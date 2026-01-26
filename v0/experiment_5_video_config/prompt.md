@@ -1,0 +1,230 @@
+Act as a Senior SDET. I need you to implement the test plan below.
+
+I am currently in the root of the repository. Before generating any code, you must perform a "Context Exploration" phase to understand the existing testing architecture.
+
+**Step 1: Context Exploration**
+1.  Scan the `docs/` folder to understand the project's testing conventions or architecture documentation.
+2.  Analyze the `libs/` and `utilities/` folders. Identify existing helper classes, fixtures, and utility functions.
+3.  Look for existing test files in `tests/` folder to see how they import these utilities and what standard `pytest` fixtures are available (e.g., clients, namespace helpers). Examine how tests are linked to requirements.
+
+**Step 2: Code Generation**
+* Implement the scenarios from the Test Plan below.
+* **Strict Constraint:** Do not hallucinate new utilities. You MUST use the existing functions and classes you found in `libs/` and `utilities/`. If a specific helper is missing, implement it locally in the test file using the base clients found.
+
+**Test Plan (STP):**
+# Openshift-virtualization-tests Test plan
+
+## **[Tech Preview] Allow VM-owners to explicitly set the video device type - Quality Engineering Plan**
+
+---
+
+### Metadata & Tracking
+
+| Field                  | Details                                                                             |
+| :--------------------- | :---------------------------------------------------------------------------------- |
+| **Enhancement(s)**     | [KubeVirt Enhancement VEP-87](https://github.com/kubevirt/enhancements/pull/87)     |
+| **Feature in Jira**    | [CNV-70742](https://issues.redhat.com/browse/CNV-70742)                             |
+| **Jira Tracking**      | [CNV-70742](https://issues.redhat.com/browse/CNV-70742) (Tasks must block the epic) |
+| **QE Owner(s)**        | Akriti Gupta                                                                        |
+| **Owning SIG**         | sig-compute                                                                         |
+| **Participating SIGs** | sig-compute, sig-hco                                                                |
+| **Current Status**     | Draft                                                                               |
+
+### Related GitHub Pull Requests
+
+This section lists all GitHub Pull Requests found during the Jira data collection process. These PRs provide implementation context for test planning.
+
+| PR Link                                                                           | Repository                               | Source Jira Issue | Description                                                       |
+| :-------------------------------------------------------------------------------- | :--------------------------------------- | :---------------- | :---------------------------------------------------------------- |
+| [PR #928](https://github.com/kubevirt/user-guide/pull/928)                        | kubevirt/user-guide                      | CNV-70761         | Add VideoConfig feature gate documentation and video type support |
+| [PR #3622](https://github.com/kubevirt/hyperconverged-cluster-operator/pull/3622) | kubevirt/hyperconverged-cluster-operator | CNV-70763         | Expose VideoConfig feature gate in HCO API (Alpha/Dev Preview)    |
+| [PR #3827](https://github.com/kubevirt/hyperconverged-cluster-operator/pull/3827) | kubevirt/hyperconverged-cluster-operator | CNV-71191         | Enable VideoConfig feature gate by default (Beta/Tech Preview)    |
+
+**Note:** All PRs listed above were reviewed for implementation details, code changes, and review comments to inform this test plan.
+
+---
+
+### **I. Motivation and Requirements Review (QE Review Guidelines)**
+
+This section documents the mandatory QE review process. The goal is to understand the feature's value, technology, and testability prior to formal test planning.
+
+#### **1. Requirement & User Story Review Checklist**
+
+| Check                                  | Done | Details/Notes                                                                                                                                                                                                  | Comments                                                              |
+| :------------------------------------- | :--- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------- |
+| **Review Requirements**                | [x]  | Reviewed CNV-70742 epic and linked stories (CNV-70761, CNV-70763, CNV-71191, CNV-71192, CNV-71193, CNV-72105)                                                                                                  | Feature promotes VideoConfig FG from Alpha to Beta                    |
+| **Understand Value**                   | [x]  | VM owners can select optimal video device type for their architecture/workload. Upstream requirement: Enable user configurability. Downstream requirement: Expose via HCO, enabled by default in Tech Preview. | Value: Performance optimization and flexibility for diverse workloads |
+| **Customer Use Cases**                 | [x]  | - Windows VMs requiring VGA for compatibility<br>- Linux VMs using virtio for better performance<br>- EFI VMs benefiting from bochs for efficiency                                                             | Clear use cases for different guest OS requirements                   |
+| **Testability**                        | [x]  | Requirements are testable via API validation, VM creation with different video types, and verification of domain XML                                                                                           | All requirements have clear acceptance criteria                       |
+| **Acceptance Criteria**                | [x]  | - VideoConfig FG enabled by default<br>- VM spec accepts video.type field<br>- Supported types: virtio, vga, bochs, cirrus, ramfb (architecture-dependent)<br>- Default behavior unchanged when FG disabled    | Defined in Jira and upstream docs                                     |
+| **Non-Functional Requirements (NFRs)** | [x]  | - Performance: virtio offers better performance<br>- Usability: Clear documentation per architecture<br>- Monitoring: No new metrics required<br>- Docs: Upstream and downstream documentation required        | Performance testing for different video types recommended             |
+
+- [KubeVirt Enhancement VEP-87](https://github.com/kubevirt/enhancements/pull/87)
+
+#### **2. Technology and Design Review**
+
+| Check                            | Done | Details/Notes                                                                                                                                                                                     | Comments                                                 |
+| :------------------------------- | :--- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------- |
+| **Developer Handoff/QE Kickoff** | [x]  | Feature implements `spec.template.spec.domain.devices.video.type` field in VirtualMachine API. Feature gate `VideoConfig` controls availability. HCO exposes via `spec.featureGates.videoConfig`. | Implementation reviewed via GitHub PRs                   |
+| **Technology Challenges**        | [x]  | - Architecture-specific video type support varies<br>- Only virtio supports multiple heads<br>- Guest OS driver requirements (virtio-gpu drivers needed for virtio)                               | Test matrix must cover all supported architectures       |
+| **Test Environment Needs**       | [x]  | - Multi-architecture cluster (AMD64, ARM64 if available)<br>- Both BIOS and EFI firmware configurations<br>- Guest images with appropriate drivers                                                | ARM64 and s390x testing may require specialized hardware |
+| **API Extensions**               | [x]  | - `spec.template.spec.domain.devices.video.type`: string enum (virtio, vga, bochs, cirrus, ramfb)<br>- HCO: `spec.featureGates.videoConfig`: boolean (default: true)                              | API changes in KubeVirt and HCO                          |
+| **Topology Considerations**      | [x]  | Standard single-cluster deployment. No multi-cluster implications.                                                                                                                                | N/A for multi-cluster                                    |
+
+### **II. Software Test Plan (STP)**
+
+This STP serves as the **overall roadmap for testing**, detailing the scope, approach, resources, and schedule.
+
+---
+
+#### **1. Scope of Testing**
+
+Testing covers the VideoConfig feature gate promotion to Tech Preview status in OpenShift Virtualization 4.21. This includes validation of the video device type configuration field (`spec.domain.devices.video.type`) in VirtualMachine specifications, HCO feature gate management, and architecture-specific video type support across AMD64, ARM64, and s390x platforms.
+
+#### **2. Testing Goals**
+
+- Verify VideoConfig feature gate is enabled by default in CNV 4.21
+- Validate VM creation and operation with all supported video device types (virtio, vga, bochs, cirrus, ramfb)
+- Ensure architecture-specific video type constraints are enforced
+- Confirm backward compatibility when feature gate is explicitly disabled
+- Validate HCO correctly propagates feature gate to KubeVirt CR
+
+#### **3. Non-Goals (Testing Scope Exclusions)**
+
+| Non-Goal                               | Rationale                                                                       | PM/ Lead Agreement |
+| :------------------------------------- | :------------------------------------------------------------------------------ | :----------------- |
+| Testing new video device types         | No new video types introduced in this release per Jira requirements             | [ ] Name/Date      |
+| Multi-head video configuration testing | Multi-head configuration not exposed via VideoConfig FG in 4.21 (per CNV-71193) | [ ] Name/Date      |
+| s390x architecture testing             | Limited test infrastructure availability; only virtio supported on s390x        | [ ] Name/Date      |
+| ARM64 (aarch64) testing                | Limited test infrastructure; documented as secondary priority                   | [ ] Name/Date      |
+| Performance benchmarking at scale      | Tech Preview scope; detailed performance analysis planned for GA                | [ ] Name/Date      |
+| UI testing for video configuration     | UI changes not in scope for Tech Preview; API-only testing                      | [ ] Name/Date      |
+
+#### **4. Test Strategy**
+
+##### **A. Types of Testing**
+
+| Item (Testing Type)            | Applicable (Y/N or N/A) | Comments                                                            |
+| :----------------------------- | :---------------------- | :------------------------------------------------------------------ |
+| Functional Testing             | Y                       | VM creation, video type configuration, feature gate toggling        |
+| Automation Testing             | Y                       | Core scenarios to be automated for CI/CD integration                |
+| Performance Testing            | Y                       | Basic comparison between video types; detailed benchmarking post-GA |
+| Security Testing               | N/A                     | No new security surface; existing VM isolation mechanisms apply     |
+| Usability Testing              | N/A                     | No UI changes; API usability validated through functional tests     |
+| Compatibility Testing          | Y                       | Cross-architecture, guest OS driver compatibility                   |
+| Regression Testing             | Y                       | Ensure default video behavior unchanged when FG disabled            |
+| Upgrade Testing                | Y                       | Verify FG state persistence and VM behavior across upgrades         |
+| Backward Compatibility Testing | Y                       | Existing VMs without video.type field continue using defaults       |
+
+##### **B. Potential Areas to Consider**
+
+| Item                   | Description                                                                                      | Applicable (Y/N or N/A) | Comment                                                                                        |
+| :--------------------- | :----------------------------------------------------------------------------------------------- | :---------------------- | :--------------------------------------------------------------------------------------------- |
+| **Dependencies**       | Dependent on deliverables from other components/products? Identify what is tested by which team. | Y                       | Depends on KubeVirt core (VideoConfig FG) and HCO (feature gate exposure); both already merged |
+| **Monitoring**         | Does the feature require metrics and/or alerts?                                                  | N                       | No new metrics introduced; existing VM monitoring applies                                      |
+| **Cross Integrations** | Does the feature affect other features/require testing by other components?                      | Y                       | HCO integration tested; no impact on CDI, networking, or storage components                    |
+| **UI**                 | Does the feature require UI? If so, ensure the UI aligns with the requirements.                  | N                       | Tech Preview is API-only; no UI changes planned                                                |
+
+#### **5. Test Environment**
+
+| Environment Component                         | Configuration                           | Specification Examples                                       |
+| :-------------------------------------------- | :-------------------------------------- | :----------------------------------------------------------- |
+| **Cluster Topology**                          | Standard HA cluster                     | 3-master/3-worker bare-metal cluster                         |
+| **OCP & OpenShift Virtualization Version(s)** | OCP 4.21, CNV 4.21                      | OCP 4.21 with OpenShift Virtualization 4.21.0                |
+| **CPU Virtualization**                        | Hardware virtualization enabled         | Nodes with VT-x (Intel) or AMD-V (AMD) enabled in BIOS       |
+| **Compute Resources**                         | Standard worker node configuration      | Minimum per worker node: 8 vCPUs, 32GB RAM                   |
+| **Special Hardware**                          | N/A                                     | No special hardware required                                 |
+| **Storage**                                   | Any supported StorageClass              | hostpath-provisioner, OCS/ODF, or local storage for test VMs |
+| **Network**                                   | Default cluster networking              | OVN-Kubernetes (default)                                     |
+| **Required Operators**                        | OpenShift Virtualization                | HCO operator with VideoConfig feature gate                   |
+| **Platform**                                  | Bare metal (primary), cloud (secondary) | Bare metal preferred for architecture testing                |
+| **Special Configurations**                    | BIOS and EFI firmware variations        | Test VMs with both SeaBIOS and OVMF/EFI boot configurations  |
+
+#### **5.5. Testing Tools & Frameworks**
+
+| Category           | Tools/Frameworks                                                     |
+| :----------------- | :------------------------------------------------------------------- |
+| **Test Framework** | Standard openshift-virtualization-tests framework                    |
+| **CI/CD**          | Standard test lanes; no special pipeline configuration required      |
+| **Other Tools**    | virsh/libvirt for domain XML verification; virtctl for VM management |
+
+#### **6. Entry Criteria**
+
+The following conditions must be met before testing can begin:
+
+- [x] Requirements and design documents are **approved and merged** (PRs #928, #3622, #3827 merged)
+- [ ] Test environment is **set up and configured** (see Section II.5 - Test Environment)
+- [ ] Test cases are **reviewed and approved**
+- [ ] VideoConfig feature gate merged and available in test builds (CNV v4.21.0.rhel9-31+)
+- [ ] HCO correctly propagates VideoConfig feature gate to KubeVirt CR
+
+#### **7. Risks and Limitations**
+
+| Risk Category        | Specific Risk for This Feature                                                 | Mitigation Strategy                                                                     | Status |
+| :------------------- | :----------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------- | :----- |
+| Timeline/Schedule    | Tech Preview deadline approaching; test automation development may lag         | Prioritize P0/P1 scenarios; manual testing for remaining scenarios                      | [ ]    |
+| Test Coverage        | ARM64 and s390x architectures have limited test infrastructure                 | Focus on AMD64 (BIOS/EFI); document ARM64/s390x as known limitations                    | [ ]    |
+| Test Environment     | Multi-architecture cluster setup complexity                                    | Use standard AMD64 cluster; ARM64 testing contingent on infrastructure availability     | [ ]    |
+| Untestable Aspects   | Guest OS driver availability varies; some video types require specific drivers | Document driver requirements; test with known-good guest images (Fedora, RHEL, Windows) | [ ]    |
+| Resource Constraints | Single QE resource assigned to feature                                         | Leverage existing test infrastructure; prioritize automation for regression prevention  | [ ]    |
+| Dependencies         | Feature depends on upstream KubeVirt 1.7 VideoConfig Beta promotion            | Upstream already merged; downstream build availability confirmed                        | [ ]    |
+| Other                | Invalid video type for architecture may cause VM boot failure                  | Implement negative test cases; validate error handling and user feedback                | [ ]    |
+
+#### **8. Known Limitations**
+
+- **Architecture-specific video type support:**
+  - AMD64/x86_64 (BIOS): Supports virtio, vga, bochs, cirrus, ramfb (default: vga)
+  - AMD64/x86_64 (EFI): Supports virtio, vga, bochs, cirrus, ramfb (default: bochs)
+  - ARM64: Supports virtio, ramfb only (default: virtio)
+  - s390x: Supports virtio only (default: virtio)
+- **Multi-head support:** Only virtio video device type supports multiple heads (up to 16); this is not configurable via VideoConfig FG in 4.21
+- **Driver requirements:** virtio video requires virtio-gpu drivers in guest OS; bochs requires driver for BIOS guests only (OVMF includes bochs driver)
+- **cirrus video type:** Legacy device type; not recommended for new deployments
+- **Tech Preview status:** Feature may change in future releases; not recommended for production workloads
+
+---
+
+### **III. Test Scenarios & Traceability**
+
+This section provides a **high-level overview** of test scenarios mapped to requirements.
+
+#### **1. Requirements-to-Tests Mapping**
+
+| Requirement ID | Requirement Summary                               | Test Scenario(s)                                       | Test Type(s)           | Priority |
+| :------------- | :------------------------------------------------ | :----------------------------------------------------- | :--------------------- | :------- |
+| CNV-70742      | VideoConfig FG enabled by default in Tech Preview | Verify FG active by default in fresh install           | Functional             | P0       |
+| CNV-70742      | VM spec accepts video.type field                  | Create VM with video.type=virtio                       | Functional             | P0       |
+| CNV-70742      | VM spec accepts video.type field                  | Create VM with video.type=vga                          | Functional             | P0       |
+| CNV-70742      | VM spec accepts video.type field                  | Create VM with video.type=bochs                        | Functional             | P0       |
+| CNV-70742      | VM runs with configured video type                | Verify domain XML reflects configured video type       | Functional             | P0       |
+| CNV-70742      | Default behavior preserved when FG disabled       | Disable FG, verify default video type used             | Functional, Regression | P0       |
+| CNV-70742      | Architecture-specific video type validation       | Test unsupported video type on architecture (negative) | Functional             | P1       |
+| CNV-70742      | VM spec accepts video.type field                  | Create VM with video.type=cirrus                       | Functional             | P1       |
+| CNV-70742      | VM spec accepts video.type field                  | Create VM with video.type=ramfb                        | Functional             | P1       |
+| CNV-70742      | Video type persists across VM restart             | Restart VM, verify video type preserved                | Functional             | P1       |
+| CNV-70742      | Video type persists across live migration         | Migrate VM, verify video type preserved                | Functional             | P1       |
+| CNV-70763      | HCO exposes VideoConfig feature gate              | Verify HCO CR includes videoConfig in featureGates     | Functional             | P0       |
+| CNV-71191      | HCO sets VideoConfig to true by default           | Verify HCO default value is true                       | Functional             | P0       |
+| CNV-71191      | HCO propagates VideoConfig to KubeVirt CR         | Verify KubeVirt CR reflects HCO featureGate setting    | Functional             | P0       |
+| CNV-70742      | VM without video.type uses architecture default   | Create VM without video.type, verify default used      | Functional             | P1       |
+| CNV-70742      | Invalid video type rejected with clear error      | Submit invalid video type, verify API rejection        | Functional             | P1       |
+| CNV-70742      | Video config works with EFI boot                  | Create EFI VM with video.type=bochs                    | Functional             | P1       |
+| CNV-70742      | Video config works with BIOS boot                 | Create BIOS VM with video.type=vga                     | Functional             | P1       |
+| CNV-70742      | Upgrade preserves video configuration             | Upgrade cluster, verify VM video config preserved      | Upgrade                | P2       |
+| CNV-70742      | Existing VMs unaffected by FG state change        | Toggle FG, verify running VMs unaffected               | Regression             | P2       |
+
+**Note:** For detailed test procedures, steps, and expected results, refer to the Software Test Design (STD) document.
+
+---
+
+### **IV. Sign-off and Approval**
+
+This Software Test Plan requires approval from the following stakeholders:
+
+- **Reviewers:**
+  - [Name / @github-username]
+  - [Name / @github-username]
+- **Approvers:**
+  - [Name / @github-username]
+  - [Name / @github-username]
+
