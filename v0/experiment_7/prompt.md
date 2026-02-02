@@ -1,0 +1,257 @@
+Act as a Senior SDET. I need you to implement the test plan below.
+
+I am currently in the root of the repository. Before generating any code, you must perform a "Context Exploration" phase to understand the existing testing architecture.
+
+**Step 1: Context Exploration**
+1.  Scan the `docs/` folder to understand the project's testing conventions or architecture documentation.
+2.  Analyze the `libs/` and `utilities/` folders. Identify existing helper classes, fixtures, and utility functions.
+3.  Look for existing test files in `tests/` folder to see how they import these utilities and what standard `pytest` fixtures are available (e.g., clients, namespace helpers). Examine how tests are linked to requirements.
+
+**Step 2: Code Generation**
+* Implement the scenarios from the Test Plan below.
+* **Strict Constraint:** Do not hallucinate new utilities. You MUST use the existing functions and classes you found in `libs/` and `utilities/`. If a specific helper is missing, implement it locally in the test file using the base clients found.
+
+**Test Plan (STP):**
+# Openshift-virtualization-tests Test plan
+
+## **Windows Guest Agent OS/Hostname Info Display Issue - Quality Engineering Plan**
+
+---
+
+### Metadata & Tracking
+
+| Field                  | Details                                                                |
+| :--------------------- | :--------------------------------------------------------------------- |
+| **Enhancement(s)**     | N/A - Bug Fix                                                          |
+| **Feature in Jira**    | [CNV-61262](https://issues.redhat.com/browse/CNV-61262)                |
+| **Jira Tracking**      | [CNV-56888](https://issues.redhat.com/browse/CNV-56888) (Bug Fix)      |
+| **QE Owner(s)**        | Stuart Gott                                                            |
+| **Owning SIG**         | sig-compute                                                            |
+| **Participating SIGs** | sig-compute, sig-ui                                                    |
+| **Current Status**     | Draft                                                                  |
+
+### Related GitHub Pull Requests
+
+| PR Link | Repository | Source Jira Issue | Description |
+| :------ | :--------- | :---------------- | :---------- |
+| [kubevirt/kubevirt#14232](https://github.com/kubevirt/kubevirt/pull/14232) | kubevirt/kubevirt | CNV-56888 | [release-1.3] BugFix: Ensure domain.Status.OSInfo is not empty |
+
+**Note:** All PRs listed above were reviewed for implementation details, code changes, and review comments to inform this test plan.
+
+---
+
+### **I. Motivation and Requirements Review (QE Review Guidelines)**
+
+#### **1. Requirement & User Story Review Checklist**
+
+| Check                                  | Done | Details/Notes                                                                                                                                                                           | Comments |
+| :------------------------------------- | :--- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------- |
+| **Review Requirements**                | [x]  | Reviewed bug: Windows VMs show "Guest Agent Required" for OS/hostname even when qemu-ga is running. domain.Status.OSInfo sometimes empty. |          |
+| **Understand Value**                   | [x]  | User experience - accurate VM info display is essential for management. |          |
+| **Customer Use Cases**                 | [x]  | Users managing Windows VMs expecting to see OS version and hostname. |          |
+| **Testability**                        | [x]  | Testable with Windows VMs with guest agent installed. |          |
+| **Acceptance Criteria**                | [x]  | OS and hostname info should display correctly when guest agent is running. |          |
+| **Non-Functional Requirements (NFRs)** | [x]  | Usability - accurate information display. |          |
+
+#### **2. Technology and Design Review**
+
+| Check                            | Done | Details/Notes                                                                                                                           | Comments |
+| :------------------------------- | :--- | :------------------------------------------------------------------------------------------------------------------------------------------------------ | :------- |
+| **Developer Handoff/QE Kickoff** | [ ]  | Pending - need walkthrough on OSInfo population logic. |          |
+| **Technology Challenges**        | [x]  | Race condition where domain.Status.OSInfo is sometimes not populated despite guest agent reporting. Fix ensures OSInfo is not empty. |          |
+| **Test Environment Needs**       | [x]  | Windows VM with qemu-guest-agent and virtio-serial driver. |          |
+| **API Extensions**               | [x]  | Fix ensures domain.Status.OSInfo is populated correctly. |          |
+| **Topology Considerations**      | [x]  | Standard topology. |          |
+
+### **II. Software Test Plan (STP)**
+
+#### **1. Scope of Testing**
+
+**In Scope:**
+
+- Verify Windows VM OS info displays correctly
+- Verify Windows VM hostname displays correctly
+- Verify info updates when guest agent starts
+- Verify behavior across multiple VM reboots
+- Verify with different Windows versions
+
+**Document Conventions:** 
+- qemu-ga: QEMU Guest Agent - reports guest info to host
+- OSInfo: Domain status field containing OS details
+- virtio-serial: Driver for guest-host communication
+
+#### **2. Testing Goals**
+
+- [ ] Verify 100% correct OS info display for Windows VMs
+- [ ] Confirm no "Guest Agent Required" when agent is running
+- [ ] Validate info persistence across reboots
+
+#### **3. Non-Goals (Testing Scope Exclusions)**
+
+| Non-Goal                               | Rationale              | PM/ Lead Agreement |
+| :------------------------------------- | :--------------------- | :----------------- |
+| Linux guest agent testing              | Different code path | [ ] Name/Date      |
+| Guest agent performance testing        | Functionality focus | [ ] Name/Date      |
+| Testing unsupported Windows versions   | Out of scope | [ ] Name/Date      |
+
+#### **4. Test Strategy**
+
+##### **A. Types of Testing**
+
+| Item (Testing Type)            | Applicable (Y/N or N/A) | Comments |
+| :----------------------------- | :---------------------- | :------- |
+| Functional Testing             | Y                       | Core info display |
+| Automation Testing             | Y                       | Must be automated |
+| Performance Testing            | N/A                     | Not in scope |
+| Security Testing               | N/A                     | No security changes |
+| Usability Testing              | Y                       | User experience focus |
+| Compatibility Testing          | Y                       | Different Windows versions |
+| Regression Testing             | Y                       | Guest agent tests |
+| Upgrade Testing                | N/A                     | Not upgrade specific |
+| Backward Compatibility Testing | N/A                     | Bug fix |
+
+##### **B. Potential Areas to Consider**
+
+| Item                   | Description                                                                                                        | Applicable (Y/N or N/A) | Comment |
+| :--------------------- | :----------------------------------------------------------------------------------------------------------------- | :---------------------- | :------ |
+| **Dependencies**       | qemu-guest-agent, virtio-serial driver                                                                             | Y                       | Guest requirements |
+| **Monitoring**         | VMI status monitoring                                                                                              | Y                       | Track OSInfo |
+| **Cross Integrations** | virt-handler, VMI status, UI display                                                                               | Y                       | All involved |
+| **UI**                 | VM overview page                                                                                                   | Y                       | Primary display area |
+
+#### **5. Test Environment**
+
+| Environment Component                         | Configuration | Specification Examples                                                                        |
+| :-------------------------------------------- | :------------ | :-------------------------------------------------------------------------------------------- |
+| **Cluster Topology**                          | Required      | Standard cluster                                                                              |
+| **OCP & OpenShift Virtualization Version(s)** | Required      | OCP 4.17+ with OpenShift Virtualization 4.17+                                                 |
+| **CPU Virtualization**                        | Required      | VT-x or AMD-V enabled                                                                         |
+| **Compute Resources**                         | Required      | Sufficient for Windows VMs                                                                    |
+| **Special Hardware**                          | N/A           | None required                                                                                 |
+| **Storage**                                   | Required      | Standard storage                                                                              |
+| **Network**                                   | Required      | OVN-Kubernetes                                                                                |
+| **Required Operators**                        | Required      | OpenShift Virtualization Operator                                                             |
+| **Platform**                                  | Required      | Any supported platform                                                                        |
+| **Special Configurations**                    | Required      | Windows VMs with qemu-ga and virtio drivers                                                   |
+
+#### **5.5. Testing Tools & Frameworks**
+
+| Category           | Tools/Frameworks                                                  |
+| :----------------- | :---------------------------------------------------------------- |
+| **Test Framework** | Standard OpenShift Virtualization test framework                  |
+| **CI/CD**          | Standard CI pipeline (Windows VM lane)                            |
+| **Other Tools**    | Windows guest agent, virtio-win drivers                           |
+
+#### **6. Entry and Exit Criteria**
+
+##### **A. Entry Criteria**
+
+- [x] Requirements and design documents are **approved and merged**
+- [ ] Test environment is **set up and configured** with Windows VMs
+- [ ] Test cases are **reviewed and approved**
+- [ ] PR #14232 is merged
+
+##### **B. Exit Criteria**
+
+- [ ] OS info displays correctly for Windows
+- [ ] No false "Guest Agent Required" messages
+- [ ] Info persists across reboots
+- [ ] Test automation merged
+
+#### **7. Risks and Limitations**
+
+| Risk Category        | Specific Risk for This Feature                                                                                 | Mitigation Strategy                                                                            | Status |
+| :------------------- | :------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------- | :----- |
+| Timeline/Schedule    | Windows VM setup takes longer                                                                                  | Use pre-built Windows images                                                                   | [ ]    |
+| Test Coverage        | Race condition may be timing dependent                                                                         | Test multiple scenarios                                                                        | [ ]    |
+| Test Environment     | Need Windows licensing for VMs                                                                                 | Use evaluation images                                                                          | [ ]    |
+| Untestable Aspects   | All Windows versions                                                                                           | Focus on supported versions                                                                    | [ ]    |
+| Resource Constraints | Windows VMs require more resources                                                                             | Allocate appropriately                                                                         | [ ]    |
+| Dependencies         | Guest agent installation                                                                                       | Verify agent running                                                                           | [ ]    |
+| Other                | N/A                                                                                                            | N/A                                                                                            | [ ]    |
+
+#### **8. Known Limitations**
+
+- Requires Windows guest with qemu-guest-agent installed
+- virtio-serial driver must be installed for communication
+- Guest agent service must be running
+
+---
+
+### **III. Test Case Descriptions & Traceability**
+
+#### **1. Requirements-to-Tests Mapping**
+
+| Requirement ID | Requirement Summary   | Test Scenario(s)                                           | Test Type(s)                | Priority |
+| :------------- | :-------------------- | :--------------------------------------------------------- | :-------------------------- | :------- |
+| CNV-61262      | OS info displays | Verify Windows OS version shown correctly | Functional, Tier 1 | P0 |
+| CNV-61262      | Hostname displays | Verify Windows hostname shown correctly | Functional, Tier 1 | P0 |
+| CNV-61262      | No false message | No "Guest Agent Required" when agent running | Functional, Tier 1 | P0 |
+| CNV-61262      | Persistence | Info persists after VM reboot | Functional, Tier 1 | P1 |
+
+#### **Test Scenarios - Tier 1 (Functional)**
+
+**Scenario 1: Windows OS Info Display**
+- **Preconditions:** Windows VM with qemu-ga running
+- **Steps:**
+  1. Start Windows VM with guest agent
+  2. Wait for agent to report
+  3. Check VMI status for OSInfo
+  4. Verify OS version displayed
+- **Expected Result:** Correct Windows version shown (not "Guest Agent Required")
+- **Priority:** P0
+
+**Scenario 2: Windows Hostname Display**
+- **Preconditions:** Windows VM with qemu-ga running
+- **Steps:**
+  1. Start Windows VM
+  2. Set specific hostname in guest
+  3. Check VMI status
+  4. Verify hostname displayed
+- **Expected Result:** Correct hostname shown
+- **Priority:** P0
+
+**Scenario 3: Info After Reboot**
+- **Preconditions:** Windows VM running with info displayed
+- **Steps:**
+  1. Verify info displayed correctly
+  2. Reboot Windows VM (guest restart)
+  3. Wait for agent to reconnect
+  4. Verify info still displayed
+- **Expected Result:** Info restored after reboot
+- **Priority:** P1
+
+**Scenario 4: Agent Start Detection**
+- **Preconditions:** Windows VM with agent stopped initially
+- **Steps:**
+  1. Start Windows VM
+  2. Stop qemu-ga service in guest
+  3. Verify "Guest Agent Required" shown
+  4. Start qemu-ga service
+  5. Verify info now displays
+- **Expected Result:** Info appears when agent starts
+- **Priority:** P1
+
+#### **Test Scenarios - Tier 2 (E2E)**
+
+**Scenario 5: Multiple Windows Versions**
+- **Preconditions:** Windows 10, Windows Server VMs
+- **Steps:**
+  1. Test Windows 10 VM info display
+  2. Test Windows Server 2019 VM info display
+  3. Test Windows Server 2022 VM info display
+- **Expected Result:** All versions show correct info
+- **Priority:** P2
+
+---
+
+### **IV. Sign-off and Approval**
+
+This Software Test Plan requires approval from the following stakeholders:
+
+- **Reviewers:**
+  - [QE Team Lead]
+  - [Windows Team Representative]
+- **Approvers:**
+  - [QE Manager]
+  - [Product Owner]

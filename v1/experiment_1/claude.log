@@ -1,0 +1,85 @@
+● Now I'll execute the prompt. I'm acting as a Senior SDET to translate the Software Test Plan into an executable Python test file using pytest.   
+                                                                                                                                                   
+  Phase 1: Context Exploration                                                                                                                     
+                                                                                                                                                   
+  Let me start by exploring the repository structure to understand testing conventions and available utilities.                                    
+                                                                                                                                                   
+● Searched for 12 patterns, read 10 files (ctrl+o to expand)                                                                                       
+                                                                                                                                                   
+● Perfect! I have explored the codebase structure. Now let me move to Phase 2: Code Generation.                                                    
+                                                                                                                                                   
+  Phase 2: Code Generation (Drafting)                                                                                                              
+                                                                                                                                                   
+  Based on the STP and the codebase patterns I found, I'll create a test file for the CommonInstancetypesDeployment feature.                       
+                                                                                                                                                   
+● Write(tests/install_upgrade_operators/common_instancetypes_deployment/test_hco_common_instancetypes_deployment.py)                               
+  ⎿  Wrote 227 lines to tests/install_upgrade_operators/common_instancetypes_deployment/test_hco_common_instancetypes_deployment.py                
+     """                                                                                                                                           
+     Tests for CommonInstancetypesDeployment HCO feature.                                                                                          
+                                                                                                                                                   
+     This module tests the ability to enable/disable common-instancetypes                                                                          
+     deployment via the HyperConverged CR spec.commonInstancetypesDeployment field.                                                                
+     """                                                                                                                                           
+                                                                                                                                                   
+     import logging                                                                                                                                
+                                                                                                                                                   
+     import pytest                                                                                                                                 
+     … +217 lines (ctrl+o to expand)                                                                                                               
+                                                                                                                                                   
+● Phase 3: Validation & Self-Healing (Pyright Loop)                                                                                                
+                                                                                                                                                   
+  Now let me run pyright to check for type safety and attribute errors.                                                                            
+                                                                                                                                                   
+● Bash(pyright tests/install_upgrade_operators/common_instancetypes_deployment/test_hco_common_instancetypes_deployment.py)                        
+  ⎿  0 errors, 0 warnings, 0 informations                                                                                                          
+                                                                                                                                                   
+● Perfect! Pyright passed with 0 errors. Let me create the __init__.py file for the new test directory to make it a proper Python package.         
+                                                                                                                                                   
+● Write(tests/install_upgrade_operators/common_instancetypes_deployment/__init__.py)                                                               
+  ⎿  Wrote 2 lines to tests/install_upgrade_operators/common_instancetypes_deployment/__init__.py                                                  
+     # Common instancetypes deployment tests                                                                                                       
+                                                                                                                                                   
+                                                                                                                                                   
+● Let me verify the generated test file one more time to ensure everything is correct.                                                             
+                                                                                                                                                   
+● Read 2 files (ctrl+o to expand)                                                                                                                  
+                                                                                                                                                   
+● Summary                                                                                                                                          
+                                                                                                                                                   
+  I've successfully translated the Software Test Plan (STP) for "Unable to Disable Common-Instancetypes Deployment from HCO" into an executable    
+  Python test file using pytest.                                                                                                                   
+                                                                                                                                                   
+  What Was Created:                                                                                                                                
+                                                                                                                                                   
+  Location: tests/install_upgrade_operators/common_instancetypes_deployment/test_hco_common_instancetypes_deployment.py                            
+                                                                                                                                                   
+  Test Coverage (All 4 Tier-1 Scenarios from STP):                                                                                                 
+                                                                                                                                                   
+  1. test_disable_common_instancetypes (Polarion: CNV-61256-1)                                                                                     
+    - Verifies setting commonInstancetypesDeployment: Disabled removes all common-instancetype resources                                           
+    - Priority: P0                                                                                                                                 
+  2. test_enable_common_instancetypes (Polarion: CNV-61256-2)                                                                                      
+    - Verifies setting commonInstancetypesDeployment: Enabled deploys common-instancetype resources                                                
+    - Priority: P0                                                                                                                                 
+  3. test_common_instancetypes_default_behavior (Polarion: CNV-61256-3)                                                                            
+    - Verifies default behavior (instancetypes enabled by default)                                                                                 
+    - Priority: P0                                                                                                                                 
+  4. test_common_instancetypes_setting_persistence (Polarion: CNV-61256-4)                                                                         
+    - Verifies setting persists across HCO reconciliation                                                                                          
+    - Priority: P1                                                                                                                                 
+                                                                                                                                                   
+  Key Features:                                                                                                                                    
+                                                                                                                                                   
+  - Follows repository conventions: Uses existing patterns from HCO tests in strict_reconciliation/                                                
+  - Proper fixtures: Uses admin_client, hco_namespace, hyperconverged_resource_scope_function                                                      
+  - HCO reconciliation: Uses ResourceEditorValidateHCOReconcile with SSP in reconciliation list                                                    
+  - Robust waiting logic: Implements wait_for_common_instancetypes_state() with timeout handling                                                   
+  - Comprehensive verification: Checks both presence/absence and counts of instancetype resources                                                  
+  - Type-safe: Passed pyright validation with 0 errors                                                                                             
+  - Markers: Includes sno and post_upgrade markers                                                                                                 
+  - Logging: Includes informative logging at each step                                                                                             
+                                                                                                                                                   
+  Pyright Validation: ✅ PASSED (0 errors, 0 warnings, 0 informations)                                                                             
+                                                                                                                                                   
+  The test file is ready for execution and follows all repository coding standards and conventions.                                                
+                                                                                                                 

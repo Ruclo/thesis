@@ -1,0 +1,4 @@
+Failed due to expecting a different Exception being raised. NotFoundException instead of ApiException(404).
+Semantically these expections are the same.
+
+Claude code made a fixture in which it tries to stop a stopped vm. This causes an error.

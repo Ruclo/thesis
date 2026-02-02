@@ -1,0 +1,300 @@
+diff --git a/tests/virt/cluster/guest_agent/__init__.py b/tests/virt/cluster/guest_agent/__init__.py
+new file mode 100644
+index 0000000..e69de29
+diff --git a/tests/virt/cluster/guest_agent/conftest.py b/tests/virt/cluster/guest_agent/conftest.py
+new file mode 100644
+index 0000000..2c52f6e
+--- /dev/null
++++ b/tests/virt/cluster/guest_agent/conftest.py
+@@ -0,0 +1,10 @@
++"""
++Conftest for guest_agent tests.
++
++Imports fixtures from common_templates to make them available for guest agent tests.
++"""
++
++import pytest
++
++# Import Windows OS fixtures from common_templates
++pytest_plugins = ["tests.virt.cluster.common_templates.conftest"]
+diff --git a/tests/virt/cluster/guest_agent/windows/__init__.py b/tests/virt/cluster/guest_agent/windows/__init__.py
+new file mode 100644
+index 0000000..e69de29
+diff --git a/tests/virt/cluster/guest_agent/windows/test_windows_guest_agent_osinfo.py b/tests/virt/cluster/guest_agent/windows/test_windows_guest_agent_osinfo.py
+new file mode 100644
+index 0000000..594df7f
+--- /dev/null
++++ b/tests/virt/cluster/guest_agent/windows/test_windows_guest_agent_osinfo.py
+@@ -0,0 +1,272 @@
++"""
++Test Windows Guest Agent OS/Hostname Info Display
++
++Tests for CNV-61262: Verify Windows VMs display OS info and hostname correctly
++when qemu-guest-agent is running, and that domain.Status.OSInfo is populated.
++"""
++
++import logging
++import pytest
++from pyhelper_utils.shell import run_ssh_commands
++from timeout_sampler import TimeoutExpiredError, TimeoutSampler
++
++from utilities.constants import (
++    OS_FLAVOR_WINDOWS,
++    TIMEOUT_2MIN,
++    TIMEOUT_3MIN,
++    TIMEOUT_5SEC,
++    TIMEOUT_6MIN,
++    TCP_TIMEOUT_30SEC,
++)
++from utilities.virt import (
++    get_guest_os_info,
++    get_virtctl_os_info,
++    validate_virtctl_guest_agent_after_guest_reboot,
++    validate_virtctl_guest_agent_data_over_time,
++    restart_vm_wait_for_running_vm,
++)
++from utilities.ssp import validate_os_info_vmi_vs_windows_os
++
++
++pytestmark = [
++    pytest.mark.post_upgrade,
++    pytest.mark.special_infra,
++    pytest.mark.high_resource_vm,
++]
++
++LOGGER = logging.getLogger(__name__)
++TESTS_CLASS_NAME = "TestWindowsGuestAgentOSInfo"
++
++
++@pytest.mark.usefixtures("cluster_cpu_model_scope_class")
++class TestWindowsGuestAgentOSInfo:
++    """Test Windows Guest Agent OS and Hostname Info Display"""
++
++    @pytest.mark.sno
++    @pytest.mark.dependency(name=f"{TESTS_CLASS_NAME}::create_vm")
++    @pytest.mark.polarion("CNV-61262")
++    @pytest.mark.jira("CNV-56888")
++    def test_create_vm(self, matrix_windows_os_vm_from_template):
++        """
++        Test CNV VM creation from template.
++
++        Creates a Windows VM from template to prepare for guest agent testing.
++        """
++        LOGGER.info("Create Windows VM from template.")
++        matrix_windows_os_vm_from_template.create(wait=True)
++
++    @pytest.mark.sno
++    @pytest.mark.dependency(
++        name=f"{TESTS_CLASS_NAME}::start_vm",
++        depends=[f"{TESTS_CLASS_NAME}::create_vm"],
++    )
++    @pytest.mark.polarion("CNV-61263")
++    @pytest.mark.jira("CNV-56888")
++    def test_start_vm(self, matrix_windows_os_vm_from_template):
++        """
++        Test VM start and wait for it to be running.
++
++        Starts the Windows VM and waits for it to reach Running state
++        with SSH connectivity.
++        """
++        LOGGER.info("Start Windows VM and wait for running state.")
++        matrix_windows_os_vm_from_template.start(wait=True)
++
++    @pytest.mark.sno
++    @pytest.mark.dependency(
++        name=f"{TESTS_CLASS_NAME}::windows_os_info_display",
++        depends=[f"{TESTS_CLASS_NAME}::start_vm"],
++    )
++    @pytest.mark.polarion("CNV-61264")
++    @pytest.mark.jira("CNV-56888")
++    def test_windows_os_info_display(self, matrix_windows_os_vm_from_template):
++        """
++        Test Windows OS version info displays correctly.
++
++        Scenario 1: Windows OS Info Display
++        - Verifies that Windows OS version is displayed correctly
++        - Checks that domain.Status.OSInfo is populated
++        - Ensures no "Guest Agent Required" message when agent is running
++
++        Expected Result: Correct Windows version shown (not "Guest Agent Required")
++        """
++        LOGGER.info("Verify Windows OS info is displayed correctly.")
++        vm = matrix_windows_os_vm_from_template
++
++        # Wait for guest agent data to be available
++        assert validate_virtctl_guest_agent_data_over_time(
++            vm=vm
++        ), "Guest agent data not available within timeout"
++
++        # Get VMI guest OS info
++        vmi_os_info = get_guest_os_info(vmi=vm.vmi)
++        assert vmi_os_info, "VMI guestOSInfo is empty - should contain OS data"
++
++        # Verify OS info contains expected fields
++        assert "name" in vmi_os_info, "OS name not found in guestOSInfo"
++        assert vmi_os_info["name"], "OS name is empty in guestOSInfo"
++
++        # Validate OS info matches actual Windows guest
++        validate_os_info_vmi_vs_windows_os(vm=vm)
++
++        LOGGER.info(f"Windows OS info displayed correctly: {vmi_os_info['name']}")
++
++    @pytest.mark.sno
++    @pytest.mark.dependency(
++        name=f"{TESTS_CLASS_NAME}::windows_hostname_display",
++        depends=[f"{TESTS_CLASS_NAME}::start_vm"],
++    )
++    @pytest.mark.polarion("CNV-61265")
++    @pytest.mark.jira("CNV-56888")
++    def test_windows_hostname_display(self, matrix_windows_os_vm_from_template):
++        """
++        Test Windows hostname displays correctly.
++
++        Scenario 2: Windows Hostname Display
++        - Verifies that Windows hostname is displayed correctly
++        - Checks VMI status for hostname field
++
++        Expected Result: Correct hostname shown
++        """
++        LOGGER.info("Verify Windows hostname is displayed correctly.")
++        vm = matrix_windows_os_vm_from_template
++
++        # Get virtctl OS info which includes hostname
++        virtctl_info = get_virtctl_os_info(vm=vm)
++        assert virtctl_info, "virtctl guestosinfo returned no data"
++        assert "hostname" in virtctl_info, "hostname not found in virtctl output"
++        assert virtctl_info["hostname"], "hostname is empty in virtctl output"
++
++        # Get VMI guest OS info
++        vmi_os_info = get_guest_os_info(vmi=vm.vmi)
++        assert vmi_os_info, "VMI guestOSInfo is empty"
++
++        LOGGER.info(f"Windows hostname displayed correctly: {virtctl_info['hostname']}")
++
++    @pytest.mark.dependency(
++        name=f"{TESTS_CLASS_NAME}::info_after_reboot",
++        depends=[f"{TESTS_CLASS_NAME}::windows_os_info_display"],
++    )
++    @pytest.mark.polarion("CNV-61266")
++    @pytest.mark.jira("CNV-56888")
++    def test_info_after_reboot(self, matrix_windows_os_vm_from_template):
++        """
++        Test OS/hostname info persists after VM reboot.
++
++        Scenario 3: Info After Reboot
++        - Verifies info is displayed correctly before reboot
++        - Performs guest reboot
++        - Verifies info is restored after reboot
++
++        Expected Result: Info restored after reboot
++        """
++        LOGGER.info("Verify OS/hostname info persists after VM reboot.")
++        vm = matrix_windows_os_vm_from_template
++
++        # Verify info is displayed before reboot
++        vmi_os_info_before = get_guest_os_info(vmi=vm.vmi)
++        assert vmi_os_info_before, "VMI guestOSInfo is empty before reboot"
++
++        virtctl_info_before = get_virtctl_os_info(vm=vm)
++        assert virtctl_info_before, "virtctl guestosinfo returned no data before reboot"
++
++        # Perform guest reboot and validate guest agent reconnects
++        validate_virtctl_guest_agent_after_guest_reboot(
++            vm=vm, os_type=OS_FLAVOR_WINDOWS
++        )
++
++        # Verify info is still displayed after reboot
++        vmi_os_info_after = get_guest_os_info(vmi=vm.vmi)
++        assert vmi_os_info_after, "VMI guestOSInfo is empty after reboot"
++
++        virtctl_info_after = get_virtctl_os_info(vm=vm)
++        assert virtctl_info_after, "virtctl guestosinfo returned no data after reboot"
++
++        # Verify key fields match before and after
++        assert (
++            vmi_os_info_before["name"] == vmi_os_info_after["name"]
++        ), "OS name changed after reboot"
++        assert (
++            virtctl_info_before["hostname"] == virtctl_info_after["hostname"]
++        ), "Hostname changed after reboot"
++
++        LOGGER.info("OS/hostname info persisted successfully after reboot.")
++
++    @pytest.mark.dependency(
++        name=f"{TESTS_CLASS_NAME}::agent_start_detection",
++        depends=[f"{TESTS_CLASS_NAME}::start_vm"],
++    )
++    @pytest.mark.polarion("CNV-61267")
++    @pytest.mark.jira("CNV-56888")
++    def test_agent_start_detection(self, matrix_windows_os_vm_from_template):
++        """
++        Test guest agent start detection.
++
++        Scenario 4: Agent Start Detection
++        - Stops qemu-ga service in guest
++        - Verifies agent disconnection is detected
++        - Starts qemu-ga service
++        - Verifies info appears when agent reconnects
++
++        Expected Result: Info appears when agent starts
++        """
++        LOGGER.info("Test guest agent start detection.")
++        vm = matrix_windows_os_vm_from_template
++
++        # Verify agent is connected initially
++        assert validate_virtctl_guest_agent_data_over_time(
++            vm=vm
++        ), "Guest agent not connected initially"
++
++        # Stop qemu-ga service in guest
++        LOGGER.info("Stopping QEMU guest agent service.")
++        run_ssh_commands(
++            host=vm.ssh_exec,
++            commands=['powershell -command "Stop-Service -Name \'QEMU-GA\'"'],
++            tcp_timeout=TCP_TIMEOUT_30SEC,
++        )
++
++        # Wait for agent disconnection to be detected
++        LOGGER.info("Waiting for agent disconnection to be detected.")
++        try:
++            for sample in TimeoutSampler(
++                wait_timeout=TIMEOUT_3MIN,
++                sleep=TIMEOUT_5SEC,
++                func=lambda: vm.vmi.instance.status.conditions,
++            ):
++                agent_condition = next(
++                    (
++                        cond
++                        for cond in sample
++                        if cond.get("type") == "AgentConnected"
++                    ),
++                    None,
++                )
++                if agent_condition and agent_condition.get("status") == "False":
++                    LOGGER.info("Agent disconnection detected.")
++                    break
++        except TimeoutExpiredError:
++            raise AssertionError(
++                "Agent disconnection not detected within timeout"
++            )
++
++        # Start qemu-ga service
++        LOGGER.info("Starting QEMU guest agent service.")
++        run_ssh_commands(
++            host=vm.ssh_exec,
++            commands=['powershell -command "Start-Service -Name \'QEMU-GA\'"'],
++            tcp_timeout=TCP_TIMEOUT_30SEC,
++        )
++
++        # Wait for agent to reconnect and info to be available
++        LOGGER.info("Waiting for agent to reconnect and info to be available.")
++        assert validate_virtctl_guest_agent_data_over_time(
++            vm=vm
++        ), "Guest agent did not reconnect within timeout"
++
++        # Verify info is now available
++        vmi_os_info = get_guest_os_info(vmi=vm.vmi)
++        assert vmi_os_info, "VMI guestOSInfo is still empty after agent restart"
++        assert "name" in vmi_os_info, "OS name not found after agent restart"
++
++        LOGGER.info("Guest agent reconnected and info is available.")

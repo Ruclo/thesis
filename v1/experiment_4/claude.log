@@ -1,0 +1,100 @@
+● Now I'll execute the prompt. This is a comprehensive task to create a pytest test file for VM snapshot restore with RerunOnFailure run strategy. 
+  Let me follow the three-phase workflow.                                                                                                          
+                                                                                                                                                   
+  Phase 1: Context Exploration                                                                                                                     
+                                                                                                                                                   
+  Let me start by exploring the codebase to understand testing conventions, utilities, and patterns.                                               
+                                                                                                                                                   
+● Searched for 13 patterns, read 9 files (ctrl+o to expand)                                                                                        
+                                                                                                                                                   
+● Now I have good context. Let me proceed with the three-phase workflow.                                                                           
+                                                                                                                                                   
+  Phase 2: Code Generation (Drafting)                                                                                                              
+                                                                                                                                                   
+  Let me create the test file implementing the scenarios from the STP.                                                                             
+                                                                                                                                                   
+● Write(tests/storage/snapshots/test_snapshot_restore_run_strategy.py)                                                                             
+  ⎿  Wrote 443 lines to tests/storage/snapshots/test_snapshot_restore_run_strategy.py                                                              
+     # -*- coding: utf-8 -*-                                                                                                                       
+                                                                                                                                                   
+     """                                                                                                                                           
+     VM Snapshot Restore with runStrategy RerunOnFailure Tests                                                                                     
+     CNV-63819: VM snapshot restore stuck with runStrategy RerunOnFailure                                                                          
+     """                                                                                                                                           
+                                                                                                                                                   
+     import logging                                                                                                                                
+                                                                                                                                                   
+     import pytest                                                                                                                                 
+     … +433 lines (ctrl+o to expand)                                                                                                               
+                                                                                                                                                   
+● Phase 3: Validation & Self-Healing (Pyright Loop)                                                                                                
+                                                                                                                                                   
+  Now let me run pyright to check for type safety and attribute errors.                                                                            
+                                                                                                                                                   
+● Bash(pyright tests/storage/snapshots/test_snapshot_restore_run_strategy.py)                                                                      
+  ⎿  Error: Exit code 1                                                                                                                            
+     /home/mvavrine/cnv/openshift-virtualization-tests/tests/storage/snapshots/test_snapshot_restore_run_strategy.py                               
+       /home/mvavrine/cnv/openshift-virtualization-tests/tests/storage/snapshots/test_snapshot_restore_run_strategy.py:10:8 - error: Import "pytest
+      could not be resolved (reportMissingImports)                                                                                                 
+       /home/mvavrine/cnv/openshift-virtualization-tests/tests/storage/snapshots/test_snapshot_restore_run_strategy.py:11:6 - error: Import        
+     "ocp_resources.resource" could not be resolved (reportMissingImports)                                                                         
+       /home/mvavrine/cnv/openshift-virtualization-tests/tests/storage/snapshots/test_snapshot_restore_run_strategy.py:12:6 - error: Import        
+     "ocp_resources.virtual_machine" could not be resolved (reportMissingImports)                                                                  
+       /home/mvavrine/cnv/openshift-virtualization-tests/tests/storage/snapshots/test_snapshot_restore_run_strategy.py:13:6 - error: Import        
+     "ocp_resources.virtual_machine_instance" could not be resolved (reportMissingImports)                                                         
+       /home/mvavrine/cnv/openshift-virtualization-tests/tests/storage/snapshots/test_snapshot_restore_run_strategy.py:14:6 - error: Import        
+     "ocp_resources.virtual_machine_restore" could not be resolved (reportMissingImports)                                                          
+       /home/mvavrine/cnv/openshift-virtualization-tests/tests/storage/snapshots/test_snapshot_restore_run_strategy.py:15:6 - error: Import        
+     "ocp_resources.virtual_machine_snapshot" could not be resolved (reportMissingImports)                                                         
+     6 errors, 0 warnings, 0 informations                                                                                                          
+                                                                                                                                                   
+● Searched for 1 pattern (ctrl+o to expand)                                                                                                        
+                                                                                                                                                   
+● Bash(pyright --version && python -c "import sys; print(sys.executable)")                                                                         
+  ⎿  Interrupted · What should Claude do instead?                                                                                                  
+                                                                                                                                                   
+❯ source the venv and run pyright                                                                                                                  
+                                                                                                                                                   
+● Searched for 1 pattern (ctrl+o to expand)                                                                                                        
+                                                                                                                                                   
+● Bash(source .venv/bin/activate && pyright tests/storage/snapshots/test_snapshot_restore_run_strategy.py)                                         
+  ⎿  0 errors, 0 warnings, 0 informations                                                                                                          
+                                                                                                                                                   
+● Perfect! The test file has been successfully created and passes pyright validation with 0 errors.                                                
+                                                                                                                                                   
+  Summary                                                                                                                                          
+                                                                                                                                                   
+  I've successfully completed the three-phase workflow to generate a pytest test file for the VM Snapshot Restore with runStrategy RerunOnFailure  
+  feature (CNV-63819):                                                                                                                             
+                                                                                                                                                   
+  Phase 1: Context Exploration ✓                                                                                                                   
+                                                                                                                                                   
+  - Reviewed coding standards from docs/CODING_AND_STYLE_GUIDE.md                                                                                  
+  - Analyzed existing snapshot tests in tests/storage/snapshots/test_snapshots.py                                                                  
+  - Examined VM run strategy tests in tests/virt/cluster/vm_lifecycle/test_vm_run_strategy.py                                                      
+  - Identified key utilities: cirros_vm_for_snapshot, VirtualMachineRestore, VirtualMachineSnapshot                                                
+  - Found fixture patterns and import conventions                                                                                                  
+                                                                                                                                                   
+  Phase 2: Code Generation ✓                                                                                                                       
+                                                                                                                                                   
+  Created tests/storage/snapshots/test_snapshot_restore_run_strategy.py with:                                                                      
+                                                                                                                                                   
+  Test Classes:                                                                                                                                    
+  1. TestSnapshotRestoreRunStrategy - Core functionality tests:                                                                                    
+    - test_snapshot_restore_rerunonfailure_completes (CNV-63819, P1, gating)                                                                       
+    - test_vm_does_not_autostart_during_restore (CNV-63819-2, P1)                                                                                  
+    - test_vm_can_start_after_restore (CNV-63819-3, P1)                                                                                            
+    - test_snapshot_restore_other_run_strategies (CNV-63819-4, regression tests for Always/Manual/Halted)                                          
+  2. TestSnapshotRestoreDataIntegrity - E2E tests:                                                                                                 
+    - test_complete_snapshot_restore_workflow_with_data (CNV-63819-E2E)                                                                            
+                                                                                                                                                   
+  Fixtures:                                                                                                                                        
+  - vm_with_run_strategy - Configures VM with specified run strategy                                                                               
+  - vm_snapshot_with_data - Creates snapshot with test data                                                                                        
+                                                                                                                                                   
+  Phase 3: Validation ✓                                                                                                                            
+                                                                                                                                                   
+  - Ran pyright with venv activated                                                                                                                
+  - Result: 0 errors, 0 warnings, 0 informations                                                                                                   
+                                                                                                                                                   
+  The test file follows all repository conventions and is ready for use!   

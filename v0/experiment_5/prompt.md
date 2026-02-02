@@ -1,3 +1,17 @@
+Act as a Senior SDET. I need you to implement the test plan below.
+
+I am currently in the root of the repository. Before generating any code, you must perform a "Context Exploration" phase to understand the existing testing architecture.
+
+**Step 1: Context Exploration**
+1.  Scan the `docs/` folder to understand the project's testing conventions or architecture documentation.
+2.  Analyze the `libs/` and `utilities/` folders. Identify existing helper classes, fixtures, and utility functions.
+3.  Look for existing test files in `tests/` folder to see how they import these utilities and what standard `pytest` fixtures are available (e.g., clients, namespace helpers). Examine how tests are linked to requirements.
+
+**Step 2: Code Generation**
+* Implement the scenarios from the Test Plan below.
+* **Strict Constraint:** Do not hallucinate new utilities. You MUST use the existing functions and classes you found in `libs/` and `utilities/`. If a specific helper is missing, implement it locally in the test file using the base clients found.
+
+**Test Plan (STP):**
 # Openshift-virtualization-tests Test plan
 
 ## **StorageProfile snapshotClass Not Honored for VM Snapshot - Quality Engineering Plan**

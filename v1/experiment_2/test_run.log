@@ -1,0 +1,87 @@
+/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/exceptions.py:91: DeprecationWarning: HTTPResponse.getheaders() is deprecated and will be removed in urllib3 v2.1.0. Instead access HTTPResponse.headers directly.
+  self.headers = http_resp.getheaders()
+/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/exceptions.py:91: DeprecationWarning: HTTPResponse.getheaders() is deprecated and will be removed in urllib3 v2.1.0. Instead access HTTPResponse.headers directly.
+  self.headers = http_resp.getheaders()
+2026-01-29T17:00:05.609912 ocp_resources Namespace INFO Create Namespace cnv-tests-run-in-progress-ns
+2026-01-29T17:00:05.610074 ocp_resources Namespace INFO Posting {'apiVersion': 'v1', 'kind': 'Namespace', 'metadata': {'name': 'cnv-tests-run-in-progress-ns'}, 'spec': {}}
+2026-01-29T17:00:05.646672 ocp_resources Namespace INFO Wait until Namespace cnv-tests-run-in-progress-ns is created
+2026-01-29T17:00:05.667022 ocp_resources Namespace INFO Wait for Namespace cnv-tests-run-in-progress-ns status to be Active
+2026-01-29T17:00:05.686656 ocp_resources Namespace INFO Status of Namespace cnv-tests-run-in-progress-ns is Active
+2026-01-29T17:00:05.686991 ocp_resources Namespace INFO Update Namespace cnv-tests-run-in-progress-ns:
+{'metadata': {'labels': {'pod-security.kubernetes.io/enforce': 'privileged', 'security.openshift.io/scc.podSecurityLabelSync': 'false'}, 'name': 'cnv-tests-run-in-progress-ns'}}
+2026-01-29T17:00:05.733419 ocp_resources ConfigMap INFO Create ConfigMap cnv-tests-run-in-progress
+2026-01-29T17:00:05.733527 ocp_resources ConfigMap INFO Posting {'apiVersion': 'v1', 'kind': 'ConfigMap', 'metadata': {'name': 'cnv-tests-run-in-progress', 'namespace': 'cnv-tests-run-in-progress-ns'}, 'data': '*******'}
+2026-01-29T17:00:05.765257 ocp_resources ConfigMap INFO Wait until ConfigMap cnv-tests-run-in-progress is created
+=============================================================== test session starts ===============================================================
+platform linux -- Python 3.14.0, pytest-9.0.2, pluggy-1.6.0
+benchmark: 5.2.3 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /home/mvavrine/cnv/openshift-virtualization-tests
+configfile: pytest.ini (WARNING: ignoring pytest config in pyproject.toml!)
+plugins: anyio-4.12.0, html-4.1.1, order-1.3.0, repeat-0.9.4, progress-1.4.0, dependency-0.6.0, jira-0.3.22, metadata-3.1.1, testconfig-0.2.0, benchmark-5.2.3, mock-3.15.1
+collected 7 items                                                                                                                                 
+
+tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py 2026-01-29T17:04:53.715003 tests.infrastructure.vm_console_proxy.test_vnc_screenshot_stability INFO Screenshot command executed successfully
+.2026-01-29T17:04:53.715365 tests.infrastructure.vm_console_proxy.test_vnc_screenshot_stability INFO Screenshot captured successfully: /home/mvavrine/cnv/openshift-virtualization-tests/tests-collected-info/rhel-vnc-screenshot-test-1769702465-7046099_no_vnc.png (7710 bytes)
+
+TEST: TestVncScreenshotStability.test_screenshot_without_vnc_connection STATUS: PASSED
+
+__________________________________ 1 of 7 completed, 1 Pass, 0 Fail, 0 Skip, 0 XPass, 0 XFail, 0 Error, 0 ReRun ___________________________________
+
+tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py ------------------------------------------------------- TEARDOWN -------------------------------------------------------
+
+------------------------------------ test_vnc_stability_with_concurrent_screenshots ------------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+.
+__________________________________ 2 of 7 completed, 2 Pass, 0 Fail, 0 Skip, 0 XPass, 0 XFail, 0 Error, 0 ReRun ___________________________________
+
+TEST: TestVncScreenshotStability.test_vnc_stability_with_concurrent_screenshots STATUS: PASSED
+------------------------------------------------------- TEARDOWN -------------------------------------------------------
+
+tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py 2026-01-29T17:05:04.884737 tests.infrastructure.vm_console_proxy.test_vnc_screenshot_stability INFO Screenshot quality verified: valid PNG format, 7710 bytes
+.
+TEST: TestVncScreenshotStability.test_screenshot_quality_verification STATUS: PASSED
+
+------------------------------------------------------- TEARDOWN -------------------------------------------------------
+__________________________________ 3 of 7 completed, 3 Pass, 0 Fail, 0 Skip, 0 XPass, 0 XFail, 0 Error, 0 ReRun ___________________________________
+
+tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py 
+-------------------------------------- test_thumbnail_updates_without_vnc_impact --------------------------------------
+.
+__________________________________ 4 of 7 completed, 4 Pass, 0 Fail, 0 Skip, 0 XPass, 0 XFail, 0 Error, 0 ReRun ___________________________________
+
+tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py .
+__________________________________ 5 of 7 completed, 5 Pass, 0 Fail, 0 Skip, 0 XPass, 0 XFail, 0 Error, 0 ReRun ___________________________________
+
+tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py .
+__________________________________ 6 of 7 completed, 6 Pass, 0 Fail, 0 Skip, 0 XPass, 0 XFail, 0 Error, 0 ReRun ___________________________________
+
+tests/deprecated_api/test_deprecation_audit_logs.py .
+__________________________________ 7 of 7 completed, 7 Pass, 0 Fail, 0 Skip, 0 XPass, 0 XFail, 0 Error, 0 ReRun ___________________________________
+                                                                                                                                            [100%]2026-01-29T17:12:57.924926 ocp_resources ConfigMap INFO Delete ConfigMap cnv-tests-run-in-progress
+2026-01-29T17:12:57.932253 ocp_resources ConfigMap INFO Deleting {'kind': 'ConfigMap', 'apiVersion': 'v1', 'metadata': {'name': 'cnv-tests-run-in-progress', 'namespace': 'cnv-tests-run-in-progress-ns', 'uid': '3683cd14-cd91-4117-869f-d15917a217c1', 'resourceVersion': '164209', 'creationTimestamp': '2026-01-29T16:00:05Z', 'managedFields': [{'manager': 'OpenAPI-Generator', 'operation': 'Update', 'apiVersion': 'v1', 'time': '2026-01-29T16:00:05Z', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:data': {'.': {}, 'f:host': {}, 'f:pytest_cmd': {}, 'f:run-in-container': {}, 'f:running_from_dir': {}, 'f:session-id': {}, 'f:user': {}}}}]}, 'data': '*******'}
+2026-01-29T17:12:57.951163 ocp_resources ConfigMap INFO Wait until ConfigMap cnv-tests-run-in-progress is deleted
+2026-01-29T17:12:57.957860 ocp_resources Namespace INFO Delete Namespace cnv-tests-run-in-progress-ns
+2026-01-29T17:12:57.961949 ocp_resources Namespace INFO Deleting {'kind': 'Namespace', 'apiVersion': 'v1', 'metadata': {'name': 'cnv-tests-run-in-progress-ns', 'uid': 'd8579706-7fbd-4b46-9c21-744aa8073b27', 'resourceVersion': '164211', 'creationTimestamp': '2026-01-29T16:00:05Z', 'labels': {'kubernetes.io/metadata.name': 'cnv-tests-run-in-progress-ns', 'pod-security.kubernetes.io/audit': 'restricted', 'pod-security.kubernetes.io/audit-version': 'latest', 'pod-security.kubernetes.io/enforce': 'privileged', 'pod-security.kubernetes.io/warn': 'restricted', 'pod-security.kubernetes.io/warn-version': 'latest', 'security.openshift.io/scc.podSecurityLabelSync': 'false'}, 'annotations': {'openshift.io/sa.scc.mcs': 's0:c29,c4', 'openshift.io/sa.scc.supplemental-groups': '1000820000/10000', 'openshift.io/sa.scc.uid-range': '1000820000/10000', 'security.openshift.io/MinimallySufficientPodSecurityStandard': 'restricted'}, 'managedFields': [{'manager': 'pod-security-admission-label-synchronization-controller', 'operation': 'Apply', 'apiVersion': 'v1', 'time': '2026-01-29T16:00:05Z', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:annotations': {'f:security.openshift.io/MinimallySufficientPodSecurityStandard': {}}, 'f:labels': {'f:pod-security.kubernetes.io/audit': {}, 'f:pod-security.kubernetes.io/audit-version': {}, 'f:pod-security.kubernetes.io/warn': {}, 'f:pod-security.kubernetes.io/warn-version': {}}}}}, {'manager': 'OpenAPI-Generator', 'operation': 'Update', 'apiVersion': 'v1', 'time': '2026-01-29T16:00:05Z', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:labels': {'.': {}, 'f:kubernetes.io/metadata.name': {}, 'f:pod-security.kubernetes.io/enforce': {}, 'f:security.openshift.io/scc.podSecurityLabelSync': {}}}}}, {'manager': 'cluster-policy-controller', 'operation': 'Update', 'apiVersion': 'v1', 'time': '2026-01-29T16:00:05Z', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:annotations': {'.': {}, 'f:openshift.io/sa.scc.mcs': {}, 'f:openshift.io/sa.scc.supplemental-groups': {}, 'f:openshift.io/sa.scc.uid-range': {}}}}}]}, 'spec': {'finalizers': ['kubernetes']}, 'status': {'phase': 'Active'}}
+2026-01-29T17:12:57.973398 ocp_resources Namespace INFO Wait until Namespace cnv-tests-run-in-progress-ns is deleted
+=================================================== 7 passed, 20 warnings in 778.22s (0:12:58) ====================================================
+
+================================================================ warnings summary =================================================================
+tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py: 12 warnings
+tests/deprecated_api/test_deprecation_audit_logs.py: 4 warnings
+.venv/lib/python3.14/site-packages/kubernetes/client/exceptions.py:91: 2 warnings
+  /home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/exceptions.py:91: DeprecationWarning: HTTPResponse.getheaders() is deprecated and will be removed in urllib3 v2.1.0. Instead access HTTPResponse.headers directly.
+    self.headers = http_resp.getheaders()
+
+tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py::TestVncScreenshotStability::test_vnc_stability_with_concurrent_screenshots
+tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py::TestVncScreenshotStability::test_thumbnail_updates_without_vnc_impact
+tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py::TestVncScreenshotStability::test_extended_dual_usage
+tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py::TestVncScreenshotStability::test_multiple_guest_os_types[rhel]
+  /home/mvavrine/.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/pty.py:66: DeprecationWarning: This process (pid=67327) is multi-threaded, use of forkpty() may lead to deadlocks in the child.
+    pid, fd = os.forkpty()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=================================================== 7 passed, 22 warnings in 778.22s (0:12:58) ====================================================
+2026-01-29T17:12:57.951298 timeout_sampler INFO Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_deleted.lambda: self.exists)
+2026-01-29T17:12:57.955340 timeout_sampler INFO Elapsed time: 9.369850158691406e-05 [0:00:00.000094]
+2026-01-29T17:12:57.973631 timeout_sampler INFO Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_deleted.lambda: self.exists)
+2026-01-29T17:13:03.994491 timeout_sampler INFO Elapsed time: 6.0171003341674805 [0:00:06.017100]

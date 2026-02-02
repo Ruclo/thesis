@@ -1,0 +1,406 @@
+● Now I'll execute the prompt, which asks me to act as a Senior SDET and translate the Software Test Plan into an executable Python test file. Let 
+  me follow the three-phase workflow:                                                                                                              
+                                                                                                                                                   
+  Phase 1: Context Exploration                                                                                                                     
+                                                                                                                                                   
+  I'll explore the codebase to understand testing conventions, utilities, and patterns.                                                            
+                                                                                                                                                   
+● 3 Explore agents finished (ctrl+o to expand)                                                                                                     
+   ├─ Explore testing conventions in docs · 18 tool uses · 36.4k tokens                                                                            
+   │  ⎿  Done                                                                                                                                      
+   ├─ Map VNC/screenshot utilities · 31 tool uses · 45.3k tokens                                                                                   
+   │  ⎿  Done                                                                                                                                      
+   └─ Check existing VNC/console tests · 36 tool uses · 44.3k tokens                                                                               
+      ⎿  Done                                                                                                                                      
+                                                                                                                                                   
+● Perfect! I now have comprehensive context from Phase 1. Let me proceed to Phase 2: Generate the test code.                                       
+                                                                                                                                                   
+  Phase 2: Code Generation                                                                                                                         
+                                                                                                                                                   
+  Based on the STP and explored utilities, I'll create a test file that implements the VNC console stability and screenshot functionality tests.   
+                                                                                                                                                   
+● Write(tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py)                                                                    
+  ⎿  Wrote 467 lines to tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py                                                     
+     """                                                                                                                                           
+     Test VNC Console Disconnect Due to Thumbnail/Full Screen Competition                                                                          
+                                                                                                                                                   
+     This module tests the fix for CNV-60117 where VNC console disconnects when                                                                    
+     VM overview thumbnail and full-screen VNC compete for the VNC connection.                                                                     
+                                                                                                                                                   
+     The fix changes screenshot to use libvirt's virDomainScreenshot API instead                                                                   
+     of VNC, eliminating connection competition.                                                                                                   
+                                                                                                                                                   
+     Polarion tracking:                                                                                                                            
+     … +457 lines (ctrl+o to expand)                                                                                                               
+                                                                                                                                                   
+● Now let me proceed to Phase 3: Validation & Self-Healing with Pyright.                                                                           
+                                                                                                                                                   
+● Bash(pyright tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py)                                                             
+  ⎿  Error: Exit code 1                                                                                                                            
+     /home/mvavrine/cnv/openshift-virtualization-tests/tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py                      
+       /home/mvavrine/cnv/openshift-virtualization-tests/tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py:20:8 - error: Impor
+      "pytest" could not be resolved (reportMissingImports)                                                                                        
+       /home/mvavrine/cnv/openshift-virtualization-tests/tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py:21:6 - error: Impor
+      "ocp_resources.service_account" could not be resolved (reportMissingImports)                                                                 
+       /home/mvavrine/cnv/openshift-virtualization-tests/tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py:22:6 - error: Impor
+      "ocp_resources.virtual_machine" could not be resolved (reportMissingImports)                                                                 
+       /home/mvavrine/cnv/openshift-virtualization-tests/tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py:23:6 - error: Impor
+      "ocp_resources.virtual_machine_cluster_instancetype" could not be resolved (reportMissingImports)                                            
+       /home/mvavrine/cnv/openshift-virtualization-tests/tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py:24:6 - error: Impor
+      "ocp_resources.virtual_machine_cluster_preference" could not be resolved (reportMissingImports)                                              
+       /home/mvavrine/cnv/openshift-virtualization-tests/tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py:85:33 - error:     
+     "run_command" is unknown import symbol (reportAttributeAccessIssue)                                                                           
+       /home/mvavrine/cnv/openshift-virtualization-tests/tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py:222:33 - error:    
+     "child" is not a known attribute of "None" (reportOptionalMemberAccess)                                                                       
+       /home/mvavrine/cnv/openshift-virtualization-tests/tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py:334:33 - error:    
+     "child" is not a known attribute of "None" (reportOptionalMemberAccess)                                                                       
+     … +2 lines (ctrl+o to see all)                                                                                                                
+                                                                                                                                                   
+● Let me check the VNCConnection class to understand the typing and fix the attribute access issues.                                               
+                                                                                                                                                   
+● Searched for 1 pattern, read 2 files (ctrl+o to expand)                                                                                          
+                                                                                                                                                   
+● I found the issues. Let me fix them:                                                                                                             
+                                                                                                                                                   
+  1. The VNCConnection context manager returns self.child (pexpect object), not the VNCConnection instance                                         
+  2. run_command should be imported from pyhelper_utils.shell, not from utilities.infra                                                            
+                                                                                                                                                   
+● Update(tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py)                                                                   
+  ⎿  Added 1 line                                                                                                                                  
+      22  from ocp_resources.virtual_machine import VirtualMachine                                                                                 
+      23  from ocp_resources.virtual_machine_cluster_instancetype import VirtualMachineClusterInstancetype                                         
+      24  from ocp_resources.virtual_machine_cluster_preference import VirtualMachineClusterPreference                                             
+      25 +from pyhelper_utils.shell import run_command                                                                                             
+      26                                                                                                                                           
+      27  from tests.infrastructure.vm_console_proxy.constants import VM_CONSOLE_PROXY                                                             
+      28  from tests.infrastructure.vm_console_proxy.utils import create_vnc_console_token                                                         
+                                                                                                                                                   
+● Update(tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py)                                                                   
+  ⎿  Removed 2 lines                                                                                                                               
+      83  @pytest.fixture(scope="module")                                                                                                          
+      84  def service_account_token_for_screenshot_tests(service_account_for_screenshot_tests):                                                    
+      85      """Generate token for service account."""                                                                                            
+      86 -    from utilities.infra import run_command                                                                                              
+      87 -                                                                                                                                         
+      86      return run_command(                                                                                                                  
+      87          command=shlex.split(                                                                                                             
+      88              f"oc create token -n {service_account_for_screenshot_tests.namespace} "                                                      
+                                                                                                                                                   
+● Update(tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py)                                                                   
+  ⎿  Added 4 lines, removed 3 lines                                                                                                                
+      185                                                                                                                                          
+      186          try:                                                                                                                            
+      187              # Establish VNC connection                                                                                                  
+      188 -            with VNCConnection(vm=vm_for_vnc_screenshot_tests) as vnc_conn:                                                             
+      188 +            # Note: vnc_child is the pexpect.spawn object returned by __enter__                                                         
+      189 +            with VNCConnection(vm=vm_for_vnc_screenshot_tests) as vnc_child:                                                            
+      190                  LOGGER.info("VNC connection established successfully")                                                                  
+      191                                                                                                                                          
+      192                  # Capture multiple screenshots while VNC is connected                                                                   
+     ...                                                                                                                                           
+      217                      # Brief pause between screenshots                                                                                   
+      218                      time.sleep(2)                                                                                                       
+      219                                                                                                                                          
+      220 -                # Verify VNC connection is still alive by checking the child process                                                    
+      221 -                assert vnc_conn.child.isalive(), "VNC connection terminated unexpectedly"                                               
+      220 +                # Verify VNC connection is still alive by checking the pexpect process                                                  
+      221 +                assert vnc_child.isalive(), "VNC connection terminated unexpectedly"                                                    
+      222                  LOGGER.info(                                                                                                            
+      223                      "VNC connection remained stable through all screenshot operations"                                                  
+      224                  )                                                                                                                       
+                                                                                                                                                   
+● Update(tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py)                                                                   
+  ⎿  Added 2 lines, removed 2 lines                                                                                                                
+      317          """                                                                                                                             
+      318          LOGGER.info("Testing VNC stability with repeated thumbnail refreshes")                                                          
+      319                                                                                                                                          
+      320 -        with VNCConnection(vm=vm_for_vnc_screenshot_tests) as vnc_conn:                                                                 
+      320 +        with VNCConnection(vm=vm_for_vnc_screenshot_tests) as vnc_child:                                                                
+      321              LOGGER.info("VNC connection established")                                                                                   
+      322                                                                                                                                          
+      323              # Simulate rapid thumbnail refreshes (10 screenshots in quick succession)                                                   
+     ...                                                                                                                                           
+      331                  )                                                                                                                       
+      332                                                                                                                                          
+      333                  # Verify VNC is still alive after each screenshot                                                                       
+      334 -                assert vnc_conn.child.isalive(), (                                                                                      
+      334 +                assert vnc_child.isalive(), (                                                                                           
+      335                      f"VNC disconnected after screenshot {i + 1}"                                                                        
+      336                  )                                                                                                                       
+      337                                                                                                                                          
+                                                                                                                                                   
+● Update(tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py)                                                                   
+  ⎿  Added 2 lines, removed 2 lines                                                                                                                
+      366          screenshot_interval = 30  # Capture every 30 seconds                                                                            
+      367          start_time = time.time()                                                                                                        
+      368                                                                                                                                          
+      369 -        with VNCConnection(vm=vm_for_vnc_screenshot_tests) as vnc_conn:                                                                 
+      369 +        with VNCConnection(vm=vm_for_vnc_screenshot_tests) as vnc_child:                                                                
+      370              LOGGER.info("VNC connection established for extended test")                                                                 
+      371                                                                                                                                          
+      372              screenshot_count = 0                                                                                                        
+      373              while time.time() - start_time < test_duration:                                                                             
+      374                  # Verify VNC is still alive                                                                                             
+      375 -                assert vnc_conn.child.isalive(), (                                                                                      
+      375 +                assert vnc_child.isalive(), (                                                                                           
+      376                      f"VNC disconnected after {time.time() - start_time:.0f} seconds"                                                    
+      377                  )                                                                                                                       
+      378                                                                                                                                          
+                                                                                                                                                   
+● Now let me run pyright again to check for remaining errors.                                                                                      
+                                                                                                                                                   
+● Bash(pyright tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py)                                                             
+  ⎿  Error: Exit code 1                                                                                                                            
+     /home/mvavrine/cnv/openshift-virtualization-tests/tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py                      
+       /home/mvavrine/cnv/openshift-virtualization-tests/tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py:20:8 - error: Impor
+      "pytest" could not be resolved (reportMissingImports)                                                                                        
+       /home/mvavrine/cnv/openshift-virtualization-tests/tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py:21:6 - error: Impor
+      "ocp_resources.service_account" could not be resolved (reportMissingImports)                                                                 
+       /home/mvavrine/cnv/openshift-virtualization-tests/tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py:22:6 - error: Impor
+      "ocp_resources.virtual_machine" could not be resolved (reportMissingImports)                                                                 
+       /home/mvavrine/cnv/openshift-virtualization-tests/tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py:23:6 - error: Impor
+      "ocp_resources.virtual_machine_cluster_instancetype" could not be resolved (reportMissingImports)                                            
+       /home/mvavrine/cnv/openshift-virtualization-tests/tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py:24:6 - error: Impor
+      "ocp_resources.virtual_machine_cluster_preference" could not be resolved (reportMissingImports)                                              
+       /home/mvavrine/cnv/openshift-virtualization-tests/tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py:25:6 - error: Impor
+      "pyhelper_utils.shell" could not be resolved (reportMissingImports)                                                                          
+       /home/mvavrine/cnv/openshift-virtualization-tests/tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py:222:34 - error:    
+     "isalive" is not a known attribute of "None" (reportOptionalMemberAccess)                                                                     
+       /home/mvavrine/cnv/openshift-virtualization-tests/tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py:334:34 - error:    
+     "isalive" is not a known attribute of "None" (reportOptionalMemberAccess)                                                                     
+     … +2 lines (ctrl+o to see all)                                                                                                                
+                                                                                                                                                   
+● Let me check how pyright is actually being used in this repo and if these errors are expected.                                                   
+                                                                                                                                                   
+● Bash(pyright tests/infrastructure/vm_console_proxy/test_vm_console_proxy.py 2>&1 | head -30)                                                     
+  ⎿ /home/mvavrine/cnv/openshift-virtualization-tests/tests/infrastructure/vm_console_proxy/test_vm_console_proxy.py                               
+      /home/mvavrine/cnv/openshift-virtualization-tests/tests/infrastructure/vm_console_proxy/test_vm_console_proxy.py:3:8 - error: Import "py     
+    test" could not be resolved (reportMissingImports)                                                                                             
+    1 error, 0 warnings, 0 informations                                                                                                            
+                                                                                                                                                   
+                                                                                                                                                   
+● Searched for 1 pattern, read 1 file (ctrl+o to expand)                                                                                           
+                                                                                                                                                   
+● Let me add type annotations to the VNCConnection class to fix the pyright errors.                                                                
+                                                                                                                                                   
+● Update(utilities/vnc_utils.py)                                                                                                                   
+  ⎿  User rejected update to utilities/vnc_utils.py                                                                                                
+      1 +from typing import Any                                                                                                                    
+      2 +                                                                                                                                          
+      3  import pexpect                                                                                                                            
+      4  from timeout_sampler import TimeoutSampler                                                                                                
+      5                                                                                                                                            
+     ...                                                                                                                                           
+       6                                                                                                                                           
+       7                                                                                                                                           
+       8  class VNCConnection:                                                                                                                     
+       9 -    def __init__(self, vm):                                                                                                              
+       9 +    def __init__(self, vm: Any) -> None:                                                                                                 
+      10          self.vm = vm                                                                                                                     
+      11 -        self.child = None                                                                                                                
+      11 +        self.child: pexpect.spawn[str] | None = None                                                                                     
+      12          self.base_dir = get_data_collector_base_directory()                                                                              
+      13                                                                                                                                           
+      14 -    def __enter__(self):                                                                                                                 
+      14 +    def __enter__(self) -> pexpect.spawn[str]:                                                                                           
+      15          sampler = TimeoutSampler(                                                                                                        
+      16              wait_timeout=TIMEOUT_5MIN,                                                                                                   
+      17              sleep=TIMEOUT_5SEC,                                                                                                          
+     ...                                                                                                                                           
+      27                  self.child.logfile = open(f"{self.base_dir}/{self.vm.name}.pexpect.log", "a")                                            
+      28                  self.child.expect('"port":', timeout=TIMEOUT_5MIN)                                                                       
+      29                  return self.child                                                                                                        
+      30 +        raise RuntimeError("Failed to establish VNC connection")                                                                         
+      31                                                                                                                                           
+      32 -    def __exit__(self, exc_type, exc_val, exc_tb):                                                                                       
+      33 -        self.child.close()                                                                                                               
+      32 +    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:                                                                
+      33 +        if self.child:                                                                                                                   
+      34 +            self.child.close()                                                                                                           
+                                                                                                                                                   
+❯ dont edit existing files                                                                                                                         
+                                                                                                                                                   
+● I'll check if running pyright with the proper environment resolves the import errors.                                                            
+                                                                                                                                                   
+● Bash(uv run pyright tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py 2>&1)                                                 
+  ⎿  Error: Exit code 1                                                                                                                            
+        Building openshift-virtualization-tests-4-21 @ file:///home/mvavrine/cnv/openshift-virtualization-tests                                    
+           Built openshift-virtualization-tests-4-21 @ file:///home/mvavrine/cnv/openshift-virtualization-tests                                    
+     Uninstalled 1 package in 0.47ms                                                                                                               
+     Installed 1 package in 0.79ms                                                                                                                 
+     /home/mvavrine/cnv/openshift-virtualization-tests/tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py                      
+       /home/mvavrine/cnv/openshift-virtualization-tests/tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py:143:9 - error:     
+     Expression with type "tuple[bool, str, str]" cannot be assigned to target tuple                                                               
+         Type "tuple[bool, str, str]" is incompatible with target tuple                                                                            
+           Tuple size mismatch; expected 2 but received 3 (reportAssignmentType)                                                                   
+       /home/mvavrine/cnv/openshift-virtualization-tests/tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py:203:21 - error:    
+     Expression with type "tuple[bool, str, str]" cannot be assigned to target tuple                                                               
+     … +9 lines (ctrl+o to see all)                                                                                                                
+                                                                                                                                                   
+● Good progress! Now I see the real errors. Let me check the run_virtctl_command return signature.                                                 
+                                                                                                                                                   
+● Searched for 3 patterns (ctrl+o to expand)                                                                                                       
+                                                                                                                                                   
+● I can see that run_command returns 3 values (success, stdout, stderr). Let me fix the test file.                                                 
+                                                                                                                                                   
+● Update(tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py)                                                                   
+  ⎿  Added 2 lines, removed 2 lines                                                                                                                
+      140          screenshot_path = Path(base_dir) / f"{vm_for_vnc_screenshot_tests.name}_no_vnc.png"                                             
+      141                                                                                                                                          
+      142          # Capture screenshot using virtctl (no VNC connection)                                                                          
+      143 -        success, output = run_virtctl_command(                                                                                          
+      143 +        success, output, error = run_virtctl_command(                                                                                   
+      144              command=shlex.split(                                                                                                        
+      145                  f"vnc screenshot {vm_for_vnc_screenshot_tests.name} "                                                                   
+      146                  f"-f {screenshot_path}"                                                                                                 
+     ...                                                                                                                                           
+      149          )                                                                                                                               
+      150                                                                                                                                          
+      151          # Verify screenshot command succeeded                                                                                           
+      152 -        assert success, f"Screenshot command failed: {output}"                                                                          
+      152 +        assert success, f"Screenshot command failed: {output} {error}"                                                                  
+      153          LOGGER.info("Screenshot command executed successfully")                                                                         
+      154                                                                                                                                          
+      155          # Verify screenshot file exists and has content                                                                                 
+                                                                                                                                                   
+● Update(tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py)                                                                   
+  ⎿  Added 2 lines, removed 2 lines                                                                                                                
+      200                          / f"{vm_for_vnc_screenshot_tests.name}_with_vnc_{i}.png"                                                        
+      201                      )                                                                                                                   
+      202                                                                                                                                          
+      203 -                    success, output = run_virtctl_command(                                                                              
+      203 +                    success, output, error = run_virtctl_command(                                                                       
+      204                          command=shlex.split(                                                                                            
+      205                              f"vnc screenshot {vm_for_vnc_screenshot_tests.name} "                                                       
+      206                              f"-f {screenshot_path}"                                                                                     
+     ...                                                                                                                                           
+      208                          namespace=vm_for_vnc_screenshot_tests.namespace,                                                                
+      209                      )                                                                                                                   
+      210                                                                                                                                          
+      211 -                    assert success, f"Screenshot {i + 1} failed: {output}"                                                              
+      211 +                    assert success, f"Screenshot {i + 1} failed: {output} {error}"                                                      
+      212                      assert screenshot_path.exists(), (                                                                                  
+      213                          f"Screenshot file {i + 1} not found"                                                                            
+      214                      )                                                                                                                   
+                                                                                                                                                   
+● Update(tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py)                                                                   
+  ⎿  Added 2 lines, removed 2 lines                                                                                                                
+      263          )                                                                                                                               
+      264                                                                                                                                          
+      265          # Capture screenshot                                                                                                            
+      266 -        success, output = run_virtctl_command(                                                                                          
+      266 +        success, output, error = run_virtctl_command(                                                                                   
+      267              command=shlex.split(                                                                                                        
+      268                  f"vnc screenshot {vm_for_vnc_screenshot_tests.name} "                                                                   
+      269                  f"-f {screenshot_path}"                                                                                                 
+     ...                                                                                                                                           
+      271              namespace=vm_for_vnc_screenshot_tests.namespace,                                                                            
+      272          )                                                                                                                               
+      273                                                                                                                                          
+      274 -        assert success, f"Screenshot command failed: {output}"                                                                          
+      274 +        assert success, f"Screenshot command failed: {output} {error}"                                                                  
+      275                                                                                                                                          
+      276          # Verify file exists and has content                                                                                            
+      277          assert screenshot_path.exists(), "Screenshot file not found"                                                                    
+                                                                                                                                                   
+● Now let me fix the type issues with vnc_child by adding assertions.                                                                              
+                                                                                                                                                   
+● Update(tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py)                                                                   
+  ⎿  Added 4 lines                                                                                                                                 
+      16  import shlex                                                                                                                             
+      17  import time                                                                                                                              
+      18  from pathlib import Path                                                                                                                 
+      19 +from typing import TYPE_CHECKING                                                                                                         
+      20                                                                                                                                           
+      21  import pytest                                                                                                                            
+      22  from ocp_resources.service_account import ServiceAccount                                                                                 
+     ...                                                                                                                                           
+      24  from ocp_resources.virtual_machine_cluster_preference import VirtualMachineClusterPreference                                             
+      25  from pyhelper_utils.shell import run_command                                                                                             
+      26                                                                                                                                           
+      27 +if TYPE_CHECKING:                                                                                                                        
+      28 +    import pexpect                                                                                                                       
+      29 +                                                                                                                                         
+      30  from tests.infrastructure.vm_console_proxy.constants import VM_CONSOLE_PROXY                                                             
+      31  from tests.infrastructure.vm_console_proxy.utils import create_vnc_console_token                                                         
+      32  from utilities.constants import (                                                                                                        
+                                                                                                                                                   
+● Update(tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py)                                                                   
+  ⎿  Added 1 line, removed 1 line                                                                                                                  
+      223                      time.sleep(2)                                                                                                       
+      224                                                                                                                                          
+      225                  # Verify VNC connection is still alive by checking the pexpect process                                                  
+      226 -                assert vnc_child.isalive(), "VNC connection terminated unexpectedly"                                                    
+      226 +                assert vnc_child is not None and vnc_child.isalive(), "VNC connection terminated unexpectedly"                          
+      227                  LOGGER.info(                                                                                                            
+      228                      "VNC connection remained stable through all screenshot operations"                                                  
+      229                  )                                                                                                                       
+                                                                                                                                                   
+● Update(tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py)                                                                   
+  ⎿  Added 1 line, removed 1 line                                                                                                                  
+      335                  )                                                                                                                       
+      336                                                                                                                                          
+      337                  # Verify VNC is still alive after each screenshot                                                                       
+      338 -                assert vnc_child.isalive(), (                                                                                           
+      338 +                assert vnc_child is not None and vnc_child.isalive(), (                                                                 
+      339                      f"VNC disconnected after screenshot {i + 1}"                                                                        
+      340                  )                                                                                                                       
+      341                                                                                                                                          
+                                                                                                                                                   
+● Update(tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py)                                                                   
+  ⎿  Added 1 line, removed 1 line                                                                                                                  
+      376              screenshot_count = 0                                                                                                        
+      377              while time.time() - start_time < test_duration:                                                                             
+      378                  # Verify VNC is still alive                                                                                             
+      379 -                assert vnc_child.isalive(), (                                                                                           
+      379 +                assert vnc_child is not None and vnc_child.isalive(), (                                                                 
+      380                      f"VNC disconnected after {time.time() - start_time:.0f} seconds"                                                    
+      381                  )                                                                                                                       
+      382                                                                                                                                          
+                                                                                                                                                   
+● Now let me run pyright again to verify all errors are fixed.                                                                                     
+                                                                                                                                                   
+● Bash(uv run pyright tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py 2>&1)                                                 
+  ⎿  0 errors, 0 warnings, 0 informations                                                                                                          
+                                                                                                                                                   
+● Perfect! All pyright errors are resolved. Let me provide you with a summary of what was accomplished.                                            
+                                                                                                                                                   
+  ---                                                                                                                                              
+  Summary: Test Implementation Complete                                                                                                            
+                                                                                                                                                   
+  I've successfully translated the Software Test Plan (STP) for CNV-61271 (VNC Console Disconnect Due to Thumbnail/Full Screen Competition) into an
+   executable Python test file following the three-phase workflow:                                                                                 
+                                                                                                                                                   
+  Phase 1: Context Exploration ✓                                                                                                                   
+                                                                                                                                                   
+  - Scanned documentation for testing conventions and patterns                                                                                     
+  - Mapped VNC/screenshot utilities in libs/ and utilities/                                                                                        
+  - Reviewed existing tests for valid import patterns and fixture usage                                                                            
+                                                                                                                                                   
+  Phase 2: Code Generation ✓                                                                                                                       
+                                                                                                                                                   
+  Created /home/mvavrine/cnv/openshift-virtualization-tests/tests/infrastructure/vm_console_proxy/test_vnc_screenshot_stability.py with:           
+                                                                                                                                                   
+  Test Coverage (6 scenarios from STP):                                                                                                            
+  1. test_screenshot_without_vnc_connection (P0) - Verifies screenshot API works without VNC                                                       
+  2. test_vnc_stability_with_concurrent_screenshots (P0) - Tests VNC stability with concurrent screenshots                                         
+  3. test_screenshot_quality_verification (P1) - Validates PNG format and quality                                                                  
+  4. test_thumbnail_updates_without_vnc_impact (P0) - Tests rapid thumbnail refreshes                                                              
+  5. test_extended_dual_usage (Tier 2, P1) - 5-minute stress test with periodic screenshots                                                        
+  6. test_multiple_guest_os_types (Tier 2, P2) - Parametrized test for different OS types                                                          
+                                                                                                                                                   
+  Key Features:                                                                                                                                    
+  - All utilities sourced from actual codebase (no hallucinated helpers)                                                                           
+  - Proper fixture scoping (module-level for shared VMs, tokens)                                                                                   
+  - Dependency chains using @pytest.mark.dependency                                                                                                
+  - Polarion markers for test tracking                                                                                                             
+  - Comprehensive logging and assertions                                                                                                           
+                                                                                                                                                   
+  Phase 3: Validation & Self-Healing ✓                                                                                                             
+                                                                                                                                                   
+  Ran pyright type checking and fixed all errors:                                                                                                  
+  - Fixed run_virtctl_command return tuple (3 values: success, stdout, stderr)                                                                     
+  - Added proper type assertions for pexpect spawn objects                                                                                         
+  - Result: 0 errors, 0 warnings, 0 informations                                                                                                   
+                                                                                                                                                   
+  The test file is ready for execution and follows all coding standards from the repository.   

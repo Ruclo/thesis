@@ -1,0 +1,91 @@
+/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/exceptions.py:91: DeprecationWarning: HTTPResponse.getheaders() is deprecated and will be removed in urllib3 v2.1.0. Instead access HTTPResponse.headers directly.
+  self.headers = http_resp.getheaders()
+/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/exceptions.py:91: DeprecationWarning: HTTPResponse.getheaders() is deprecated and will be removed in urllib3 v2.1.0. Instead access HTTPResponse.headers directly.
+  self.headers = http_resp.getheaders()
+2026-01-29T16:30:02.249069 ocp_resources Namespace [32mINFO[0m Create Namespace cnv-tests-run-in-progress-ns[0m
+2026-01-29T16:30:02.249271 ocp_resources Namespace [32mINFO[0m Posting {'apiVersion': 'v1', 'kind': 'Namespace', 'metadata': {'name': 'cnv-tests-run-in-progress-ns'}, 'spec': {}}[0m
+2026-01-29T16:30:02.269024 ocp_resources Namespace [32mINFO[0m Wait until Namespace cnv-tests-run-in-progress-ns is created[0m
+2026-01-29T16:30:02.311230 ocp_resources Namespace [32mINFO[0m Wait for Namespace cnv-tests-run-in-progress-ns status to be Active[0m
+2026-01-29T16:30:02.330380 ocp_resources Namespace [32mINFO[0m Status of Namespace cnv-tests-run-in-progress-ns is Active[0m
+2026-01-29T16:30:02.330862 ocp_resources Namespace [32mINFO[0m Update Namespace cnv-tests-run-in-progress-ns:
+{'metadata': {'labels': {'pod-security.kubernetes.io/enforce': 'privileged', 'security.openshift.io/scc.podSecurityLabelSync': 'false'}, 'name': 'cnv-tests-run-in-progress-ns'}}[0m
+2026-01-29T16:30:02.352913 ocp_resources ConfigMap [32mINFO[0m Create ConfigMap cnv-tests-run-in-progress[0m
+2026-01-29T16:30:02.353132 ocp_resources ConfigMap [32mINFO[0m Posting {'apiVersion': 'v1', 'kind': 'ConfigMap', 'metadata': {'name': 'cnv-tests-run-in-progress', 'namespace': 'cnv-tests-run-in-progress-ns'}, 'data': '*******'}[0m
+2026-01-29T16:30:02.385877 ocp_resources ConfigMap [32mINFO[0m Wait until ConfigMap cnv-tests-run-in-progress is created[0m
+============================= test session starts ==============================
+platform linux -- Python 3.14.0, pytest-9.0.2, pluggy-1.6.0
+benchmark: 5.2.3 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /home/mvavrine/cnv/openshift-virtualization-tests
+configfile: pytest.ini (WARNING: ignoring pytest config in pyproject.toml!)
+plugins: anyio-4.12.0, html-4.1.1, order-1.3.0, repeat-0.9.4, progress-1.4.0, dependency-0.6.0, jira-0.3.22, metadata-3.1.1, testconfig-0.2.0, benchmark-5.2.3, mock-3.15.1
+collected 8 items
+
+tests/storage/snapshots/test_snapshot_restore_run_strategy.py s
+_ 1 of 8 completed, 0 Pass, 0 Fail, 1 Skip, 0 XPass, 0 XFail, 0 Error, 0 ReRun _
+
+tests/storage/snapshots/test_snapshot_restore_run_strategy.py 
+TEST: TestSnapshotRestoreRunStrategy.test_snapshot_restore_rerunonfailure_completes[test_snapshot_restore_rerunonfailure] STATUS: [1;33mSKIPPED[0m
+------------------------------------------------------- TEARDOWN -------------------------------------------------------
+s
+TEST: TestSnapshotRestoreRunStrategy.test_vm_does_not_autostart_during_restore[test_vm_no_autostart_during_restore] STATUS: [1;33mSKIPPED[0m
+------------------------------------------------------- TEARDOWN -------------------------------------------------------
+
+_ 2 of 8 completed, 0 Pass, 0 Fail, 2 Skip, 0 XPass, 0 XFail, 0 Error, 0 ReRun _
+
+tests/storage/snapshots/test_snapshot_restore_run_strategy.py s
+TEST: TestSnapshotRestoreRunStrategy.test_vm_can_start_after_restore[test_manual_start_after_restore] STATUS: [1;33mSKIPPED[0m
+
+_ 3 of 8 completed, 0 Pass, 0 Fail, 3 Skip, 0 XPass, 0 XFail, 0 Error, 0 ReRun _
+
+tests/storage/snapshots/test_snapshot_restore_run_strategy.py ------------------------------------------------------- TEARDOWN -------------------------------------------------------
+s
+TEST: TestSnapshotRestoreRunStrategy.test_snapshot_restore_other_run_strategies[test_snapshot_restore_always_regression] STATUS: [1;33mSKIPPED[0m
+
+_ 4 of 8 completed, 0 Pass, 0 Fail, 4 Skip, 0 XPass, 0 XFail, 0 Error, 0 ReRun _
+
+tests/storage/snapshots/test_snapshot_restore_run_strategy.py ------------------------------------------------------- TEARDOWN -------------------------------------------------------
+s
+_ 5 of 8 completed, 0 Pass, 0 Fail, 5 Skip, 0 XPass, 0 XFail, 0 Error, 0 ReRun _
+
+tests/storage/snapshots/test_snapshot_restore_run_strategy.py 
+TEST: TestSnapshotRestoreRunStrategy.test_snapshot_restore_other_run_strategies[test_snapshot_restore_manual_regression] STATUS: [1;33mSKIPPED[0m
+------------------------------------------------------- TEARDOWN -------------------------------------------------------
+s
+TEST: TestSnapshotRestoreRunStrategy.test_snapshot_restore_other_run_strategies[test_snapshot_restore_halted_regression] STATUS: [1;33mSKIPPED[0m
+
+_ 6 of 8 completed, 0 Pass, 0 Fail, 6 Skip, 0 XPass, 0 XFail, 0 Error, 0 ReRun _
+
+tests/storage/snapshots/test_snapshot_restore_run_strategy.py ------------------------------------------------------- TEARDOWN -------------------------------------------------------
+s
+TEST: TestSnapshotRestoreDataIntegrity.test_complete_snapshot_restore_workflow_with_data[test_complete_snapshot_restore_workflow] STATUS: [1;33mSKIPPED[0m
+
+_ 7 of 8 completed, 0 Pass, 0 Fail, 7 Skip, 0 XPass, 0 XFail, 0 Error, 0 ReRun _
+
+tests/deprecated_api/test_deprecation_audit_logs.py .
+_ 8 of 8 completed, 1 Pass, 0 Fail, 7 Skip, 0 XPass, 0 XFail, 0 Error, 0 ReRun _
+                                                                         [100%]2026-01-29T16:30:51.979254 ocp_resources ConfigMap [32mINFO[0m Delete ConfigMap cnv-tests-run-in-progress[0m
+2026-01-29T16:30:51.984076 ocp_resources ConfigMap [32mINFO[0m Deleting {'kind': 'ConfigMap', 'apiVersion': 'v1', 'metadata': {'name': 'cnv-tests-run-in-progress', 'namespace': 'cnv-tests-run-in-progress-ns', 'uid': '78fe56ba-ef8c-4819-ab96-7d2908ee52f7', 'resourceVersion': '151073', 'creationTimestamp': '2026-01-29T15:30:02Z', 'managedFields': [{'manager': 'OpenAPI-Generator', 'operation': 'Update', 'apiVersion': 'v1', 'time': '2026-01-29T15:30:02Z', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:data': {'.': {}, 'f:host': {}, 'f:pytest_cmd': {}, 'f:run-in-container': {}, 'f:running_from_dir': {}, 'f:session-id': {}, 'f:user': {}}}}]}, 'data': '*******'}[0m
+2026-01-29T16:30:51.995348 ocp_resources ConfigMap [32mINFO[0m Wait until ConfigMap cnv-tests-run-in-progress is deleted[0m
+2026-01-29T16:30:52.000469 ocp_resources Namespace [32mINFO[0m Delete Namespace cnv-tests-run-in-progress-ns[0m
+2026-01-29T16:30:52.003625 ocp_resources Namespace [32mINFO[0m Deleting {'kind': 'Namespace', 'apiVersion': 'v1', 'metadata': {'name': 'cnv-tests-run-in-progress-ns', 'uid': 'edfa6386-866f-408c-943a-e896d9e5f381', 'resourceVersion': '151069', 'creationTimestamp': '2026-01-29T15:30:02Z', 'labels': {'kubernetes.io/metadata.name': 'cnv-tests-run-in-progress-ns', 'pod-security.kubernetes.io/enforce': 'privileged', 'security.openshift.io/scc.podSecurityLabelSync': 'false'}, 'annotations': {'openshift.io/sa.scc.mcs': 's0:c28,c7', 'openshift.io/sa.scc.supplemental-groups': '1000770000/10000', 'openshift.io/sa.scc.uid-range': '1000770000/10000'}, 'managedFields': [{'manager': 'OpenAPI-Generator', 'operation': 'Update', 'apiVersion': 'v1', 'time': '2026-01-29T15:30:02Z', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:labels': {'.': {}, 'f:kubernetes.io/metadata.name': {}, 'f:pod-security.kubernetes.io/enforce': {}, 'f:security.openshift.io/scc.podSecurityLabelSync': {}}}}}, {'manager': 'cluster-policy-controller', 'operation': 'Update', 'apiVersion': 'v1', 'time': '2026-01-29T15:30:02Z', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:annotations': {'.': {}, 'f:openshift.io/sa.scc.mcs': {}, 'f:openshift.io/sa.scc.supplemental-groups': {}, 'f:openshift.io/sa.scc.uid-range': {}}}}}]}, 'spec': {'finalizers': ['kubernetes']}, 'status': {'phase': 'Active'}}[0m
+2026-01-29T16:30:52.014276 ocp_resources Namespace [32mINFO[0m Wait until Namespace cnv-tests-run-in-progress-ns is deleted[0m
+2026-01-29T16:30:51.995521 timeout_sampler [32mINFO[0m Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_deleted.lambda: self.exists)[0m
+2026-01-29T16:30:51.998569 timeout_sampler [32mINFO[0m Elapsed time: 0.00012159347534179688 [0:00:00.000122][0m
+2026-01-29T16:30:52.014470 timeout_sampler [32mINFO[0m Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_deleted.lambda: self.exists)[0m
+2026-01-29T16:30:58.043009 timeout_sampler [32mINFO[0m Elapsed time: 6.024708271026611 [0:00:06.024708][0m
+================== 1 passed, 7 skipped, 6 warnings in 55.63s ===================
+
+=============================== warnings summary ===============================
+tests/deprecated_api/test_deprecation_audit_logs.py::test_deprecated_apis_in_audit_logs
+tests/deprecated_api/test_deprecation_audit_logs.py::test_deprecated_apis_in_audit_logs
+tests/deprecated_api/test_deprecation_audit_logs.py::test_deprecated_apis_in_audit_logs
+tests/deprecated_api/test_deprecation_audit_logs.py::test_deprecated_apis_in_audit_logs
+tests/deprecated_api/test_deprecation_audit_logs.py::test_deprecated_apis_in_audit_logs
+tests/deprecated_api/test_deprecation_audit_logs.py::test_deprecated_apis_in_audit_logs
+.venv/lib/python3.14/site-packages/kubernetes/client/exceptions.py:91
+.venv/lib/python3.14/site-packages/kubernetes/client/exceptions.py:91
+  /home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/exceptions.py:91: DeprecationWarning: HTTPResponse.getheaders() is deprecated and will be removed in urllib3 v2.1.0. Instead access HTTPResponse.headers directly.
+    self.headers = http_resp.getheaders()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================== 1 passed, 7 skipped, 8 warnings in 55.63s ===================

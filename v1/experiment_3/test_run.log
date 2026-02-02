@@ -1,0 +1,1893 @@
+/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/exceptions.py:91: DeprecationWarning: HTTPResponse.getheaders() is deprecated and will be removed in urllib3 v2.1.0. Instead access HTTPResponse.headers directly.
+  self.headers = http_resp.getheaders()
+/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/exceptions.py:91: DeprecationWarning: HTTPResponse.getheaders() is deprecated and will be removed in urllib3 v2.1.0. Instead access HTTPResponse.headers directly.
+  self.headers = http_resp.getheaders()
+2026-01-30T15:02:03.090860 ocp_resources Namespace INFO Create Namespace cnv-tests-run-in-progress-ns
+2026-01-30T15:02:03.090975 ocp_resources Namespace INFO Posting {'apiVersion': 'v1', 'kind': 'Namespace', 'metadata': {'name': 'cnv-tests-run-in-progress-ns'}, 'spec': {}}
+2026-01-30T15:02:03.115010 ocp_resources Namespace INFO Wait until Namespace cnv-tests-run-in-progress-ns is created
+2026-01-30T15:02:03.117180 ocp_resources Namespace INFO Wait for Namespace cnv-tests-run-in-progress-ns status to be Active
+2026-01-30T15:02:03.119120 ocp_resources Namespace INFO Status of Namespace cnv-tests-run-in-progress-ns is Active
+2026-01-30T15:02:03.119401 ocp_resources Namespace INFO Update Namespace cnv-tests-run-in-progress-ns:
+{'metadata': {'labels': {'pod-security.kubernetes.io/enforce': 'privileged', 'security.openshift.io/scc.podSecurityLabelSync': 'false'}, 'name': 'cnv-tests-run-in-progress-ns'}}
+2026-01-30T15:02:03.142263 ocp_resources ConfigMap INFO Create ConfigMap cnv-tests-run-in-progress
+2026-01-30T15:02:03.142390 ocp_resources ConfigMap INFO Posting {'apiVersion': 'v1', 'kind': 'ConfigMap', 'metadata': {'name': 'cnv-tests-run-in-progress', 'namespace': 'cnv-tests-run-in-progress-ns'}, 'data': '*******'}
+2026-01-30T15:02:03.181715 ocp_resources ConfigMap INFO Wait until ConfigMap cnv-tests-run-in-progress is created
+==================================== test session starts ====================================
+platform linux -- Python 3.14.0, pytest-9.0.2, pluggy-1.6.0
+benchmark: 5.2.3 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /home/mvavrine/cnv/openshift-virtualization-tests
+configfile: pytest.ini (WARNING: ignoring pytest config in pyproject.toml!)
+plugins: anyio-4.12.0, html-4.1.1, order-1.3.0, repeat-0.9.4, progress-1.4.0, dependency-0.6.0, jira-0.3.22, metadata-3.1.1, testconfig-0.2.0, benchmark-5.2.3, mock-3.15.1
+collected 7 items                                                                           
+
+tests/virt/node/general/test_vmi_hard_reset.py 2026-01-30T15:06:06.246357 tests.virt.node.general.test_vmi_hard_reset INFO Boot count after reset: 3
+.------------------------------------------------------- TEARDOWN -------------------------------------------------------
+
+_______ 1 of 7 completed, 1 Pass, 0 Fail, 0 Skip, 0 XPass, 0 XFail, 0 Error, 0 ReRun ________
+
+tests/virt/node/general/test_vmi_hard_reset.py 2026-01-30T15:06:56.987500 tests.virt.node.general.test_vmi_hard_reset INFO VMI UID after reset: b9659656-4cc2-4885-94af-0d2c3dbd3006
+.
+TEST: TestVMIHardResetBasic.test_vmi_uid_unchanged_after_reset[vm-for-hard-reset-basic-test] STATUS: PASSED
+
+_______ 2 of 7 completed, 2 Pass, 0 Fail, 0 Skip, 0 XPass, 0 XFail, 0 Error, 0 ReRun ________
+
+tests/virt/node/general/test_vmi_hard_reset.py 
+--------------------------- test_boot_time_changes_after_reset[vm-for-hard-reset-basic-test] ---------------------------
+.
+__________________________________ 3 of 7 completed, 3 Pass, 0 Fail, 0 Skip, 0 XPass, 0 XFail, 0 Error, 0 ReRun ___________________________________
+
+tests/virt/node/general/test_vmi_hard_reset.py E
+
+_____________________________________ ERROR at setup of TestVMIHardResetNegative.test_reset_stopped_vmi_fails _____________________________________
+
+func = <bound method ApiClient.request of <kubernetes.client.api_client.ApiClient object at 0x7f4f91ffaf50>>
+exceptions_dict = {<class 'urllib3.exceptions.MaxRetryError'>: [], <class 'ConnectionAbortedError'>: [], <class 'ConnectionResetError'>:...eader changed', 'etcdserver: request timed out', 'Internal error occurred: failed calling webhook', 'rpc error:'], ...}
+timeout = 30, sleep_time = 5
+kwargs = {'headers': {'Content-Type': 'application/json', 'authorization': 'Bearer sha256~QKRGB4TlZP9F4dfvlUrm4KYPf5DG_zcwQWvU9...t.io/v1/namespaces/node-general-test-vmi-hard-reset/virtualmachines/stopped-vm-for-reset-test-1769782330-6000266/stop'}
+sampler = <timeout_sampler.TimeoutSampler object at 0x7f4f906e71b0>
+
+
+TEST: TestVMIHardResetNegative.test_reset_stopped_vmi_fails [setup] STATUS: ERROR
+    @staticmethod
+    def retry_cluster_exceptions(
+        func: Callable,
+        exceptions_dict: dict[type[Exception], list[str]] = DEFAULT_CLUSTER_RETRY_EXCEPTIONS,
+        timeout: int = TIMEOUT_10SEC,
+        sleep_time: int = 1,
+        **kwargs: Any,
+    ) -> Any:
+        try:
+            sampler = TimeoutSampler(
+                wait_timeout=timeout,
+                sleep=sleep_time,
+                func=func,
+                print_log=False,
+                exceptions_dict=exceptions_dict,
+                **kwargs,
+            )
+>           for sample in sampler:
+                          ^^^^^^^
+
+.venv/lib/python3.14/site-packages/ocp_resources/resource.py:1141: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <timeout_sampler.TimeoutSampler object at 0x7f4f906e71b0>
+
+    def __iter__(self) -> Any:
+        """
+        Call `func` and yield the result, or raise an exception on timeout.
+    
+        Yields:
+            any: Return value from `func`
+    
+        Raises:
+            TimeoutExpiredError: if `func` takes longer than `wait_timeout` seconds to return a value
+        """
+        timeout_watch = TimeoutWatch(timeout=self.wait_timeout)
+        if self.print_log:
+            log = (
+                f"Waiting for {self.wait_timeout} seconds"
+                f" [{datetime.timedelta(seconds=self.wait_timeout)}], retry every"
+                f" {self.sleep} seconds."
+            )
+    
+            if self.print_func_log:
+                log += f" ({self._func_log})"
+    
+            LOGGER.info(log)
+    
+        last_exp = None
+        elapsed_time = None
+        while timeout_watch.remaining_time() > 0:
+            try:
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+                yield self.func(*self.func_args, **self.func_kwargs)
+                time.sleep(self.sleep)
+                elapsed_time = None
+    
+            except Exception as exp:
+                last_exp = exp
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+    
+                if not self._should_ignore_exception(exp=last_exp):
+>                   raise TimeoutExpiredError(
+                        self._get_exception_log(exp=last_exp), last_exp=last_exp, elapsed_time=elapsed_time
+                    )
+E                   timeout_sampler.TimeoutExpiredError: Timed Out: 30
+E                   Function: kubernetes.client.api_client.request  Kwargs: {'url': 'https://api.crc.testing:6443/apis/subresources.kubevirt.io/v1/namespaces/node-general-test-vmi-hard-reset/virtualmachines/stopped-vm-for-reset-test-1769782330-6000266/stop', 'method': 'PUT', 'headers': {'authorization': 'Bearer sha256~QKRGB4TlZP9F4dfvlUrm4KYPf5DG_zcwQWvU9VPr-k4', 'Content-Type': 'application/json'}}
+E                   Last exception: ApiException: (409)
+E                   Reason: Conflict
+E                   HTTP response headers: HTTPHeaderDict({'Audit-Id': '2a5fe17d-bf1e-472c-b0de-6fecb74ba720', 'Cache-Control': 'no-cache, private', 'Content-Length': '390', 'Content-Type': 'application/json', 'Date': 'Fri, 30 Jan 2026 14:12:10 GMT', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Kubernetes-Pf-Flowschema-Uid': 'f189ee22-aabe-407b-ba5e-9a603c368650', 'X-Kubernetes-Pf-Prioritylevel-Uid': '4f751c94-83f7-493a-a75f-8ccff50aa8b4'})
+E                   HTTP response body: {
+E                    "kind": "Status",
+E                    "apiVersion": "v1",
+E                    "metadata": {},
+E                    "status": "Failure",
+E                    "message": "Operation cannot be fulfilled on virtualmachine.kubevirt.io \"stopped-vm-for-reset-test-1769782330-6000266\": VM is not running",
+E                    "reason": "Conflict",
+E                    "details": {
+E                     "name": "stopped-vm-for-reset-test-1769782330-6000266",
+E                     "group": "kubevirt.io",
+E                     "kind": "virtualmachine"
+E                    },
+E                    "code": 409
+E                   }
+E                   .
+E                   Elapsed time: 0.04572796821594238 [0:00:00.045728]
+
+.venv/lib/python3.14/site-packages/timeout_sampler/__init__.py:171: TimeoutExpiredError
+
+The above exception was the direct cause of the following exception:
+
+namespace = <ocp_resources.namespace.Namespace object at 0x7f4f90e263f0>
+unprivileged_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f4f91ffa950>
+
+    @pytest.fixture(scope="class")
+    def stopped_vm_for_reset_test(namespace, unprivileged_client):
+        """
+        Create a stopped VM for negative reset testing.
+    
+        Args:
+            namespace: Test namespace fixture
+            unprivileged_client: Unprivileged client fixture
+    
+        Yields:
+            VirtualMachineForTests: Stopped VM instance
+        """
+        vm_name = "stopped-vm-for-reset-test"
+        with VirtualMachineForTests(
+            client=unprivileged_client,
+            name=vm_name,
+            body=fedora_vm_body(name=vm_name),
+            namespace=namespace.name,
+        ) as vm:
+>           vm.stop(wait=True)
+
+tests/virt/node/general/test_vmi_hard_reset.py:124: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+.venv/lib/python3.14/site-packages/ocp_resources/virtual_machine.py:105: in stop
+    self.api_request(method="PUT", action="stop")
+.venv/lib/python3.14/site-packages/ocp_resources/virtual_machine.py:79: in api_request
+    return super().api_request(
+.venv/lib/python3.14/site-packages/ocp_resources/resource.py:1321: in api_request
+    response = self.retry_cluster_exceptions(
+.venv/lib/python3.14/site-packages/ocp_resources/resource.py:1146: in retry_cluster_exceptions
+    raise exp.last_exp from exp
+.venv/lib/python3.14/site-packages/timeout_sampler/__init__.py:162: in __iter__
+    yield self.func(*self.func_args, **self.func_kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/kubernetes/client/api_client.py:399: in request
+    return self.rest_client.PUT(url,
+.venv/lib/python3.14/site-packages/kubernetes/client/rest.py:289: in PUT
+    return self.request("PUT", url,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <kubernetes.client.rest.RESTClientObject object at 0x7f4f91ffac50>, method = 'PUT'
+url = 'https://api.crc.testing:6443/apis/subresources.kubevirt.io/v1/namespaces/node-general-test-vmi-hard-reset/virtualmachines/stopped-vm-for-reset-test-1769782330-6000266/stop'
+query_params = None, headers = {'Content-Type': 'application/json', 'authorization': 'Bearer sha256~QKRGB4TlZP9F4dfvlUrm4KYPf5DG_zcwQWvU9VPr-k4'}
+body = None, post_params = {}, _preload_content = True, _request_timeout = None
+
+    def request(self, method, url, query_params=None, headers=None,
+                body=None, post_params=None, _preload_content=True,
+                _request_timeout=None):
+        """Perform requests.
+    
+        :param method: http request method
+        :param url: http request url
+        :param query_params: query parameters in the url
+        :param headers: http request headers
+        :param body: request json body, for `application/json`
+        :param post_params: request post parameters,
+                            `application/x-www-form-urlencoded`
+                            and `multipart/form-data`
+        :param _preload_content: if False, the urllib3.HTTPResponse object will
+                                 be returned without reading/decoding response
+                                 data. Default is True.
+        :param _request_timeout: timeout setting for this request. If one
+                                 number provided, it will be total request
+                                 timeout. It can also be a pair (tuple) of
+                                 (connection, read) timeouts.
+        """
+        method = method.upper()
+        assert method in ['GET', 'HEAD', 'DELETE', 'POST', 'PUT',
+                          'PATCH', 'OPTIONS']
+    
+        if post_params and body:
+            raise ApiValueError(
+                "body parameter cannot be used with post_params parameter."
+            )
+    
+        post_params = post_params or {}
+        headers = headers or {}
+    
+        timeout = None
+        if _request_timeout:
+            if isinstance(_request_timeout, (int, ) if six.PY3 else (int, long)):  # noqa: E501,F821
+                timeout = urllib3.Timeout(total=_request_timeout)
+            elif (isinstance(_request_timeout, tuple) and
+                  len(_request_timeout) == 2):
+                timeout = urllib3.Timeout(
+                    connect=_request_timeout[0], read=_request_timeout[1])
+    
+        if 'Content-Type' not in headers:
+            headers['Content-Type'] = 'application/json'
+    
+        try:
+            # For `POST`, `PUT`, `PATCH`, `OPTIONS`, `DELETE`
+            if method in ['POST', 'PUT', 'PATCH', 'OPTIONS', 'DELETE']:
+                if query_params:
+                    url += '?' + urlencode(query_params)
+                if (re.search('json', headers['Content-Type'], re.IGNORECASE) or
+                        headers['Content-Type'] == 'application/apply-patch+yaml'):
+                    if headers['Content-Type'] == 'application/json-patch+json':
+                        if not isinstance(body, list):
+                            headers['Content-Type'] = \
+                                'application/strategic-merge-patch+json'
+                    request_body = None
+                    if body is not None:
+                        request_body = json.dumps(body)
+                    r = self.pool_manager.request(
+                        method, url,
+                        body=request_body,
+                        preload_content=_preload_content,
+                        timeout=timeout,
+                        headers=headers)
+                elif headers['Content-Type'] == 'application/x-www-form-urlencoded':  # noqa: E501
+                    r = self.pool_manager.request(
+                        method, url,
+                        fields=post_params,
+                        encode_multipart=False,
+                        preload_content=_preload_content,
+                        timeout=timeout,
+                        headers=headers)
+                elif headers['Content-Type'] == 'multipart/form-data':
+                    # must del headers['Content-Type'], or the correct
+                    # Content-Type which generated by urllib3 will be
+                    # overwritten.
+                    del headers['Content-Type']
+                    r = self.pool_manager.request(
+                        method, url,
+                        fields=post_params,
+                        encode_multipart=True,
+                        preload_content=_preload_content,
+                        timeout=timeout,
+                        headers=headers)
+                # Pass a `string` parameter directly in the body to support
+                # other content types than Json when `body` argument is
+                # provided in serialized form
+                elif isinstance(body, str) or isinstance(body, bytes):
+                    request_body = body
+                    r = self.pool_manager.request(
+                        method, url,
+                        body=request_body,
+                        preload_content=_preload_content,
+                        timeout=timeout,
+                        headers=headers)
+                else:
+                    # Cannot generate the request from given parameters
+                    msg = """Cannot prepare a request message for provided
+                             arguments. Please check that your arguments match
+                             declared content type."""
+                    raise ApiException(status=0, reason=msg)
+            # For `GET`, `HEAD`
+            else:
+                r = self.pool_manager.request(method, url,
+                                              fields=query_params,
+                                              preload_content=_preload_content,
+                                              timeout=timeout,
+                                              headers=headers)
+        except urllib3.exceptions.SSLError as e:
+            msg = "{0}\n{1}".format(type(e).__name__, str(e))
+            raise ApiException(status=0, reason=msg)
+    
+        if _preload_content:
+            r = RESTResponse(r)
+    
+            # In the python 3, the response.data is bytes.
+            # we need to decode it to string.
+            if six.PY3:
+                r.data = r.data.decode('utf8')
+    
+            # log response body
+            logger.debug("response body: %s", r.data)
+    
+        if not 200 <= r.status <= 299:
+>           raise ApiException(http_resp=r)
+E           kubernetes.client.exceptions.ApiException: (409)
+E           Reason: Conflict
+E           HTTP response headers: HTTPHeaderDict({'Audit-Id': '2a5fe17d-bf1e-472c-b0de-6fecb74ba720', 'Cache-Control': 'no-cache, private', 'Content-Length': '390', 'Content-Type': 'application/json', 'Date': 'Fri, 30 Jan 2026 14:12:10 GMT', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Kubernetes-Pf-Flowschema-Uid': 'f189ee22-aabe-407b-ba5e-9a603c368650', 'X-Kubernetes-Pf-Prioritylevel-Uid': '4f751c94-83f7-493a-a75f-8ccff50aa8b4'})
+E           HTTP response body: {
+E            "kind": "Status",
+E            "apiVersion": "v1",
+E            "metadata": {},
+E            "status": "Failure",
+E            "message": "Operation cannot be fulfilled on virtualmachine.kubevirt.io \"stopped-vm-for-reset-test-1769782330-6000266\": VM is not running",
+E            "reason": "Conflict",
+E            "details": {
+E             "name": "stopped-vm-for-reset-test-1769782330-6000266",
+E             "group": "kubevirt.io",
+E             "kind": "virtualmachine"
+E            },
+E            "code": 409
+E           }
+
+.venv/lib/python3.14/site-packages/kubernetes/client/rest.py:238: ApiException
+-------------------------------------------------------------- Captured stderr setup --------------------------------------------------------------
+2026-01-30T15:12:08.410561 ocp_resources.resource INFO Trying to get client via new_client_from_config --- [DuplicateFilter: Last log `kind: VirtualMachineInstance api version: kubevirt.io/v1` repeated 13 times]
+
+--------------------------------------------- test_reset_stopped_vmi_fails ---------------------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-01-30T15:12:08.410002 conftest INFO Executing function fixture: term_handler_scope_function
+2026-01-30T15:12:08.410104 conftest INFO Executing class fixture: term_handler_scope_class
+2026-01-30T15:12:08.410242 conftest INFO Executing function fixture: autouse_fixtures
+2026-01-30T15:12:08.410399 conftest INFO Executing class fixture: stopped_vm_for_reset_test
+2026-01-30T15:12:08.443847 timeout_sampler INFO Waiting for 10 seconds [0:00:10], retry every 1 seconds. (Function: utilities.virt._get_image_json  Kwargs: {'cmd': 'oc image -o json info quay.io/openshift-cnv/qe-cnv-tests-fedora:41 --filter-by-os amd64 --registry-config=/tmp/tmp2x1llbgq-cnv-tests-pull-secret/pull-secrets.json'})
+2026-01-30T15:12:08.444000 pyhelper_utils.shell INFO Running oc image -o json info quay.io/openshift-cnv/qe-cnv-tests-fedora:41 --filter-by-os amd64 --registry-config=/tmp/tmp2x1llbgq-cnv-tests-pull-secret/pull-secrets.json command
+2026-01-30T15:12:10.597982 timeout_sampler INFO Elapsed time: 0.00011610984802246094 [0:00:00.000116]
+2026-01-30T15:12:10.600129 ocp_resources.resource INFO kind: VirtualMachine api version: kubevirt.io/v1
+2026-01-30T15:12:10.600227 utilities.virt WARNING `os_login_param` not defined for fedora
+2026-01-30T15:12:10.603404 utilities.virt INFO Setting random username and password
+2026-01-30T15:12:10.633322 ocp_resources VirtualMachine INFO Create VirtualMachine stopped-vm-for-reset-test-1769782330-6000266
+2026-01-30T15:12:10.633420 ocp_resources VirtualMachine INFO Posting {'apiVersion': 'kubevirt.io/v1', 'kind': 'VirtualMachine', 'metadata': {'creationTimestamp': None, 'labels': {'kubevirt.io/vm': 'stopped-vm-for-reset-test'}, 'name': 'stopped-vm-for-reset-test-1769782330-6000266'}, 'spec': {'template': {'metadata': {'creationTimestamp': None, 'labels': {'kubevirt.io/vm': 'stopped-vm-for-reset-test-1769782330-6000266', 'kubevirt.io/domain': 'stopped-vm-for-reset-test-1769782330-6000266', 'debugLogs': 'true'}}, 'spec': {'domain': {'cpu': {'cores': 1}, 'memory': {'guest': '1Gi'}, 'devices': {'disks': [{'disk': {'bus': 'virtio'}, 'name': 'containerdisk'}, {'disk': {'bus': 'virtio'}, 'name': 'cloudinitdisk'}], 'interfaces': [{'masquerade': {}, 'name': 'default'}], 'rng': {}}, 'machine': {'type': ''}}, 'networks': [{'name': 'default', 'pod': {}}], 'terminationGracePeriodSeconds': 30, 'volumes': [{'containerDisk': {'image': 'quay.io/openshift-cnv/qe-cnv-tests-fedora:41@sha256:a91659fba4e0258dda1be076dd6e56e34d9bf3dce082e57f939994ce0f124348'}, 'name': 'containerdisk'}, {'name': 'cloudinitdisk', 'cloudInitNoCloud': {'userData': '*******'}}]}}, 'runStrategy': 'Halted'}}
+2026-01-30T15:12:10.723683 ocp_resources VirtualMachine INFO Delete VirtualMachine stopped-vm-for-reset-test-1769782330-6000266
+2026-01-30T15:12:10.747072 ocp_resources VirtualMachine INFO Deleting {'apiVersion': 'kubevirt.io/v1', 'kind': 'VirtualMachine', 'metadata': {'annotations': {'kubemacpool.io/transaction-timestamp': '2026-01-30T14:12:10.718780373Z', 'kubevirt.io/latest-observed-api-version': 'v1', 'kubevirt.io/storage-observed-api-version': 'v1'}, 'creationTimestamp': '2026-01-30T14:12:10Z', 'generation': 1, 'labels': {'kubevirt.io/vm': 'stopped-vm-for-reset-test'}, 'managedFields': [{'apiVersion': 'kubevirt.io/v1', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:labels': {'.': {}, 'f:kubevirt.io/vm': {}}}, 'f:spec': {'.': {}, 'f:runStrategy': {}, 'f:template': {'.': {}, 'f:metadata': {'.': {}, 'f:creationTimestamp': {}, 'f:labels': {'.': {}, 'f:debugLogs': {}, 'f:kubevirt.io/domain': {}, 'f:kubevirt.io/vm': {}}}, 'f:spec': {'.': {}, 'f:domain': {'.': {}, 'f:cpu': {'.': {}, 'f:cores': {}}, 'f:devices': {'.': {}, 'f:disks': {}, 'f:interfaces': {}, 'f:rng': {}}, 'f:machine': {'.': {}, 'f:type': {}}, 'f:memory': {'.': {}, 'f:guest': {}}}, 'f:networks': {}, 'f:terminationGracePeriodSeconds': {}, 'f:volumes': {}}}}}, 'manager': 'OpenAPI-Generator', 'operation': 'Update', 'time': '2026-01-30T14:12:10Z'}, {'apiVersion': 'kubevirt.io/v1', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:annotations': {'f:kubevirt.io/latest-observed-api-version': {}, 'f:kubevirt.io/storage-observed-api-version': {}}}}, 'manager': 'virt-controller', 'operation': 'Update', 'time': '2026-01-30T14:12:10Z'}, {'apiVersion': 'kubevirt.io/v1', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:status': {'.': {}, 'f:printableStatus': {}, 'f:volumeSnapshotStatuses': {}}}, 'manager': 'virt-controller', 'operation': 'Update', 'subresource': 'status', 'time': '2026-01-30T14:12:10Z'}], 'name': 'stopped-vm-for-reset-test-1769782330-6000266', 'namespace': 'node-general-test-vmi-hard-reset', 'resourceVersion': '140689', 'uid': '49a6ad11-2315-4030-af53-180898675d8f'}, 'spec': {'runStrategy': 'Halted', 'template': {'metadata': {'creationTimestamp': None, 'labels': {'debugLogs': 'true', 'kubevirt.io/domain': 'stopped-vm-for-reset-test-1769782330-6000266', 'kubevirt.io/vm': 'stopped-vm-for-reset-test-1769782330-6000266'}}, 'spec': {'architecture': 'amd64', 'domain': {'cpu': {'cores': 1}, 'devices': {'disks': [{'disk': {'bus': 'virtio'}, 'name': 'containerdisk'}, {'disk': {'bus': 'virtio'}, 'name': 'cloudinitdisk'}], 'interfaces': [{'macAddress': '02:ff:97:43:ee:b3', 'masquerade': {}, 'name': 'default'}], 'rng': {}}, 'firmware': {'serial': '0a137727-80cf-471b-964c-e8c6d38188ef', 'uuid': '55880cb4-314b-4448-b21e-2e5923e5854e'}, 'machine': {'type': 'pc-q35-rhel9.6.0'}, 'memory': {'guest': '1Gi'}, 'resources': {}}, 'networks': [{'name': 'default', 'pod': {}}], 'terminationGracePeriodSeconds': 30, 'volumes': [{'containerDisk': {'image': 'quay.io/openshift-cnv/qe-cnv-tests-fedora:41@sha256:a91659fba4e0258dda1be076dd6e56e34d9bf3dce082e57f939994ce0f124348'}, 'name': 'containerdisk'}, {'cloudInitNoCloud': {'userData': '*******'}, 'name': 'cloudinitdisk'}]}}}, 'status': {'printableStatus': 'Stopped', 'volumeSnapshotStatuses': [{'enabled': False, 'name': 'containerdisk', 'reason': 'Snapshot is not supported for this volumeSource type [containerdisk]'}, {'enabled': False, 'name': 'cloudinitdisk', 'reason': 'Snapshot is not supported for this volumeSource type [cloudinitdisk]'}]}}
+2026-01-30T15:12:10.786980 ocp_resources VirtualMachine INFO Wait until VirtualMachine stopped-vm-for-reset-test-1769782330-6000266 is deleted
+2026-01-30T15:12:10.787110 timeout_sampler INFO Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_deleted.lambda: self.exists)
+2026-01-30T15:12:11.802480 timeout_sampler INFO Elapsed time: 1.0119411945343018 [0:00:01.011941]
+__________________________________ 4 of 7 completed, 3 Pass, 0 Fail, 0 Skip, 0 XPass, 0 XFail, 1 Error, 0 ReRun ___________________________________
+func = <bound method ApiClient.request of <kubernetes.client.api_client.ApiClient object at 0x7f4f91ffaf50>>
+exceptions_dict = {<class 'urllib3.exceptions.MaxRetryError'>: [], <class 'ConnectionAbortedError'>: [], <class 'ConnectionResetError'>:...eader changed', 'etcdserver: request timed out', 'Internal error occurred: failed calling webhook', 'rpc error:'], ...}
+timeout = 30, sleep_time = 5
+kwargs = {'headers': {'Content-Type': 'application/json', 'authorization': 'Bearer sha256~QKRGB4TlZP9F4dfvlUrm4KYPf5DG_zcwQWvU9...t.io/v1/namespaces/node-general-test-vmi-hard-reset/virtualmachines/stopped-vm-for-reset-test-1769782330-6000266/stop'}
+sampler = <timeout_sampler.TimeoutSampler object at 0x7f4f906e71b0>
+
+    @staticmethod
+    def retry_cluster_exceptions(
+        func: Callable,
+        exceptions_dict: dict[type[Exception], list[str]] = DEFAULT_CLUSTER_RETRY_EXCEPTIONS,
+        timeout: int = TIMEOUT_10SEC,
+        sleep_time: int = 1,
+        **kwargs: Any,
+    ) -> Any:
+        try:
+            sampler = TimeoutSampler(
+                wait_timeout=timeout,
+                sleep=sleep_time,
+                func=func,
+                print_log=False,
+                exceptions_dict=exceptions_dict,
+                **kwargs,
+            )
+>           for sample in sampler:
+                          ^^^^^^^
+
+.venv/lib/python3.14/site-packages/ocp_resources/resource.py:1141: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <timeout_sampler.TimeoutSampler object at 0x7f4f906e71b0>
+
+    def __iter__(self) -> Any:
+        """
+        Call `func` and yield the result, or raise an exception on timeout.
+    
+        Yields:
+            any: Return value from `func`
+    
+        Raises:
+            TimeoutExpiredError: if `func` takes longer than `wait_timeout` seconds to return a value
+        """
+        timeout_watch = TimeoutWatch(timeout=self.wait_timeout)
+        if self.print_log:
+            log = (
+                f"Waiting for {self.wait_timeout} seconds"
+                f" [{datetime.timedelta(seconds=self.wait_timeout)}], retry every"
+                f" {self.sleep} seconds."
+            )
+    
+            if self.print_func_log:
+                log += f" ({self._func_log})"
+    
+            LOGGER.info(log)
+    
+        last_exp = None
+        elapsed_time = None
+        while timeout_watch.remaining_time() > 0:
+            try:
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+                yield self.func(*self.func_args, **self.func_kwargs)
+                time.sleep(self.sleep)
+                elapsed_time = None
+    
+            except Exception as exp:
+                last_exp = exp
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+    
+                if not self._should_ignore_exception(exp=last_exp):
+>                   raise TimeoutExpiredError(
+                        self._get_exception_log(exp=last_exp), last_exp=last_exp, elapsed_time=elapsed_time
+                    )
+E                   timeout_sampler.TimeoutExpiredError: Timed Out: 30
+E                   Function: kubernetes.client.api_client.request  Kwargs: {'url': 'https://api.crc.testing:6443/apis/subresources.kubevirt.io/v1/namespaces/node-general-test-vmi-hard-reset/virtualmachines/stopped-vm-for-reset-test-1769782330-6000266/stop', 'method': 'PUT', 'headers': {'authorization': 'Bearer sha256~QKRGB4TlZP9F4dfvlUrm4KYPf5DG_zcwQWvU9VPr-k4', 'Content-Type': 'application/json'}}
+E                   Last exception: ApiException: (409)
+E                   Reason: Conflict
+E                   HTTP response headers: HTTPHeaderDict({'Audit-Id': '2a5fe17d-bf1e-472c-b0de-6fecb74ba720', 'Cache-Control': 'no-cache, private', 'Content-Length': '390', 'Content-Type': 'application/json', 'Date': 'Fri, 30 Jan 2026 14:12:10 GMT', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Kubernetes-Pf-Flowschema-Uid': 'f189ee22-aabe-407b-ba5e-9a603c368650', 'X-Kubernetes-Pf-Prioritylevel-Uid': '4f751c94-83f7-493a-a75f-8ccff50aa8b4'})
+E                   HTTP response body: {
+E                    "kind": "Status",
+E                    "apiVersion": "v1",
+E                    "metadata": {},
+E                    "status": "Failure",
+E                    "message": "Operation cannot be fulfilled on virtualmachine.kubevirt.io \"stopped-vm-for-reset-test-1769782330-6000266\": VM is not running",
+E                    "reason": "Conflict",
+E                    "details": {
+E                     "name": "stopped-vm-for-reset-test-1769782330-6000266",
+E                     "group": "kubevirt.io",
+E                     "kind": "virtualmachine"
+E                    },
+E                    "code": 409
+E                   }
+E                   .
+E                   Elapsed time: 0.04572796821594238 [0:00:00.045728]
+
+.venv/lib/python3.14/site-packages/timeout_sampler/__init__.py:171: TimeoutExpiredError
+
+The above exception was the direct cause of the following exception:
+
+namespace = <ocp_resources.namespace.Namespace object at 0x7f4f90e263f0>
+unprivileged_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f4f91ffa950>
+
+    @pytest.fixture(scope="class")
+    def stopped_vm_for_reset_test(namespace, unprivileged_client):
+        """
+        Create a stopped VM for negative reset testing.
+    
+        Args:
+            namespace: Test namespace fixture
+            unprivileged_client: Unprivileged client fixture
+    
+        Yields:
+            VirtualMachineForTests: Stopped VM instance
+        """
+        vm_name = "stopped-vm-for-reset-test"
+        with VirtualMachineForTests(
+            client=unprivileged_client,
+            name=vm_name,
+            body=fedora_vm_body(name=vm_name),
+            namespace=namespace.name,
+        ) as vm:
+>           vm.stop(wait=True)
+
+tests/virt/node/general/test_vmi_hard_reset.py:124: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+.venv/lib/python3.14/site-packages/ocp_resources/virtual_machine.py:105: in stop
+    self.api_request(method="PUT", action="stop")
+.venv/lib/python3.14/site-packages/ocp_resources/virtual_machine.py:79: in api_request
+    return super().api_request(
+.venv/lib/python3.14/site-packages/ocp_resources/resource.py:1321: in api_request
+    response = self.retry_cluster_exceptions(
+.venv/lib/python3.14/site-packages/ocp_resources/resource.py:1146: in retry_cluster_exceptions
+    raise exp.last_exp from exp
+.venv/lib/python3.14/site-packages/timeout_sampler/__init__.py:162: in __iter__
+    yield self.func(*self.func_args, **self.func_kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/kubernetes/client/api_client.py:399: in request
+    return self.rest_client.PUT(url,
+.venv/lib/python3.14/site-packages/kubernetes/client/rest.py:289: in PUT
+    return self.request("PUT", url,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <kubernetes.client.rest.RESTClientObject object at 0x7f4f91ffac50>, method = 'PUT'
+url = 'https://api.crc.testing:6443/apis/subresources.kubevirt.io/v1/namespaces/node-general-test-vmi-hard-reset/virtualmachines/stopped-vm-for-reset-test-1769782330-6000266/stop'
+query_params = None, headers = {'Content-Type': 'application/json', 'authorization': 'Bearer sha256~QKRGB4TlZP9F4dfvlUrm4KYPf5DG_zcwQWvU9VPr-k4'}
+body = None, post_params = {}, _preload_content = True, _request_timeout = None
+
+    def request(self, method, url, query_params=None, headers=None,
+                body=None, post_params=None, _preload_content=True,
+                _request_timeout=None):
+        """Perform requests.
+    
+        :param method: http request method
+        :param url: http request url
+        :param query_params: query parameters in the url
+        :param headers: http request headers
+        :param body: request json body, for `application/json`
+        :param post_params: request post parameters,
+                            `application/x-www-form-urlencoded`
+                            and `multipart/form-data`
+        :param _preload_content: if False, the urllib3.HTTPResponse object will
+                                 be returned without reading/decoding response
+                                 data. Default is True.
+        :param _request_timeout: timeout setting for this request. If one
+                                 number provided, it will be total request
+                                 timeout. It can also be a pair (tuple) of
+                                 (connection, read) timeouts.
+        """
+        method = method.upper()
+        assert method in ['GET', 'HEAD', 'DELETE', 'POST', 'PUT',
+                          'PATCH', 'OPTIONS']
+    
+        if post_params and body:
+            raise ApiValueError(
+                "body parameter cannot be used with post_params parameter."
+            )
+    
+        post_params = post_params or {}
+        headers = headers or {}
+    
+        timeout = None
+        if _request_timeout:
+            if isinstance(_request_timeout, (int, ) if six.PY3 else (int, long)):  # noqa: E501,F821
+                timeout = urllib3.Timeout(total=_request_timeout)
+            elif (isinstance(_request_timeout, tuple) and
+                  len(_request_timeout) == 2):
+                timeout = urllib3.Timeout(
+                    connect=_request_timeout[0], read=_request_timeout[1])
+    
+        if 'Content-Type' not in headers:
+            headers['Content-Type'] = 'application/json'
+    
+        try:
+            # For `POST`, `PUT`, `PATCH`, `OPTIONS`, `DELETE`
+            if method in ['POST', 'PUT', 'PATCH', 'OPTIONS', 'DELETE']:
+                if query_params:
+                    url += '?' + urlencode(query_params)
+                if (re.search('json', headers['Content-Type'], re.IGNORECASE) or
+                        headers['Content-Type'] == 'application/apply-patch+yaml'):
+                    if headers['Content-Type'] == 'application/json-patch+json':
+                        if not isinstance(body, list):
+                            headers['Content-Type'] = \
+                                'application/strategic-merge-patch+json'
+                    request_body = None
+                    if body is not None:
+                        request_body = json.dumps(body)
+                    r = self.pool_manager.request(
+                        method, url,
+                        body=request_body,
+                        preload_content=_preload_content,
+                        timeout=timeout,
+                        headers=headers)
+                elif headers['Content-Type'] == 'application/x-www-form-urlencoded':  # noqa: E501
+                    r = self.pool_manager.request(
+                        method, url,
+                        fields=post_params,
+                        encode_multipart=False,
+                        preload_content=_preload_content,
+                        timeout=timeout,
+                        headers=headers)
+                elif headers['Content-Type'] == 'multipart/form-data':
+                    # must del headers['Content-Type'], or the correct
+                    # Content-Type which generated by urllib3 will be
+                    # overwritten.
+                    del headers['Content-Type']
+                    r = self.pool_manager.request(
+                        method, url,
+                        fields=post_params,
+                        encode_multipart=True,
+                        preload_content=_preload_content,
+                        timeout=timeout,
+                        headers=headers)
+                # Pass a `string` parameter directly in the body to support
+                # other content types than Json when `body` argument is
+                # provided in serialized form
+                elif isinstance(body, str) or isinstance(body, bytes):
+                    request_body = body
+                    r = self.pool_manager.request(
+                        method, url,
+                        body=request_body,
+                        preload_content=_preload_content,
+                        timeout=timeout,
+                        headers=headers)
+                else:
+                    # Cannot generate the request from given parameters
+                    msg = """Cannot prepare a request message for provided
+                             arguments. Please check that your arguments match
+                             declared content type."""
+                    raise ApiException(status=0, reason=msg)
+            # For `GET`, `HEAD`
+            else:
+                r = self.pool_manager.request(method, url,
+                                              fields=query_params,
+                                              preload_content=_preload_content,
+                                              timeout=timeout,
+                                              headers=headers)
+        except urllib3.exceptions.SSLError as e:
+            msg = "{0}\n{1}".format(type(e).__name__, str(e))
+            raise ApiException(status=0, reason=msg)
+    
+        if _preload_content:
+            r = RESTResponse(r)
+    
+            # In the python 3, the response.data is bytes.
+            # we need to decode it to string.
+            if six.PY3:
+                r.data = r.data.decode('utf8')
+    
+            # log response body
+            logger.debug("response body: %s", r.data)
+    
+        if not 200 <= r.status <= 299:
+>           raise ApiException(http_resp=r)
+E           kubernetes.client.exceptions.ApiException: (409)
+E           Reason: Conflict
+E           HTTP response headers: HTTPHeaderDict({'Audit-Id': '2a5fe17d-bf1e-472c-b0de-6fecb74ba720', 'Cache-Control': 'no-cache, private', 'Content-Length': '390', 'Content-Type': 'application/json', 'Date': 'Fri, 30 Jan 2026 14:12:10 GMT', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Kubernetes-Pf-Flowschema-Uid': 'f189ee22-aabe-407b-ba5e-9a603c368650', 'X-Kubernetes-Pf-Prioritylevel-Uid': '4f751c94-83f7-493a-a75f-8ccff50aa8b4'})
+E           HTTP response body: {
+E            "kind": "Status",
+E            "apiVersion": "v1",
+E            "metadata": {},
+E            "status": "Failure",
+E            "message": "Operation cannot be fulfilled on virtualmachine.kubevirt.io \"stopped-vm-for-reset-test-1769782330-6000266\": VM is not running",
+E            "reason": "Conflict",
+E            "details": {
+E             "name": "stopped-vm-for-reset-test-1769782330-6000266",
+E             "group": "kubevirt.io",
+E             "kind": "virtualmachine"
+E            },
+E            "code": 409
+E           }
+
+.venv/lib/python3.14/site-packages/kubernetes/client/rest.py:238: ApiException
+
+tests/virt/node/general/test_vmi_hard_reset.py 
+------------------------------------------ test_reset_non_existent_vmi_fails ------------------------------------------
+F
+
+___________________________________________ TestVMIHardResetNegative.test_reset_non_existent_vmi_fails ____________________________________________
+
+func = <bound method ApiClient.request of <kubernetes.client.api_client.ApiClient object at 0x7f4f91ffaf50>>
+exceptions_dict = {<class 'urllib3.exceptions.MaxRetryError'>: [], <class 'ConnectionAbortedError'>: [], <class 'ConnectionResetError'>:...eader changed', 'etcdserver: request timed out', 'Internal error occurred: failed calling webhook', 'rpc error:'], ...}
+timeout = 30, sleep_time = 5
+kwargs = {'headers': {'Content-Type': 'application/json', 'authorization': 'Bearer sha256~QKRGB4TlZP9F4dfvlUrm4KYPf5DG_zcwQWvU9...subresources.kubevirt.io/v1/namespaces/node-general-test-vmi-hard-reset/virtualmachineinstances/non-existent-vm/reset'}
+sampler = <timeout_sampler.TimeoutSampler object at 0x7f4f904beb70>
+
+    @staticmethod
+    def retry_cluster_exceptions(
+        func: Callable,
+        exceptions_dict: dict[type[Exception], list[str]] = DEFAULT_CLUSTER_RETRY_EXCEPTIONS,
+        timeout: int = TIMEOUT_10SEC,
+        sleep_time: int = 1,
+        **kwargs: Any,
+    ) -> Any:
+        try:
+            sampler = TimeoutSampler(
+                wait_timeout=timeout,
+                sleep=sleep_time,
+                func=func,
+                print_log=False,
+                exceptions_dict=exceptions_dict,
+                **kwargs,
+            )
+>           for sample in sampler:
+                          ^^^^^^^
+
+.venv/lib/python3.14/site-packages/ocp_resources/resource.py:1141: 
+
+TEST: TestVMIHardResetNegative.test_reset_non_existent_vmi_fails STATUS: FAILED
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <timeout_sampler.TimeoutSampler object at 0x7f4f904beb70>
+
+    def __iter__(self) -> Any:
+        """
+        Call `func` and yield the result, or raise an exception on timeout.
+    
+        Yields:
+            any: Return value from `func`
+    
+        Raises:
+            TimeoutExpiredError: if `func` takes longer than `wait_timeout` seconds to return a value
+        """
+        timeout_watch = TimeoutWatch(timeout=self.wait_timeout)
+        if self.print_log:
+            log = (
+                f"Waiting for {self.wait_timeout} seconds"
+                f" [{datetime.timedelta(seconds=self.wait_timeout)}], retry every"
+                f" {self.sleep} seconds."
+            )
+    
+            if self.print_func_log:
+                log += f" ({self._func_log})"
+    
+            LOGGER.info(log)
+    
+        last_exp = None
+        elapsed_time = None
+        while timeout_watch.remaining_time() > 0:
+            try:
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+                yield self.func(*self.func_args, **self.func_kwargs)
+                time.sleep(self.sleep)
+                elapsed_time = None
+    
+            except Exception as exp:
+                last_exp = exp
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+    
+                if not self._should_ignore_exception(exp=last_exp):
+>                   raise TimeoutExpiredError(
+                        self._get_exception_log(exp=last_exp), last_exp=last_exp, elapsed_time=elapsed_time
+                    )
+E                   timeout_sampler.TimeoutExpiredError: Timed Out: 30
+E                   Function: kubernetes.client.api_client.request  Kwargs: {'url': 'https://api.crc.testing:6443/apis/subresources.kubevirt.io/v1/namespaces/node-general-test-vmi-hard-reset/virtualmachineinstances/non-existent-vm/reset', 'method': 'PUT', 'headers': {'authorization': 'Bearer sha256~QKRGB4TlZP9F4dfvlUrm4KYPf5DG_zcwQWvU9VPr-k4', 'Content-Type': 'application/json'}}
+E                   Last exception: ApiException: (404)
+E                   Reason: Not Found
+E                   HTTP response headers: HTTPHeaderDict({'Audit-Id': '0bdc5d5d-9178-49fb-bc0f-dbf2c358964a', 'Cache-Control': 'no-cache, private', 'Content-Length': '306', 'Content-Type': 'application/json', 'Date': 'Fri, 30 Jan 2026 14:12:11 GMT', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Kubernetes-Pf-Flowschema-Uid': 'f189ee22-aabe-407b-ba5e-9a603c368650', 'X-Kubernetes-Pf-Prioritylevel-Uid': '4f751c94-83f7-493a-a75f-8ccff50aa8b4'})
+E                   HTTP response body: {
+E                    "kind": "Status",
+E                    "apiVersion": "v1",
+E                    "metadata": {},
+E                    "status": "Failure",
+E                    "message": "virtualmachineinstance.kubevirt.io \"non-existent-vm\" not found",
+E                    "reason": "NotFound",
+E                    "details": {
+E                     "name": "non-existent-vm",
+E                     "group": "kubevirt.io",
+E                     "kind": "virtualmachineinstance"
+E                    },
+E                    "code": 404
+E                   }
+E                   .
+E                   Elapsed time: 0.005287885665893555 [0:00:00.005288]
+
+.venv/lib/python3.14/site-packages/timeout_sampler/__init__.py:171: TimeoutExpiredError
+
+The above exception was the direct cause of the following exception:
+
+self = <tests.virt.node.general.test_vmi_hard_reset.TestVMIHardResetNegative object at 0x7f4f91fa6850>
+namespace = <ocp_resources.namespace.Namespace object at 0x7f4f90e263f0>
+unprivileged_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f4f91ffa950>
+
+    @pytest.mark.polarion("CNV-12377")
+    def test_reset_non_existent_vmi_fails(self, namespace, unprivileged_client):
+        """
+        TS-06: Verify reset fails on non-existent VMI.
+    
+        This test verifies:
+        - Reset operation fails when VMI doesn't exist
+        - Appropriate error is returned
+        """
+        non_existent_vm = VirtualMachine(
+            name="non-existent-vm",
+            namespace=namespace.name,
+            client=unprivileged_client,
+        )
+    
+        with pytest.raises((NotFoundError, AttributeError)) as exc_info:
+>           non_existent_vm.vmi.reset()
+
+tests/virt/node/general/test_vmi_hard_reset.py:281: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+.venv/lib/python3.14/site-packages/ocp_resources/virtual_machine_instance.py:75: in reset
+    return self.api_request(method="PUT", action="reset")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/ocp_resources/virtual_machine_instance.py:56: in api_request
+    return super().api_request(
+.venv/lib/python3.14/site-packages/ocp_resources/resource.py:1321: in api_request
+    response = self.retry_cluster_exceptions(
+.venv/lib/python3.14/site-packages/ocp_resources/resource.py:1146: in retry_cluster_exceptions
+    raise exp.last_exp from exp
+.venv/lib/python3.14/site-packages/timeout_sampler/__init__.py:162: in __iter__
+    yield self.func(*self.func_args, **self.func_kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/kubernetes/client/api_client.py:399: in request
+    return self.rest_client.PUT(url,
+.venv/lib/python3.14/site-packages/kubernetes/client/rest.py:289: in PUT
+    return self.request("PUT", url,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <kubernetes.client.rest.RESTClientObject object at 0x7f4f91ffac50>, method = 'PUT'
+url = 'https://api.crc.testing:6443/apis/subresources.kubevirt.io/v1/namespaces/node-general-test-vmi-hard-reset/virtualmachineinstances/non-existent-vm/reset'
+query_params = None, headers = {'Content-Type': 'application/json', 'authorization': 'Bearer sha256~QKRGB4TlZP9F4dfvlUrm4KYPf5DG_zcwQWvU9VPr-k4'}
+body = None, post_params = {}, _preload_content = True, _request_timeout = None
+
+    def request(self, method, url, query_params=None, headers=None,
+                body=None, post_params=None, _preload_content=True,
+                _request_timeout=None):
+        """Perform requests.
+    
+        :param method: http request method
+        :param url: http request url
+        :param query_params: query parameters in the url
+        :param headers: http request headers
+        :param body: request json body, for `application/json`
+        :param post_params: request post parameters,
+                            `application/x-www-form-urlencoded`
+                            and `multipart/form-data`
+        :param _preload_content: if False, the urllib3.HTTPResponse object will
+                                 be returned without reading/decoding response
+                                 data. Default is True.
+        :param _request_timeout: timeout setting for this request. If one
+                                 number provided, it will be total request
+                                 timeout. It can also be a pair (tuple) of
+                                 (connection, read) timeouts.
+        """
+        method = method.upper()
+        assert method in ['GET', 'HEAD', 'DELETE', 'POST', 'PUT',
+                          'PATCH', 'OPTIONS']
+    
+        if post_params and body:
+            raise ApiValueError(
+                "body parameter cannot be used with post_params parameter."
+            )
+    
+        post_params = post_params or {}
+        headers = headers or {}
+    
+        timeout = None
+        if _request_timeout:
+            if isinstance(_request_timeout, (int, ) if six.PY3 else (int, long)):  # noqa: E501,F821
+                timeout = urllib3.Timeout(total=_request_timeout)
+            elif (isinstance(_request_timeout, tuple) and
+                  len(_request_timeout) == 2):
+                timeout = urllib3.Timeout(
+                    connect=_request_timeout[0], read=_request_timeout[1])
+    
+        if 'Content-Type' not in headers:
+            headers['Content-Type'] = 'application/json'
+    
+        try:
+            # For `POST`, `PUT`, `PATCH`, `OPTIONS`, `DELETE`
+            if method in ['POST', 'PUT', 'PATCH', 'OPTIONS', 'DELETE']:
+                if query_params:
+                    url += '?' + urlencode(query_params)
+                if (re.search('json', headers['Content-Type'], re.IGNORECASE) or
+                        headers['Content-Type'] == 'application/apply-patch+yaml'):
+                    if headers['Content-Type'] == 'application/json-patch+json':
+                        if not isinstance(body, list):
+                            headers['Content-Type'] = \
+                                'application/strategic-merge-patch+json'
+                    request_body = None
+                    if body is not None:
+                        request_body = json.dumps(body)
+                    r = self.pool_manager.request(
+                        method, url,
+                        body=request_body,
+                        preload_content=_preload_content,
+                        timeout=timeout,
+                        headers=headers)
+                elif headers['Content-Type'] == 'application/x-www-form-urlencoded':  # noqa: E501
+                    r = self.pool_manager.request(
+                        method, url,
+                        fields=post_params,
+                        encode_multipart=False,
+                        preload_content=_preload_content,
+                        timeout=timeout,
+                        headers=headers)
+                elif headers['Content-Type'] == 'multipart/form-data':
+                    # must del headers['Content-Type'], or the correct
+                    # Content-Type which generated by urllib3 will be
+                    # overwritten.
+                    del headers['Content-Type']
+                    r = self.pool_manager.request(
+                        method, url,
+                        fields=post_params,
+                        encode_multipart=True,
+                        preload_content=_preload_content,
+                        timeout=timeout,
+                        headers=headers)
+                # Pass a `string` parameter directly in the body to support
+                # other content types than Json when `body` argument is
+                # provided in serialized form
+                elif isinstance(body, str) or isinstance(body, bytes):
+                    request_body = body
+                    r = self.pool_manager.request(
+                        method, url,
+                        body=request_body,
+                        preload_content=_preload_content,
+                        timeout=timeout,
+                        headers=headers)
+                else:
+                    # Cannot generate the request from given parameters
+                    msg = """Cannot prepare a request message for provided
+                             arguments. Please check that your arguments match
+                             declared content type."""
+                    raise ApiException(status=0, reason=msg)
+            # For `GET`, `HEAD`
+            else:
+                r = self.pool_manager.request(method, url,
+                                              fields=query_params,
+                                              preload_content=_preload_content,
+                                              timeout=timeout,
+                                              headers=headers)
+        except urllib3.exceptions.SSLError as e:
+            msg = "{0}\n{1}".format(type(e).__name__, str(e))
+            raise ApiException(status=0, reason=msg)
+    
+        if _preload_content:
+            r = RESTResponse(r)
+    
+            # In the python 3, the response.data is bytes.
+            # we need to decode it to string.
+            if six.PY3:
+                r.data = r.data.decode('utf8')
+    
+            # log response body
+            logger.debug("response body: %s", r.data)
+    
+        if not 200 <= r.status <= 299:
+>           raise ApiException(http_resp=r)
+E           kubernetes.client.exceptions.ApiException: (404)
+E           Reason: Not Found
+E           HTTP response headers: HTTPHeaderDict({'Audit-Id': '0bdc5d5d-9178-49fb-bc0f-dbf2c358964a', 'Cache-Control': 'no-cache, private', 'Content-Length': '306', 'Content-Type': 'application/json', 'Date': 'Fri, 30 Jan 2026 14:12:11 GMT', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Kubernetes-Pf-Flowschema-Uid': 'f189ee22-aabe-407b-ba5e-9a603c368650', 'X-Kubernetes-Pf-Prioritylevel-Uid': '4f751c94-83f7-493a-a75f-8ccff50aa8b4'})
+E           HTTP response body: {
+E            "kind": "Status",
+E            "apiVersion": "v1",
+E            "metadata": {},
+E            "status": "Failure",
+E            "message": "virtualmachineinstance.kubevirt.io \"non-existent-vm\" not found",
+E            "reason": "NotFound",
+E            "details": {
+E             "name": "non-existent-vm",
+E             "group": "kubevirt.io",
+E             "kind": "virtualmachineinstance"
+E            },
+E            "code": 404
+E           }
+
+.venv/lib/python3.14/site-packages/kubernetes/client/rest.py:238: ApiException
+-------------------------------------------------------------- Captured stderr setup --------------------------------------------------------------
+------------------------------------------------------- TEARDOWN -------------------------------------------------------
+-------------------------------------------------------------- Captured stderr call ---------------------------------------------------------------
+2026-01-30T15:12:11.921402 ocp_resources.resource INFO kind: VirtualMachineInstance api version: kubevirt.io/v1
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-01-30T15:12:11.920631 conftest INFO Executing function fixture: term_handler_scope_function
+2026-01-30T15:12:11.920806 conftest INFO Executing function fixture: autouse_fixtures
+--------------------------------------------------------- CALL ---------------------------------------------------------
+func = <bound method ApiClient.request of <kubernetes.client.api_client.ApiClient object at 0x7f4f91ffaf50>>
+exceptions_dict = {<class 'urllib3.exceptions.MaxRetryError'>: [], <class 'ConnectionAbortedError'>: [], <class 'ConnectionResetError'>:...eader changed', 'etcdserver: request timed out', 'Internal error occurred: failed calling webhook', 'rpc error:'], ...}
+timeout = 30, sleep_time = 5
+kwargs = {'headers': {'Content-Type': 'application/json', 'authorization': 'Bearer sha256~QKRGB4TlZP9F4dfvlUrm4KYPf5DG_zcwQWvU9...subresources.kubevirt.io/v1/namespaces/node-general-test-vmi-hard-reset/virtualmachineinstances/non-existent-vm/reset'}
+sampler = <timeout_sampler.TimeoutSampler object at 0x7f4f904beb70>
+
+    @staticmethod
+    def retry_cluster_exceptions(
+        func: Callable,
+        exceptions_dict: dict[type[Exception], list[str]] = DEFAULT_CLUSTER_RETRY_EXCEPTIONS,
+        timeout: int = TIMEOUT_10SEC,
+        sleep_time: int = 1,
+        **kwargs: Any,
+    ) -> Any:
+        try:
+            sampler = TimeoutSampler(
+                wait_timeout=timeout,
+                sleep=sleep_time,
+                func=func,
+                print_log=False,
+                exceptions_dict=exceptions_dict,
+                **kwargs,
+            )
+>           for sample in sampler:
+                          ^^^^^^^
+
+.venv/lib/python3.14/site-packages/ocp_resources/resource.py:1141: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <timeout_sampler.TimeoutSampler object at 0x7f4f904beb70>
+
+    def __iter__(self) -> Any:
+        """
+        Call `func` and yield the result, or raise an exception on timeout.
+    
+        Yields:
+            any: Return value from `func`
+    
+        Raises:
+            TimeoutExpiredError: if `func` takes longer than `wait_timeout` seconds to return a value
+        """
+        timeout_watch = TimeoutWatch(timeout=self.wait_timeout)
+        if self.print_log:
+            log = (
+                f"Waiting for {self.wait_timeout} seconds"
+                f" [{datetime.timedelta(seconds=self.wait_timeout)}], retry every"
+                f" {self.sleep} seconds."
+            )
+    
+            if self.print_func_log:
+                log += f" ({self._func_log})"
+    
+            LOGGER.info(log)
+    
+        last_exp = None
+        elapsed_time = None
+        while timeout_watch.remaining_time() > 0:
+            try:
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+                yield self.func(*self.func_args, **self.func_kwargs)
+                time.sleep(self.sleep)
+                elapsed_time = None
+    
+            except Exception as exp:
+                last_exp = exp
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+    
+                if not self._should_ignore_exception(exp=last_exp):
+>                   raise TimeoutExpiredError(
+                        self._get_exception_log(exp=last_exp), last_exp=last_exp, elapsed_time=elapsed_time
+                    )
+E                   timeout_sampler.TimeoutExpiredError: Timed Out: 30
+E                   Function: kubernetes.client.api_client.request  Kwargs: {'url': 'https://api.crc.testing:6443/apis/subresources.kubevirt.io/v1/namespaces/node-general-test-vmi-hard-reset/virtualmachineinstances/non-existent-vm/reset', 'method': 'PUT', 'headers': {'authorization': 'Bearer sha256~QKRGB4TlZP9F4dfvlUrm4KYPf5DG_zcwQWvU9VPr-k4', 'Content-Type': 'application/json'}}
+E                   Last exception: ApiException: (404)
+E                   Reason: Not Found
+E                   HTTP response headers: HTTPHeaderDict({'Audit-Id': '0bdc5d5d-9178-49fb-bc0f-dbf2c358964a', 'Cache-Control': 'no-cache, private', 'Content-Length': '306', 'Content-Type': 'application/json', 'Date': 'Fri, 30 Jan 2026 14:12:11 GMT', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Kubernetes-Pf-Flowschema-Uid': 'f189ee22-aabe-407b-ba5e-9a603c368650', 'X-Kubernetes-Pf-Prioritylevel-Uid': '4f751c94-83f7-493a-a75f-8ccff50aa8b4'})
+E                   HTTP response body: {
+E                    "kind": "Status",
+E                    "apiVersion": "v1",
+E                    "metadata": {},
+E                    "status": "Failure",
+E                    "message": "virtualmachineinstance.kubevirt.io \"non-existent-vm\" not found",
+E                    "reason": "NotFound",
+E                    "details": {
+E                     "name": "non-existent-vm",
+E                     "group": "kubevirt.io",
+E                     "kind": "virtualmachineinstance"
+E                    },
+E                    "code": 404
+E                   }
+E                   .
+E                   Elapsed time: 0.005287885665893555 [0:00:00.005288]
+
+.venv/lib/python3.14/site-packages/timeout_sampler/__init__.py:171: TimeoutExpiredError
+
+The above exception was the direct cause of the following exception:
+
+self = <tests.virt.node.general.test_vmi_hard_reset.TestVMIHardResetNegative object at 0x7f4f91fa6850>
+namespace = <ocp_resources.namespace.Namespace object at 0x7f4f90e263f0>
+unprivileged_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f4f91ffa950>
+
+    @pytest.mark.polarion("CNV-12377")
+    def test_reset_non_existent_vmi_fails(self, namespace, unprivileged_client):
+        """
+        TS-06: Verify reset fails on non-existent VMI.
+    
+        This test verifies:
+        - Reset operation fails when VMI doesn't exist
+        - Appropriate error is returned
+        """
+        non_existent_vm = VirtualMachine(
+            name="non-existent-vm",
+            namespace=namespace.name,
+            client=unprivileged_client,
+        )
+    
+        with pytest.raises((NotFoundError, AttributeError)) as exc_info:
+>           non_existent_vm.vmi.reset()
+
+tests/virt/node/general/test_vmi_hard_reset.py:281: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+.venv/lib/python3.14/site-packages/ocp_resources/virtual_machine_instance.py:75: in reset
+    return self.api_request(method="PUT", action="reset")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/ocp_resources/virtual_machine_instance.py:56: in api_request
+    return super().api_request(
+.venv/lib/python3.14/site-packages/ocp_resources/resource.py:1321: in api_request
+    response = self.retry_cluster_exceptions(
+.venv/lib/python3.14/site-packages/ocp_resources/resource.py:1146: in retry_cluster_exceptions
+    raise exp.last_exp from exp
+.venv/lib/python3.14/site-packages/timeout_sampler/__init__.py:162: in __iter__
+    yield self.func(*self.func_args, **self.func_kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/kubernetes/client/api_client.py:399: in request
+    return self.rest_client.PUT(url,
+.venv/lib/python3.14/site-packages/kubernetes/client/rest.py:289: in PUT
+    return self.request("PUT", url,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <kubernetes.client.rest.RESTClientObject object at 0x7f4f91ffac50>, method = 'PUT'
+url = 'https://api.crc.testing:6443/apis/subresources.kubevirt.io/v1/namespaces/node-general-test-vmi-hard-reset/virtualmachineinstances/non-existent-vm/reset'
+query_params = None, headers = {'Content-Type': 'application/json', 'authorization': 'Bearer sha256~QKRGB4TlZP9F4dfvlUrm4KYPf5DG_zcwQWvU9VPr-k4'}
+body = None, post_params = {}, _preload_content = True, _request_timeout = None
+
+    def request(self, method, url, query_params=None, headers=None,
+                body=None, post_params=None, _preload_content=True,
+                _request_timeout=None):
+        """Perform requests.
+    
+        :param method: http request method
+        :param url: http request url
+        :param query_params: query parameters in the url
+        :param headers: http request headers
+        :param body: request json body, for `application/json`
+        :param post_params: request post parameters,
+                            `application/x-www-form-urlencoded`
+                            and `multipart/form-data`
+        :param _preload_content: if False, the urllib3.HTTPResponse object will
+                                 be returned without reading/decoding response
+                                 data. Default is True.
+        :param _request_timeout: timeout setting for this request. If one
+                                 number provided, it will be total request
+                                 timeout. It can also be a pair (tuple) of
+                                 (connection, read) timeouts.
+        """
+        method = method.upper()
+        assert method in ['GET', 'HEAD', 'DELETE', 'POST', 'PUT',
+                          'PATCH', 'OPTIONS']
+    
+        if post_params and body:
+            raise ApiValueError(
+                "body parameter cannot be used with post_params parameter."
+            )
+    
+        post_params = post_params or {}
+        headers = headers or {}
+    
+        timeout = None
+        if _request_timeout:
+            if isinstance(_request_timeout, (int, ) if six.PY3 else (int, long)):  # noqa: E501,F821
+                timeout = urllib3.Timeout(total=_request_timeout)
+            elif (isinstance(_request_timeout, tuple) and
+                  len(_request_timeout) == 2):
+                timeout = urllib3.Timeout(
+                    connect=_request_timeout[0], read=_request_timeout[1])
+    
+        if 'Content-Type' not in headers:
+            headers['Content-Type'] = 'application/json'
+    
+        try:
+            # For `POST`, `PUT`, `PATCH`, `OPTIONS`, `DELETE`
+            if method in ['POST', 'PUT', 'PATCH', 'OPTIONS', 'DELETE']:
+                if query_params:
+                    url += '?' + urlencode(query_params)
+                if (re.search('json', headers['Content-Type'], re.IGNORECASE) or
+                        headers['Content-Type'] == 'application/apply-patch+yaml'):
+                    if headers['Content-Type'] == 'application/json-patch+json':
+                        if not isinstance(body, list):
+                            headers['Content-Type'] = \
+                                'application/strategic-merge-patch+json'
+                    request_body = None
+                    if body is not None:
+                        request_body = json.dumps(body)
+                    r = self.pool_manager.request(
+                        method, url,
+                        body=request_body,
+                        preload_content=_preload_content,
+                        timeout=timeout,
+                        headers=headers)
+                elif headers['Content-Type'] == 'application/x-www-form-urlencoded':  # noqa: E501
+                    r = self.pool_manager.request(
+                        method, url,
+                        fields=post_params,
+                        encode_multipart=False,
+                        preload_content=_preload_content,
+                        timeout=timeout,
+                        headers=headers)
+                elif headers['Content-Type'] == 'multipart/form-data':
+                    # must del headers['Content-Type'], or the correct
+                    # Content-Type which generated by urllib3 will be
+                    # overwritten.
+                    del headers['Content-Type']
+                    r = self.pool_manager.request(
+                        method, url,
+                        fields=post_params,
+                        encode_multipart=True,
+                        preload_content=_preload_content,
+                        timeout=timeout,
+                        headers=headers)
+                # Pass a `string` parameter directly in the body to support
+                # other content types than Json when `body` argument is
+                # provided in serialized form
+                elif isinstance(body, str) or isinstance(body, bytes):
+                    request_body = body
+                    r = self.pool_manager.request(
+                        method, url,
+                        body=request_body,
+                        preload_content=_preload_content,
+                        timeout=timeout,
+                        headers=headers)
+                else:
+                    # Cannot generate the request from given parameters
+                    msg = """Cannot prepare a request message for provided
+                             arguments. Please check that your arguments match
+                             declared content type."""
+                    raise ApiException(status=0, reason=msg)
+            # For `GET`, `HEAD`
+            else:
+                r = self.pool_manager.request(method, url,
+                                              fields=query_params,
+                                              preload_content=_preload_content,
+                                              timeout=timeout,
+                                              headers=headers)
+        except urllib3.exceptions.SSLError as e:
+            msg = "{0}\n{1}".format(type(e).__name__, str(e))
+            raise ApiException(status=0, reason=msg)
+    
+        if _preload_content:
+            r = RESTResponse(r)
+    
+            # In the python 3, the response.data is bytes.
+            # we need to decode it to string.
+            if six.PY3:
+                r.data = r.data.decode('utf8')
+    
+            # log response body
+            logger.debug("response body: %s", r.data)
+    
+        if not 200 <= r.status <= 299:
+>           raise ApiException(http_resp=r)
+E           kubernetes.client.exceptions.ApiException: (404)
+E           Reason: Not Found
+E           HTTP response headers: HTTPHeaderDict({'Audit-Id': '0bdc5d5d-9178-49fb-bc0f-dbf2c358964a', 'Cache-Control': 'no-cache, private', 'Content-Length': '306', 'Content-Type': 'application/json', 'Date': 'Fri, 30 Jan 2026 14:12:11 GMT', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Kubernetes-Pf-Flowschema-Uid': 'f189ee22-aabe-407b-ba5e-9a603c368650', 'X-Kubernetes-Pf-Prioritylevel-Uid': '4f751c94-83f7-493a-a75f-8ccff50aa8b4'})
+E           HTTP response body: {
+E            "kind": "Status",
+E            "apiVersion": "v1",
+E            "metadata": {},
+E            "status": "Failure",
+E            "message": "virtualmachineinstance.kubevirt.io \"non-existent-vm\" not found",
+E            "reason": "NotFound",
+E            "details": {
+E             "name": "non-existent-vm",
+E             "group": "kubevirt.io",
+E             "kind": "virtualmachineinstance"
+E            },
+E            "code": 404
+E           }
+
+.venv/lib/python3.14/site-packages/kubernetes/client/rest.py:238: ApiException
+__________________________________ 5 of 7 completed, 3 Pass, 1 Fail, 0 Skip, 0 XPass, 0 XFail, 1 Error, 0 ReRun ___________________________________
+
+tests/virt/node/general/test_vmi_hard_reset.py .
+__________________________________ 6 of 7 completed, 4 Pass, 1 Fail, 0 Skip, 0 XPass, 0 XFail, 1 Error, 0 ReRun ___________________________________
+
+tests/deprecated_api/test_deprecation_audit_logs.py .
+__________________________________ 7 of 7 completed, 5 Pass, 1 Fail, 0 Skip, 0 XPass, 0 XFail, 1 Error, 0 ReRun ___________________________________
+                                                                                                                                            [100%]2026-01-30T15:15:01.873198 ocp_resources ConfigMap INFO Delete ConfigMap cnv-tests-run-in-progress
+2026-01-30T15:15:01.878289 ocp_resources ConfigMap INFO Deleting {'kind': 'ConfigMap', 'apiVersion': 'v1', 'metadata': {'name': 'cnv-tests-run-in-progress', 'namespace': 'cnv-tests-run-in-progress-ns', 'uid': 'eb3a16f2-bacf-4be1-9e0f-be50a2f12c06', 'resourceVersion': '136098', 'creationTimestamp': '2026-01-30T14:02:03Z', 'managedFields': [{'manager': 'OpenAPI-Generator', 'operation': 'Update', 'apiVersion': 'v1', 'time': '2026-01-30T14:02:03Z', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:data': {'.': {}, 'f:host': {}, 'f:pytest_cmd': {}, 'f:run-in-container': {}, 'f:running_from_dir': {}, 'f:session-id': {}, 'f:user': {}}}}]}, 'data': '*******'}
+2026-01-30T15:15:01.896315 ocp_resources ConfigMap INFO Wait until ConfigMap cnv-tests-run-in-progress is deleted
+2026-01-30T15:15:01.901043 ocp_resources Namespace INFO Delete Namespace cnv-tests-run-in-progress-ns
+2026-01-30T15:15:01.903887 ocp_resources Namespace INFO Deleting {'kind': 'Namespace', 'apiVersion': 'v1', 'metadata': {'name': 'cnv-tests-run-in-progress-ns', 'uid': '2df173d9-8e68-4c42-a943-fa32bb27aa29', 'resourceVersion': '136109', 'creationTimestamp': '2026-01-30T14:02:03Z', 'labels': {'kubernetes.io/metadata.name': 'cnv-tests-run-in-progress-ns', 'pod-security.kubernetes.io/enforce': 'privileged', 'security.openshift.io/scc.podSecurityLabelSync': 'false'}, 'annotations': {'openshift.io/sa.scc.mcs': 's0:c30,c10', 'openshift.io/sa.scc.supplemental-groups': '1000890000/10000', 'openshift.io/sa.scc.uid-range': '1000890000/10000'}, 'managedFields': [{'manager': 'OpenAPI-Generator', 'operation': 'Update', 'apiVersion': 'v1', 'time': '2026-01-30T14:02:03Z', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:labels': {'.': {}, 'f:kubernetes.io/metadata.name': {}, 'f:pod-security.kubernetes.io/enforce': {}, 'f:security.openshift.io/scc.podSecurityLabelSync': {}}}}}, {'manager': 'cluster-policy-controller', 'operation': 'Update', 'apiVersion': 'v1', 'time': '2026-01-30T14:02:03Z', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:annotations': {'.': {}, 'f:openshift.io/sa.scc.mcs': {}, 'f:openshift.io/sa.scc.supplemental-groups': {}, 'f:openshift.io/sa.scc.uid-range': {}}}}}]}, 'spec': {'finalizers': ['kubernetes']}, 'status': {'phase': 'Active'}}
+2026-01-30T15:15:01.915298 ocp_resources Namespace INFO Wait until Namespace cnv-tests-run-in-progress-ns is deleted
+========================================== 1 failed, 5 passed, 22 warnings, 1 error in 784.74s (0:13:04) ==========================================
+
+===================================================================== ERRORS ======================================================================
+_____________________________________ ERROR at setup of TestVMIHardResetNegative.test_reset_stopped_vmi_fails _____________________________________
+
+func = <bound method ApiClient.request of <kubernetes.client.api_client.ApiClient object at 0x7f4f91ffaf50>>
+exceptions_dict = {<class 'urllib3.exceptions.MaxRetryError'>: [], <class 'ConnectionAbortedError'>: [], <class 'ConnectionResetError'>:...eader changed', 'etcdserver: request timed out', 'Internal error occurred: failed calling webhook', 'rpc error:'], ...}
+timeout = 30, sleep_time = 5
+kwargs = {'headers': {'Content-Type': 'application/json', 'authorization': 'Bearer sha256~QKRGB4TlZP9F4dfvlUrm4KYPf5DG_zcwQWvU9...t.io/v1/namespaces/node-general-test-vmi-hard-reset/virtualmachines/stopped-vm-for-reset-test-1769782330-6000266/stop'}
+sampler = <timeout_sampler.TimeoutSampler object at 0x7f4f906e71b0>
+
+    @staticmethod
+    def retry_cluster_exceptions(
+        func: Callable,
+        exceptions_dict: dict[type[Exception], list[str]] = DEFAULT_CLUSTER_RETRY_EXCEPTIONS,
+        timeout: int = TIMEOUT_10SEC,
+        sleep_time: int = 1,
+        **kwargs: Any,
+    ) -> Any:
+        try:
+            sampler = TimeoutSampler(
+                wait_timeout=timeout,
+                sleep=sleep_time,
+                func=func,
+                print_log=False,
+                exceptions_dict=exceptions_dict,
+                **kwargs,
+            )
+>           for sample in sampler:
+                          ^^^^^^^
+
+.venv/lib/python3.14/site-packages/ocp_resources/resource.py:1141: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <timeout_sampler.TimeoutSampler object at 0x7f4f906e71b0>
+
+    def __iter__(self) -> Any:
+        """
+        Call `func` and yield the result, or raise an exception on timeout.
+    
+        Yields:
+            any: Return value from `func`
+    
+        Raises:
+            TimeoutExpiredError: if `func` takes longer than `wait_timeout` seconds to return a value
+        """
+        timeout_watch = TimeoutWatch(timeout=self.wait_timeout)
+        if self.print_log:
+            log = (
+                f"Waiting for {self.wait_timeout} seconds"
+                f" [{datetime.timedelta(seconds=self.wait_timeout)}], retry every"
+                f" {self.sleep} seconds."
+            )
+    
+            if self.print_func_log:
+                log += f" ({self._func_log})"
+    
+            LOGGER.info(log)
+    
+        last_exp = None
+        elapsed_time = None
+        while timeout_watch.remaining_time() > 0:
+            try:
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+                yield self.func(*self.func_args, **self.func_kwargs)
+                time.sleep(self.sleep)
+                elapsed_time = None
+    
+            except Exception as exp:
+                last_exp = exp
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+    
+                if not self._should_ignore_exception(exp=last_exp):
+>                   raise TimeoutExpiredError(
+                        self._get_exception_log(exp=last_exp), last_exp=last_exp, elapsed_time=elapsed_time
+                    )
+E                   timeout_sampler.TimeoutExpiredError: Timed Out: 30
+E                   Function: kubernetes.client.api_client.request  Kwargs: {'url': 'https://api.crc.testing:6443/apis/subresources.kubevirt.io/v1/namespaces/node-general-test-vmi-hard-reset/virtualmachines/stopped-vm-for-reset-test-1769782330-6000266/stop', 'method': 'PUT', 'headers': {'authorization': 'Bearer sha256~QKRGB4TlZP9F4dfvlUrm4KYPf5DG_zcwQWvU9VPr-k4', 'Content-Type': 'application/json'}}
+E                   Last exception: ApiException: (409)
+E                   Reason: Conflict
+E                   HTTP response headers: HTTPHeaderDict({'Audit-Id': '2a5fe17d-bf1e-472c-b0de-6fecb74ba720', 'Cache-Control': 'no-cache, private', 'Content-Length': '390', 'Content-Type': 'application/json', 'Date': 'Fri, 30 Jan 2026 14:12:10 GMT', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Kubernetes-Pf-Flowschema-Uid': 'f189ee22-aabe-407b-ba5e-9a603c368650', 'X-Kubernetes-Pf-Prioritylevel-Uid': '4f751c94-83f7-493a-a75f-8ccff50aa8b4'})
+E                   HTTP response body: {
+E                    "kind": "Status",
+E                    "apiVersion": "v1",
+E                    "metadata": {},
+E                    "status": "Failure",
+E                    "message": "Operation cannot be fulfilled on virtualmachine.kubevirt.io \"stopped-vm-for-reset-test-1769782330-6000266\": VM is not running",
+E                    "reason": "Conflict",
+E                    "details": {
+E                     "name": "stopped-vm-for-reset-test-1769782330-6000266",
+E                     "group": "kubevirt.io",
+E                     "kind": "virtualmachine"
+E                    },
+E                    "code": 409
+E                   }
+E                   .
+E                   Elapsed time: 0.04572796821594238 [0:00:00.045728]
+
+.venv/lib/python3.14/site-packages/timeout_sampler/__init__.py:171: TimeoutExpiredError
+
+The above exception was the direct cause of the following exception:
+
+namespace = <ocp_resources.namespace.Namespace object at 0x7f4f90e263f0>
+unprivileged_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f4f91ffa950>
+
+    @pytest.fixture(scope="class")
+    def stopped_vm_for_reset_test(namespace, unprivileged_client):
+        """
+        Create a stopped VM for negative reset testing.
+    
+        Args:
+            namespace: Test namespace fixture
+            unprivileged_client: Unprivileged client fixture
+    
+        Yields:
+            VirtualMachineForTests: Stopped VM instance
+        """
+        vm_name = "stopped-vm-for-reset-test"
+        with VirtualMachineForTests(
+            client=unprivileged_client,
+            name=vm_name,
+            body=fedora_vm_body(name=vm_name),
+            namespace=namespace.name,
+        ) as vm:
+>           vm.stop(wait=True)
+
+tests/virt/node/general/test_vmi_hard_reset.py:124: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+.venv/lib/python3.14/site-packages/ocp_resources/virtual_machine.py:105: in stop
+    self.api_request(method="PUT", action="stop")
+.venv/lib/python3.14/site-packages/ocp_resources/virtual_machine.py:79: in api_request
+    return super().api_request(
+.venv/lib/python3.14/site-packages/ocp_resources/resource.py:1321: in api_request
+    response = self.retry_cluster_exceptions(
+.venv/lib/python3.14/site-packages/ocp_resources/resource.py:1146: in retry_cluster_exceptions
+    raise exp.last_exp from exp
+.venv/lib/python3.14/site-packages/timeout_sampler/__init__.py:162: in __iter__
+    yield self.func(*self.func_args, **self.func_kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/kubernetes/client/api_client.py:399: in request
+    return self.rest_client.PUT(url,
+.venv/lib/python3.14/site-packages/kubernetes/client/rest.py:289: in PUT
+    return self.request("PUT", url,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <kubernetes.client.rest.RESTClientObject object at 0x7f4f91ffac50>, method = 'PUT'
+url = 'https://api.crc.testing:6443/apis/subresources.kubevirt.io/v1/namespaces/node-general-test-vmi-hard-reset/virtualmachines/stopped-vm-for-reset-test-1769782330-6000266/stop'
+query_params = None, headers = {'Content-Type': 'application/json', 'authorization': 'Bearer sha256~QKRGB4TlZP9F4dfvlUrm4KYPf5DG_zcwQWvU9VPr-k4'}
+body = None, post_params = {}, _preload_content = True, _request_timeout = None
+
+    def request(self, method, url, query_params=None, headers=None,
+                body=None, post_params=None, _preload_content=True,
+                _request_timeout=None):
+        """Perform requests.
+    
+        :param method: http request method
+        :param url: http request url
+        :param query_params: query parameters in the url
+        :param headers: http request headers
+        :param body: request json body, for `application/json`
+        :param post_params: request post parameters,
+                            `application/x-www-form-urlencoded`
+                            and `multipart/form-data`
+        :param _preload_content: if False, the urllib3.HTTPResponse object will
+                                 be returned without reading/decoding response
+                                 data. Default is True.
+        :param _request_timeout: timeout setting for this request. If one
+                                 number provided, it will be total request
+                                 timeout. It can also be a pair (tuple) of
+                                 (connection, read) timeouts.
+        """
+        method = method.upper()
+        assert method in ['GET', 'HEAD', 'DELETE', 'POST', 'PUT',
+                          'PATCH', 'OPTIONS']
+    
+        if post_params and body:
+            raise ApiValueError(
+                "body parameter cannot be used with post_params parameter."
+            )
+    
+        post_params = post_params or {}
+        headers = headers or {}
+    
+        timeout = None
+        if _request_timeout:
+            if isinstance(_request_timeout, (int, ) if six.PY3 else (int, long)):  # noqa: E501,F821
+                timeout = urllib3.Timeout(total=_request_timeout)
+            elif (isinstance(_request_timeout, tuple) and
+                  len(_request_timeout) == 2):
+                timeout = urllib3.Timeout(
+                    connect=_request_timeout[0], read=_request_timeout[1])
+    
+        if 'Content-Type' not in headers:
+            headers['Content-Type'] = 'application/json'
+    
+        try:
+            # For `POST`, `PUT`, `PATCH`, `OPTIONS`, `DELETE`
+            if method in ['POST', 'PUT', 'PATCH', 'OPTIONS', 'DELETE']:
+                if query_params:
+                    url += '?' + urlencode(query_params)
+                if (re.search('json', headers['Content-Type'], re.IGNORECASE) or
+                        headers['Content-Type'] == 'application/apply-patch+yaml'):
+                    if headers['Content-Type'] == 'application/json-patch+json':
+                        if not isinstance(body, list):
+                            headers['Content-Type'] = \
+                                'application/strategic-merge-patch+json'
+                    request_body = None
+                    if body is not None:
+                        request_body = json.dumps(body)
+                    r = self.pool_manager.request(
+                        method, url,
+                        body=request_body,
+                        preload_content=_preload_content,
+                        timeout=timeout,
+                        headers=headers)
+                elif headers['Content-Type'] == 'application/x-www-form-urlencoded':  # noqa: E501
+                    r = self.pool_manager.request(
+                        method, url,
+                        fields=post_params,
+                        encode_multipart=False,
+                        preload_content=_preload_content,
+                        timeout=timeout,
+                        headers=headers)
+                elif headers['Content-Type'] == 'multipart/form-data':
+                    # must del headers['Content-Type'], or the correct
+                    # Content-Type which generated by urllib3 will be
+                    # overwritten.
+                    del headers['Content-Type']
+                    r = self.pool_manager.request(
+                        method, url,
+                        fields=post_params,
+                        encode_multipart=True,
+                        preload_content=_preload_content,
+                        timeout=timeout,
+                        headers=headers)
+                # Pass a `string` parameter directly in the body to support
+                # other content types than Json when `body` argument is
+                # provided in serialized form
+                elif isinstance(body, str) or isinstance(body, bytes):
+                    request_body = body
+                    r = self.pool_manager.request(
+                        method, url,
+                        body=request_body,
+                        preload_content=_preload_content,
+                        timeout=timeout,
+                        headers=headers)
+                else:
+                    # Cannot generate the request from given parameters
+                    msg = """Cannot prepare a request message for provided
+                             arguments. Please check that your arguments match
+                             declared content type."""
+                    raise ApiException(status=0, reason=msg)
+            # For `GET`, `HEAD`
+            else:
+                r = self.pool_manager.request(method, url,
+                                              fields=query_params,
+                                              preload_content=_preload_content,
+                                              timeout=timeout,
+                                              headers=headers)
+        except urllib3.exceptions.SSLError as e:
+            msg = "{0}\n{1}".format(type(e).__name__, str(e))
+            raise ApiException(status=0, reason=msg)
+    
+        if _preload_content:
+            r = RESTResponse(r)
+    
+            # In the python 3, the response.data is bytes.
+            # we need to decode it to string.
+            if six.PY3:
+                r.data = r.data.decode('utf8')
+    
+            # log response body
+            logger.debug("response body: %s", r.data)
+    
+        if not 200 <= r.status <= 299:
+>           raise ApiException(http_resp=r)
+E           kubernetes.client.exceptions.ApiException: (409)
+E           Reason: Conflict
+E           HTTP response headers: HTTPHeaderDict({'Audit-Id': '2a5fe17d-bf1e-472c-b0de-6fecb74ba720', 'Cache-Control': 'no-cache, private', 'Content-Length': '390', 'Content-Type': 'application/json', 'Date': 'Fri, 30 Jan 2026 14:12:10 GMT', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Kubernetes-Pf-Flowschema-Uid': 'f189ee22-aabe-407b-ba5e-9a603c368650', 'X-Kubernetes-Pf-Prioritylevel-Uid': '4f751c94-83f7-493a-a75f-8ccff50aa8b4'})
+E           HTTP response body: {
+E            "kind": "Status",
+E            "apiVersion": "v1",
+E            "metadata": {},
+E            "status": "Failure",
+E            "message": "Operation cannot be fulfilled on virtualmachine.kubevirt.io \"stopped-vm-for-reset-test-1769782330-6000266\": VM is not running",
+E            "reason": "Conflict",
+E            "details": {
+E             "name": "stopped-vm-for-reset-test-1769782330-6000266",
+E             "group": "kubevirt.io",
+E             "kind": "virtualmachine"
+E            },
+E            "code": 409
+E           }
+
+.venv/lib/python3.14/site-packages/kubernetes/client/rest.py:238: ApiException
+-------------------------------------------------------------- Captured stderr setup --------------------------------------------------------------
+2026-01-30T15:12:08.410561 ocp_resources.resource INFO Trying to get client via new_client_from_config --- [DuplicateFilter: Last log `kind: VirtualMachineInstance api version: kubevirt.io/v1` repeated 13 times]
+
+--------------------------------------------- test_reset_stopped_vmi_fails ---------------------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-01-30T15:12:08.410002 conftest INFO Executing function fixture: term_handler_scope_function
+2026-01-30T15:12:08.410104 conftest INFO Executing class fixture: term_handler_scope_class
+2026-01-30T15:12:08.410242 conftest INFO Executing function fixture: autouse_fixtures
+2026-01-30T15:12:08.410399 conftest INFO Executing class fixture: stopped_vm_for_reset_test
+2026-01-30T15:12:08.443847 timeout_sampler INFO Waiting for 10 seconds [0:00:10], retry every 1 seconds. (Function: utilities.virt._get_image_json  Kwargs: {'cmd': 'oc image -o json info quay.io/openshift-cnv/qe-cnv-tests-fedora:41 --filter-by-os amd64 --registry-config=/tmp/tmp2x1llbgq-cnv-tests-pull-secret/pull-secrets.json'})
+2026-01-30T15:12:08.444000 pyhelper_utils.shell INFO Running oc image -o json info quay.io/openshift-cnv/qe-cnv-tests-fedora:41 --filter-by-os amd64 --registry-config=/tmp/tmp2x1llbgq-cnv-tests-pull-secret/pull-secrets.json command
+2026-01-30T15:12:10.597982 timeout_sampler INFO Elapsed time: 0.00011610984802246094 [0:00:00.000116]
+2026-01-30T15:12:10.600129 ocp_resources.resource INFO kind: VirtualMachine api version: kubevirt.io/v1
+2026-01-30T15:12:10.600227 utilities.virt WARNING `os_login_param` not defined for fedora
+2026-01-30T15:12:10.603404 utilities.virt INFO Setting random username and password
+2026-01-30T15:12:10.633322 ocp_resources VirtualMachine INFO Create VirtualMachine stopped-vm-for-reset-test-1769782330-6000266
+2026-01-30T15:12:10.633420 ocp_resources VirtualMachine INFO Posting {'apiVersion': 'kubevirt.io/v1', 'kind': 'VirtualMachine', 'metadata': {'creationTimestamp': None, 'labels': {'kubevirt.io/vm': 'stopped-vm-for-reset-test'}, 'name': 'stopped-vm-for-reset-test-1769782330-6000266'}, 'spec': {'template': {'metadata': {'creationTimestamp': None, 'labels': {'kubevirt.io/vm': 'stopped-vm-for-reset-test-1769782330-6000266', 'kubevirt.io/domain': 'stopped-vm-for-reset-test-1769782330-6000266', 'debugLogs': 'true'}}, 'spec': {'domain': {'cpu': {'cores': 1}, 'memory': {'guest': '1Gi'}, 'devices': {'disks': [{'disk': {'bus': 'virtio'}, 'name': 'containerdisk'}, {'disk': {'bus': 'virtio'}, 'name': 'cloudinitdisk'}], 'interfaces': [{'masquerade': {}, 'name': 'default'}], 'rng': {}}, 'machine': {'type': ''}}, 'networks': [{'name': 'default', 'pod': {}}], 'terminationGracePeriodSeconds': 30, 'volumes': [{'containerDisk': {'image': 'quay.io/openshift-cnv/qe-cnv-tests-fedora:41@sha256:a91659fba4e0258dda1be076dd6e56e34d9bf3dce082e57f939994ce0f124348'}, 'name': 'containerdisk'}, {'name': 'cloudinitdisk', 'cloudInitNoCloud': {'userData': '*******'}}]}}, 'runStrategy': 'Halted'}}
+2026-01-30T15:12:10.723683 ocp_resources VirtualMachine INFO Delete VirtualMachine stopped-vm-for-reset-test-1769782330-6000266
+2026-01-30T15:12:10.747072 ocp_resources VirtualMachine INFO Deleting {'apiVersion': 'kubevirt.io/v1', 'kind': 'VirtualMachine', 'metadata': {'annotations': {'kubemacpool.io/transaction-timestamp': '2026-01-30T14:12:10.718780373Z', 'kubevirt.io/latest-observed-api-version': 'v1', 'kubevirt.io/storage-observed-api-version': 'v1'}, 'creationTimestamp': '2026-01-30T14:12:10Z', 'generation': 1, 'labels': {'kubevirt.io/vm': 'stopped-vm-for-reset-test'}, 'managedFields': [{'apiVersion': 'kubevirt.io/v1', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:labels': {'.': {}, 'f:kubevirt.io/vm': {}}}, 'f:spec': {'.': {}, 'f:runStrategy': {}, 'f:template': {'.': {}, 'f:metadata': {'.': {}, 'f:creationTimestamp': {}, 'f:labels': {'.': {}, 'f:debugLogs': {}, 'f:kubevirt.io/domain': {}, 'f:kubevirt.io/vm': {}}}, 'f:spec': {'.': {}, 'f:domain': {'.': {}, 'f:cpu': {'.': {}, 'f:cores': {}}, 'f:devices': {'.': {}, 'f:disks': {}, 'f:interfaces': {}, 'f:rng': {}}, 'f:machine': {'.': {}, 'f:type': {}}, 'f:memory': {'.': {}, 'f:guest': {}}}, 'f:networks': {}, 'f:terminationGracePeriodSeconds': {}, 'f:volumes': {}}}}}, 'manager': 'OpenAPI-Generator', 'operation': 'Update', 'time': '2026-01-30T14:12:10Z'}, {'apiVersion': 'kubevirt.io/v1', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:annotations': {'f:kubevirt.io/latest-observed-api-version': {}, 'f:kubevirt.io/storage-observed-api-version': {}}}}, 'manager': 'virt-controller', 'operation': 'Update', 'time': '2026-01-30T14:12:10Z'}, {'apiVersion': 'kubevirt.io/v1', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:status': {'.': {}, 'f:printableStatus': {}, 'f:volumeSnapshotStatuses': {}}}, 'manager': 'virt-controller', 'operation': 'Update', 'subresource': 'status', 'time': '2026-01-30T14:12:10Z'}], 'name': 'stopped-vm-for-reset-test-1769782330-6000266', 'namespace': 'node-general-test-vmi-hard-reset', 'resourceVersion': '140689', 'uid': '49a6ad11-2315-4030-af53-180898675d8f'}, 'spec': {'runStrategy': 'Halted', 'template': {'metadata': {'creationTimestamp': None, 'labels': {'debugLogs': 'true', 'kubevirt.io/domain': 'stopped-vm-for-reset-test-1769782330-6000266', 'kubevirt.io/vm': 'stopped-vm-for-reset-test-1769782330-6000266'}}, 'spec': {'architecture': 'amd64', 'domain': {'cpu': {'cores': 1}, 'devices': {'disks': [{'disk': {'bus': 'virtio'}, 'name': 'containerdisk'}, {'disk': {'bus': 'virtio'}, 'name': 'cloudinitdisk'}], 'interfaces': [{'macAddress': '02:ff:97:43:ee:b3', 'masquerade': {}, 'name': 'default'}], 'rng': {}}, 'firmware': {'serial': '0a137727-80cf-471b-964c-e8c6d38188ef', 'uuid': '55880cb4-314b-4448-b21e-2e5923e5854e'}, 'machine': {'type': 'pc-q35-rhel9.6.0'}, 'memory': {'guest': '1Gi'}, 'resources': {}}, 'networks': [{'name': 'default', 'pod': {}}], 'terminationGracePeriodSeconds': 30, 'volumes': [{'containerDisk': {'image': 'quay.io/openshift-cnv/qe-cnv-tests-fedora:41@sha256:a91659fba4e0258dda1be076dd6e56e34d9bf3dce082e57f939994ce0f124348'}, 'name': 'containerdisk'}, {'cloudInitNoCloud': {'userData': '*******'}, 'name': 'cloudinitdisk'}]}}}, 'status': {'printableStatus': 'Stopped', 'volumeSnapshotStatuses': [{'enabled': False, 'name': 'containerdisk', 'reason': 'Snapshot is not supported for this volumeSource type [containerdisk]'}, {'enabled': False, 'name': 'cloudinitdisk', 'reason': 'Snapshot is not supported for this volumeSource type [cloudinitdisk]'}]}}
+2026-01-30T15:12:10.786980 ocp_resources VirtualMachine INFO Wait until VirtualMachine stopped-vm-for-reset-test-1769782330-6000266 is deleted
+2026-01-30T15:12:10.787110 timeout_sampler INFO Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_deleted.lambda: self.exists)
+2026-01-30T15:12:11.802480 timeout_sampler INFO Elapsed time: 1.0119411945343018 [0:00:01.011941]
+==================================================================== FAILURES =====================================================================
+___________________________________________ TestVMIHardResetNegative.test_reset_non_existent_vmi_fails ____________________________________________
+
+func = <bound method ApiClient.request of <kubernetes.client.api_client.ApiClient object at 0x7f4f91ffaf50>>
+exceptions_dict = {<class 'urllib3.exceptions.MaxRetryError'>: [], <class 'ConnectionAbortedError'>: [], <class 'ConnectionResetError'>:...eader changed', 'etcdserver: request timed out', 'Internal error occurred: failed calling webhook', 'rpc error:'], ...}
+timeout = 30, sleep_time = 5
+kwargs = {'headers': {'Content-Type': 'application/json', 'authorization': 'Bearer sha256~QKRGB4TlZP9F4dfvlUrm4KYPf5DG_zcwQWvU9...subresources.kubevirt.io/v1/namespaces/node-general-test-vmi-hard-reset/virtualmachineinstances/non-existent-vm/reset'}
+sampler = <timeout_sampler.TimeoutSampler object at 0x7f4f904beb70>
+
+    @staticmethod
+    def retry_cluster_exceptions(
+        func: Callable,
+        exceptions_dict: dict[type[Exception], list[str]] = DEFAULT_CLUSTER_RETRY_EXCEPTIONS,
+        timeout: int = TIMEOUT_10SEC,
+        sleep_time: int = 1,
+        **kwargs: Any,
+    ) -> Any:
+        try:
+            sampler = TimeoutSampler(
+                wait_timeout=timeout,
+                sleep=sleep_time,
+                func=func,
+                print_log=False,
+                exceptions_dict=exceptions_dict,
+                **kwargs,
+            )
+>           for sample in sampler:
+                          ^^^^^^^
+
+.venv/lib/python3.14/site-packages/ocp_resources/resource.py:1141: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <timeout_sampler.TimeoutSampler object at 0x7f4f904beb70>
+
+    def __iter__(self) -> Any:
+        """
+        Call `func` and yield the result, or raise an exception on timeout.
+    
+        Yields:
+            any: Return value from `func`
+    
+        Raises:
+            TimeoutExpiredError: if `func` takes longer than `wait_timeout` seconds to return a value
+        """
+        timeout_watch = TimeoutWatch(timeout=self.wait_timeout)
+        if self.print_log:
+            log = (
+                f"Waiting for {self.wait_timeout} seconds"
+                f" [{datetime.timedelta(seconds=self.wait_timeout)}], retry every"
+                f" {self.sleep} seconds."
+            )
+    
+            if self.print_func_log:
+                log += f" ({self._func_log})"
+    
+            LOGGER.info(log)
+    
+        last_exp = None
+        elapsed_time = None
+        while timeout_watch.remaining_time() > 0:
+            try:
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+                yield self.func(*self.func_args, **self.func_kwargs)
+                time.sleep(self.sleep)
+                elapsed_time = None
+    
+            except Exception as exp:
+                last_exp = exp
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+    
+                if not self._should_ignore_exception(exp=last_exp):
+>                   raise TimeoutExpiredError(
+                        self._get_exception_log(exp=last_exp), last_exp=last_exp, elapsed_time=elapsed_time
+                    )
+E                   timeout_sampler.TimeoutExpiredError: Timed Out: 30
+E                   Function: kubernetes.client.api_client.request  Kwargs: {'url': 'https://api.crc.testing:6443/apis/subresources.kubevirt.io/v1/namespaces/node-general-test-vmi-hard-reset/virtualmachineinstances/non-existent-vm/reset', 'method': 'PUT', 'headers': {'authorization': 'Bearer sha256~QKRGB4TlZP9F4dfvlUrm4KYPf5DG_zcwQWvU9VPr-k4', 'Content-Type': 'application/json'}}
+E                   Last exception: ApiException: (404)
+E                   Reason: Not Found
+E                   HTTP response headers: HTTPHeaderDict({'Audit-Id': '0bdc5d5d-9178-49fb-bc0f-dbf2c358964a', 'Cache-Control': 'no-cache, private', 'Content-Length': '306', 'Content-Type': 'application/json', 'Date': 'Fri, 30 Jan 2026 14:12:11 GMT', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Kubernetes-Pf-Flowschema-Uid': 'f189ee22-aabe-407b-ba5e-9a603c368650', 'X-Kubernetes-Pf-Prioritylevel-Uid': '4f751c94-83f7-493a-a75f-8ccff50aa8b4'})
+E                   HTTP response body: {
+E                    "kind": "Status",
+E                    "apiVersion": "v1",
+E                    "metadata": {},
+E                    "status": "Failure",
+E                    "message": "virtualmachineinstance.kubevirt.io \"non-existent-vm\" not found",
+E                    "reason": "NotFound",
+E                    "details": {
+E                     "name": "non-existent-vm",
+E                     "group": "kubevirt.io",
+E                     "kind": "virtualmachineinstance"
+E                    },
+E                    "code": 404
+E                   }
+E                   .
+E                   Elapsed time: 0.005287885665893555 [0:00:00.005288]
+
+.venv/lib/python3.14/site-packages/timeout_sampler/__init__.py:171: TimeoutExpiredError
+
+The above exception was the direct cause of the following exception:
+
+self = <tests.virt.node.general.test_vmi_hard_reset.TestVMIHardResetNegative object at 0x7f4f91fa6850>
+namespace = <ocp_resources.namespace.Namespace object at 0x7f4f90e263f0>
+unprivileged_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f4f91ffa950>
+
+    @pytest.mark.polarion("CNV-12377")
+    def test_reset_non_existent_vmi_fails(self, namespace, unprivileged_client):
+        """
+        TS-06: Verify reset fails on non-existent VMI.
+    
+        This test verifies:
+        - Reset operation fails when VMI doesn't exist
+        - Appropriate error is returned
+        """
+        non_existent_vm = VirtualMachine(
+            name="non-existent-vm",
+            namespace=namespace.name,
+            client=unprivileged_client,
+        )
+    
+        with pytest.raises((NotFoundError, AttributeError)) as exc_info:
+>           non_existent_vm.vmi.reset()
+
+tests/virt/node/general/test_vmi_hard_reset.py:281: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+.venv/lib/python3.14/site-packages/ocp_resources/virtual_machine_instance.py:75: in reset
+    return self.api_request(method="PUT", action="reset")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/ocp_resources/virtual_machine_instance.py:56: in api_request
+    return super().api_request(
+.venv/lib/python3.14/site-packages/ocp_resources/resource.py:1321: in api_request
+    response = self.retry_cluster_exceptions(
+.venv/lib/python3.14/site-packages/ocp_resources/resource.py:1146: in retry_cluster_exceptions
+    raise exp.last_exp from exp
+.venv/lib/python3.14/site-packages/timeout_sampler/__init__.py:162: in __iter__
+    yield self.func(*self.func_args, **self.func_kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/kubernetes/client/api_client.py:399: in request
+    return self.rest_client.PUT(url,
+.venv/lib/python3.14/site-packages/kubernetes/client/rest.py:289: in PUT
+    return self.request("PUT", url,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <kubernetes.client.rest.RESTClientObject object at 0x7f4f91ffac50>, method = 'PUT'
+url = 'https://api.crc.testing:6443/apis/subresources.kubevirt.io/v1/namespaces/node-general-test-vmi-hard-reset/virtualmachineinstances/non-existent-vm/reset'
+query_params = None, headers = {'Content-Type': 'application/json', 'authorization': 'Bearer sha256~QKRGB4TlZP9F4dfvlUrm4KYPf5DG_zcwQWvU9VPr-k4'}
+body = None, post_params = {}, _preload_content = True, _request_timeout = None
+
+    def request(self, method, url, query_params=None, headers=None,
+                body=None, post_params=None, _preload_content=True,
+                _request_timeout=None):
+        """Perform requests.
+    
+        :param method: http request method
+        :param url: http request url
+        :param query_params: query parameters in the url
+        :param headers: http request headers
+        :param body: request json body, for `application/json`
+        :param post_params: request post parameters,
+                            `application/x-www-form-urlencoded`
+                            and `multipart/form-data`
+        :param _preload_content: if False, the urllib3.HTTPResponse object will
+                                 be returned without reading/decoding response
+                                 data. Default is True.
+        :param _request_timeout: timeout setting for this request. If one
+                                 number provided, it will be total request
+                                 timeout. It can also be a pair (tuple) of
+                                 (connection, read) timeouts.
+        """
+        method = method.upper()
+        assert method in ['GET', 'HEAD', 'DELETE', 'POST', 'PUT',
+                          'PATCH', 'OPTIONS']
+    
+        if post_params and body:
+            raise ApiValueError(
+                "body parameter cannot be used with post_params parameter."
+            )
+    
+        post_params = post_params or {}
+        headers = headers or {}
+    
+        timeout = None
+        if _request_timeout:
+            if isinstance(_request_timeout, (int, ) if six.PY3 else (int, long)):  # noqa: E501,F821
+                timeout = urllib3.Timeout(total=_request_timeout)
+            elif (isinstance(_request_timeout, tuple) and
+                  len(_request_timeout) == 2):
+                timeout = urllib3.Timeout(
+                    connect=_request_timeout[0], read=_request_timeout[1])
+    
+        if 'Content-Type' not in headers:
+            headers['Content-Type'] = 'application/json'
+    
+        try:
+            # For `POST`, `PUT`, `PATCH`, `OPTIONS`, `DELETE`
+            if method in ['POST', 'PUT', 'PATCH', 'OPTIONS', 'DELETE']:
+                if query_params:
+                    url += '?' + urlencode(query_params)
+                if (re.search('json', headers['Content-Type'], re.IGNORECASE) or
+                        headers['Content-Type'] == 'application/apply-patch+yaml'):
+                    if headers['Content-Type'] == 'application/json-patch+json':
+                        if not isinstance(body, list):
+                            headers['Content-Type'] = \
+                                'application/strategic-merge-patch+json'
+                    request_body = None
+                    if body is not None:
+                        request_body = json.dumps(body)
+                    r = self.pool_manager.request(
+                        method, url,
+                        body=request_body,
+                        preload_content=_preload_content,
+                        timeout=timeout,
+                        headers=headers)
+                elif headers['Content-Type'] == 'application/x-www-form-urlencoded':  # noqa: E501
+                    r = self.pool_manager.request(
+                        method, url,
+                        fields=post_params,
+                        encode_multipart=False,
+                        preload_content=_preload_content,
+                        timeout=timeout,
+                        headers=headers)
+                elif headers['Content-Type'] == 'multipart/form-data':
+                    # must del headers['Content-Type'], or the correct
+                    # Content-Type which generated by urllib3 will be
+                    # overwritten.
+                    del headers['Content-Type']
+                    r = self.pool_manager.request(
+                        method, url,
+                        fields=post_params,
+                        encode_multipart=True,
+                        preload_content=_preload_content,
+                        timeout=timeout,
+                        headers=headers)
+                # Pass a `string` parameter directly in the body to support
+                # other content types than Json when `body` argument is
+                # provided in serialized form
+                elif isinstance(body, str) or isinstance(body, bytes):
+                    request_body = body
+                    r = self.pool_manager.request(
+                        method, url,
+                        body=request_body,
+                        preload_content=_preload_content,
+                        timeout=timeout,
+                        headers=headers)
+                else:
+                    # Cannot generate the request from given parameters
+                    msg = """Cannot prepare a request message for provided
+                             arguments. Please check that your arguments match
+                             declared content type."""
+                    raise ApiException(status=0, reason=msg)
+            # For `GET`, `HEAD`
+            else:
+                r = self.pool_manager.request(method, url,
+                                              fields=query_params,
+                                              preload_content=_preload_content,
+                                              timeout=timeout,
+                                              headers=headers)
+        except urllib3.exceptions.SSLError as e:
+            msg = "{0}\n{1}".format(type(e).__name__, str(e))
+            raise ApiException(status=0, reason=msg)
+    
+        if _preload_content:
+            r = RESTResponse(r)
+    
+            # In the python 3, the response.data is bytes.
+            # we need to decode it to string.
+            if six.PY3:
+                r.data = r.data.decode('utf8')
+    
+            # log response body
+            logger.debug("response body: %s", r.data)
+    
+        if not 200 <= r.status <= 299:
+>           raise ApiException(http_resp=r)
+E           kubernetes.client.exceptions.ApiException: (404)
+E           Reason: Not Found
+E           HTTP response headers: HTTPHeaderDict({'Audit-Id': '0bdc5d5d-9178-49fb-bc0f-dbf2c358964a', 'Cache-Control': 'no-cache, private', 'Content-Length': '306', 'Content-Type': 'application/json', 'Date': 'Fri, 30 Jan 2026 14:12:11 GMT', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Kubernetes-Pf-Flowschema-Uid': 'f189ee22-aabe-407b-ba5e-9a603c368650', 'X-Kubernetes-Pf-Prioritylevel-Uid': '4f751c94-83f7-493a-a75f-8ccff50aa8b4'})
+E           HTTP response body: {
+E            "kind": "Status",
+E            "apiVersion": "v1",
+E            "metadata": {},
+E            "status": "Failure",
+E            "message": "virtualmachineinstance.kubevirt.io \"non-existent-vm\" not found",
+E            "reason": "NotFound",
+E            "details": {
+E             "name": "non-existent-vm",
+E             "group": "kubevirt.io",
+E             "kind": "virtualmachineinstance"
+E            },
+E            "code": 404
+E           }
+
+.venv/lib/python3.14/site-packages/kubernetes/client/rest.py:238: ApiException
+-------------------------------------------------------------- Captured stderr setup --------------------------------------------------------------
+------------------------------------------------------- TEARDOWN -------------------------------------------------------
+-------------------------------------------------------------- Captured stderr call ---------------------------------------------------------------
+2026-01-30T15:12:11.921402 ocp_resources.resource INFO kind: VirtualMachineInstance api version: kubevirt.io/v1
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-01-30T15:12:11.920631 conftest INFO Executing function fixture: term_handler_scope_function
+2026-01-30T15:12:11.920806 conftest INFO Executing function fixture: autouse_fixtures
+--------------------------------------------------------- CALL ---------------------------------------------------------
+================================================================ warnings summary =================================================================
+tests/virt/node/general/test_vmi_hard_reset.py: 16 warnings
+tests/deprecated_api/test_deprecation_audit_logs.py: 4 warnings
+.venv/lib/python3.14/site-packages/kubernetes/client/exceptions.py:91: 2 warnings
+  /home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/exceptions.py:91: DeprecationWarning: HTTPResponse.getheaders() is deprecated and will be removed in urllib3 v2.1.0. Instead access HTTPResponse.headers directly.
+    self.headers = http_resp.getheaders()
+
+tests/virt/node/general/test_vmi_hard_reset.py::TestVMIHardResetNegative::test_reset_stopped_vmi_fails
+tests/virt/node/general/test_vmi_hard_reset.py::TestVMIHardResetNegative::test_reset_non_existent_vmi_fails
+  /home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/rest.py:44: DeprecationWarning: HTTPResponse.getheaders() is deprecated and will be removed in urllib3 v2.1.0. Instead access HTTPResponse.headers directly.
+    return self.urllib3_response.getheaders()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+============================================================= short test summary info =============================================================
+FAILED tests/virt/node/general/test_vmi_hard_reset.py::TestVMIHardResetNegative::test_reset_non_existent_vmi_fails - kubernetes.client.exceptions.ApiException: (404)
+ERROR tests/virt/node/general/test_vmi_hard_reset.py::TestVMIHardResetNegative::test_reset_stopped_vmi_fails - kubernetes.client.exceptions.ApiException: (409)
+========================================== 1 failed, 5 passed, 24 warnings, 1 error in 784.77s (0:13:04) ==========================================
+2026-01-30T15:15:01.896451 timeout_sampler INFO Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_deleted.lambda: self.exists)
+2026-01-30T15:15:01.899130 timeout_sampler INFO Elapsed time: 8.511543273925781e-05 [0:00:00.000085]
+2026-01-30T15:15:01.915403 timeout_sampler INFO Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_deleted.lambda: self.exists)
+2026-01-30T15:15:07.948021 timeout_sampler INFO Elapsed time: 6.0288331508636475 [0:00:06.028833]

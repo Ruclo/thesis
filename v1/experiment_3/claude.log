@@ -1,0 +1,144 @@
+● Perfect! I have the STP content. Now I'll follow the three-phase workflow to create an executable pytest file for the VMI Hard Reset feature.    
+                                                                                                                                                   
+  Phase 1: Context Exploration                                                                                                                     
+                                                                                                                                                   
+  Let me start by exploring the repository structure and documentation.                                                                            
+                                                                                                                                                   
+● Searched for 3 patterns, read 1 file (ctrl+o to expand)                                                                                          
+                                                                                                                                                   
+● Excellent! There's already a test file for VMI reset. Let me read the key documentation and existing test to understand the conventions.         
+                                                                                                                                                   
+● Searched for 14 patterns, read 6 files (ctrl+o to expand)                                                                                        
+                                                                                                                                                   
+● Bash(python3 -c "from ocp_resources.virtual_machine_instance import VirtualMachineInstance; import inspect; print([m for m in                    
+      dir(VirtualMachineInstance) if not m.st…)                                                                                                    
+  ⎿  No matches found                                                                                                                              
+                                                                                                                                                   
+● Searched for 3 patterns, read 1 file (ctrl+o to expand)                                                                                          
+                                                                                                                                                   
+● Perfect! I now have sufficient context. Let me create a comprehensive test file based on the STP.                                                
+                                                                                                                                                   
+  Phase 2: Code Generation                                                                                                                         
+                                                                                                                                                   
+  Based on my exploration, I'll now generate the test file implementing the test scenarios from the STP.                                           
+                                                                                                                                                   
+● Write(tests/virt/node/general/test_vmi_hard_reset.py)                                                                                            
+  ⎿  Wrote 314 lines to tests/virt/node/general/test_vmi_hard_reset.py                                                                             
+     """                                                                                                                                           
+     Test Suite for VMI Hard Reset Functionality (VIRTSTRAT-357)                                                                                   
+                                                                                                                                                   
+     This test suite covers the Force/Hard Reset feature for VirtualMachineInstance objects.                                                       
+     The hard reset functionality provides a faster, in-place alternative to VM restart that:                                                      
+     - Simulates pressing the hardware reset button on a physical machine                                                                          
+     - Does not require pod rescheduling                                                                                                           
+     - Preserves VMI UID and pod assignment                                                                                                        
+     - Provides an immediate recovery path for hung guests                                                                                         
+     """                                                                                                                                           
+     … +304 lines (ctrl+o to expand)                                                                                                               
+                                                                                                                                                   
+● Phase 3: Validation & Self-Healing                                                                                                               
+                                                                                                                                                   
+  Now I'll run pyright to validate the code and fix any errors.                                                                                    
+                                                                                                                                                   
+● Bash(pyright tests/virt/node/general/test_vmi_hard_reset.py)                                                                                     
+  ⎿  Error: Exit code 1                                                                                                                            
+     /home/mvavrine/cnv/openshift-virtualization-tests/tests/virt/node/general/test_vmi_hard_reset.py                                              
+       /home/mvavrine/cnv/openshift-virtualization-tests/tests/virt/node/general/test_vmi_hard_reset.py:15:8 - error: Import "pytest" could not be 
+     resolved (reportMissingImports)                                                                                                               
+       /home/mvavrine/cnv/openshift-virtualization-tests/tests/virt/node/general/test_vmi_hard_reset.py:16:6 - error: Import                       
+     "kubernetes.dynamic.exceptions" could not be resolved (reportMissingImports)                                                                  
+       /home/mvavrine/cnv/openshift-virtualization-tests/tests/virt/node/general/test_vmi_hard_reset.py:17:6 - error: Import                       
+     "ocp_resources.cluster_role" could not be resolved (reportMissingImports)                                                                     
+       /home/mvavrine/cnv/openshift-virtualization-tests/tests/virt/node/general/test_vmi_hard_reset.py:18:6 - error: Import                       
+     "ocp_resources.role_binding" could not be resolved (reportMissingImports)                                                                     
+       /home/mvavrine/cnv/openshift-virtualization-tests/tests/virt/node/general/test_vmi_hard_reset.py:19:6 - error: Import                       
+     "ocp_resources.virtual_machine" could not be resolved (reportMissingImports)                                                                  
+       /home/mvavrine/cnv/openshift-virtualization-tests/tests/virt/node/general/test_vmi_hard_reset.py:20:6 - error: Import "pyhelper_utils.shell"
+     could not be resolved (reportMissingImports)                                                                                                  
+     6 errors, 0 warnings, 0 informations                                                                                                          
+                                                                                                                                                   
+                                                                                                                                                   
+● Read 1 file (ctrl+o to expand)                                                                                                                   
+                                                                                                                                                   
+● Bash(source .venv/bin/activate && pyright tests/virt/node/general/test_vmi_hard_reset.py)                                                        
+  ⎿  0 errors, 0 warnings, 0 informations                                                                                                          
+                                                                                                                                                   
+● Excellent! Pyright passes with 0 errors. Let me verify the code by running a quick syntax check and comparing with the existing test.            
+                                                                                                                                                   
+● Bash(python3 -m py_compile tests/virt/node/general/test_vmi_hard_reset.py && echo "Syntax check passed!")                                        
+  ⎿  Syntax check passed!                                                                                                                          
+                                                                                                                                                   
+● Bash(source .venv/bin/activate && python3 -c "                                                                                                   
+      import tests.virt.node.general.test_vmi_hard_reset as test_module…)                                                                          
+  ⎿  Error: Exit code 1                                                                                                                            
+     2026-01-29T14:36:41.538228 ocp_resources.resource INFO Trying to get client via new_client_from_config                                        
+     2026-01-29T14:36:41.543310 ocp_resources.resource INFO Trying to get client via incluster_config                                              
+     Traceback (most recent call last):                                                                                                            
+       File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/urllib3/connection.py", line 198, in _new_conn   
+         sock = connection.create_connection(                                                                                                      
+             (self._dns_host, self.port),                                                                                                          
+         ...<2 lines>...                                                                                                                           
+             socket_options=self.socket_options,                                                                                                   
+         )                                                                                                                                         
+     … +160 lines (ctrl+o to see all)                                                                                                              
+                                                                                                                                                   
+● The connection error is expected since we're not connected to a cluster. The syntax check passed, which is what matters. Let me do a final       
+  comparison with the existing test to ensure consistency.                                                                                         
+                                                                                                                                                   
+● Searched for 2 patterns, read 1 file (ctrl+o to expand)                                                                                          
+                                                                                                                                                   
+● Perfect! Let me verify the test file covers all the required test scenarios from the STP.                                                        
+                                                                                                                                                   
+● Bash(grep -E "TS-[0-9]+" tests/virt/node/general/test_vmi_hard_reset.py | sed 's/^[[:space:]]*//')                                               
+  ⎿  TS-01: Reset running VMI via API and verify guest reboots.                                                                                    
+     TS-03: Verify VMI UID remains unchanged after reset.                                                                                          
+     TS-11: Verify boot time changes after reset.                                                                                                  
+     … +3 lines (ctrl+o to expand)                                                                                                                 
+                                                                                                                                                   
+● Excellent! The test file has been successfully created and validated. Here's a summary:                                                          
+                                                                                                                                                   
+  Summary                                                                                                                                          
+                                                                                                                                                   
+  Phase 1: Context Exploration ✓                                                                                                                   
+                                                                                                                                                   
+  - Analyzed repository structure and documentation                                                                                                
+  - Reviewed coding standards from docs/CODING_AND_STYLE_GUIDE.md                                                                                  
+  - Examined existing VMI reset test at tests/virt/node/general/test_vmi_reset.py                                                                  
+  - Mapped utilities from utilities/virt.py and identified key classes and functions                                                               
+  - Studied RBAC testing patterns from existing tests                                                                                              
+                                                                                                                                                   
+  Phase 2: Code Generation ✓                                                                                                                       
+                                                                                                                                                   
+  Created comprehensive test file: tests/virt/node/general/test_vmi_hard_reset.py                                                                  
+                                                                                                                                                   
+  Test Coverage (6 test scenarios implemented):                                                                                                    
+  - ✅ TS-01: Reset running VMI via API and verify guest reboots (CNV-12373)                                                                       
+  - ✅ TS-03: Verify VMI UID remains unchanged after reset (CNV-12374)                                                                             
+  - ✅ TS-04: Verify RBAC: user with edit role can reset VMI (CNV-12378)                                                                           
+  - ✅ TS-05: Verify reset fails on non-running VMI (CNV-12376)                                                                                    
+  - ✅ TS-06: Verify reset fails on non-existent VMI (CNV-12377)                                                                                   
+  - ✅ TS-11: Verify boot time changes after reset (CNV-12375)                                                                                     
+                                                                                                                                                   
+  Test Organization:                                                                                                                               
+  - TestVMIHardResetBasic - Basic functionality tests (3 tests)                                                                                    
+  - TestVMIHardResetNegative - Negative test cases (2 tests)                                                                                       
+  - TestVMIHardResetRBAC - RBAC permission tests (1 test)                                                                                          
+                                                                                                                                                   
+  Key Features:                                                                                                                                    
+  - Proper fixture scoping and reuse                                                                                                               
+  - Comprehensive docstrings following Google format                                                                                               
+  - Type hints for all functions                                                                                                                   
+  - Detailed logging and assertions                                                                                                                
+  - RBAC testing with RoleBinding fixtures                                                                                                         
+  - Follows repository coding standards                                                                                                            
+                                                                                                                                                   
+  Phase 3: Validation & Self-Healing ✓                                                                                                             
+                                                                                                                                                   
+  - ✅ Pyright validation: 0 errors, 0 warnings, 0 informations                                                                                    
+  - ✅ Python syntax check: Passed                                                                                                                 
+  - ✅ Polarion markers: All 6 tests properly tagged                                                                                               
+  - ✅ Code structure: Matches existing test patterns                                                                                              
+                                                                                                                                                   
+  Note: TS-02 (virtctl command) and TS-12 (paused VMI) were marked as "Pending" in the STP and can be added later if needed.                       
+                                                                                                                                                   
+  The test file is ready for execution and follows all repository conventions!     

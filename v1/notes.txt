@@ -1,0 +1,2 @@
+Instruct LLM not to change already existent files.
+Check what is the difference between uv run pyright and pyright
