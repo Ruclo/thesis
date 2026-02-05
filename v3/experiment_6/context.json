@@ -1,0 +1,91 @@
+{
+  "test_location": "/home/mvavrine/cnv/openshift-virtualization-tests/tests/virt/node/hotplug/",
+  "naming_convention": "test_cpu_maxsockets_limits.py",
+  "existing_cpu_tests": [
+    "/home/mvavrine/cnv/openshift-virtualization-tests/tests/virt/node/hotplug/test_cpu_memory_hotplug.py",
+    "/home/mvavrine/cnv/openshift-virtualization-tests/tests/infrastructure/instance_types/test_cpu_memory_hotplug_instancetype.py",
+    "/home/mvavrine/cnv/openshift-virtualization-tests/tests/virt/node/cpu_sockets_threads/test_cpu_support_sockets_threads.py"
+  ],
+  "common_imports": [
+    "import logging",
+    "import pytest",
+    "from kubernetes.dynamic.exceptions import UnprocessibleEntityError",
+    "from ocp_resources.virtual_machine import VirtualMachine",
+    "from ocp_resources.template import Template",
+    "from ocp_resources.resource import ResourceEditor",
+    "from tests.os_params import RHEL_LATEST, RHEL_LATEST_LABELS, WINDOWS_LATEST, WINDOWS_LATEST_LABELS",
+    "from tests.utils import assert_guest_os_cpu_count, hotplug_spec_vm, hotplug_spec_vm_and_verify_hotplug, clean_up_migration_jobs",
+    "from utilities.constants import TIMEOUT_10MIN, FOUR_CPU_SOCKETS, SIX_CPU_SOCKETS, EIGHT_CPU_SOCKETS, TEN_CPU_SOCKETS, FOUR_GI_MEMORY, SIX_GI_MEMORY",
+    "from utilities.virt import VirtualMachineForTestsFromTemplate, migrate_vm_and_verify, restart_vm_wait_for_running_vm, running_vm"
+  ],
+  "fixtures": {
+    "builtin_fixtures": [
+      "namespace - Kubernetes namespace fixture",
+      "unprivileged_client - Unprivileged Kubernetes client",
+      "admin_client - Admin Kubernetes client",
+      "golden_image_data_source_for_test_scope_class - Data source for test VMs",
+      "golden_image_data_volume_template_for_test_scope_class - Data volume template"
+    ],
+    "custom_vm_fixtures": [
+      "hotplugged_vm - VM with CPU hotplug capabilities (scope: class)",
+      "hotplugged_sockets_memory_guest - Fixture to perform hotplug operations"
+    ],
+    "vm_creation_pattern": "VirtualMachineForTestsFromTemplate with cpu_max_sockets parameter"
+  },
+  "utilities": {
+    "vm_creation": [
+      "VirtualMachineForTestsFromTemplate - utilities/virt.py - Creates VM from template with hotplug capabilities"
+    ],
+    "cpu_operations": [
+      "hotplug_spec_vm(vm, sockets=None) - tests/utils.py - Patch VM with new CPU socket count",
+      "hotplug_spec_vm_and_verify_hotplug(vm, client, sockets) - tests/utils.py - Hotplug CPU and verify with migration"
+    ],
+    "validation": [
+      "assert_guest_os_cpu_count(vm, spec_cpu_amount) - tests/utils.py - Verify CPU count in guest OS",
+      "assert_restart_required_condition(vm, expected_message) - tests/utils.py - Check RestartRequired condition"
+    ],
+    "vm_operations": [
+      "running_vm(vm) - utilities/virt.py - Wait for VM to reach running state",
+      "migrate_vm_and_verify(vm, check_ssh_connectivity=True) - utilities/virt.py - Migrate VM and verify",
+      "restart_vm_wait_for_running_vm(vm) - utilities/virt.py - Restart VM and wait for running state"
+    ],
+    "cleanup": [
+      "clean_up_migration_jobs(client, vm) - tests/utils.py - Cleanup migration jobs"
+    ]
+  },
+  "api_patterns": {
+    "create_vm_with_hotplug": "with VirtualMachineForTestsFromTemplate(name=vm_name, namespace=namespace.name, client=unprivileged_client, data_volume_template=data_volume_template, cpu_max_sockets=EIGHT_CPU_SOCKETS, memory_max_guest=TEN_GI_MEMORY, cpu_sockets=FOUR_CPU_SOCKETS) as vm: running_vm(vm=vm)",
+    "hotplug_cpu": "hotplug_spec_vm(vm=vm, sockets=SIX_CPU_SOCKETS)",
+    "verify_guest_cpu": "assert_guest_os_cpu_count(vm=vm, spec_cpu_amount=SIX_CPU_SOCKETS)",
+    "expect_error": "with pytest.raises(UnprocessibleEntityError): hotplug_spec_vm(vm=vm, sockets=TEN_CPU_SOCKETS)"
+  },
+  "test_structure_example": "class-based tests with @pytest.mark.parametrize using indirect=True for fixtures. Use TESTS_CLASS_NAME constant for dependency naming. Apply @pytest.mark.rwx_default_storage, @pytest.mark.polarion, and @pytest.mark.dependency markers.",
+  "constants": {
+    "cpu_sockets": "TWO_CPU_SOCKETS=2, FOUR_CPU_SOCKETS=4, SIX_CPU_SOCKETS=6, EIGHT_CPU_SOCKETS=8, TEN_CPU_SOCKETS=10",
+    "memory": "FOUR_GI_MEMORY='4Gi', SIX_GI_MEMORY='6Gi', EIGHT_GI_MEMORY='8Gi', TEN_GI_MEMORY='10Gi'",
+    "timeouts": "TIMEOUT_1SEC=1, TIMEOUT_10SEC=10, TIMEOUT_10MIN=600, TIMEOUT_30MIN=1800"
+  },
+  "test_markers": [
+    "@pytest.mark.rwx_default_storage - Required for tests using RWX storage",
+    "@pytest.mark.polarion('CNV-XXXXX') - For test traceability",
+    "@pytest.mark.dependency(name='', depends=[]) - For test ordering",
+    "@pytest.mark.gating - For gating tests",
+    "pytestmark = pytest.mark.rwx_default_storage - Module-level marker"
+  ],
+  "parametrization_pattern": {
+    "os_selection": "golden_image_data_source_for_test_scope_class with pytest.param({'os_dict': RHEL_LATEST})",
+    "vm_fixture": "hotplugged_vm with pytest.param({'template_labels': RHEL_LATEST_LABELS, 'vm_name': 'vm-name'})",
+    "hotplug_operation": "hotplugged_sockets_memory_guest with pytest.param({'sockets': SIX_CPU_SOCKETS})"
+  },
+  "error_handling": {
+    "exceeding_max_sockets": "with pytest.raises(UnprocessibleEntityError): hotplug_spec_vm(vm=vm, sockets=TEN_CPU_SOCKETS); pytest.fail('Socket value set higher than max value!')",
+    "xfail_pattern": "@pytest.fixture() def xfail_windows_memory_hotunplug(hotplugged_vm): if 'windows' in hotplugged_vm.name: pytest.xfail(reason='Windows OS doesn\\'t officially support memory hot unplug!')"
+  },
+  "implementation_notes": {
+    "cpu_model": "Use modern_cpu_for_migration fixture for CPU model",
+    "windows_compatibility": "Use vmx_disabled_flag fixture for Windows VMs (CNV-62851)",
+    "fixture_scope": "Use scope='class' for VM fixtures to share across test class",
+    "cleanup": "Use yield in fixtures and clean_up_migration_jobs() in teardown",
+    "test_dependencies": "Use @pytest.mark.dependency() for test execution order"
+  }
+}

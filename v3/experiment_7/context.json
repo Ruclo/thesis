@@ -1,0 +1,276 @@
+{
+  "repository": "openshift-virtualization-tests",
+  "description": "Public repository under RedHatQE organization for OpenShift Virtualization testing",
+  "utilities": {
+    "virt": {
+      "classes": [
+        "VirtualMachineForTests",
+        "VirtualMachineForTestsFromTemplate",
+        "VirtualMachineForCloning",
+        "ServiceForVirtualMachineForTests"
+      ],
+      "key_methods": [
+        "wait_for_vm_interfaces",
+        "running_vm",
+        "wait_for_running_vm",
+        "get_guest_os_info",
+        "get_windows_os_dict",
+        "wait_for_windows_vm",
+        "migrate_vm_and_verify",
+        "wait_for_migration_finished",
+        "restart_vm_wait_for_running_vm",
+        "check_qemu_guest_agent_installed",
+        "validate_libvirt_persistent_domain",
+        "assert_vm_xml_efi",
+        "check_vm_xml_smbios",
+        "get_virtctl_os_info",
+        "validate_virtctl_guest_agent_data_over_time",
+        "validate_virtctl_guest_agent_after_guest_reboot",
+        "guest_reboot",
+        "run_os_command",
+        "wait_for_user_agent_down"
+      ]
+    },
+    "ssp": {
+      "key_methods": [
+        "validate_os_info_vmi_vs_windows_os",
+        "get_windows_os_info",
+        "wait_for_ssp_conditions",
+        "get_ssp_resource"
+      ]
+    },
+    "guest_support": {
+      "key_methods": [
+        "assert_windows_efi",
+        "check_vm_xml_hyperv",
+        "check_windows_vm_hvinfo"
+      ]
+    },
+    "infra": {
+      "classes": [
+        "ClusterHosts",
+        "ExecCommandOnPod"
+      ],
+      "key_methods": [
+        "create_ns",
+        "generate_namespace_name",
+        "get_infrastructure",
+        "get_nodes_with_label",
+        "get_pods",
+        "run_virtctl_command",
+        "wait_for_pods_deletion"
+      ]
+    },
+    "constants": {
+      "timeout_constants": [
+        "TIMEOUT_1MIN",
+        "TIMEOUT_2MIN",
+        "TIMEOUT_3MIN",
+        "TIMEOUT_4MIN",
+        "TIMEOUT_5MIN",
+        "TIMEOUT_6MIN",
+        "TIMEOUT_10MIN",
+        "TIMEOUT_12MIN",
+        "TIMEOUT_25MIN"
+      ],
+      "os_flavors": [
+        "OS_FLAVOR_WINDOWS",
+        "OS_FLAVOR_RHEL",
+        "OS_FLAVOR_FEDORA",
+        "OS_FLAVOR_CIRROS",
+        "OS_FLAVOR_ALPINE"
+      ],
+      "component_names": [
+        "VIRT_OPERATOR",
+        "VIRT_LAUNCHER",
+        "VIRT_API",
+        "VIRT_CONTROLLER",
+        "VIRT_HANDLER",
+        "SSP_KUBEVIRT_HYPERCONVERGED",
+        "SSP_OPERATOR",
+        "CDI_OPERATOR"
+      ]
+    }
+  },
+  "fixtures": {
+    "session_scoped": [
+      "admin_client",
+      "unprivileged_client",
+      "nodes",
+      "schedulable_nodes",
+      "workers",
+      "control_plane_nodes",
+      "cnv_tests_utilities_namespace",
+      "utility_daemonset",
+      "hyperconverged_resource_scope_session"
+    ],
+    "function_scoped_common": [
+      "namespace"
+    ],
+    "virt_specific": [
+      "cluster_cpu_model_scope_class",
+      "matrix_windows_os_vm_from_template"
+    ],
+    "scopes": {
+      "admin_client": "session",
+      "unprivileged_client": "session",
+      "namespace": "function",
+      "nodes": "session",
+      "workers": "session"
+    }
+  },
+  "imports": {
+    "common_patterns": [
+      "import logging",
+      "import pytest",
+      "from ocp_resources.virtual_machine import VirtualMachine",
+      "from ocp_resources.namespace import Namespace",
+      "from utilities.virt import VirtualMachineForTests, running_vm, get_guest_os_info",
+      "from utilities.ssp import validate_os_info_vmi_vs_windows_os",
+      "from utilities.constants import OS_FLAVOR_WINDOWS, TIMEOUT_5MIN",
+      "from utilities.infra import create_ns, generate_namespace_name"
+    ],
+    "windows_specific": [
+      "from utilities.guest_support import assert_windows_efi, check_vm_xml_hyperv",
+      "from tests.virt.cluster.common_templates.utils import validate_os_info_virtctl_vs_windows_os"
+    ]
+  },
+  "conventions": {
+    "markers": {
+      "general": [
+        "@pytest.mark.polarion('CNV-XXXXX')",
+        "@pytest.mark.jira('https://issues.redhat.com/browse/CNV-XXXXX')"
+      ],
+      "test_types": [
+        "@pytest.mark.gating",
+        "@pytest.mark.post_upgrade",
+        "@pytest.mark.smoke",
+        "@pytest.mark.tier2",
+        "@pytest.mark.tier3"
+      ],
+      "architecture": [
+        "@pytest.mark.arm64",
+        "@pytest.mark.x86_64",
+        "@pytest.mark.s390x"
+      ],
+      "infrastructure": [
+        "@pytest.mark.special_infra",
+        "@pytest.mark.high_resource_vm",
+        "@pytest.mark.gpu",
+        "@pytest.mark.sriov",
+        "@pytest.mark.sno"
+      ],
+      "teams": [
+        "@pytest.mark.virt",
+        "@pytest.mark.network",
+        "@pytest.mark.storage"
+      ]
+    },
+    "module_level_markers": [
+      "pytestmark = [pytest.mark.post_upgrade, pytest.mark.special_infra, pytest.mark.high_resource_vm]"
+    ],
+    "naming": {
+      "test_files": "test_<feature>_<scenario>.py",
+      "test_methods": "test_<specific_behavior>",
+      "test_classes": "Test<FeatureName>",
+      "fixtures": "noun describing what it provides (e.g., 'storage_secret', not 'create_secret')"
+    },
+    "file_structure": {
+      "pattern": "tests/<domain>/<feature>/test_*.py",
+      "examples": [
+        "tests/virt/cluster/common_templates/windows/test_windows_os_support.py",
+        "tests/virt/node/general/test_cloud_init_vm.py",
+        "tests/storage/snapshots/test_snapshots.py"
+      ]
+    },
+    "docstrings": {
+      "format": "Google-format docstrings",
+      "test_description": "Brief one-line description in triple quotes"
+    },
+    "test_dependencies": {
+      "plugin": "pytest-dependency",
+      "usage": "@pytest.mark.dependency(name='test_name', depends=['other_test'])"
+    }
+  },
+  "precedents": {
+    "windows_guest_agent_tests": [
+      "tests/virt/cluster/common_templates/windows/test_windows_os_support.py:66-68 (test_vmi_guest_agent_info)",
+      "tests/virt/cluster/common_templates/windows/test_windows_os_support.py:73-74 (test_virtctl_guest_agent_os_info)"
+    ],
+    "vm_lifecycle_tests": [
+      "tests/virt/cluster/vm_lifecycle/test_restart.py",
+      "tests/virt/cluster/vm_lifecycle/test_vm_run_strategy.py"
+    ],
+    "windows_vm_tests": [
+      "tests/virt/cluster/common_templates/windows/test_windows_os_support.py",
+      "tests/virt/cluster/common_templates/windows/test_windows_custom_options.py",
+      "tests/virt/node/general/test_windows_vtpm_bitlocker.py"
+    ]
+  },
+  "testing_patterns": {
+    "fixture_ordering": "pytest native fixtures first, then session-scoped, then others",
+    "fixture_single_responsibility": "Each fixture should do one action/functionality only",
+    "test_independence": "Each test should verify a single aspect and be independent",
+    "class_usage": "Group related tests in classes when they share fixtures",
+    "usefixtures_decorator": "Use @pytest.mark.usefixtures for fixtures without return values",
+    "parametrization": "Use request.param with dict structure for readability",
+    "error_vs_failed": "Fixtures report failures as ERROR, tests as FAILED"
+  },
+  "coding_standards": {
+    "style_guide": "Based on Google Python Style Guide",
+    "typing": "Add typing to new code, enforced using mypy",
+    "imports": "Always use absolute paths, avoid importing from conftest.py",
+    "logging": "Use logging.getLogger(__name__) at module level",
+    "variable_naming": "Use descriptive names, avoid single-letter names",
+    "code_reuse": "Search for existing functions before writing new ones",
+    "context_managers": "Use 'with' statement for resource creation"
+  },
+  "tools_and_frameworks": {
+    "test_framework": "pytest",
+    "kubernetes_api": "openshift-python-wrapper (github.com/RedHatQE/openshift-python-wrapper)",
+    "pre_commit": "pre-commit for code quality checks",
+    "tox": "tox for CI testing",
+    "config_management": "pytest-testconfig for test configuration"
+  },
+  "key_resources": {
+    "ocp_resources": [
+      "VirtualMachine",
+      "VirtualMachineInstance",
+      "DataVolume",
+      "Namespace",
+      "Pod",
+      "Service",
+      "ConfigMap",
+      "Secret"
+    ],
+    "context_managers": "Resources created using 'with' statement automatically handle cleanup"
+  },
+  "windows_vm_specifics": {
+    "requirements": [
+      "qemu-guest-agent installed",
+      "virtio-serial driver for guest-host communication",
+      "virtio-win drivers package"
+    ],
+    "validation_utilities": [
+      "validate_os_info_vmi_vs_windows_os (utilities.ssp)",
+      "validate_os_info_virtctl_vs_windows_os (tests.virt.cluster.common_templates.utils)",
+      "assert_windows_efi (utilities.guest_support)",
+      "check_vm_xml_hyperv (utilities.guest_support)"
+    ],
+    "common_markers": [
+      "pytest.mark.high_resource_vm",
+      "pytest.mark.special_infra",
+      "pytest.mark.post_upgrade"
+    ]
+  },
+  "test_execution": {
+    "ci_integration": "Jenkins jobs with pytest parameters",
+    "container_builds": "/build-and-push-container command on PR",
+    "pr_requirements": [
+      "Verified label",
+      "At least 2 reviewer approvals (/lgtm)",
+      "At least 1 approver approval (/approve)",
+      "All CI checks passing"
+    ]
+  }
+}

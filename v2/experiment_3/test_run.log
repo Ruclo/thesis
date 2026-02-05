@@ -1,0 +1,1969 @@
+/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/exceptions.py:91: DeprecationWarning: HTTPResponse.getheaders() is deprecated and will be removed in urllib3 v2.1.0. Instead access HTTPResponse.headers directly.
+  self.headers = http_resp.getheaders()
+/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/exceptions.py:91: DeprecationWarning: HTTPResponse.getheaders() is deprecated and will be removed in urllib3 v2.1.0. Instead access HTTPResponse.headers directly.
+  self.headers = http_resp.getheaders()
+2026-02-04T12:02:17.676919 ocp_resources Namespace INFO Create Namespace cnv-tests-run-in-progress-ns
+2026-02-04T12:02:17.677012 ocp_resources Namespace INFO Posting {'apiVersion': 'v1', 'kind': 'Namespace', 'metadata': {'name': 'cnv-tests-run-in-progress-ns'}, 'spec': {}}
+2026-02-04T12:02:17.691370 ocp_resources Namespace INFO Wait until Namespace cnv-tests-run-in-progress-ns is created
+2026-02-04T12:02:17.739434 ocp_resources Namespace INFO Wait for Namespace cnv-tests-run-in-progress-ns status to be Active
+2026-02-04T12:02:17.745392 ocp_resources Namespace INFO Status of Namespace cnv-tests-run-in-progress-ns is Active
+2026-02-04T12:02:17.745797 ocp_resources Namespace INFO Update Namespace cnv-tests-run-in-progress-ns:
+{'metadata': {'labels': {'pod-security.kubernetes.io/enforce': 'privileged', 'security.openshift.io/scc.podSecurityLabelSync': 'false'}, 'name': 'cnv-tests-run-in-progress-ns'}}
+2026-02-04T12:02:17.792470 ocp_resources ConfigMap INFO Create ConfigMap cnv-tests-run-in-progress
+2026-02-04T12:02:17.792594 ocp_resources ConfigMap INFO Posting {'apiVersion': 'v1', 'kind': 'ConfigMap', 'metadata': {'name': 'cnv-tests-run-in-progress', 'namespace': 'cnv-tests-run-in-progress-ns'}, 'data': '*******'}
+2026-02-04T12:02:17.834937 ocp_resources ConfigMap INFO Wait until ConfigMap cnv-tests-run-in-progress is created
+=================================================================================== test session starts ====================================================================================
+platform linux -- Python 3.14.0, pytest-9.0.2, pluggy-1.6.0
+benchmark: 5.2.3 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /home/mvavrine/cnv/openshift-virtualization-tests
+configfile: pytest.ini (WARNING: ignoring pytest config in pyproject.toml!)
+plugins: anyio-4.12.0, html-4.1.1, order-1.3.0, repeat-0.9.4, progress-1.4.0, dependency-0.6.0, jira-0.3.22, metadata-3.1.1, testconfig-0.2.0, benchmark-5.2.3, mock-3.15.1
+collected 8 items                                                                                                                                                                          
+
+tests/virt/lifecycle/test_vm_reset_api.py E
+
+_____________________________________________________________ ERROR at setup of TestVMIResetAPI.test_reset_running_vmi_via_api _____________________________________________________________
+
+self = <ocp_resources.virtual_machine_instance.VirtualMachineInstance object at 0x7f86e76aef90>, timeout = 240, logs = True, stop_status = None
+
+
+TEST: TestVMIResetAPI.test_reset_running_vmi_via_api [setup] STATUS: ERROR
+    def wait_until_running(self, timeout=TIMEOUT_4MINUTES, logs=True, stop_status=None):
+        """
+        Wait until VMI is running
+    
+        Args:
+            timeout (int): Time to wait for VMI.
+            logs (bool): True to extract logs from the VMI pod and from the VMI.
+            stop_status (str): Status which should stop the wait and failed.
+    
+        Raises:
+            TimeoutExpiredError: If VMI failed to run.
+        """
+        try:
+>           self.wait_for_status(status=self.Status.RUNNING, timeout=timeout, stop_status=stop_status)
+
+.venv/lib/python3.14/site-packages/ocp_resources/virtual_machine_instance.py:130: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.14/site-packages/ocp_resources/resource.py:991: in wait_for_status
+    for sample in samples:
+                  ^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <timeout_sampler.TimeoutSampler object at 0x7f86e68f4b90>
+
+    def __iter__(self) -> Any:
+        """
+        Call `func` and yield the result, or raise an exception on timeout.
+    
+        Yields:
+            any: Return value from `func`
+    
+        Raises:
+            TimeoutExpiredError: if `func` takes longer than `wait_timeout` seconds to return a value
+        """
+        timeout_watch = TimeoutWatch(timeout=self.wait_timeout)
+        if self.print_log:
+            log = (
+                f"Waiting for {self.wait_timeout} seconds"
+                f" [{datetime.timedelta(seconds=self.wait_timeout)}], retry every"
+                f" {self.sleep} seconds."
+            )
+    
+            if self.print_func_log:
+                log += f" ({self._func_log})"
+    
+            LOGGER.info(log)
+    
+        last_exp = None
+        elapsed_time = None
+        while timeout_watch.remaining_time() > 0:
+            try:
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+                yield self.func(*self.func_args, **self.func_kwargs)
+                time.sleep(self.sleep)
+                elapsed_time = None
+    
+            except Exception as exp:
+                last_exp = exp
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+    
+                if not self._should_ignore_exception(exp=last_exp):
+                    raise TimeoutExpiredError(
+                        self._get_exception_log(exp=last_exp), last_exp=last_exp, elapsed_time=elapsed_time
+                    )
+    
+                time.sleep(self.sleep)
+                elapsed_time = None
+    
+            finally:
+                if self.print_log and elapsed_time:
+                    LOGGER.info(_elapsed_time_log(elapsed_time=elapsed_time))
+    
+>       raise TimeoutExpiredError(self._get_exception_log(exp=last_exp), last_exp=last_exp)
+E       timeout_sampler.TimeoutExpiredError: Timed Out: 240
+E       Function: ocp_resources.resource.wait_for_status.lambda: self.exists
+E       Last exception: N/A.
+
+.venv/lib/python3.14/site-packages/timeout_sampler/__init__.py:182: TimeoutExpiredError
+
+During handling of the above exception, another exception occurred:
+
+unprivileged_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f86e76da550>, namespace = <ocp_resources.namespace.Namespace object at 0x7f86e69aab10>
+
+    @pytest.fixture()
+    def running_alpine_vmi(
+        unprivileged_client: DynamicClient, namespace: Namespace
+    ) -> Generator[VirtualMachineForTests, None, None]:
+        """
+        Fixture providing a running Alpine Linux VMI with SSH access.
+    
+        Args:
+            unprivileged_client: Kubernetes client with unprivileged permissions
+            namespace: Test namespace
+    
+        Yields:
+            VirtualMachine: Running VM with SSH connectivity
+        """
+        name = "alpine-vmi-reset-test"
+        LOGGER.info(f"Creating Alpine VMI: {name}")
+    
+        with VirtualMachineForTests(
+            client=unprivileged_client,
+            name=name,
+            namespace=namespace.name,
+            body=fedora_vm_body(name=name),
+            memory_requests="512Mi",
+        ) as vm:
+>           running_vm(vm=vm)
+
+tests/virt/lifecycle/conftest.py:70: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+utilities/virt.py:1763: in running_vm
+    wait_for_running_vm(
+utilities/virt.py:1691: in wait_for_running_vm
+    vm.vmi.wait_until_running(timeout=wait_until_running_timeout)
+.venv/lib/python3.14/site-packages/ocp_resources/virtual_machine_instance.py:138: in wait_until_running
+    self.logger.debug(virt_pod.log(container="compute"))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/ocp_resources/pod.py:546: in log
+    return self._kube_v1_api.read_namespaced_pod_log(name=self.name, namespace=self.namespace, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/kubernetes/client/api/core_v1_api.py:24264: in read_namespaced_pod_log
+    return self.read_namespaced_pod_log_with_http_info(name, namespace, **kwargs)  # noqa: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/kubernetes/client/api/core_v1_api.py:24387: in read_namespaced_pod_log_with_http_info
+    return self.api_client.call_api(
+.venv/lib/python3.14/site-packages/kubernetes/client/api_client.py:348: in call_api
+    return self.__call_api(resource_path, method,
+.venv/lib/python3.14/site-packages/kubernetes/client/api_client.py:180: in __call_api
+    response_data = self.request(
+.venv/lib/python3.14/site-packages/kubernetes/client/api_client.py:373: in request
+    return self.rest_client.GET(url,
+.venv/lib/python3.14/site-packages/kubernetes/client/rest.py:244: in GET
+    return self.request("GET", url,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <kubernetes.client.rest.RESTClientObject object at 0x7f86e76da850>, method = 'GET'
+url = 'https://api.crc.testing:6443/api/v1/namespaces/lifecycle-test-vm-reset-api/pods/virt-launcher-alpine-vmi-reset-test-1770203060-1976576-7srth/log'
+query_params = [('container', 'compute')]
+headers = {'Accept': 'application/json', 'Content-Type': 'application/json', 'User-Agent': 'OpenAPI-Generator/34.1.0/python', 'authorization': 'Bearer sha256~af_1L91kXIy1Vm9wskwHqD0gLgkQuxByW1_3LPmkjlQ'}
+body = None, post_params = {}, _preload_content = True, _request_timeout = None
+
+    def request(self, method, url, query_params=None, headers=None,
+                body=None, post_params=None, _preload_content=True,
+                _request_timeout=None):
+        """Perform requests.
+    
+        :param method: http request method
+        :param url: http request url
+        :param query_params: query parameters in the url
+        :param headers: http request headers
+        :param body: request json body, for `application/json`
+        :param post_params: request post parameters,
+                            `application/x-www-form-urlencoded`
+                            and `multipart/form-data`
+        :param _preload_content: if False, the urllib3.HTTPResponse object will
+                                 be returned without reading/decoding response
+                                 data. Default is True.
+        :param _request_timeout: timeout setting for this request. If one
+                                 number provided, it will be total request
+                                 timeout. It can also be a pair (tuple) of
+                                 (connection, read) timeouts.
+        """
+        method = method.upper()
+        assert method in ['GET', 'HEAD', 'DELETE', 'POST', 'PUT',
+                          'PATCH', 'OPTIONS']
+    
+        if post_params and body:
+            raise ApiValueError(
+                "body parameter cannot be used with post_params parameter."
+            )
+    
+        post_params = post_params or {}
+        headers = headers or {}
+    
+        timeout = None
+        if _request_timeout:
+            if isinstance(_request_timeout, (int, ) if six.PY3 else (int, long)):  # noqa: E501,F821
+                timeout = urllib3.Timeout(total=_request_timeout)
+            elif (isinstance(_request_timeout, tuple) and
+                  len(_request_timeout) == 2):
+                timeout = urllib3.Timeout(
+                    connect=_request_timeout[0], read=_request_timeout[1])
+    
+        if 'Content-Type' not in headers:
+            headers['Content-Type'] = 'application/json'
+    
+        try:
+            # For `POST`, `PUT`, `PATCH`, `OPTIONS`, `DELETE`
+            if method in ['POST', 'PUT', 'PATCH', 'OPTIONS', 'DELETE']:
+                if query_params:
+                    url += '?' + urlencode(query_params)
+                if (re.search('json', headers['Content-Type'], re.IGNORECASE) or
+                        headers['Content-Type'] == 'application/apply-patch+yaml'):
+                    if headers['Content-Type'] == 'application/json-patch+json':
+                        if not isinstance(body, list):
+                            headers['Content-Type'] = \
+                                'application/strategic-merge-patch+json'
+                    request_body = None
+                    if body is not None:
+                        request_body = json.dumps(body)
+                    r = self.pool_manager.request(
+                        method, url,
+                        body=request_body,
+                        preload_content=_preload_content,
+                        timeout=timeout,
+                        headers=headers)
+                elif headers['Content-Type'] == 'application/x-www-form-urlencoded':  # noqa: E501
+                    r = self.pool_manager.request(
+                        method, url,
+                        fields=post_params,
+                        encode_multipart=False,
+                        preload_content=_preload_content,
+                        timeout=timeout,
+                        headers=headers)
+                elif headers['Content-Type'] == 'multipart/form-data':
+                    # must del headers['Content-Type'], or the correct
+                    # Content-Type which generated by urllib3 will be
+                    # overwritten.
+                    del headers['Content-Type']
+                    r = self.pool_manager.request(
+                        method, url,
+                        fields=post_params,
+                        encode_multipart=True,
+                        preload_content=_preload_content,
+                        timeout=timeout,
+                        headers=headers)
+                # Pass a `string` parameter directly in the body to support
+                # other content types than Json when `body` argument is
+                # provided in serialized form
+                elif isinstance(body, str) or isinstance(body, bytes):
+                    request_body = body
+                    r = self.pool_manager.request(
+                        method, url,
+                        body=request_body,
+                        preload_content=_preload_content,
+                        timeout=timeout,
+                        headers=headers)
+                else:
+                    # Cannot generate the request from given parameters
+                    msg = """Cannot prepare a request message for provided
+                             arguments. Please check that your arguments match
+                             declared content type."""
+                    raise ApiException(status=0, reason=msg)
+            # For `GET`, `HEAD`
+            else:
+                r = self.pool_manager.request(method, url,
+                                              fields=query_params,
+                                              preload_content=_preload_content,
+                                              timeout=timeout,
+                                              headers=headers)
+        except urllib3.exceptions.SSLError as e:
+            msg = "{0}\n{1}".format(type(e).__name__, str(e))
+            raise ApiException(status=0, reason=msg)
+    
+        if _preload_content:
+            r = RESTResponse(r)
+    
+            # In the python 3, the response.data is bytes.
+            # we need to decode it to string.
+            if six.PY3:
+                r.data = r.data.decode('utf8')
+    
+            # log response body
+            logger.debug("response body: %s", r.data)
+    
+        if not 200 <= r.status <= 299:
+>           raise ApiException(http_resp=r)
+E           kubernetes.client.exceptions.ApiException: (400)
+E           Reason: Bad Request
+E           HTTP response headers: HTTPHeaderDict({'Audit-Id': '6c5e87e5-45ea-4488-a12a-0626ab11f963', 'Cache-Control': 'no-cache, private', 'Content-Type': 'application/json', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'Date': 'Wed, 04 Feb 2026 11:08:20 GMT', 'Content-Length': '245'})
+E           HTTP response body: {"kind":"Status","apiVersion":"v1","metadata":{},"status":"Failure","message":"container \"compute\" in pod \"virt-launcher-alpine-vmi-reset-test-1770203060-1976576-7srth\" is waiting to start: PodInitializing","reason":"BadRequest","code":400}
+
+.venv/lib/python3.14/site-packages/kubernetes/client/rest.py:238: ApiException
+---------------------------------------------------------------------------------- Captured stderr setup -----------------------------------------------------------------------------------
+
+-------------------------------------------- test_reset_running_vmi_via_api --------------------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-04T12:02:17.879239 conftest INFO Executing session fixture: admin_client
+2026-02-04T12:02:17.879457 conftest INFO Executing session fixture: pytestconfig
+2026-02-04T12:02:17.879584 conftest INFO Executing session fixture: installing_cnv
+2026-02-04T12:02:17.879674 conftest INFO Executing session fixture: cnv_tests_utilities_namespace
+2026-02-04T12:02:17.886976 ocp_resources Namespace INFO Create Namespace cnv-tests-utilities
+2026-02-04T12:02:17.887083 ocp_resources Namespace INFO Posting {'apiVersion': 'v1', 'kind': 'Namespace', 'metadata': {'name': 'cnv-tests-utilities', 'labels': {'pod-security.kubernetes.io/enforce': 'privileged', 'security.openshift.io/scc.podSecurityLabelSync': 'false'}}, 'spec': {}}
+2026-02-04T12:02:17.902275 ocp_resources Namespace INFO Wait for Namespace cnv-tests-utilities status to be Active
+2026-02-04T12:02:17.902447 timeout_sampler INFO Waiting for 120 seconds [0:02:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_for_status.lambda: self.exists)
+2026-02-04T12:02:17.936723 ocp_resources Namespace INFO Status of Namespace cnv-tests-utilities is Active
+2026-02-04T12:02:17.936919 timeout_sampler INFO Elapsed time: 9.417533874511719e-05 [0:00:00.000094]
+2026-02-04T12:02:17.937758 ocp_resources.resource INFO kind: OAuth api version: config.openshift.io/v1
+2026-02-04T12:02:17.938245 ocp_resources.resource INFO kind: DaemonSet api version: apps/v1
+2026-02-04T12:02:17.937174 conftest INFO Executing session fixture: skip_unprivileged_client
+2026-02-04T12:02:17.937396 conftest INFO Executing session fixture: identity_provider_config
+2026-02-04T12:02:17.937902 conftest INFO Executing session fixture: leftovers_cleanup
+2026-02-04T12:02:17.937980 tests.conftest INFO Checking for leftover resources
+2026-02-04T12:02:18.014172 ocp_resources.resource INFO ResourceEdits: Updating data for resource OAuth cluster
+2026-02-04T12:02:18.014298 ocp_resources OAuth INFO Update OAuth cluster:
+{'metadata': {'name': 'cluster'}, 'spec': {'identityProviders': [{'htpasswd': {'fileData': {'name': 'htpass-secret'}}, 'mappingMethod': 'claim', 'name': 'developer', 'type': 'HTPasswd'}], 'tokenConfig': {'accessTokenMaxAgeSeconds': 31536000}}}
+2026-02-04T12:02:18.019431 conftest INFO Executing session fixture: artifactory_setup
+2026-02-04T12:02:18.019605 tests.conftest INFO Checking for artifactory credentials:
+2026-02-04T12:02:18.019683 tests.conftest WARNING Explicitly skipping artifactory setup check due to use of --skip-artifactory-check
+2026-02-04T12:02:18.019813 conftest INFO Executing session fixture: os_path_environment
+2026-02-04T12:02:18.019959 conftest INFO Executing session fixture: tmpdir_factory
+2026-02-04T12:02:18.020065 conftest INFO Executing session fixture: bin_directory
+2026-02-04T12:02:18.021525 ocp_resources.resource INFO Trying to get client via new_client_from_config
+2026-02-04T12:02:18.021235 conftest INFO Executing session fixture: virtctl_binary
+2026-02-04T12:02:18.032271 ocp_resources.resource INFO kind: ConsoleCLIDownload api version: console.openshift.io/v1
+2026-02-04T12:02:18.062958 utilities.infra INFO Downloading archive using: url=https://hyperconverged-cluster-cli-download-openshift-cnv.apps-crc.testing/amd64/linux/virtctl.tar.gz
+2026-02-04T12:02:18.185487 utilities.infra INFO Extract the downloaded archive.
+2026-02-04T12:02:18.717160 utilities.infra INFO Downloaded file: ['virtctl']
+2026-02-04T12:02:18.719058 ocp_resources.resource INFO Trying to get client via new_client_from_config
+2026-02-04T12:02:18.718546 conftest INFO Executing session fixture: oc_binary
+2026-02-04T12:02:18.726111 ocp_resources.resource INFO kind: ConsoleCLIDownload api version: console.openshift.io/v1
+2026-02-04T12:02:18.735206 utilities.infra INFO Downloading archive using: url=https://downloads-openshift-console.apps-crc.testing/amd64/linux/oc.tar
+2026-02-04T12:02:19.576086 utilities.infra INFO Extract the downloaded archive.
+2026-02-04T12:02:19.657818 utilities.infra INFO Downloaded file: ['oc']
+2026-02-04T12:02:19.672078 ocp_resources.resource INFO kind: ClusterVersion api version: config.openshift.io/v1
+2026-02-04T12:02:19.671226 conftest INFO Executing session fixture: bin_directory_to_os_path
+2026-02-04T12:02:19.671765 tests.conftest INFO Adding /tmp/pytest-eXwZRBvKG3ZwpdM4EYkMxG/bin0 to $PATH
+2026-02-04T12:02:19.671908 conftest INFO Executing session fixture: openshift_current_version
+2026-02-04T12:02:19.679344 conftest INFO Executing session fixture: hco_namespace
+2026-02-04T12:02:19.682889 ocp_resources.resource INFO kind: Subscription api version: operators.coreos.com/v1alpha1
+2026-02-04T12:02:19.682547 conftest INFO Executing session fixture: csv_scope_session
+2026-02-04T12:02:19.689758 ocp_resources.resource INFO kind: ClusterServiceVersion api version: operators.coreos.com/v1alpha1
+2026-02-04T12:02:19.709321 conftest INFO Executing session fixture: cnv_current_version
+2026-02-04T12:02:19.730342 ocp_resources.resource INFO kind: Subscription api version: operators.coreos.com/v1alpha1
+2026-02-04T12:02:19.729988 conftest INFO Executing session fixture: cnv_subscription_scope_session
+2026-02-04T12:02:19.735453 conftest INFO Executing session fixture: hco_image
+2026-02-04T12:02:19.739011 ocp_resources.resource INFO kind: CatalogSource api version: operators.coreos.com/v1alpha1
+2026-02-04T12:02:19.747285 ocp_resources.resource INFO kind: StorageClass api version: storage.k8s.io/v1
+2026-02-04T12:02:19.746904 conftest INFO Executing session fixture: cluster_storage_classes
+2026-02-04T12:02:19.751130 ocp_resources.resource INFO kind: KubeVirt api version: kubevirt.io/v1
+2026-02-04T12:02:19.750762 conftest INFO Executing session fixture: ocs_storage_class
+2026-02-04T12:02:19.750895 conftest INFO Executing session fixture: ocs_current_version
+2026-02-04T12:02:19.750992 conftest INFO Executing session fixture: kubevirt_resource_scope_session
+2026-02-04T12:02:19.755401 ocp_resources.resource INFO kind: Network api version: config.openshift.io/v1
+2026-02-04T12:02:19.755156 conftest INFO Executing session fixture: cluster_service_network
+2026-02-04T12:02:19.758132 conftest INFO Executing session fixture: ipv6_supported_cluster
+2026-02-04T12:02:19.758337 conftest INFO Executing session fixture: ipv4_supported_cluster
+2026-02-04T12:02:19.758469 conftest INFO Executing session fixture: nodes
+2026-02-04T12:02:19.763456 conftest INFO Executing session fixture: workers
+2026-02-04T12:02:19.768203 ocp_resources.resource INFO Trying to get client via new_client_from_config
+2026-02-04T12:02:19.767745 conftest INFO Executing session fixture: cnv_source
+2026-02-04T12:02:19.767907 conftest INFO Executing session fixture: is_production_source
+2026-02-04T12:02:19.767990 conftest INFO Executing session fixture: generated_pulled_secret
+2026-02-04T12:02:19.786806 conftest INFO Executing session fixture: cnv_tests_utilities_service_account
+2026-02-04T12:02:19.795383 ocp_resources ServiceAccount INFO Create ServiceAccount cnv-tests-sa
+2026-02-04T12:02:19.795486 ocp_resources ServiceAccount INFO Posting {'apiVersion': 'v1', 'kind': 'ServiceAccount', 'metadata': {'name': 'cnv-tests-sa', 'namespace': 'cnv-tests-utilities'}}
+2026-02-04T12:02:19.910760 timeout_sampler INFO Waiting for 10 seconds [0:00:10], retry every 1 seconds. (Function: utilities.virt._get_image_json  Kwargs: {'cmd': 'oc image -o json info quay.io/openshift-cnv/qe-net-utils:latest --filter-by-os linux/amd64 --registry-config=/tmp/tmpcgpu5_jz-cnv-tests-pull-secret/pull-secrets.json'})
+2026-02-04T12:02:19.911021 pyhelper_utils.shell INFO Running oc image -o json info quay.io/openshift-cnv/qe-net-utils:latest --filter-by-os linux/amd64 --registry-config=/tmp/tmpcgpu5_jz-cnv-tests-pull-secret/pull-secrets.json command
+2026-02-04T12:02:19.910379 conftest INFO Executing session fixture: utility_daemonset
+2026-02-04T12:02:22.276052 timeout_sampler INFO Elapsed time: 0.0002014636993408203 [0:00:00.000201]
+2026-02-04T12:02:22.311000 ocp_resources.resource INFO kind: DaemonSet api version: apps/v1 --- [DuplicateFilter: Last log `Trying to get client via new_client_from_config` repeated 2 times]
+2026-02-04T12:02:22.316268 ocp_resources DaemonSet INFO Create DaemonSet utility
+2026-02-04T12:02:22.316432 ocp_resources DaemonSet INFO Posting {'apiVersion': 'apps/v1', 'kind': 'DaemonSet', 'metadata': {'annotations': {'deprecated.daemonset.template.generation': '0'}, 'creationTimestamp': None, 'labels': {'cnv-test': 'utility', 'tier': 'node'}, 'name': 'utility', 'namespace': 'cnv-tests-utilities'}, 'spec': {'revisionHistoryLimit': 10, 'selector': {'matchLabels': {'cnv-test': 'utility', 'tier': 'node'}}, 'template': {'metadata': {'creationTimestamp': None, 'labels': {'cnv-test': 'utility', 'tier': 'node'}}, 'spec': {'containers': [{'command': ['/bin/bash', '-c', 'echo ok > /tmp/healthy && sleep INF'], 'image': 'quay.io/openshift-cnv/qe-net-utils:latest@sha256:2c8e11ac0f0b36553bed603c1c67dccb703d7059ccbcf8c91e3a35c99719ce20', 'imagePullPolicy': 'IfNotPresent', 'name': 'utility', 'readinessProbe': {'exec': {'command': ['cat', '/tmp/healthy']}, 'failureThreshold': 3, 'initialDelaySeconds': 5, 'periodSeconds': 5, 'successThreshold': 1, 'timeoutSeconds': 1}, 'resources': {'limits': {'cpu': '100m', 'memory': '50Mi'}, 'requests': {'cpu': '100m', 'memory': '50Mi'}}, 'securityContext': {'privileged': True, 'runAsUser': 0}, 'stdin': True, 'stdinOnce': True, 'terminationMessagePath': '/dev/termination-log', 'terminationMessagePolicy': 'File', 'tty': True, 'volumeMounts': [{'mountPath': '/host', 'name': 'host'}, {'mountPath': '/var/run/secrets/kubernetes.io/serviceaccount', 'name': 'kube-api-access-m5ch7', 'readOnly': True}, {'mountPath': '/host/run/openvswitch', 'name': 'ovs-run'}, {'mountPath': '/run/dbus/system_bus_socket', 'name': 'dbus-socket'}, {'mountPath': '/host/dev', 'name': 'dev'}, {'mountPath': '/host/etc', 'name': 'etc'}, {'mountPath': '/host/var', 'name': 'var'}]}], 'dnsPolicy': 'ClusterFirst', 'enableServiceLinks': True, 'hostNetwork': True, 'hostPID': True, 'imagePullSecrets': [{'name': 'default-dockercfg-xrlbh'}], 'preemptionPolicy': 'PreemptLowerPriority', 'priority': 0, 'restartPolicy': 'Always', 'schedulerName': 'default-scheduler', 'securityContext': {'privileged': True}, 'serviceAccount': 'cnv-tests-sa', 'serviceAccountName': 'cnv-tests-sa', 'terminationGracePeriodSeconds': 30, 'tolerations': [{'effect': 'NoSchedule', 'key': 'node-role.kubernetes.io/master', 'operator': 'Exists'}], 'volumes': [{'hostPath': {'path': '/', 'type': 'Directory'}, 'name': 'host'}, {'hostPath': {'path': '/run/openvswitch', 'type': ''}, 'name': 'ovs-run'}, {'hostPath': {'path': '/run/dbus/system_bus_socket', 'type': 'Socket'}, 'name': 'dbus-socket'}, {'hostPath': {'path': '/dev', 'type': 'Directory'}, 'name': 'dev'}, {'hostPath': {'path': '/etc', 'type': 'Directory'}, 'name': 'etc'}, {'hostPath': {'path': '/var', 'type': 'Directory'}, 'name': 'var'}, {'name': 'kube-api-access-m5ch7', 'projected': {'defaultMode': 420, 'sources': [{'serviceAccountToken': {'path': 'token'}}, {'configMap': {'items': [{'key': 'ca.crt', 'path': 'ca.crt'}], 'name': 'kube-root-ca.crt'}}, {'downwardAPI': {'items': [{'fieldRef': {'apiVersion': 'v1', 'fieldPath': 'metadata.namespace'}, 'path': 'namespace'}]}}, {'configMap': {'items': [{'key': 'service-ca.crt', 'path': 'service-ca.crt'}], 'name': 'openshift-service-ca.crt'}}]}}]}}, 'updateStrategy': {'type': 'OnDelete'}}}
+2026-02-04T12:02:22.348897 ocp_resources DaemonSet INFO Wait for DaemonSet utility to deploy all desired pods
+2026-02-04T12:02:22.349051 timeout_sampler INFO Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: kubernetes.dynamic.client.get  Kwargs: {'field_selector': 'metadata.name==utility', 'namespace': 'cnv-tests-utilities'})
+2026-02-04T12:02:29.402019 timeout_sampler INFO Elapsed time: 7.03596305847168 [0:00:07.035963]
+2026-02-04T12:02:29.402345 conftest INFO Executing session fixture: workers_utility_pods
+2026-02-04T12:02:29.420560 conftest INFO Executing session fixture: workers_type
+2026-02-04T12:02:29.455931 ocp_resources Pod INFO Execute ['chroot', '/host', 'bash', '-c', 'systemd-detect-virt'] on utility-wz2z4 (crc)
+2026-02-04T12:02:29.522704 tests.conftest INFO Cluster workers are: virtual
+2026-02-04T12:02:29.523062 conftest INFO Executing session fixture: nodes_cpu_architecture
+2026-02-04T12:02:29.528981 pyhelper_utils.shell INFO Running virtctl version command
+2026-02-04T12:02:29.528799 conftest INFO Executing session fixture: cluster_info
+2026-02-04T12:02:29.552272 ocp_resources.resource INFO kind: Network api version: config.openshift.io/v1
+2026-02-04T12:02:29.556264 ocp_resources.resource INFO kind: HyperConverged api version: hco.kubevirt.io/v1beta1
+2026-02-04T12:02:29.555112 tests.conftest INFO 
+Cluster info:
+	Openshift version: 4.20.5
+	CNV version: 4.20.3
+	HCO image: registry.redhat.io/redhat/redhat-operator-index:v4.20
+	OCS version: None
+	CNI type: OVNKubernetes
+	Workers type: virtual
+	Cluster CPU Architecture: amd64
+	IPv4 cluster: True
+	IPv6 cluster: False
+	Virtctl version: 
+	Client Version: version.Info{GitVersion:"v1.6.3-42-gf72ce58db2", GitCommit:"f72ce58db218d0dfe60ce157ea6c37032a0fda17", GitTreeState:"clean", BuildDate:"2025-12-07T09:01:32Z", GoVersion:"go1.24.6 (Red Hat 1.24.6-1.module+el8.10.0+23407+428597c7) X:strictfipsruntime", Compiler:"gc", Platform:"linux/amd64"}
+	Server Version: version.Info{GitVersion:"v1.6.3-42-gf72ce58db2", GitCommit:"f72ce58db218d0dfe60ce157ea6c37032a0fda17", GitTreeState:"clean", BuildDate:"2025-12-12T08:29:44Z", GoVersion:"go1.24.6 (Red Hat 1.24.6-1.el9_6) X:strictfipsruntime", Compiler:"gc", Platform:"linux/amd64"}
+
+2026-02-04T12:02:29.555316 conftest INFO Executing function fixture: term_handler_scope_function
+2026-02-04T12:02:29.555427 conftest INFO Executing class fixture: term_handler_scope_class
+2026-02-04T12:02:29.555503 conftest INFO Executing module fixture: term_handler_scope_module
+2026-02-04T12:02:29.555590 conftest INFO Executing session fixture: term_handler_scope_session
+2026-02-04T12:02:29.555704 conftest INFO Executing session fixture: record_testsuite_property
+2026-02-04T12:02:29.555791 conftest INFO Executing session fixture: junitxml_polarion
+2026-02-04T12:02:29.555890 conftest INFO Executing session fixture: cluster_storage_classes_names
+2026-02-04T12:02:29.555977 conftest INFO Executing session fixture: junitxml_plugin
+2026-02-04T12:02:29.556058 conftest INFO Executing session fixture: hyperconverged_resource_scope_session
+2026-02-04T12:02:29.560588 ocp_utilities.infra INFO Verify all nodes are in a healthy condition.
+2026-02-04T12:02:29.560315 conftest INFO Executing session fixture: cluster_sanity_scope_session
+2026-02-04T12:02:29.560450 utilities.infra INFO Running cluster sanity. (To skip cluster sanity check pass --cluster-sanity-skip-check to pytest)
+2026-02-04T12:02:29.560500 utilities.infra INFO Check storage classes sanity. (To skip storage class sanity check pass --cluster-sanity-skip-storage-check to pytest)
+2026-02-04T12:02:29.560544 utilities.infra INFO Check nodes sanity. (To skip nodes sanity check pass --cluster-sanity-skip-nodes-check to pytest)
+2026-02-04T12:02:29.564231 ocp_utilities.infra INFO Verify all nodes are schedulable.
+2026-02-04T12:02:29.568003 timeout_sampler INFO Waiting for 300 seconds [0:05:00], retry every 5 seconds. (Function: utilities.infra.get_pods  Kwargs: {'dyn_client': <kubernetes.dynamic.client.DynamicClient object at 0x7f86e96e2270>, 'namespace': <ocp_resources.namespace.Namespace object at 0x7f86e767f100>})
+2026-02-04T12:02:29.728600 timeout_sampler INFO Elapsed time: 0.00011038780212402344 [0:00:00.000110]
+2026-02-04T12:02:29.728842 timeout_sampler INFO Waiting for 600 seconds [0:10:00], retry every 5 seconds. (Function: utilities.infra.<locals>.lambda: dynamic_client.namespace.resource_kind.resource_name.list.get)
+2026-02-04T12:02:29.728757 utilities.infra INFO Waiting for resource to stabilize: resource_kind=HyperConverged conditions={'Available': 'True', 'Progressing': 'False', 'ReconcileComplete': 'True', 'Degraded': 'False', 'Upgradeable': 'True'} sleep=600 consecutive_checks_count=3
+2026-02-04T12:02:39.748973 timeout_sampler INFO Elapsed time: 10.013789653778076 [0:00:10.013790]
+2026-02-04T12:02:39.749424 ocp_utilities.infra INFO Verify all nodes are in a healthy condition.
+2026-02-04T12:02:39.749203 conftest INFO Executing module fixture: cluster_sanity_scope_module
+2026-02-04T12:02:39.749313 utilities.infra INFO Running cluster sanity. (To skip cluster sanity check pass --cluster-sanity-skip-check to pytest)
+2026-02-04T12:02:39.749356 utilities.infra INFO Check storage classes sanity. (To skip storage class sanity check pass --cluster-sanity-skip-storage-check to pytest)
+2026-02-04T12:02:39.749394 utilities.infra INFO Check nodes sanity. (To skip nodes sanity check pass --cluster-sanity-skip-nodes-check to pytest)
+2026-02-04T12:02:39.753599 ocp_utilities.infra INFO Verify all nodes are schedulable.
+2026-02-04T12:02:39.756737 timeout_sampler INFO Waiting for 300 seconds [0:05:00], retry every 5 seconds. (Function: utilities.infra.get_pods  Kwargs: {'dyn_client': <kubernetes.dynamic.client.DynamicClient object at 0x7f86e96e2270>, 'namespace': <ocp_resources.namespace.Namespace object at 0x7f86e767f100>})
+2026-02-04T12:02:39.896308 timeout_sampler INFO Elapsed time: 0.00010061264038085938 [0:00:00.000101]
+2026-02-04T12:02:39.896528 timeout_sampler INFO Waiting for 600 seconds [0:10:00], retry every 5 seconds. (Function: utilities.infra.<locals>.lambda: dynamic_client.namespace.resource_kind.resource_name.list.get)
+2026-02-04T12:02:39.896447 utilities.infra INFO Waiting for resource to stabilize: resource_kind=HyperConverged conditions={'Available': 'True', 'Progressing': 'False', 'ReconcileComplete': 'True', 'Degraded': 'False', 'Upgradeable': 'True'} sleep=600 consecutive_checks_count=3
+2026-02-04T12:02:49.929069 timeout_sampler INFO Elapsed time: 10.025918245315552 [0:00:10.025918]
+2026-02-04T12:02:49.929285 conftest INFO Executing session fixture: ssh_key_tmpdir_scope_session
+2026-02-04T12:02:49.929743 conftest INFO Executing session fixture: generated_ssh_key_for_vm_access
+2026-02-04T12:02:50.013716 ocp_resources.resource INFO Trying to get client via new_client_from_config
+2026-02-04T12:02:50.013191 conftest INFO Executing function fixture: autouse_fixtures
+2026-02-04T12:02:50.013464 conftest INFO Executing session fixture: is_psi_cluster
+2026-02-04T12:02:50.020790 ocp_resources.resource INFO kind: Infrastructure api version: config.openshift.io/v1
+2026-02-04T12:02:50.027455 conftest INFO Executing session fixture: schedulable_nodes
+2026-02-04T12:02:50.045663 conftest INFO Executing session fixture: gpu_nodes
+2026-02-04T12:02:50.049857 conftest INFO Executing session fixture: nodes_with_supported_gpus
+2026-02-04T12:02:50.050012 conftest INFO Executing session fixture: sriov_workers
+2026-02-04T12:02:50.053396 conftest INFO Executing session fixture: nodes_cpu_vendor
+2026-02-04T12:02:50.060460 conftest INFO Executing session fixture: nodes_cpu_virt_extension
+2026-02-04T12:02:50.060621 conftest INFO Executing session fixture: allocatable_memory_per_node_scope_session
+2026-02-04T12:02:50.066769 tests.virt.utils INFO Node crc has 23.01947021484375 GiB of allocatable memory
+2026-02-04T12:02:50.066953 conftest INFO Executing session fixture: virt_special_infra_sanity
+2026-02-04T12:02:50.067105 tests.virt.conftest INFO Verifying that cluster has all required capabilities for special_infra marked tests
+2026-02-04T12:02:50.067422 conftest INFO Executing session fixture: unprivileged_secret
+2026-02-04T12:02:50.069496 ocp_resources.resource INFO Trying to get client via new_client_from_config
+2026-02-04T12:02:50.076009 ocp_resources Secret INFO Create Secret htpass-secret-for-cnv-tests
+2026-02-04T12:02:50.076098 ocp_resources Secret INFO Posting {'apiVersion': 'v1', 'kind': 'Secret', 'metadata': {'name': 'htpass-secret-for-cnv-tests', 'namespace': 'openshift-config'}, 'data': '*******'}
+2026-02-04T12:02:50.120006 ocp_resources.resource INFO ResourceEdit: Backing up old data
+2026-02-04T12:02:50.119781 conftest INFO Executing session fixture: identity_provider_with_htpasswd
+2026-02-04T12:02:50.128251 ocp_resources.resource INFO ResourceEdits: Updating data for resource OAuth cluster
+2026-02-04T12:02:50.128384 ocp_resources OAuth INFO Update OAuth cluster:
+{'metadata': {'name': 'cluster'}, 'spec': {'identityProviders': [{'name': 'htpasswd_provider', 'mappingMethod': 'claim', 'type': 'HTPasswd', 'htpasswd': {'fileData': {'name': 'htpass-secret-for-cnv-tests'}}}], 'tokenConfig': {'accessTokenMaxAgeSeconds': 604800, 'accessTokenInactivityTimeout': None}}}
+2026-02-04T12:02:50.147053 ocp_resources.resource INFO Trying to get client via new_client_from_config
+2026-02-04T12:02:50.154232 ocp_resources.resource INFO kind: Deployment api version: apps/v1
+2026-02-04T12:02:50.171995 timeout_sampler INFO Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: tests.conftest.<locals>.lambda: dp.instance.status.conditions)
+2026-02-04T12:02:50.171855 tests.conftest INFO Wait for oauth-openshift -> Type: Progressing -> Reason: ReplicaSetUpdated
+2026-02-04T12:03:50.412481 timeout_sampler INFO Elapsed time: 60.23741960525513 [0:01:00.237420]
+2026-02-04T12:03:50.412665 timeout_sampler INFO Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: tests.conftest.<locals>.lambda: dp.instance.status.conditions)
+2026-02-04T12:03:50.412589 tests.conftest INFO Wait for oauth-openshift -> Type: Progressing -> Reason: NewReplicaSetAvailable
+2026-02-04T12:04:17.531258 timeout_sampler INFO Elapsed time: 27.11544704437256 [0:00:27.115447]
+2026-02-04T12:04:17.531497 conftest INFO Executing session fixture: kubeconfig_export_path
+2026-02-04T12:04:17.531605 conftest INFO Executing session fixture: exported_kubeconfig
+2026-02-04T12:04:17.531889 tests.conftest INFO Setting KUBECONFIG dir for this run to point to: /tmp/tmpf8cgaigg-cnv-tests-kubeconfig
+2026-02-04T12:04:17.531946 tests.conftest INFO Copy KUBECONFIG to /tmp/tmpf8cgaigg-cnv-tests-kubeconfig/kubeconfig
+2026-02-04T12:04:17.532164 tests.conftest INFO Set: KUBECONFIG=/tmp/tmpf8cgaigg-cnv-tests-kubeconfig/kubeconfig
+2026-02-04T12:04:17.532274 conftest INFO Executing session fixture: unprivileged_client
+2026-02-04T12:04:17.601425 timeout_sampler INFO Waiting for 60 seconds [0:01:00], retry every 3 seconds. (Function: subprocess.Popen  Kwargs: {'args': 'oc login https://api.crc.testing:6443 -u unprivileged-user -p unprivileged-password', 'shell': True, 'stdout': -1, 'stderr': -1})
+2026-02-04T12:04:17.601259 utilities.infra INFO Trying to login to account
+2026-02-04T12:04:17.826922 timeout_sampler INFO Elapsed time: 0.00021505355834960938 [0:00:00.000215]
+2026-02-04T12:04:17.826726 utilities.infra INFO Login - success
+2026-02-04T12:04:17.831181 timeout_sampler INFO Waiting for 60 seconds [0:01:00], retry every 3 seconds. (Function: subprocess.Popen  Kwargs: {'args': 'oc login https://api.crc.testing:6443 -u kubeadmin', 'shell': True, 'stdout': -1, 'stderr': -1})
+2026-02-04T12:04:17.831066 utilities.infra INFO Trying to login to account
+2026-02-04T12:04:17.925577 timeout_sampler INFO Elapsed time: 0.0001304149627685547 [0:00:00.000130]
+2026-02-04T12:04:17.925944 ocp_resources.resource INFO Trying to get client via new_client_from_config
+2026-02-04T12:04:17.925391 utilities.infra INFO Login - success
+2026-02-04T12:04:17.933335 ocp_resources.resource INFO kind: ProjectRequest api version: project.openshift.io/v1
+2026-02-04T12:04:17.933464 ocp_resources ProjectRequest INFO Create ProjectRequest lifecycle-test-vm-reset-api
+2026-02-04T12:04:17.933516 ocp_resources ProjectRequest INFO Posting {'apiVersion': 'project.openshift.io/v1', 'kind': 'ProjectRequest', 'metadata': {'name': 'lifecycle-test-vm-reset-api'}}
+2026-02-04T12:04:17.933055 conftest INFO Executing module fixture: namespace
+2026-02-04T12:04:18.056559 ocp_resources.resource INFO kind: Project api version: project.openshift.io/v1
+2026-02-04T12:04:18.056686 ocp_resources Project INFO Wait for Project lifecycle-test-vm-reset-api status to be Active
+2026-02-04T12:04:18.056757 timeout_sampler INFO Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_for_status.lambda: self.exists)
+2026-02-04T12:04:18.062607 ocp_resources Project INFO Status of Project lifecycle-test-vm-reset-api is Active
+2026-02-04T12:04:18.062747 timeout_sampler INFO Elapsed time: 5.698204040527344e-05 [0:00:00.000057]
+2026-02-04T12:04:18.066876 ocp_resources Namespace INFO Wait for Namespace lifecycle-test-vm-reset-api status to be Active
+2026-02-04T12:04:18.067002 timeout_sampler INFO Waiting for 120 seconds [0:02:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_for_status.lambda: self.exists)
+2026-02-04T12:04:18.070120 ocp_resources Namespace INFO Status of Namespace lifecycle-test-vm-reset-api is Active
+2026-02-04T12:04:18.070292 timeout_sampler INFO Elapsed time: 7.009506225585938e-05 [0:00:00.000070]
+2026-02-04T12:04:18.070417 ocp_resources.resource INFO ResourceEdits: Updating data for resource Namespace lifecycle-test-vm-reset-api
+2026-02-04T12:04:18.070494 ocp_resources Namespace INFO Update Namespace lifecycle-test-vm-reset-api:
+{'metadata': {'labels': None, 'name': 'lifecycle-test-vm-reset-api'}}
+2026-02-04T12:04:18.102598 ocp_resources.resource INFO Trying to get client via new_client_from_config
+2026-02-04T12:04:18.102102 conftest INFO Executing function fixture: running_alpine_vmi
+2026-02-04T12:04:18.102326 conftest INFO Creating Alpine VMI: alpine-vmi-reset-test
+2026-02-04T12:04:18.177283 timeout_sampler INFO Waiting for 10 seconds [0:00:10], retry every 1 seconds. (Function: utilities.virt._get_image_json  Kwargs: {'cmd': 'oc image -o json info quay.io/openshift-cnv/qe-cnv-tests-fedora:41 --filter-by-os amd64 --registry-config=/tmp/tmpmzl4kqp_-cnv-tests-pull-secret/pull-secrets.json'})
+2026-02-04T12:04:18.177466 pyhelper_utils.shell INFO Running oc image -o json info quay.io/openshift-cnv/qe-cnv-tests-fedora:41 --filter-by-os amd64 --registry-config=/tmp/tmpmzl4kqp_-cnv-tests-pull-secret/pull-secrets.json command
+2026-02-04T12:04:20.194838 timeout_sampler INFO Elapsed time: 0.00013756752014160156 [0:00:00.000138]
+2026-02-04T12:04:20.197838 ocp_resources.resource INFO kind: VirtualMachine api version: kubevirt.io/v1
+2026-02-04T12:04:20.197942 utilities.virt WARNING `os_login_param` not defined for fedora
+2026-02-04T12:04:20.201637 utilities.virt INFO Setting random username and password
+2026-02-04T12:04:20.201962 utilities.virt WARNING Setting requests.memory value! (Users should set VM memory via memory.guest!)
+2026-02-04T12:04:20.235232 ocp_resources VirtualMachine INFO Create VirtualMachine alpine-vmi-reset-test-1770203060-1976576
+2026-02-04T12:04:20.235378 ocp_resources VirtualMachine INFO Posting {'apiVersion': 'kubevirt.io/v1', 'kind': 'VirtualMachine', 'metadata': {'creationTimestamp': None, 'labels': {'kubevirt.io/vm': 'alpine-vmi-reset-test'}, 'name': 'alpine-vmi-reset-test-1770203060-1976576'}, 'spec': {'template': {'metadata': {'creationTimestamp': None, 'labels': {'kubevirt.io/vm': 'alpine-vmi-reset-test-1770203060-1976576', 'kubevirt.io/domain': 'alpine-vmi-reset-test-1770203060-1976576', 'debugLogs': 'true'}}, 'spec': {'domain': {'cpu': {'cores': 1}, 'memory': {'guest': '1Gi'}, 'devices': {'disks': [{'disk': {'bus': 'virtio'}, 'name': 'containerdisk'}, {'disk': {'bus': 'virtio'}, 'name': 'cloudinitdisk'}], 'interfaces': [{'masquerade': {}, 'name': 'default'}], 'rng': {}}, 'machine': {'type': ''}, 'resources': {'requests': {'memory': '512Mi'}}}, 'networks': [{'name': 'default', 'pod': {}}], 'terminationGracePeriodSeconds': 30, 'volumes': [{'containerDisk': {'image': 'quay.io/openshift-cnv/qe-cnv-tests-fedora:41@sha256:a91659fba4e0258dda1be076dd6e56e34d9bf3dce082e57f939994ce0f124348'}, 'name': 'containerdisk'}, {'name': 'cloudinitdisk', 'cloudInitNoCloud': {'userData': '*******'}}]}}, 'runStrategy': 'Halted'}}
+2026-02-04T12:04:20.360650 timeout_sampler INFO Waiting for 5 seconds [0:00:05], retry every 1 seconds. (Function: utilities.virt.<locals>.lambda: vm.instance.get)
+2026-02-04T12:04:20.374700 timeout_sampler INFO Elapsed time: 0.000141143798828125 [0:00:00.000141]
+2026-02-04T12:04:20.374958 ocp_resources.resource INFO kind: VirtualMachineInstance api version: kubevirt.io/v1
+2026-02-04T12:04:20.375020 ocp_resources VirtualMachineInstance INFO Wait for VirtualMachineInstance alpine-vmi-reset-test-1770203060-1976576 status to be Running
+2026-02-04T12:04:20.375073 timeout_sampler INFO Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_for_status.lambda: self.exists)
+2026-02-04T12:04:21.388100 ocp_resources VirtualMachineInstance INFO Status of VirtualMachineInstance alpine-vmi-reset-test-1770203060-1976576 is Scheduling
+2026-02-04T12:08:20.561025 ocp_resources VirtualMachineInstance ERROR Status of VirtualMachineInstance alpine-vmi-reset-test-1770203060-1976576 is Scheduling
+2026-02-04T12:08:20.585434 ocp_resources Pod INFO Get Pod virt-launcher-alpine-vmi-reset-test-1770203060-1976576-7srth status
+2026-02-04T12:08:20.589015 ocp_resources VirtualMachineInstance ERROR Status of virt-launcher pod virt-launcher-alpine-vmi-reset-test-1770203060-1976576-7srth: Pending
+2026-02-04T12:08:20.603134 ocp_resources VirtualMachine INFO Delete VirtualMachine alpine-vmi-reset-test-1770203060-1976576
+2026-02-04T12:08:20.609936 ocp_resources VirtualMachine INFO Deleting {'apiVersion': 'kubevirt.io/v1', 'kind': 'VirtualMachine', 'metadata': {'annotations': {'kubemacpool.io/transaction-timestamp': '2026-02-04T11:04:20.377125879Z', 'kubevirt.io/latest-observed-api-version': 'v1', 'kubevirt.io/storage-observed-api-version': 'v1'}, 'creationTimestamp': '2026-02-04T11:04:20Z', 'finalizers': ['kubevirt.io/virtualMachineControllerFinalize'], 'generation': 2, 'labels': {'kubevirt.io/vm': 'alpine-vmi-reset-test'}, 'managedFields': [{'apiVersion': 'kubevirt.io/v1', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:labels': {'.': {}, 'f:kubevirt.io/vm': {}}}, 'f:spec': {'.': {}, 'f:template': {'.': {}, 'f:metadata': {'.': {}, 'f:creationTimestamp': {}, 'f:labels': {'.': {}, 'f:debugLogs': {}, 'f:kubevirt.io/domain': {}, 'f:kubevirt.io/vm': {}}}, 'f:spec': {'.': {}, 'f:domain': {'.': {}, 'f:cpu': {'.': {}, 'f:cores': {}}, 'f:devices': {'.': {}, 'f:disks': {}, 'f:interfaces': {}, 'f:rng': {}}, 'f:machine': {'.': {}, 'f:type': {}}, 'f:memory': {'.': {}, 'f:guest': {}}, 'f:resources': {'.': {}, 'f:requests': {'.': {}, 'f:memory': {}}}}, 'f:networks': {}, 'f:terminationGracePeriodSeconds': {}, 'f:volumes': {}}}}}, 'manager': 'OpenAPI-Generator', 'operation': 'Update', 'time': '2026-02-04T11:04:20Z'}, {'apiVersion': 'kubevirt.io/v1', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:spec': {'f:runStrategy': {}}}, 'manager': 'virt-api', 'operation': 'Update', 'time': '2026-02-04T11:04:20Z'}, {'apiVersion': 'kubevirt.io/v1', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:annotations': {'f:kubevirt.io/latest-observed-api-version': {}, 'f:kubevirt.io/storage-observed-api-version': {}}, 'f:finalizers': {'.': {}, 'v:"kubevirt.io/virtualMachineControllerFinalize"': {}}}}, 'manager': 'virt-controller', 'operation': 'Update', 'time': '2026-02-04T11:04:20Z'}, {'apiVersion': 'kubevirt.io/v1', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:status': {'.': {}, 'f:conditions': {}, 'f:created': {}, 'f:desiredGeneration': {}, 'f:observedGeneration': {}, 'f:printableStatus': {}, 'f:runStrategy': {}, 'f:volumeSnapshotStatuses': {}}}, 'manager': 'virt-controller', 'operation': 'Update', 'subresource': 'status', 'time': '2026-02-04T11:04:20Z'}], 'name': 'alpine-vmi-reset-test-1770203060-1976576', 'namespace': 'lifecycle-test-vm-reset-api', 'resourceVersion': '270034', 'uid': '11b439b2-6a83-4ae8-9587-f4907c87371d'}, 'spec': {'runStrategy': 'Always', 'template': {'metadata': {'creationTimestamp': None, 'labels': {'debugLogs': 'true', 'kubevirt.io/domain': 'alpine-vmi-reset-test-1770203060-1976576', 'kubevirt.io/vm': 'alpine-vmi-reset-test-1770203060-1976576'}}, 'spec': {'architecture': 'amd64', 'domain': {'cpu': {'cores': 1}, 'devices': {'disks': [{'disk': {'bus': 'virtio'}, 'name': 'containerdisk'}, {'disk': {'bus': 'virtio'}, 'name': 'cloudinitdisk'}], 'interfaces': [{'macAddress': '02:a4:a3:c6:6a:2d', 'masquerade': {}, 'name': 'default'}], 'rng': {}}, 'firmware': {'serial': '40b82e13-80ac-4cfd-bb42-1f67fd1b976e', 'uuid': '1e3838e8-b249-4368-8212-9192bd360de6'}, 'machine': {'type': 'pc-q35-rhel9.6.0'}, 'memory': {'guest': '1Gi'}, 'resources': {'requests': {'memory': '512Mi'}}}, 'networks': [{'name': 'default', 'pod': {}}], 'terminationGracePeriodSeconds': 30, 'volumes': [{'containerDisk': {'image': 'quay.io/openshift-cnv/qe-cnv-tests-fedora:41@sha256:a91659fba4e0258dda1be076dd6e56e34d9bf3dce082e57f939994ce0f124348'}, 'name': 'containerdisk'}, {'cloudInitNoCloud': {'userData': '*******'}, 'name': 'cloudinitdisk'}]}}}, 'status': {'conditions': [{'lastProbeTime': '2026-02-04T11:04:20Z', 'lastTransitionTime': '2026-02-04T11:04:20Z', 'message': 'Guest VM is not reported as running', 'reason': 'GuestNotRunning', 'status': 'False', 'type': 'Ready'}], 'created': True, 'desiredGeneration': 2, 'observedGeneration': 2, 'printableStatus': 'Starting', 'runStrategy': 'Always', 'volumeSnapshotStatuses': [{'enabled': False, 'name': 'containerdisk', 'reason': 'Snapshot is not supported for this volumeSource type [containerdisk]'}, {'enabled': False, 'name': 'cloudinitdisk', 'reason': 'Snapshot is not supported for this volumeSource type [cloudinitdisk]'}]}}
+2026-02-04T12:08:20.657046 ocp_resources VirtualMachine INFO Wait until VirtualMachine alpine-vmi-reset-test-1770203060-1976576 is deleted
+2026-02-04T12:08:20.657246 timeout_sampler INFO Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_deleted.lambda: self.exists)
+2026-02-04T12:08:31.701941 timeout_sampler INFO Elapsed time: 11.041288137435913 [0:00:11.041288]
+_______________________________________________________ 1 of 8 completed, 0 Pass, 0 Fail, 0 Skip, 0 XPass, 0 XFail, 1 Error, 0 ReRun _______________________________________________________
+self = <ocp_resources.virtual_machine_instance.VirtualMachineInstance object at 0x7f86e76aef90>, timeout = 240, logs = True, stop_status = None
+
+    def wait_until_running(self, timeout=TIMEOUT_4MINUTES, logs=True, stop_status=None):
+        """
+        Wait until VMI is running
+    
+        Args:
+            timeout (int): Time to wait for VMI.
+            logs (bool): True to extract logs from the VMI pod and from the VMI.
+            stop_status (str): Status which should stop the wait and failed.
+    
+        Raises:
+            TimeoutExpiredError: If VMI failed to run.
+        """
+        try:
+>           self.wait_for_status(status=self.Status.RUNNING, timeout=timeout, stop_status=stop_status)
+
+.venv/lib/python3.14/site-packages/ocp_resources/virtual_machine_instance.py:130: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.14/site-packages/ocp_resources/resource.py:991: in wait_for_status
+    for sample in samples:
+                  ^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <timeout_sampler.TimeoutSampler object at 0x7f86e68f4b90>
+
+    def __iter__(self) -> Any:
+        """
+        Call `func` and yield the result, or raise an exception on timeout.
+    
+        Yields:
+            any: Return value from `func`
+    
+        Raises:
+            TimeoutExpiredError: if `func` takes longer than `wait_timeout` seconds to return a value
+        """
+        timeout_watch = TimeoutWatch(timeout=self.wait_timeout)
+        if self.print_log:
+            log = (
+                f"Waiting for {self.wait_timeout} seconds"
+                f" [{datetime.timedelta(seconds=self.wait_timeout)}], retry every"
+                f" {self.sleep} seconds."
+            )
+    
+            if self.print_func_log:
+                log += f" ({self._func_log})"
+    
+            LOGGER.info(log)
+    
+        last_exp = None
+        elapsed_time = None
+        while timeout_watch.remaining_time() > 0:
+            try:
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+                yield self.func(*self.func_args, **self.func_kwargs)
+                time.sleep(self.sleep)
+                elapsed_time = None
+    
+            except Exception as exp:
+                last_exp = exp
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+    
+                if not self._should_ignore_exception(exp=last_exp):
+                    raise TimeoutExpiredError(
+                        self._get_exception_log(exp=last_exp), last_exp=last_exp, elapsed_time=elapsed_time
+                    )
+    
+                time.sleep(self.sleep)
+                elapsed_time = None
+    
+            finally:
+                if self.print_log and elapsed_time:
+                    LOGGER.info(_elapsed_time_log(elapsed_time=elapsed_time))
+    
+>       raise TimeoutExpiredError(self._get_exception_log(exp=last_exp), last_exp=last_exp)
+E       timeout_sampler.TimeoutExpiredError: Timed Out: 240
+E       Function: ocp_resources.resource.wait_for_status.lambda: self.exists
+E       Last exception: N/A.
+
+.venv/lib/python3.14/site-packages/timeout_sampler/__init__.py:182: TimeoutExpiredError
+
+During handling of the above exception, another exception occurred:
+
+unprivileged_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f86e76da550>, namespace = <ocp_resources.namespace.Namespace object at 0x7f86e69aab10>
+
+    @pytest.fixture()
+    def running_alpine_vmi(
+        unprivileged_client: DynamicClient, namespace: Namespace
+    ) -> Generator[VirtualMachineForTests, None, None]:
+        """
+        Fixture providing a running Alpine Linux VMI with SSH access.
+    
+        Args:
+            unprivileged_client: Kubernetes client with unprivileged permissions
+            namespace: Test namespace
+    
+        Yields:
+            VirtualMachine: Running VM with SSH connectivity
+        """
+        name = "alpine-vmi-reset-test"
+        LOGGER.info(f"Creating Alpine VMI: {name}")
+    
+        with VirtualMachineForTests(
+            client=unprivileged_client,
+            name=name,
+            namespace=namespace.name,
+            body=fedora_vm_body(name=name),
+            memory_requests="512Mi",
+        ) as vm:
+>           running_vm(vm=vm)
+
+tests/virt/lifecycle/conftest.py:70: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+utilities/virt.py:1763: in running_vm
+    wait_for_running_vm(
+utilities/virt.py:1691: in wait_for_running_vm
+    vm.vmi.wait_until_running(timeout=wait_until_running_timeout)
+.venv/lib/python3.14/site-packages/ocp_resources/virtual_machine_instance.py:138: in wait_until_running
+    self.logger.debug(virt_pod.log(container="compute"))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/ocp_resources/pod.py:546: in log
+    return self._kube_v1_api.read_namespaced_pod_log(name=self.name, namespace=self.namespace, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/kubernetes/client/api/core_v1_api.py:24264: in read_namespaced_pod_log
+    return self.read_namespaced_pod_log_with_http_info(name, namespace, **kwargs)  # noqa: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/kubernetes/client/api/core_v1_api.py:24387: in read_namespaced_pod_log_with_http_info
+    return self.api_client.call_api(
+.venv/lib/python3.14/site-packages/kubernetes/client/api_client.py:348: in call_api
+    return self.__call_api(resource_path, method,
+.venv/lib/python3.14/site-packages/kubernetes/client/api_client.py:180: in __call_api
+    response_data = self.request(
+.venv/lib/python3.14/site-packages/kubernetes/client/api_client.py:373: in request
+    return self.rest_client.GET(url,
+.venv/lib/python3.14/site-packages/kubernetes/client/rest.py:244: in GET
+    return self.request("GET", url,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <kubernetes.client.rest.RESTClientObject object at 0x7f86e76da850>, method = 'GET'
+url = 'https://api.crc.testing:6443/api/v1/namespaces/lifecycle-test-vm-reset-api/pods/virt-launcher-alpine-vmi-reset-test-1770203060-1976576-7srth/log'
+query_params = [('container', 'compute')]
+headers = {'Accept': 'application/json', 'Content-Type': 'application/json', 'User-Agent': 'OpenAPI-Generator/34.1.0/python', 'authorization': 'Bearer sha256~af_1L91kXIy1Vm9wskwHqD0gLgkQuxByW1_3LPmkjlQ'}
+body = None, post_params = {}, _preload_content = True, _request_timeout = None
+
+    def request(self, method, url, query_params=None, headers=None,
+                body=None, post_params=None, _preload_content=True,
+                _request_timeout=None):
+        """Perform requests.
+    
+        :param method: http request method
+        :param url: http request url
+        :param query_params: query parameters in the url
+        :param headers: http request headers
+        :param body: request json body, for `application/json`
+        :param post_params: request post parameters,
+                            `application/x-www-form-urlencoded`
+                            and `multipart/form-data`
+        :param _preload_content: if False, the urllib3.HTTPResponse object will
+                                 be returned without reading/decoding response
+                                 data. Default is True.
+        :param _request_timeout: timeout setting for this request. If one
+                                 number provided, it will be total request
+                                 timeout. It can also be a pair (tuple) of
+                                 (connection, read) timeouts.
+        """
+        method = method.upper()
+        assert method in ['GET', 'HEAD', 'DELETE', 'POST', 'PUT',
+                          'PATCH', 'OPTIONS']
+    
+        if post_params and body:
+            raise ApiValueError(
+                "body parameter cannot be used with post_params parameter."
+            )
+    
+        post_params = post_params or {}
+        headers = headers or {}
+    
+        timeout = None
+        if _request_timeout:
+            if isinstance(_request_timeout, (int, ) if six.PY3 else (int, long)):  # noqa: E501,F821
+                timeout = urllib3.Timeout(total=_request_timeout)
+            elif (isinstance(_request_timeout, tuple) and
+                  len(_request_timeout) == 2):
+                timeout = urllib3.Timeout(
+                    connect=_request_timeout[0], read=_request_timeout[1])
+    
+        if 'Content-Type' not in headers:
+            headers['Content-Type'] = 'application/json'
+    
+        try:
+            # For `POST`, `PUT`, `PATCH`, `OPTIONS`, `DELETE`
+            if method in ['POST', 'PUT', 'PATCH', 'OPTIONS', 'DELETE']:
+                if query_params:
+                    url += '?' + urlencode(query_params)
+                if (re.search('json', headers['Content-Type'], re.IGNORECASE) or
+                        headers['Content-Type'] == 'application/apply-patch+yaml'):
+                    if headers['Content-Type'] == 'application/json-patch+json':
+                        if not isinstance(body, list):
+                            headers['Content-Type'] = \
+                                'application/strategic-merge-patch+json'
+                    request_body = None
+                    if body is not None:
+                        request_body = json.dumps(body)
+                    r = self.pool_manager.request(
+                        method, url,
+                        body=request_body,
+                        preload_content=_preload_content,
+                        timeout=timeout,
+                        headers=headers)
+                elif headers['Content-Type'] == 'application/x-www-form-urlencoded':  # noqa: E501
+                    r = self.pool_manager.request(
+                        method, url,
+                        fields=post_params,
+                        encode_multipart=False,
+                        preload_content=_preload_content,
+                        timeout=timeout,
+                        headers=headers)
+                elif headers['Content-Type'] == 'multipart/form-data':
+                    # must del headers['Content-Type'], or the correct
+                    # Content-Type which generated by urllib3 will be
+                    # overwritten.
+                    del headers['Content-Type']
+                    r = self.pool_manager.request(
+                        method, url,
+                        fields=post_params,
+                        encode_multipart=True,
+                        preload_content=_preload_content,
+                        timeout=timeout,
+                        headers=headers)
+                # Pass a `string` parameter directly in the body to support
+                # other content types than Json when `body` argument is
+                # provided in serialized form
+                elif isinstance(body, str) or isinstance(body, bytes):
+                    request_body = body
+                    r = self.pool_manager.request(
+                        method, url,
+                        body=request_body,
+                        preload_content=_preload_content,
+                        timeout=timeout,
+                        headers=headers)
+                else:
+                    # Cannot generate the request from given parameters
+                    msg = """Cannot prepare a request message for provided
+                             arguments. Please check that your arguments match
+                             declared content type."""
+                    raise ApiException(status=0, reason=msg)
+            # For `GET`, `HEAD`
+            else:
+                r = self.pool_manager.request(method, url,
+                                              fields=query_params,
+                                              preload_content=_preload_content,
+                                              timeout=timeout,
+                                              headers=headers)
+        except urllib3.exceptions.SSLError as e:
+            msg = "{0}\n{1}".format(type(e).__name__, str(e))
+            raise ApiException(status=0, reason=msg)
+    
+        if _preload_content:
+            r = RESTResponse(r)
+    
+            # In the python 3, the response.data is bytes.
+            # we need to decode it to string.
+            if six.PY3:
+                r.data = r.data.decode('utf8')
+    
+            # log response body
+            logger.debug("response body: %s", r.data)
+    
+        if not 200 <= r.status <= 299:
+>           raise ApiException(http_resp=r)
+E           kubernetes.client.exceptions.ApiException: (400)
+E           Reason: Bad Request
+E           HTTP response headers: HTTPHeaderDict({'Audit-Id': '6c5e87e5-45ea-4488-a12a-0626ab11f963', 'Cache-Control': 'no-cache, private', 'Content-Type': 'application/json', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'Date': 'Wed, 04 Feb 2026 11:08:20 GMT', 'Content-Length': '245'})
+E           HTTP response body: {"kind":"Status","apiVersion":"v1","metadata":{},"status":"Failure","message":"container \"compute\" in pod \"virt-launcher-alpine-vmi-reset-test-1770203060-1976576-7srth\" is waiting to start: PodInitializing","reason":"BadRequest","code":400}
+
+.venv/lib/python3.14/site-packages/kubernetes/client/rest.py:238: ApiException
+
+tests/virt/lifecycle/test_vm_reset_api.py 2026-02-04T12:09:06.908798 conftest INFO Alpine VMI alpine-vmi-reset-test is running and SSH accessible
+2026-02-04T12:09:28.210613 test_vm_reset_api INFO VMI UID after reset: 4d824637-579c-443a-adaf-088f39cfac44
+2026-02-04T12:09:28.210748 test_vm_reset_api INFO VMI UID preservation test completed successfully
+.
+_______________________________________________________ 2 of 8 completed, 1 Pass, 0 Fail, 0 Skip, 0 XPass, 0 XFail, 1 Error, 0 ReRun _______________________________________________________
+
+tests/virt/lifecycle/test_vm_reset_api.py 2026-02-04T12:10:16.072272 conftest INFO Alpine VMI alpine-vmi-reset-test is running and SSH accessible
+.
+_______________________________________________________ 3 of 8 completed, 2 Pass, 0 Fail, 0 Skip, 0 XPass, 0 XFail, 1 Error, 0 ReRun _______________________________________________________
+
+tests/virt/lifecycle/test_vm_reset_api.py 2026-02-04T12:12:17.535021 Host ERROR [alpine-vmi-reset-test-1770203448-6716638] Failed to run command uptime -s ERR: bash: line 1: u: command not found
+ OUT: 
+2026-02-04T12:12:17.535177 tests.virt.lifecycle.conftest INFO Boot time from VM alpine-vmi-reset-test-1770203448-6716638: 
+2026-02-04T12:12:17.535238 test_vm_reset_api INFO Boot time after reset: 
+F
+
+____________________________________________________________________ TestVMIResetAPI.test_boot_time_changes_after_reset ____________________________________________________________________
+
+self = <test_vm_reset_api.TestVMIResetAPI object at 0x7f86e767c510>, running_alpine_vmi = <utilities.virt.VirtualMachineForTests object at 0x7f86e67dea50>
+
+    @pytest.mark.polarion("VIRTSTRAT-357-04")
+    def test_boot_time_changes_after_reset(self, running_alpine_vmi: VirtualMachineForTests) -> None:
+        """
+        Test that the guest OS boot time changes after reset, confirming actual reboot.
+    
+        Related: TS-11, AC-1
+    
+        Steps:
+            1. Execute 'uptime -s' command on the VMI to get boot time
+            2. Issue PUT request to /virtualmachineinstances/{name}/reset
+            3. Wait for VMI to become accessible
+            4. Execute 'uptime -s' command again on the VMI
+    
+        Expected:
+            - Boot time after reset is different from boot time before reset
+            - Time difference indicates recent reboot
+    
+        Args:
+            running_alpine_vmi: Running Alpine VM fixture
+
+TEST: TestVMIResetAPI.test_boot_time_changes_after_reset STATUS: FAILED
+        """
+        vm = running_alpine_vmi
+        LOGGER.info(f"Testing boot time change for VMI: {vm.name}")
+    
+        boot_time_before = get_boot_time_from_vm(vm=vm)
+        LOGGER.info(f"Boot time before reset: {boot_time_before}")
+    
+        LOGGER.info(f"Calling reset() on VMI {vm.vmi.name}")
+        vm.vmi.reset()
+    
+        LOGGER.info("Waiting for VMI to become accessible after reset")
+        vm.vmi.wait_until_running()
+        wait_for_ssh_connectivity(vm=vm, timeout=TIMEOUT_5MIN)
+    
+        boot_time_after = get_boot_time_from_vm(vm=vm)
+        LOGGER.info(f"Boot time after reset: {boot_time_after}")
+    
+>       assert boot_time_before != boot_time_after, (
+            f"Boot time should change after reset, indicating guest reboot. "
+            f"Before: {boot_time_before}, After: {boot_time_after}"
+        )
+E       AssertionError: Boot time should change after reset, indicating guest reboot. Before: , After: 
+E       assert '' != ''
+
+tests/virt/lifecycle/test_vm_reset_api.py:221: AssertionError
+---------------------------------------------------------------------------------- Captured stderr setup -----------------------------------------------------------------------------------
+2026-02-04T12:10:46.809669 ocp_resources.resource INFO Trying to get client via new_client_from_config --- [DuplicateFilter: Last log `kind: VirtualMachineInstance api version: kubevirt.io/v1` repeated 7 times]
+
+------------------------------------------ test_boot_time_changes_after_reset ------------------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-04T12:10:46.809100 conftest INFO Executing function fixture: term_handler_scope_function
+2026-02-04T12:10:46.809302 conftest INFO Executing function fixture: autouse_fixtures
+2026-02-04T12:10:46.809474 conftest INFO Executing function fixture: running_alpine_vmi
+2026-02-04T12:10:46.809523 conftest INFO Creating Alpine VMI: alpine-vmi-reset-test
+2026-02-04T12:10:46.891256 timeout_sampler INFO Waiting for 10 seconds [0:00:10], retry every 1 seconds. (Function: utilities.virt._get_image_json  Kwargs: {'cmd': 'oc image -o json info quay.io/openshift-cnv/qe-cnv-tests-fedora:41 --filter-by-os amd64 --registry-config=/tmp/tmptm4lwoaa-cnv-tests-pull-secret/pull-secrets.json'})
+2026-02-04T12:10:46.891438 pyhelper_utils.shell INFO Running oc image -o json info quay.io/openshift-cnv/qe-cnv-tests-fedora:41 --filter-by-os amd64 --registry-config=/tmp/tmptm4lwoaa-cnv-tests-pull-secret/pull-secrets.json command
+2026-02-04T12:10:48.669622 timeout_sampler INFO Elapsed time: 0.00014591217041015625 [0:00:00.000146]
+2026-02-04T12:10:48.671770 ocp_resources.resource INFO kind: VirtualMachine api version: kubevirt.io/v1
+2026-02-04T12:10:48.671869 utilities.virt WARNING `os_login_param` not defined for fedora
+2026-02-04T12:10:48.675315 utilities.virt INFO Setting random username and password
+2026-02-04T12:10:48.710263 ocp_resources VirtualMachine INFO Create VirtualMachine alpine-vmi-reset-test-1770203448-6716638
+2026-02-04T12:10:48.710484 ocp_resources VirtualMachine INFO Posting {'apiVersion': 'kubevirt.io/v1', 'kind': 'VirtualMachine', 'metadata': {'creationTimestamp': None, 'labels': {'kubevirt.io/vm': 'alpine-vmi-reset-test'}, 'name': 'alpine-vmi-reset-test-1770203448-6716638'}, 'spec': {'template': {'metadata': {'creationTimestamp': None, 'labels': {'kubevirt.io/vm': 'alpine-vmi-reset-test-1770203448-6716638', 'kubevirt.io/domain': 'alpine-vmi-reset-test-1770203448-6716638', 'debugLogs': 'true'}}, 'spec': {'domain': {'cpu': {'cores': 1}, 'memory': {'guest': '1Gi'}, 'devices': {'disks': [{'disk': {'bus': 'virtio'}, 'name': 'containerdisk'}, {'disk': {'bus': 'virtio'}, 'name': 'cloudinitdisk'}], 'interfaces': [{'masquerade': {}, 'name': 'default'}], 'rng': {}}, 'machine': {'type': ''}, 'resources': {'requests': {'memory': '512Mi'}}}, 'networks': [{'name': 'default', 'pod': {}}], 'terminationGracePeriodSeconds': 30, 'volumes': [{'containerDisk': {'image': 'quay.io/openshift-cnv/qe-cnv-tests-fedora:41@sha256:a91659fba4e0258dda1be076dd6e56e34d9bf3dce082e57f939994ce0f124348'}, 'name': 'containerdisk'}, {'name': 'cloudinitdisk', 'cloudInitNoCloud': {'userData': '*******'}}]}}, 'runStrategy': 'Halted'}}
+2026-02-04T12:10:48.675506 utilities.virt WARNING Setting requests.memory value! (Users should set VM memory via memory.guest!)
+2026-02-04T12:10:48.826196 timeout_sampler INFO Waiting for 5 seconds [0:00:05], retry every 1 seconds. (Function: utilities.virt.<locals>.lambda: vm.instance.get)
+2026-02-04T12:10:48.872343 timeout_sampler INFO Elapsed time: 0.0001723766326904297 [0:00:00.000172]
+2026-02-04T12:10:48.872548 ocp_resources.resource INFO kind: VirtualMachineInstance api version: kubevirt.io/v1
+2026-02-04T12:10:48.872613 ocp_resources VirtualMachineInstance INFO Wait for VirtualMachineInstance alpine-vmi-reset-test-1770203448-6716638 status to be Running
+2026-02-04T12:10:48.872675 timeout_sampler INFO Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_for_status.lambda: self.exists)
+2026-02-04T12:10:49.881395 ocp_resources VirtualMachineInstance INFO Status of VirtualMachineInstance alpine-vmi-reset-test-1770203448-6716638 is Scheduling
+2026-02-04T12:10:55.923563 ocp_resources VirtualMachineInstance INFO Status of VirtualMachineInstance alpine-vmi-reset-test-1770203448-6716638 is Scheduled
+2026-02-04T12:10:57.941606 ocp_resources VirtualMachineInstance INFO Status of VirtualMachineInstance alpine-vmi-reset-test-1770203448-6716638 is Running
+2026-02-04T12:10:57.941735 timeout_sampler INFO Elapsed time: 9.06551742553711 [0:00:09.065517]
+2026-02-04T12:10:57.941956 ocp_resources VirtualMachineInstance INFO Wait for VirtualMachineInstance/alpine-vmi-reset-test-1770203448-6716638's 'AgentConnected' condition to be 'True'
+2026-02-04T12:10:57.942005 ocp_resources VirtualMachineInstance INFO Wait until VirtualMachineInstance alpine-vmi-reset-test-1770203448-6716638 is created
+2026-02-04T12:10:57.942055 timeout_sampler INFO Waiting for 720 seconds [0:12:00], retry every 1 seconds. (Function: ocp_resources.resource.wait.lambda: self.exists)
+2026-02-04T12:10:57.941885 utilities.virt INFO Wait until guest agent is active on alpine-vmi-reset-test-1770203448-6716638
+2026-02-04T12:10:57.945899 timeout_sampler INFO Elapsed time: 4.6253204345703125e-05 [0:00:00.000046]
+2026-02-04T12:10:57.946042 timeout_sampler INFO Waiting for 719.995979309082 seconds [0:11:59.995979], retry every 1 seconds. (Function: ocp_resources.resource.wait_for_condition.lambda: self.instance)
+2026-02-04T12:11:18.184563 timeout_sampler INFO Elapsed time: 20.23464035987854 [0:00:20.234640]
+2026-02-04T12:11:18.184777 timeout_sampler INFO Waiting for 720 seconds [0:12:00], retry every 1 seconds. (Function: utilities.virt.<locals>.lambda: vmi.instance)
+2026-02-04T12:11:18.184697 utilities.virt INFO Wait for alpine-vmi-reset-test-1770203448-6716638 network interfaces
+2026-02-04T12:11:18.187625 timeout_sampler INFO Elapsed time: 0.00017881393432617188 [0:00:00.000179]
+2026-02-04T12:11:18.187708 utilities.virt INFO Wait for alpine-vmi-reset-test-1770203448-6716638 SSH connectivity.
+2026-02-04T12:11:18.187760 utilities.virt INFO SSH command: ssh -o 'ProxyCommand=virtctl port-forward --stdio=true vm/alpine-vmi-reset-test-1770203448-6716638/lifecycle-test-vm-reset-api 22' gnzpl8xuSYntUrGl@alpine-vmi-reset-test-1770203448-6716638
+2026-02-04T12:11:25.657464 timeout_sampler INFO Waiting for 120 seconds [0:02:00], retry every 5 seconds. (Function: rrmngmnt.host.run_command  Kwargs: {'command': ['exit'], 'tcp_timeout': 60})
+2026-02-04T12:11:25.657616 Host INFO [alpine-vmi-reset-test-1770203448-6716638] Executing command exit
+2026-02-04T12:11:25.705194 paramiko.transport INFO Connected (version 2.0, client OpenSSH_9.8)
+2026-02-04T12:11:25.723253 paramiko.transport INFO Authentication (publickey) successful!
+2026-02-04T12:11:25.983934 timeout_sampler INFO Elapsed time: 0.00018024444580078125 [0:00:00.000180]
+2026-02-04T12:11:25.984129 utilities.virt INFO Wait for alpine-vmi-reset-test-1770203448-6716638 SSH connectivity.
+2026-02-04T12:11:25.984215 utilities.virt INFO SSH command: ssh -o 'ProxyCommand=virtctl port-forward --stdio=true vm/alpine-vmi-reset-test-1770203448-6716638/lifecycle-test-vm-reset-api 22' gnzpl8xuSYntUrGl@alpine-vmi-reset-test-1770203448-6716638
+2026-02-04T12:11:33.407461 timeout_sampler INFO Waiting for 300 seconds [0:05:00], retry every 5 seconds. (Function: rrmngmnt.host.run_command  Kwargs: {'command': ['exit'], 'tcp_timeout': 60})
+2026-02-04T12:11:33.407590 Host INFO [alpine-vmi-reset-test-1770203448-6716638] Executing command exit
+2026-02-04T12:11:33.459600 paramiko.transport INFO Connected (version 2.0, client OpenSSH_9.8)
+2026-02-04T12:11:33.481635 paramiko.transport INFO Authentication (publickey) successful!
+2026-02-04T12:11:33.561622 timeout_sampler INFO Elapsed time: 0.0001556873321533203 [0:00:00.000156]
+----------------------------------------------------------------------------------- Captured stderr call -----------------------------------------------------------------------------------
+2026-02-04T12:11:33.561809 conftest INFO Alpine VMI alpine-vmi-reset-test is running and SSH accessible
+--------------------------------------------------------- CALL ---------------------------------------------------------
+2026-02-04T12:11:33.562569 test_vm_reset_api INFO Testing boot time change for VMI: alpine-vmi-reset-test-1770203448-6716638
+2026-02-04T12:11:33.562634 utilities.virt INFO SSH command: ssh -o 'ProxyCommand=virtctl port-forward --stdio=true vm/alpine-vmi-reset-test-1770203448-6716638/lifecycle-test-vm-reset-api 22' gnzpl8xuSYntUrGl@alpine-vmi-reset-test-1770203448-6716638
+2026-02-04T12:11:41.112590 Host INFO [alpine-vmi-reset-test-1770203448-6716638] Executing command u p t i m e   - s
+2026-02-04T12:11:41.161944 paramiko.transport INFO Connected (version 2.0, client OpenSSH_9.8)
+2026-02-04T12:11:41.181468 paramiko.transport INFO Authentication (publickey) successful!
+2026-02-04T12:11:41.265512 Host ERROR [alpine-vmi-reset-test-1770203448-6716638] Failed to run command uptime -s ERR: bash: line 1: u: command not found
+ OUT: 
+2026-02-04T12:11:41.265651 tests.virt.lifecycle.conftest INFO Boot time from VM alpine-vmi-reset-test-1770203448-6716638: 
+2026-02-04T12:11:41.265697 test_vm_reset_api INFO Boot time before reset: 
+2026-02-04T12:11:41.265840 test_vm_reset_api INFO Calling reset() on VMI alpine-vmi-reset-test-1770203448-6716638
+2026-02-04T12:11:41.355505 ocp_resources VirtualMachineInstance INFO Wait for VirtualMachineInstance alpine-vmi-reset-test-1770203448-6716638 status to be Running
+2026-02-04T12:11:41.355674 timeout_sampler INFO Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_for_status.lambda: self.exists)
+2026-02-04T12:11:41.355259 test_vm_reset_api INFO Waiting for VMI to become accessible after reset
+2026-02-04T12:11:41.368716 ocp_resources VirtualMachineInstance INFO Status of VirtualMachineInstance alpine-vmi-reset-test-1770203448-6716638 is Running
+2026-02-04T12:11:41.368845 timeout_sampler INFO Elapsed time: 0.00013828277587890625 [0:00:00.000138]
+2026-02-04T12:11:41.368921 utilities.virt INFO Wait for alpine-vmi-reset-test-1770203448-6716638 SSH connectivity.
+2026-02-04T12:11:41.368984 utilities.virt INFO SSH command: ssh -o 'ProxyCommand=virtctl port-forward --stdio=true vm/alpine-vmi-reset-test-1770203448-6716638/lifecycle-test-vm-reset-api 22' gnzpl8xuSYntUrGl@alpine-vmi-reset-test-1770203448-6716638
+2026-02-04T12:11:49.157419 timeout_sampler INFO Waiting for 300 seconds [0:05:00], retry every 5 seconds. (Function: rrmngmnt.host.run_command  Kwargs: {'command': ['exit'], 'tcp_timeout': 60})
+2026-02-04T12:11:49.157539 Host INFO [alpine-vmi-reset-test-1770203448-6716638] Executing command exit
+2026-02-04T12:12:04.215025 paramiko.transport ERROR Exception (client): Error reading SSH protocol banner
+2026-02-04T12:12:04.216000 paramiko.transport ERROR Traceback (most recent call last):
+2026-02-04T12:12:04.216121 paramiko.transport ERROR   File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/paramiko/transport.py", line 2363, in _check_banner
+2026-02-04T12:12:04.216169 paramiko.transport ERROR     buf = self.packetizer.readline(timeout)
+2026-02-04T12:12:04.216202 paramiko.transport ERROR   File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/paramiko/packet.py", line 395, in readline
+2026-02-04T12:12:04.216231 paramiko.transport ERROR     buf += self._read_timeout(timeout)
+2026-02-04T12:12:04.216259 paramiko.transport ERROR            ~~~~~~~~~~~~~~~~~~^^^^^^^^^
+2026-02-04T12:12:04.216285 paramiko.transport ERROR   File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/paramiko/packet.py", line 673, in _read_timeout
+2026-02-04T12:12:04.216312 paramiko.transport ERROR     raise socket.timeout()
+2026-02-04T12:12:04.216339 paramiko.transport ERROR TimeoutError
+2026-02-04T12:12:04.216365 paramiko.transport ERROR 
+2026-02-04T12:12:04.216393 paramiko.transport ERROR During handling of the above exception, another exception occurred:
+2026-02-04T12:12:04.216421 paramiko.transport ERROR 
+2026-02-04T12:12:04.216449 paramiko.transport ERROR Traceback (most recent call last):
+2026-02-04T12:12:04.216477 paramiko.transport ERROR   File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/paramiko/transport.py", line 2179, in run
+2026-02-04T12:12:04.216504 paramiko.transport ERROR     self._check_banner()
+2026-02-04T12:12:04.216529 paramiko.transport ERROR     ~~~~~~~~~~~~~~~~~~^^
+2026-02-04T12:12:04.216559 paramiko.transport ERROR   File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/paramiko/transport.py", line 2367, in _check_banner
+2026-02-04T12:12:04.216596 paramiko.transport ERROR     raise SSHException(
+2026-02-04T12:12:04.216625 paramiko.transport ERROR         "Error reading SSH protocol banner" + str(e)
+2026-02-04T12:12:04.216655 paramiko.transport ERROR     )
+2026-02-04T12:12:04.216681 paramiko.transport ERROR paramiko.ssh_exception.SSHException: Error reading SSH protocol banner
+2026-02-04T12:12:04.216708 paramiko.transport ERROR 
+2026-02-04T12:12:09.217261 Host INFO [alpine-vmi-reset-test-1770203448-6716638] Executing command exit
+2026-02-04T12:12:09.272348 paramiko.transport INFO Connected (version 2.0, client OpenSSH_9.8)
+2026-02-04T12:12:09.292046 paramiko.transport INFO Authentication (publickey) successful!
+2026-02-04T12:12:09.534371 timeout_sampler INFO Elapsed time: 20.05984354019165 [0:00:20.059844]
+2026-02-04T12:12:09.534526 utilities.virt INFO SSH command: ssh -o 'ProxyCommand=virtctl port-forward --stdio=true vm/alpine-vmi-reset-test-1770203448-6716638/lifecycle-test-vm-reset-api 22' gnzpl8xuSYntUrGl@alpine-vmi-reset-test-1770203448-6716638
+2026-02-04T12:12:17.407393 Host INFO [alpine-vmi-reset-test-1770203448-6716638] Executing command u p t i m e   - s
+2026-02-04T12:12:17.450625 paramiko.transport INFO Connected (version 2.0, client OpenSSH_9.8)
+2026-02-04T12:12:17.469419 paramiko.transport INFO Authentication (publickey) successful!
+_______________________________________________________ 4 of 8 completed, 2 Pass, 1 Fail, 0 Skip, 0 XPass, 0 XFail, 1 Error, 0 ReRun _______________________________________________________
+
+tests/virt/lifecycle/test_vm_reset_api.py 2026-02-04T12:12:25.600607 conftest INFO VMI stopped-vmi-reset-test created in stopped state
+2026-02-04T12:12:25.630972 test_vm_reset_api INFO Reset on stopped VMI raised exception as expected: (404)
+Reason: Not Found
+HTTP response headers: HTTPHeaderDict({'Audit-Id': 'fea968d3-c15e-4d63-a4e4-732e8d1651d5', 'Cache-Control': 'no-cache, private', 'Content-Length': '358', 'Content-Type': 'application/json', 'Date': 'Wed, 04 Feb 2026 11:12:25 GMT', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Kubernetes-Pf-Flowschema-Uid': 'f189ee22-aabe-407b-ba5e-9a603c368650', 'X-Kubernetes-Pf-Prioritylevel-Uid': '4f751c94-83f7-493a-a75f-8ccff50aa8b4'})
+HTTP response body: {
+ "kind": "Status",
+ "apiVersion": "v1",
+ "metadata": {},
+ "status": "Failure",
+ "message": "virtualmachineinstance.kubevirt.io \"stopped-vmi-reset-test-1770203545-5253282\" not found",
+ "reason": "NotFound",
+ "details": {
+  "name": "stopped-vmi-reset-test-1770203545-5253282",
+  "group": "kubevirt.io",
+  "kind": "virtualmachineinstance"
+ },
+ "code": 404
+}
+
+.
+_______________________________________________________ 5 of 8 completed, 3 Pass, 1 Fail, 0 Skip, 0 XPass, 0 XFail, 1 Error, 0 ReRun _______________________________________________________
+
+tests/virt/lifecycle/test_vm_reset_api.py 
+----------------------------------------- test_reset_fails_on_nonexistent_vmi -----------------------------------------
+2026-02-04T12:12:25.687488 test_vm_reset_api INFO Reset on non-existent VMI raised exception as expected: (404)
+Reason: Not Found
+HTTP response headers: HTTPHeaderDict({'Audit-Id': '3483a636-84ae-43fc-a5c9-542a20f6204f', 'Cache-Control': 'no-cache, private', 'Content-Length': '328', 'Content-Type': 'application/json', 'Date': 'Wed, 04 Feb 2026 11:12:25 GMT', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Kubernetes-Pf-Flowschema-Uid': 'f189ee22-aabe-407b-ba5e-9a603c368650', 'X-Kubernetes-Pf-Prioritylevel-Uid': '4f751c94-83f7-493a-a75f-8ccff50aa8b4'})
+HTTP response body: {
+ "kind": "Status",
+ "apiVersion": "v1",
+ "metadata": {},
+ "status": "Failure",
+ "message": "virtualmachineinstance.kubevirt.io \"nonexistent-vmi-reset-test\" not found",
+ "reason": "NotFound",
+ "details": {
+  "name": "nonexistent-vmi-reset-test",
+  "group": "kubevirt.io",
+  "kind": "virtualmachineinstance"
+ },
+ "code": 404
+}
+
+2026-02-04T12:12:25.687609 test_vm_reset_api INFO Reset failure on non-existent VMI test completed successfully
+.
+TEST: TestVMIResetAPIErrorHandling.test_reset_fails_on_nonexistent_vmi STATUS: PASSED
+
+_______________________________________________________ 6 of 8 completed, 4 Pass, 1 Fail, 0 Skip, 0 XPass, 0 XFail, 1 Error, 0 ReRun _______________________________________________________
+
+tests/virt/lifecycle/test_vm_reset_api.py E
+
+TEST: TestVMIResetAPIErrorHandling.test_reset_on_paused_vmi [setup] STATUS: ERROR
+
+_________________________________________________________ ERROR at setup of TestVMIResetAPIErrorHandling.test_reset_on_paused_vmi __________________________________________________________
+
+unprivileged_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f86e76da550>, namespace = <ocp_resources.namespace.Namespace object at 0x7f86e69aab10>
+
+    @pytest.fixture()
+    def paused_vmi(
+        unprivileged_client: DynamicClient, namespace: Namespace
+    ) -> Generator[VirtualMachineForTests, None, None]:
+        """
+        Fixture providing a VMI in Paused state.
+    
+        Args:
+            unprivileged_client: Kubernetes client with unprivileged permissions
+            namespace: Test namespace
+    
+        Yields:
+            VirtualMachine: VM in Paused phase
+        """
+        name = "paused-vmi-reset-test"
+        LOGGER.info(f"Creating VMI to pause: {name}")
+    
+        with VirtualMachineForTests(
+            client=unprivileged_client,
+            name=name,
+            namespace=namespace.name,
+            body=fedora_vm_body(name=name),
+        ) as vm:
+            running_vm(vm=vm)
+            LOGGER.info(f"Pausing VMI {name}")
+>           vm.pause(wait=True)
+            ^^^^^^^^
+E           AttributeError: 'VirtualMachineForTests' object has no attribute 'pause'
+
+tests/virt/lifecycle/conftest.py:162: AttributeError
+---------------------------------------------------------------------------------- Captured stderr setup -----------------------------------------------------------------------------------
+------------------------------------------------------- TEARDOWN -------------------------------------------------------
+2026-02-04T12:12:25.690192 ocp_resources.resource INFO Trying to get client via new_client_from_config
+
+----------------------------------------------- test_reset_on_paused_vmi -----------------------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-04T12:12:25.689503 conftest INFO Executing function fixture: term_handler_scope_function
+2026-02-04T12:12:25.689734 conftest INFO Executing function fixture: autouse_fixtures
+2026-02-04T12:12:25.689945 conftest INFO Executing function fixture: paused_vmi
+2026-02-04T12:12:25.690001 conftest INFO Creating VMI to pause: paused-vmi-reset-test
+2026-02-04T12:12:25.735804 timeout_sampler INFO Waiting for 10 seconds [0:00:10], retry every 1 seconds. (Function: utilities.virt._get_image_json  Kwargs: {'cmd': 'oc image -o json info quay.io/openshift-cnv/qe-cnv-tests-fedora:41 --filter-by-os amd64 --registry-config=/tmp/tmpb8ida67n-cnv-tests-pull-secret/pull-secrets.json'})
+2026-02-04T12:12:25.735969 pyhelper_utils.shell INFO Running oc image -o json info quay.io/openshift-cnv/qe-cnv-tests-fedora:41 --filter-by-os amd64 --registry-config=/tmp/tmpb8ida67n-cnv-tests-pull-secret/pull-secrets.json command
+2026-02-04T12:12:27.475909 timeout_sampler INFO Elapsed time: 0.00013256072998046875 [0:00:00.000133]
+2026-02-04T12:12:27.478087 ocp_resources.resource INFO kind: VirtualMachine api version: kubevirt.io/v1
+2026-02-04T12:12:27.478193 utilities.virt WARNING `os_login_param` not defined for fedora
+2026-02-04T12:12:27.481870 utilities.virt INFO Setting random username and password
+2026-02-04T12:12:27.521397 ocp_resources VirtualMachine INFO Create VirtualMachine paused-vmi-reset-test-1770203547-4779701
+2026-02-04T12:12:27.521580 ocp_resources VirtualMachine INFO Posting {'apiVersion': 'kubevirt.io/v1', 'kind': 'VirtualMachine', 'metadata': {'creationTimestamp': None, 'labels': {'kubevirt.io/vm': 'paused-vmi-reset-test'}, 'name': 'paused-vmi-reset-test-1770203547-4779701'}, 'spec': {'template': {'metadata': {'creationTimestamp': None, 'labels': {'kubevirt.io/vm': 'paused-vmi-reset-test-1770203547-4779701', 'kubevirt.io/domain': 'paused-vmi-reset-test-1770203547-4779701', 'debugLogs': 'true'}}, 'spec': {'domain': {'cpu': {'cores': 1}, 'memory': {'guest': '1Gi'}, 'devices': {'disks': [{'disk': {'bus': 'virtio'}, 'name': 'containerdisk'}, {'disk': {'bus': 'virtio'}, 'name': 'cloudinitdisk'}], 'interfaces': [{'masquerade': {}, 'name': 'default'}], 'rng': {}}, 'machine': {'type': ''}}, 'networks': [{'name': 'default', 'pod': {}}], 'terminationGracePeriodSeconds': 30, 'volumes': [{'containerDisk': {'image': 'quay.io/openshift-cnv/qe-cnv-tests-fedora:41@sha256:a91659fba4e0258dda1be076dd6e56e34d9bf3dce082e57f939994ce0f124348'}, 'name': 'containerdisk'}, {'name': 'cloudinitdisk', 'cloudInitNoCloud': {'userData': '*******'}}]}}, 'runStrategy': 'Halted'}}
+2026-02-04T12:12:27.625835 timeout_sampler INFO Waiting for 5 seconds [0:00:05], retry every 1 seconds. (Function: utilities.virt.<locals>.lambda: vm.instance.get)
+2026-02-04T12:12:27.642186 timeout_sampler INFO Elapsed time: 0.0001430511474609375 [0:00:00.000143]
+2026-02-04T12:12:27.642391 ocp_resources.resource INFO kind: VirtualMachineInstance api version: kubevirt.io/v1
+2026-02-04T12:12:27.642478 ocp_resources VirtualMachineInstance INFO Wait for VirtualMachineInstance paused-vmi-reset-test-1770203547-4779701 status to be Running
+2026-02-04T12:12:27.642533 timeout_sampler INFO Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_for_status.lambda: self.exists)
+2026-02-04T12:12:28.649250 ocp_resources VirtualMachineInstance INFO Status of VirtualMachineInstance paused-vmi-reset-test-1770203547-4779701 is Scheduling
+2026-02-04T12:12:33.666826 ocp_resources VirtualMachineInstance INFO Status of VirtualMachineInstance paused-vmi-reset-test-1770203547-4779701 is Scheduled
+2026-02-04T12:12:36.679209 ocp_resources VirtualMachineInstance INFO Status of VirtualMachineInstance paused-vmi-reset-test-1770203547-4779701 is Running
+2026-02-04T12:12:36.679410 timeout_sampler INFO Elapsed time: 9.032982349395752 [0:00:09.032982]
+2026-02-04T12:12:36.679764 ocp_resources VirtualMachineInstance INFO Wait for VirtualMachineInstance/paused-vmi-reset-test-1770203547-4779701's 'AgentConnected' condition to be 'True'
+2026-02-04T12:12:36.679914 ocp_resources VirtualMachineInstance INFO Wait until VirtualMachineInstance paused-vmi-reset-test-1770203547-4779701 is created
+2026-02-04T12:12:36.679975 timeout_sampler INFO Waiting for 720 seconds [0:12:00], retry every 1 seconds. (Function: ocp_resources.resource.wait.lambda: self.exists)
+2026-02-04T12:12:36.679650 utilities.virt INFO Wait until guest agent is active on paused-vmi-reset-test-1770203547-4779701
+2026-02-04T12:12:36.682678 timeout_sampler INFO Elapsed time: 5.340576171875e-05 [0:00:00.000053]
+2026-02-04T12:12:36.682788 timeout_sampler INFO Waiting for 719.9971349239349 seconds [0:11:59.997135], retry every 1 seconds. (Function: ocp_resources.resource.wait_for_condition.lambda: self.instance)
+2026-02-04T12:12:55.771276 timeout_sampler INFO Elapsed time: 19.085747003555298 [0:00:19.085747]
+2026-02-04T12:12:55.771491 timeout_sampler INFO Waiting for 720 seconds [0:12:00], retry every 1 seconds. (Function: utilities.virt.<locals>.lambda: vmi.instance)
+2026-02-04T12:12:55.771404 utilities.virt INFO Wait for paused-vmi-reset-test-1770203547-4779701 network interfaces
+2026-02-04T12:12:55.773957 timeout_sampler INFO Elapsed time: 0.00012612342834472656 [0:00:00.000126]
+2026-02-04T12:12:55.774067 utilities.virt INFO Wait for paused-vmi-reset-test-1770203547-4779701 SSH connectivity.
+2026-02-04T12:12:55.774138 utilities.virt INFO SSH command: ssh -o 'ProxyCommand=virtctl port-forward --stdio=true vm/paused-vmi-reset-test-1770203547-4779701/lifecycle-test-vm-reset-api 22' EPhxNqq3raNzizmO@paused-vmi-reset-test-1770203547-4779701
+2026-02-04T12:13:07.657405 timeout_sampler INFO Waiting for 120 seconds [0:02:00], retry every 5 seconds. (Function: rrmngmnt.host.run_command  Kwargs: {'command': ['exit'], 'tcp_timeout': 60})
+2026-02-04T12:13:07.657520 Host INFO [paused-vmi-reset-test-1770203547-4779701] Executing command exit
+2026-02-04T12:13:07.708858 paramiko.transport INFO Connected (version 2.0, client OpenSSH_9.8)
+2026-02-04T12:13:07.732557 paramiko.transport INFO Authentication (publickey) successful!
+2026-02-04T12:13:07.974031 timeout_sampler INFO Elapsed time: 0.00013780593872070312 [0:00:00.000138]
+2026-02-04T12:13:07.974190 conftest INFO Pausing VMI paused-vmi-reset-test
+2026-02-04T12:13:08.033853 ocp_resources VirtualMachine INFO Wait for VirtualMachine paused-vmi-reset-test-1770203547-4779701 status to be None
+2026-02-04T12:13:08.034094 timeout_sampler INFO Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: kubernetes.dynamic.client.get  Kwargs: {'field_selector': 'metadata.name==paused-vmi-reset-test-1770203547-4779701', 'namespace': 'lifecycle-test-vm-reset-api'})
+2026-02-04T12:13:09.057294 timeout_sampler INFO Elapsed time: 1.0075664520263672 [0:00:01.007566]
+2026-02-04T12:13:09.057551 ocp_resources VirtualMachineInstance INFO Wait until VirtualMachineInstance paused-vmi-reset-test-1770203547-4779701 is deleted
+2026-02-04T12:13:09.057618 timeout_sampler INFO Waiting for 480 seconds [0:08:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_deleted.lambda: self.exists)
+2026-02-04T12:13:14.078184 timeout_sampler INFO Elapsed time: 5.016910076141357 [0:00:05.016910]
+2026-02-04T12:13:14.078298 ocp_resources VirtualMachine INFO Delete VirtualMachine paused-vmi-reset-test-1770203547-4779701
+2026-02-04T12:13:14.084470 ocp_resources VirtualMachine INFO Deleting {'apiVersion': 'kubevirt.io/v1', 'kind': 'VirtualMachine', 'metadata': {'annotations': {'kubemacpool.io/transaction-timestamp': '2026-02-04T11:13:07.996568244Z', 'kubevirt.io/latest-observed-api-version': 'v1', 'kubevirt.io/storage-observed-api-version': 'v1'}, 'creationTimestamp': '2026-02-04T11:12:27Z', 'finalizers': ['kubevirt.io/virtualMachineControllerFinalize'], 'generation': 3, 'labels': {'kubevirt.io/vm': 'paused-vmi-reset-test'}, 'managedFields': [{'apiVersion': 'kubevirt.io/v1', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:labels': {'.': {}, 'f:kubevirt.io/vm': {}}}, 'f:spec': {'.': {}, 'f:template': {'.': {}, 'f:metadata': {'.': {}, 'f:creationTimestamp': {}, 'f:labels': {'.': {}, 'f:debugLogs': {}, 'f:kubevirt.io/domain': {}, 'f:kubevirt.io/vm': {}}}, 'f:spec': {'.': {}, 'f:domain': {'.': {}, 'f:cpu': {'.': {}, 'f:cores': {}}, 'f:devices': {'.': {}, 'f:disks': {}, 'f:interfaces': {}, 'f:rng': {}}, 'f:machine': {'.': {}, 'f:type': {}}, 'f:memory': {'.': {}, 'f:guest': {}}}, 'f:networks': {}, 'f:terminationGracePeriodSeconds': {}, 'f:volumes': {}}}}}, 'manager': 'OpenAPI-Generator', 'operation': 'Update', 'time': '2026-02-04T11:12:27Z'}, {'apiVersion': 'kubevirt.io/v1', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:annotations': {'f:kubevirt.io/latest-observed-api-version': {}, 'f:kubevirt.io/storage-observed-api-version': {}}, 'f:finalizers': {'.': {}, 'v:"kubevirt.io/virtualMachineControllerFinalize"': {}}}}, 'manager': 'virt-controller', 'operation': 'Update', 'time': '2026-02-04T11:12:27Z'}, {'apiVersion': 'kubevirt.io/v1', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:spec': {'f:runStrategy': {}}}, 'manager': 'virt-api', 'operation': 'Update', 'time': '2026-02-04T11:13:07Z'}, {'apiVersion': 'kubevirt.io/v1', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:status': {'.': {}, 'f:conditions': {}, 'f:desiredGeneration': {}, 'f:observedGeneration': {}, 'f:printableStatus': {}, 'f:runStrategy': {}, 'f:volumeSnapshotStatuses': {}}}, 'manager': 'virt-controller', 'operation': 'Update', 'subresource': 'status', 'time': '2026-02-04T11:13:13Z'}], 'name': 'paused-vmi-reset-test-1770203547-4779701', 'namespace': 'lifecycle-test-vm-reset-api', 'resourceVersion': '274076', 'uid': 'd3e0f1c1-a43f-478c-a152-bc2e5b357c33'}, 'spec': {'runStrategy': 'Halted', 'template': {'metadata': {'creationTimestamp': None, 'labels': {'debugLogs': 'true', 'kubevirt.io/domain': 'paused-vmi-reset-test-1770203547-4779701', 'kubevirt.io/vm': 'paused-vmi-reset-test-1770203547-4779701'}}, 'spec': {'architecture': 'amd64', 'domain': {'cpu': {'cores': 1}, 'devices': {'disks': [{'disk': {'bus': 'virtio'}, 'name': 'containerdisk'}, {'disk': {'bus': 'virtio'}, 'name': 'cloudinitdisk'}], 'interfaces': [{'macAddress': '02:a4:a3:c6:6a:32', 'masquerade': {}, 'name': 'default'}], 'rng': {}}, 'firmware': {'serial': 'a8956552-dc7d-4a3e-8ed6-3b5296d65734', 'uuid': 'afae2780-5e5b-4900-884b-1466e7c05b17'}, 'machine': {'type': 'pc-q35-rhel9.6.0'}, 'memory': {'guest': '1Gi'}, 'resources': {}}, 'networks': [{'name': 'default', 'pod': {}}], 'terminationGracePeriodSeconds': 30, 'volumes': [{'containerDisk': {'image': 'quay.io/openshift-cnv/qe-cnv-tests-fedora:41@sha256:a91659fba4e0258dda1be076dd6e56e34d9bf3dce082e57f939994ce0f124348'}, 'name': 'containerdisk'}, {'cloudInitNoCloud': {'userData': '*******'}, 'name': 'cloudinitdisk'}]}}}, 'status': {'conditions': [{'lastProbeTime': '2026-02-04T11:13:13Z', 'lastTransitionTime': '2026-02-04T11:13:13Z', 'message': 'VMI does not exist', 'reason': 'VMINotExists', 'status': 'False', 'type': 'Ready'}, {'lastProbeTime': None, 'lastTransitionTime': None, 'status': 'True', 'type': 'LiveMigratable'}, {'lastProbeTime': None, 'lastTransitionTime': None, 'status': 'True', 'type': 'StorageLiveMigratable'}], 'desiredGeneration': 3, 'observedGeneration': 3, 'printableStatus': 'Stopped', 'runStrategy': 'Halted', 'volumeSnapshotStatuses': [{'enabled': False, 'name': 'containerdisk', 'reason': 'Snapshot is not supported for this volumeSource type [containerdisk]'}, {'enabled': False, 'name': 'cloudinitdisk', 'reason': 'Snapshot is not supported for this volumeSource type [cloudinitdisk]'}]}}
+2026-02-04T12:13:14.121380 ocp_resources VirtualMachine INFO Wait until VirtualMachine paused-vmi-reset-test-1770203547-4779701 is deleted
+2026-02-04T12:13:14.121554 timeout_sampler INFO Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_deleted.lambda: self.exists)
+2026-02-04T12:13:15.128510 timeout_sampler INFO Elapsed time: 1.0037143230438232 [0:00:01.003714]
+_______________________________________________________ 7 of 8 completed, 4 Pass, 1 Fail, 0 Skip, 0 XPass, 0 XFail, 2 Error, 0 ReRun _______________________________________________________
+
+tests/deprecated_api/test_deprecation_audit_logs.py .--------------------------------------------------------- CALL ---------------------------------------------------------
+
+_______________________________________________________ 8 of 8 completed, 5 Pass, 1 Fail, 0 Skip, 0 XPass, 0 XFail, 2 Error, 0 ReRun _______________________________________________________
+                                                                                                                                                                                     [100%]2026-02-04T12:14:52.874826 ocp_resources ConfigMap INFO Delete ConfigMap cnv-tests-run-in-progress
+2026-02-04T12:14:52.881063 ocp_resources ConfigMap INFO Deleting {'kind': 'ConfigMap', 'apiVersion': 'v1', 'metadata': {'name': 'cnv-tests-run-in-progress', 'namespace': 'cnv-tests-run-in-progress-ns', 'uid': '6ec3280a-6b8b-430b-a03f-a8b5f77a2497', 'resourceVersion': '269037', 'creationTimestamp': '2026-02-04T11:02:17Z', 'managedFields': [{'manager': 'OpenAPI-Generator', 'operation': 'Update', 'apiVersion': 'v1', 'time': '2026-02-04T11:02:17Z', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:data': {'.': {}, 'f:host': {}, 'f:pytest_cmd': {}, 'f:run-in-container': {}, 'f:running_from_dir': {}, 'f:session-id': {}, 'f:user': {}}}}]}, 'data': '*******'}
+2026-02-04T12:14:52.892783 ocp_resources ConfigMap INFO Wait until ConfigMap cnv-tests-run-in-progress is deleted
+2026-02-04T12:14:52.911399 ocp_resources Namespace INFO Delete Namespace cnv-tests-run-in-progress-ns
+2026-02-04T12:14:52.915587 ocp_resources Namespace INFO Deleting {'kind': 'Namespace', 'apiVersion': 'v1', 'metadata': {'name': 'cnv-tests-run-in-progress-ns', 'uid': 'f8e6ece5-1110-49db-bd9a-7987ce02b199', 'resourceVersion': '269036', 'creationTimestamp': '2026-02-04T11:02:17Z', 'labels': {'kubernetes.io/metadata.name': 'cnv-tests-run-in-progress-ns', 'pod-security.kubernetes.io/audit': 'restricted', 'pod-security.kubernetes.io/audit-version': 'latest', 'pod-security.kubernetes.io/enforce': 'privileged', 'pod-security.kubernetes.io/warn': 'restricted', 'pod-security.kubernetes.io/warn-version': 'latest', 'security.openshift.io/scc.podSecurityLabelSync': 'false'}, 'annotations': {'openshift.io/sa.scc.mcs': 's0:c29,c4', 'openshift.io/sa.scc.supplemental-groups': '1000820000/10000', 'openshift.io/sa.scc.uid-range': '1000820000/10000', 'security.openshift.io/MinimallySufficientPodSecurityStandard': 'restricted'}, 'managedFields': [{'manager': 'pod-security-admission-label-synchronization-controller', 'operation': 'Apply', 'apiVersion': 'v1', 'time': '2026-02-04T11:02:17Z', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:annotations': {'f:security.openshift.io/MinimallySufficientPodSecurityStandard': {}}, 'f:labels': {'f:pod-security.kubernetes.io/audit': {}, 'f:pod-security.kubernetes.io/audit-version': {}, 'f:pod-security.kubernetes.io/warn': {}, 'f:pod-security.kubernetes.io/warn-version': {}}}}}, {'manager': 'OpenAPI-Generator', 'operation': 'Update', 'apiVersion': 'v1', 'time': '2026-02-04T11:02:17Z', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:labels': {'.': {}, 'f:kubernetes.io/metadata.name': {}, 'f:pod-security.kubernetes.io/enforce': {}, 'f:security.openshift.io/scc.podSecurityLabelSync': {}}}}}, {'manager': 'cluster-policy-controller', 'operation': 'Update', 'apiVersion': 'v1', 'time': '2026-02-04T11:02:17Z', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:annotations': {'.': {}, 'f:openshift.io/sa.scc.mcs': {}, 'f:openshift.io/sa.scc.supplemental-groups': {}, 'f:openshift.io/sa.scc.uid-range': {}}}}}]}, 'spec': {'finalizers': ['kubernetes']}, 'status': {'phase': 'Active'}}
+2026-02-04T12:14:52.926760 ocp_resources Namespace INFO Wait until Namespace cnv-tests-run-in-progress-ns is deleted
+============================================================== 1 failed, 5 passed, 33 warnings, 2 errors in 761.10s (0:12:41) ==============================================================
+
+========================================================================================== ERRORS ==========================================================================================
+_____________________________________________________________ ERROR at setup of TestVMIResetAPI.test_reset_running_vmi_via_api _____________________________________________________________
+
+self = <ocp_resources.virtual_machine_instance.VirtualMachineInstance object at 0x7f86e76aef90>, timeout = 240, logs = True, stop_status = None
+
+    def wait_until_running(self, timeout=TIMEOUT_4MINUTES, logs=True, stop_status=None):
+        """
+        Wait until VMI is running
+    
+        Args:
+            timeout (int): Time to wait for VMI.
+            logs (bool): True to extract logs from the VMI pod and from the VMI.
+            stop_status (str): Status which should stop the wait and failed.
+    
+        Raises:
+            TimeoutExpiredError: If VMI failed to run.
+        """
+        try:
+>           self.wait_for_status(status=self.Status.RUNNING, timeout=timeout, stop_status=stop_status)
+
+.venv/lib/python3.14/site-packages/ocp_resources/virtual_machine_instance.py:130: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.14/site-packages/ocp_resources/resource.py:991: in wait_for_status
+    for sample in samples:
+                  ^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <timeout_sampler.TimeoutSampler object at 0x7f86e68f4b90>
+
+    def __iter__(self) -> Any:
+        """
+        Call `func` and yield the result, or raise an exception on timeout.
+    
+        Yields:
+            any: Return value from `func`
+    
+        Raises:
+            TimeoutExpiredError: if `func` takes longer than `wait_timeout` seconds to return a value
+        """
+        timeout_watch = TimeoutWatch(timeout=self.wait_timeout)
+        if self.print_log:
+            log = (
+                f"Waiting for {self.wait_timeout} seconds"
+                f" [{datetime.timedelta(seconds=self.wait_timeout)}], retry every"
+                f" {self.sleep} seconds."
+            )
+    
+            if self.print_func_log:
+                log += f" ({self._func_log})"
+    
+            LOGGER.info(log)
+    
+        last_exp = None
+        elapsed_time = None
+        while timeout_watch.remaining_time() > 0:
+            try:
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+                yield self.func(*self.func_args, **self.func_kwargs)
+                time.sleep(self.sleep)
+                elapsed_time = None
+    
+            except Exception as exp:
+                last_exp = exp
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+    
+                if not self._should_ignore_exception(exp=last_exp):
+                    raise TimeoutExpiredError(
+                        self._get_exception_log(exp=last_exp), last_exp=last_exp, elapsed_time=elapsed_time
+                    )
+    
+                time.sleep(self.sleep)
+                elapsed_time = None
+    
+            finally:
+                if self.print_log and elapsed_time:
+                    LOGGER.info(_elapsed_time_log(elapsed_time=elapsed_time))
+    
+>       raise TimeoutExpiredError(self._get_exception_log(exp=last_exp), last_exp=last_exp)
+E       timeout_sampler.TimeoutExpiredError: Timed Out: 240
+E       Function: ocp_resources.resource.wait_for_status.lambda: self.exists
+E       Last exception: N/A.
+
+.venv/lib/python3.14/site-packages/timeout_sampler/__init__.py:182: TimeoutExpiredError
+
+During handling of the above exception, another exception occurred:
+
+unprivileged_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f86e76da550>, namespace = <ocp_resources.namespace.Namespace object at 0x7f86e69aab10>
+
+    @pytest.fixture()
+    def running_alpine_vmi(
+        unprivileged_client: DynamicClient, namespace: Namespace
+    ) -> Generator[VirtualMachineForTests, None, None]:
+        """
+        Fixture providing a running Alpine Linux VMI with SSH access.
+    
+        Args:
+            unprivileged_client: Kubernetes client with unprivileged permissions
+            namespace: Test namespace
+    
+        Yields:
+            VirtualMachine: Running VM with SSH connectivity
+        """
+        name = "alpine-vmi-reset-test"
+        LOGGER.info(f"Creating Alpine VMI: {name}")
+    
+        with VirtualMachineForTests(
+            client=unprivileged_client,
+            name=name,
+            namespace=namespace.name,
+            body=fedora_vm_body(name=name),
+            memory_requests="512Mi",
+        ) as vm:
+>           running_vm(vm=vm)
+
+tests/virt/lifecycle/conftest.py:70: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+utilities/virt.py:1763: in running_vm
+    wait_for_running_vm(
+utilities/virt.py:1691: in wait_for_running_vm
+    vm.vmi.wait_until_running(timeout=wait_until_running_timeout)
+.venv/lib/python3.14/site-packages/ocp_resources/virtual_machine_instance.py:138: in wait_until_running
+    self.logger.debug(virt_pod.log(container="compute"))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/ocp_resources/pod.py:546: in log
+    return self._kube_v1_api.read_namespaced_pod_log(name=self.name, namespace=self.namespace, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/kubernetes/client/api/core_v1_api.py:24264: in read_namespaced_pod_log
+    return self.read_namespaced_pod_log_with_http_info(name, namespace, **kwargs)  # noqa: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/kubernetes/client/api/core_v1_api.py:24387: in read_namespaced_pod_log_with_http_info
+    return self.api_client.call_api(
+.venv/lib/python3.14/site-packages/kubernetes/client/api_client.py:348: in call_api
+    return self.__call_api(resource_path, method,
+.venv/lib/python3.14/site-packages/kubernetes/client/api_client.py:180: in __call_api
+    response_data = self.request(
+.venv/lib/python3.14/site-packages/kubernetes/client/api_client.py:373: in request
+    return self.rest_client.GET(url,
+.venv/lib/python3.14/site-packages/kubernetes/client/rest.py:244: in GET
+    return self.request("GET", url,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <kubernetes.client.rest.RESTClientObject object at 0x7f86e76da850>, method = 'GET'
+url = 'https://api.crc.testing:6443/api/v1/namespaces/lifecycle-test-vm-reset-api/pods/virt-launcher-alpine-vmi-reset-test-1770203060-1976576-7srth/log'
+query_params = [('container', 'compute')]
+headers = {'Accept': 'application/json', 'Content-Type': 'application/json', 'User-Agent': 'OpenAPI-Generator/34.1.0/python', 'authorization': 'Bearer sha256~af_1L91kXIy1Vm9wskwHqD0gLgkQuxByW1_3LPmkjlQ'}
+body = None, post_params = {}, _preload_content = True, _request_timeout = None
+
+    def request(self, method, url, query_params=None, headers=None,
+                body=None, post_params=None, _preload_content=True,
+                _request_timeout=None):
+        """Perform requests.
+    
+        :param method: http request method
+        :param url: http request url
+        :param query_params: query parameters in the url
+        :param headers: http request headers
+        :param body: request json body, for `application/json`
+        :param post_params: request post parameters,
+                            `application/x-www-form-urlencoded`
+                            and `multipart/form-data`
+        :param _preload_content: if False, the urllib3.HTTPResponse object will
+                                 be returned without reading/decoding response
+                                 data. Default is True.
+        :param _request_timeout: timeout setting for this request. If one
+                                 number provided, it will be total request
+                                 timeout. It can also be a pair (tuple) of
+                                 (connection, read) timeouts.
+        """
+        method = method.upper()
+        assert method in ['GET', 'HEAD', 'DELETE', 'POST', 'PUT',
+                          'PATCH', 'OPTIONS']
+    
+        if post_params and body:
+            raise ApiValueError(
+                "body parameter cannot be used with post_params parameter."
+            )
+    
+        post_params = post_params or {}
+        headers = headers or {}
+    
+        timeout = None
+        if _request_timeout:
+            if isinstance(_request_timeout, (int, ) if six.PY3 else (int, long)):  # noqa: E501,F821
+                timeout = urllib3.Timeout(total=_request_timeout)
+            elif (isinstance(_request_timeout, tuple) and
+                  len(_request_timeout) == 2):
+                timeout = urllib3.Timeout(
+                    connect=_request_timeout[0], read=_request_timeout[1])
+    
+        if 'Content-Type' not in headers:
+            headers['Content-Type'] = 'application/json'
+    
+        try:
+            # For `POST`, `PUT`, `PATCH`, `OPTIONS`, `DELETE`
+            if method in ['POST', 'PUT', 'PATCH', 'OPTIONS', 'DELETE']:
+                if query_params:
+                    url += '?' + urlencode(query_params)
+                if (re.search('json', headers['Content-Type'], re.IGNORECASE) or
+                        headers['Content-Type'] == 'application/apply-patch+yaml'):
+                    if headers['Content-Type'] == 'application/json-patch+json':
+                        if not isinstance(body, list):
+                            headers['Content-Type'] = \
+                                'application/strategic-merge-patch+json'
+                    request_body = None
+                    if body is not None:
+                        request_body = json.dumps(body)
+                    r = self.pool_manager.request(
+                        method, url,
+                        body=request_body,
+                        preload_content=_preload_content,
+                        timeout=timeout,
+                        headers=headers)
+                elif headers['Content-Type'] == 'application/x-www-form-urlencoded':  # noqa: E501
+                    r = self.pool_manager.request(
+                        method, url,
+                        fields=post_params,
+                        encode_multipart=False,
+                        preload_content=_preload_content,
+                        timeout=timeout,
+                        headers=headers)
+                elif headers['Content-Type'] == 'multipart/form-data':
+                    # must del headers['Content-Type'], or the correct
+                    # Content-Type which generated by urllib3 will be
+                    # overwritten.
+                    del headers['Content-Type']
+                    r = self.pool_manager.request(
+                        method, url,
+                        fields=post_params,
+                        encode_multipart=True,
+                        preload_content=_preload_content,
+                        timeout=timeout,
+                        headers=headers)
+                # Pass a `string` parameter directly in the body to support
+                # other content types than Json when `body` argument is
+                # provided in serialized form
+                elif isinstance(body, str) or isinstance(body, bytes):
+                    request_body = body
+                    r = self.pool_manager.request(
+                        method, url,
+                        body=request_body,
+                        preload_content=_preload_content,
+                        timeout=timeout,
+                        headers=headers)
+                else:
+                    # Cannot generate the request from given parameters
+                    msg = """Cannot prepare a request message for provided
+                             arguments. Please check that your arguments match
+                             declared content type."""
+                    raise ApiException(status=0, reason=msg)
+            # For `GET`, `HEAD`
+            else:
+                r = self.pool_manager.request(method, url,
+                                              fields=query_params,
+                                              preload_content=_preload_content,
+                                              timeout=timeout,
+                                              headers=headers)
+        except urllib3.exceptions.SSLError as e:
+            msg = "{0}\n{1}".format(type(e).__name__, str(e))
+            raise ApiException(status=0, reason=msg)
+    
+        if _preload_content:
+            r = RESTResponse(r)
+    
+            # In the python 3, the response.data is bytes.
+            # we need to decode it to string.
+            if six.PY3:
+                r.data = r.data.decode('utf8')
+    
+            # log response body
+            logger.debug("response body: %s", r.data)
+    
+        if not 200 <= r.status <= 299:
+>           raise ApiException(http_resp=r)
+E           kubernetes.client.exceptions.ApiException: (400)
+E           Reason: Bad Request
+E           HTTP response headers: HTTPHeaderDict({'Audit-Id': '6c5e87e5-45ea-4488-a12a-0626ab11f963', 'Cache-Control': 'no-cache, private', 'Content-Type': 'application/json', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'Date': 'Wed, 04 Feb 2026 11:08:20 GMT', 'Content-Length': '245'})
+E           HTTP response body: {"kind":"Status","apiVersion":"v1","metadata":{},"status":"Failure","message":"container \"compute\" in pod \"virt-launcher-alpine-vmi-reset-test-1770203060-1976576-7srth\" is waiting to start: PodInitializing","reason":"BadRequest","code":400}
+
+.venv/lib/python3.14/site-packages/kubernetes/client/rest.py:238: ApiException
+---------------------------------------------------------------------------------- Captured stderr setup -----------------------------------------------------------------------------------
+
+-------------------------------------------- test_reset_running_vmi_via_api --------------------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-04T12:02:17.879239 conftest INFO Executing session fixture: admin_client
+2026-02-04T12:02:17.879457 conftest INFO Executing session fixture: pytestconfig
+2026-02-04T12:02:17.879584 conftest INFO Executing session fixture: installing_cnv
+2026-02-04T12:02:17.879674 conftest INFO Executing session fixture: cnv_tests_utilities_namespace
+2026-02-04T12:02:17.886976 ocp_resources Namespace INFO Create Namespace cnv-tests-utilities
+2026-02-04T12:02:17.887083 ocp_resources Namespace INFO Posting {'apiVersion': 'v1', 'kind': 'Namespace', 'metadata': {'name': 'cnv-tests-utilities', 'labels': {'pod-security.kubernetes.io/enforce': 'privileged', 'security.openshift.io/scc.podSecurityLabelSync': 'false'}}, 'spec': {}}
+2026-02-04T12:02:17.902275 ocp_resources Namespace INFO Wait for Namespace cnv-tests-utilities status to be Active
+2026-02-04T12:02:17.902447 timeout_sampler INFO Waiting for 120 seconds [0:02:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_for_status.lambda: self.exists)
+2026-02-04T12:02:17.936723 ocp_resources Namespace INFO Status of Namespace cnv-tests-utilities is Active
+2026-02-04T12:02:17.936919 timeout_sampler INFO Elapsed time: 9.417533874511719e-05 [0:00:00.000094]
+2026-02-04T12:02:17.937758 ocp_resources.resource INFO kind: OAuth api version: config.openshift.io/v1
+2026-02-04T12:02:17.938245 ocp_resources.resource INFO kind: DaemonSet api version: apps/v1
+2026-02-04T12:02:17.937174 conftest INFO Executing session fixture: skip_unprivileged_client
+2026-02-04T12:02:17.937396 conftest INFO Executing session fixture: identity_provider_config
+2026-02-04T12:02:17.937902 conftest INFO Executing session fixture: leftovers_cleanup
+2026-02-04T12:02:17.937980 tests.conftest INFO Checking for leftover resources
+2026-02-04T12:02:18.014172 ocp_resources.resource INFO ResourceEdits: Updating data for resource OAuth cluster
+2026-02-04T12:02:18.014298 ocp_resources OAuth INFO Update OAuth cluster:
+{'metadata': {'name': 'cluster'}, 'spec': {'identityProviders': [{'htpasswd': {'fileData': {'name': 'htpass-secret'}}, 'mappingMethod': 'claim', 'name': 'developer', 'type': 'HTPasswd'}], 'tokenConfig': {'accessTokenMaxAgeSeconds': 31536000}}}
+2026-02-04T12:02:18.019431 conftest INFO Executing session fixture: artifactory_setup
+2026-02-04T12:02:18.019605 tests.conftest INFO Checking for artifactory credentials:
+2026-02-04T12:02:18.019683 tests.conftest WARNING Explicitly skipping artifactory setup check due to use of --skip-artifactory-check
+2026-02-04T12:02:18.019813 conftest INFO Executing session fixture: os_path_environment
+2026-02-04T12:02:18.019959 conftest INFO Executing session fixture: tmpdir_factory
+2026-02-04T12:02:18.020065 conftest INFO Executing session fixture: bin_directory
+2026-02-04T12:02:18.021525 ocp_resources.resource INFO Trying to get client via new_client_from_config
+2026-02-04T12:02:18.021235 conftest INFO Executing session fixture: virtctl_binary
+2026-02-04T12:02:18.032271 ocp_resources.resource INFO kind: ConsoleCLIDownload api version: console.openshift.io/v1
+2026-02-04T12:02:18.062958 utilities.infra INFO Downloading archive using: url=https://hyperconverged-cluster-cli-download-openshift-cnv.apps-crc.testing/amd64/linux/virtctl.tar.gz
+2026-02-04T12:02:18.185487 utilities.infra INFO Extract the downloaded archive.
+2026-02-04T12:02:18.717160 utilities.infra INFO Downloaded file: ['virtctl']
+2026-02-04T12:02:18.719058 ocp_resources.resource INFO Trying to get client via new_client_from_config
+2026-02-04T12:02:18.718546 conftest INFO Executing session fixture: oc_binary
+2026-02-04T12:02:18.726111 ocp_resources.resource INFO kind: ConsoleCLIDownload api version: console.openshift.io/v1
+2026-02-04T12:02:18.735206 utilities.infra INFO Downloading archive using: url=https://downloads-openshift-console.apps-crc.testing/amd64/linux/oc.tar
+2026-02-04T12:02:19.576086 utilities.infra INFO Extract the downloaded archive.
+2026-02-04T12:02:19.657818 utilities.infra INFO Downloaded file: ['oc']
+2026-02-04T12:02:19.672078 ocp_resources.resource INFO kind: ClusterVersion api version: config.openshift.io/v1
+2026-02-04T12:02:19.671226 conftest INFO Executing session fixture: bin_directory_to_os_path
+2026-02-04T12:02:19.671765 tests.conftest INFO Adding /tmp/pytest-eXwZRBvKG3ZwpdM4EYkMxG/bin0 to $PATH
+2026-02-04T12:02:19.671908 conftest INFO Executing session fixture: openshift_current_version
+2026-02-04T12:02:19.679344 conftest INFO Executing session fixture: hco_namespace
+2026-02-04T12:02:19.682889 ocp_resources.resource INFO kind: Subscription api version: operators.coreos.com/v1alpha1
+2026-02-04T12:02:19.682547 conftest INFO Executing session fixture: csv_scope_session
+2026-02-04T12:02:19.689758 ocp_resources.resource INFO kind: ClusterServiceVersion api version: operators.coreos.com/v1alpha1
+2026-02-04T12:02:19.709321 conftest INFO Executing session fixture: cnv_current_version
+2026-02-04T12:02:19.730342 ocp_resources.resource INFO kind: Subscription api version: operators.coreos.com/v1alpha1
+2026-02-04T12:02:19.729988 conftest INFO Executing session fixture: cnv_subscription_scope_session
+2026-02-04T12:02:19.735453 conftest INFO Executing session fixture: hco_image
+2026-02-04T12:02:19.739011 ocp_resources.resource INFO kind: CatalogSource api version: operators.coreos.com/v1alpha1
+2026-02-04T12:02:19.747285 ocp_resources.resource INFO kind: StorageClass api version: storage.k8s.io/v1
+2026-02-04T12:02:19.746904 conftest INFO Executing session fixture: cluster_storage_classes
+2026-02-04T12:02:19.751130 ocp_resources.resource INFO kind: KubeVirt api version: kubevirt.io/v1
+2026-02-04T12:02:19.750762 conftest INFO Executing session fixture: ocs_storage_class
+2026-02-04T12:02:19.750895 conftest INFO Executing session fixture: ocs_current_version
+2026-02-04T12:02:19.750992 conftest INFO Executing session fixture: kubevirt_resource_scope_session
+2026-02-04T12:02:19.755401 ocp_resources.resource INFO kind: Network api version: config.openshift.io/v1
+2026-02-04T12:02:19.755156 conftest INFO Executing session fixture: cluster_service_network
+2026-02-04T12:02:19.758132 conftest INFO Executing session fixture: ipv6_supported_cluster
+2026-02-04T12:02:19.758337 conftest INFO Executing session fixture: ipv4_supported_cluster
+2026-02-04T12:02:19.758469 conftest INFO Executing session fixture: nodes
+2026-02-04T12:02:19.763456 conftest INFO Executing session fixture: workers
+2026-02-04T12:02:19.768203 ocp_resources.resource INFO Trying to get client via new_client_from_config
+2026-02-04T12:02:19.767745 conftest INFO Executing session fixture: cnv_source
+2026-02-04T12:02:19.767907 conftest INFO Executing session fixture: is_production_source
+2026-02-04T12:02:19.767990 conftest INFO Executing session fixture: generated_pulled_secret
+2026-02-04T12:02:19.786806 conftest INFO Executing session fixture: cnv_tests_utilities_service_account
+2026-02-04T12:02:19.795383 ocp_resources ServiceAccount INFO Create ServiceAccount cnv-tests-sa
+2026-02-04T12:02:19.795486 ocp_resources ServiceAccount INFO Posting {'apiVersion': 'v1', 'kind': 'ServiceAccount', 'metadata': {'name': 'cnv-tests-sa', 'namespace': 'cnv-tests-utilities'}}
+2026-02-04T12:02:19.910760 timeout_sampler INFO Waiting for 10 seconds [0:00:10], retry every 1 seconds. (Function: utilities.virt._get_image_json  Kwargs: {'cmd': 'oc image -o json info quay.io/openshift-cnv/qe-net-utils:latest --filter-by-os linux/amd64 --registry-config=/tmp/tmpcgpu5_jz-cnv-tests-pull-secret/pull-secrets.json'})
+2026-02-04T12:02:19.911021 pyhelper_utils.shell INFO Running oc image -o json info quay.io/openshift-cnv/qe-net-utils:latest --filter-by-os linux/amd64 --registry-config=/tmp/tmpcgpu5_jz-cnv-tests-pull-secret/pull-secrets.json command
+2026-02-04T12:02:19.910379 conftest INFO Executing session fixture: utility_daemonset
+2026-02-04T12:02:22.276052 timeout_sampler INFO Elapsed time: 0.0002014636993408203 [0:00:00.000201]
+2026-02-04T12:02:22.311000 ocp_resources.resource INFO kind: DaemonSet api version: apps/v1 --- [DuplicateFilter: Last log `Trying to get client via new_client_from_config` repeated 2 times]
+2026-02-04T12:02:22.316268 ocp_resources DaemonSet INFO Create DaemonSet utility
+2026-02-04T12:02:22.316432 ocp_resources DaemonSet INFO Posting {'apiVersion': 'apps/v1', 'kind': 'DaemonSet', 'metadata': {'annotations': {'deprecated.daemonset.template.generation': '0'}, 'creationTimestamp': None, 'labels': {'cnv-test': 'utility', 'tier': 'node'}, 'name': 'utility', 'namespace': 'cnv-tests-utilities'}, 'spec': {'revisionHistoryLimit': 10, 'selector': {'matchLabels': {'cnv-test': 'utility', 'tier': 'node'}}, 'template': {'metadata': {'creationTimestamp': None, 'labels': {'cnv-test': 'utility', 'tier': 'node'}}, 'spec': {'containers': [{'command': ['/bin/bash', '-c', 'echo ok > /tmp/healthy && sleep INF'], 'image': 'quay.io/openshift-cnv/qe-net-utils:latest@sha256:2c8e11ac0f0b36553bed603c1c67dccb703d7059ccbcf8c91e3a35c99719ce20', 'imagePullPolicy': 'IfNotPresent', 'name': 'utility', 'readinessProbe': {'exec': {'command': ['cat', '/tmp/healthy']}, 'failureThreshold': 3, 'initialDelaySeconds': 5, 'periodSeconds': 5, 'successThreshold': 1, 'timeoutSeconds': 1}, 'resources': {'limits': {'cpu': '100m', 'memory': '50Mi'}, 'requests': {'cpu': '100m', 'memory': '50Mi'}}, 'securityContext': {'privileged': True, 'runAsUser': 0}, 'stdin': True, 'stdinOnce': True, 'terminationMessagePath': '/dev/termination-log', 'terminationMessagePolicy': 'File', 'tty': True, 'volumeMounts': [{'mountPath': '/host', 'name': 'host'}, {'mountPath': '/var/run/secrets/kubernetes.io/serviceaccount', 'name': 'kube-api-access-m5ch7', 'readOnly': True}, {'mountPath': '/host/run/openvswitch', 'name': 'ovs-run'}, {'mountPath': '/run/dbus/system_bus_socket', 'name': 'dbus-socket'}, {'mountPath': '/host/dev', 'name': 'dev'}, {'mountPath': '/host/etc', 'name': 'etc'}, {'mountPath': '/host/var', 'name': 'var'}]}], 'dnsPolicy': 'ClusterFirst', 'enableServiceLinks': True, 'hostNetwork': True, 'hostPID': True, 'imagePullSecrets': [{'name': 'default-dockercfg-xrlbh'}], 'preemptionPolicy': 'PreemptLowerPriority', 'priority': 0, 'restartPolicy': 'Always', 'schedulerName': 'default-scheduler', 'securityContext': {'privileged': True}, 'serviceAccount': 'cnv-tests-sa', 'serviceAccountName': 'cnv-tests-sa', 'terminationGracePeriodSeconds': 30, 'tolerations': [{'effect': 'NoSchedule', 'key': 'node-role.kubernetes.io/master', 'operator': 'Exists'}], 'volumes': [{'hostPath': {'path': '/', 'type': 'Directory'}, 'name': 'host'}, {'hostPath': {'path': '/run/openvswitch', 'type': ''}, 'name': 'ovs-run'}, {'hostPath': {'path': '/run/dbus/system_bus_socket', 'type': 'Socket'}, 'name': 'dbus-socket'}, {'hostPath': {'path': '/dev', 'type': 'Directory'}, 'name': 'dev'}, {'hostPath': {'path': '/etc', 'type': 'Directory'}, 'name': 'etc'}, {'hostPath': {'path': '/var', 'type': 'Directory'}, 'name': 'var'}, {'name': 'kube-api-access-m5ch7', 'projected': {'defaultMode': 420, 'sources': [{'serviceAccountToken': {'path': 'token'}}, {'configMap': {'items': [{'key': 'ca.crt', 'path': 'ca.crt'}], 'name': 'kube-root-ca.crt'}}, {'downwardAPI': {'items': [{'fieldRef': {'apiVersion': 'v1', 'fieldPath': 'metadata.namespace'}, 'path': 'namespace'}]}}, {'configMap': {'items': [{'key': 'service-ca.crt', 'path': 'service-ca.crt'}], 'name': 'openshift-service-ca.crt'}}]}}]}}, 'updateStrategy': {'type': 'OnDelete'}}}
+2026-02-04T12:02:22.348897 ocp_resources DaemonSet INFO Wait for DaemonSet utility to deploy all desired pods
+2026-02-04T12:02:22.349051 timeout_sampler INFO Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: kubernetes.dynamic.client.get  Kwargs: {'field_selector': 'metadata.name==utility', 'namespace': 'cnv-tests-utilities'})
+2026-02-04T12:02:29.402019 timeout_sampler INFO Elapsed time: 7.03596305847168 [0:00:07.035963]
+2026-02-04T12:02:29.402345 conftest INFO Executing session fixture: workers_utility_pods
+2026-02-04T12:02:29.420560 conftest INFO Executing session fixture: workers_type
+2026-02-04T12:02:29.455931 ocp_resources Pod INFO Execute ['chroot', '/host', 'bash', '-c', 'systemd-detect-virt'] on utility-wz2z4 (crc)
+2026-02-04T12:02:29.522704 tests.conftest INFO Cluster workers are: virtual
+2026-02-04T12:02:29.523062 conftest INFO Executing session fixture: nodes_cpu_architecture
+2026-02-04T12:02:29.528981 pyhelper_utils.shell INFO Running virtctl version command
+2026-02-04T12:02:29.528799 conftest INFO Executing session fixture: cluster_info
+2026-02-04T12:02:29.552272 ocp_resources.resource INFO kind: Network api version: config.openshift.io/v1
+2026-02-04T12:02:29.556264 ocp_resources.resource INFO kind: HyperConverged api version: hco.kubevirt.io/v1beta1
+2026-02-04T12:02:29.555112 tests.conftest INFO 
+Cluster info:
+	Openshift version: 4.20.5
+	CNV version: 4.20.3
+	HCO image: registry.redhat.io/redhat/redhat-operator-index:v4.20
+	OCS version: None
+	CNI type: OVNKubernetes
+	Workers type: virtual
+	Cluster CPU Architecture: amd64
+	IPv4 cluster: True
+	IPv6 cluster: False
+	Virtctl version: 
+	Client Version: version.Info{GitVersion:"v1.6.3-42-gf72ce58db2", GitCommit:"f72ce58db218d0dfe60ce157ea6c37032a0fda17", GitTreeState:"clean", BuildDate:"2025-12-07T09:01:32Z", GoVersion:"go1.24.6 (Red Hat 1.24.6-1.module+el8.10.0+23407+428597c7) X:strictfipsruntime", Compiler:"gc", Platform:"linux/amd64"}
+	Server Version: version.Info{GitVersion:"v1.6.3-42-gf72ce58db2", GitCommit:"f72ce58db218d0dfe60ce157ea6c37032a0fda17", GitTreeState:"clean", BuildDate:"2025-12-12T08:29:44Z", GoVersion:"go1.24.6 (Red Hat 1.24.6-1.el9_6) X:strictfipsruntime", Compiler:"gc", Platform:"linux/amd64"}
+
+2026-02-04T12:02:29.555316 conftest INFO Executing function fixture: term_handler_scope_function
+2026-02-04T12:02:29.555427 conftest INFO Executing class fixture: term_handler_scope_class
+2026-02-04T12:02:29.555503 conftest INFO Executing module fixture: term_handler_scope_module
+2026-02-04T12:02:29.555590 conftest INFO Executing session fixture: term_handler_scope_session
+2026-02-04T12:02:29.555704 conftest INFO Executing session fixture: record_testsuite_property
+2026-02-04T12:02:29.555791 conftest INFO Executing session fixture: junitxml_polarion
+2026-02-04T12:02:29.555890 conftest INFO Executing session fixture: cluster_storage_classes_names
+2026-02-04T12:02:29.555977 conftest INFO Executing session fixture: junitxml_plugin
+2026-02-04T12:02:29.556058 conftest INFO Executing session fixture: hyperconverged_resource_scope_session
+2026-02-04T12:02:29.560588 ocp_utilities.infra INFO Verify all nodes are in a healthy condition.
+2026-02-04T12:02:29.560315 conftest INFO Executing session fixture: cluster_sanity_scope_session
+2026-02-04T12:02:29.560450 utilities.infra INFO Running cluster sanity. (To skip cluster sanity check pass --cluster-sanity-skip-check to pytest)
+2026-02-04T12:02:29.560500 utilities.infra INFO Check storage classes sanity. (To skip storage class sanity check pass --cluster-sanity-skip-storage-check to pytest)
+2026-02-04T12:02:29.560544 utilities.infra INFO Check nodes sanity. (To skip nodes sanity check pass --cluster-sanity-skip-nodes-check to pytest)
+2026-02-04T12:02:29.564231 ocp_utilities.infra INFO Verify all nodes are schedulable.
+2026-02-04T12:02:29.568003 timeout_sampler INFO Waiting for 300 seconds [0:05:00], retry every 5 seconds. (Function: utilities.infra.get_pods  Kwargs: {'dyn_client': <kubernetes.dynamic.client.DynamicClient object at 0x7f86e96e2270>, 'namespace': <ocp_resources.namespace.Namespace object at 0x7f86e767f100>})
+2026-02-04T12:02:29.728600 timeout_sampler INFO Elapsed time: 0.00011038780212402344 [0:00:00.000110]
+2026-02-04T12:02:29.728842 timeout_sampler INFO Waiting for 600 seconds [0:10:00], retry every 5 seconds. (Function: utilities.infra.<locals>.lambda: dynamic_client.namespace.resource_kind.resource_name.list.get)
+2026-02-04T12:02:29.728757 utilities.infra INFO Waiting for resource to stabilize: resource_kind=HyperConverged conditions={'Available': 'True', 'Progressing': 'False', 'ReconcileComplete': 'True', 'Degraded': 'False', 'Upgradeable': 'True'} sleep=600 consecutive_checks_count=3
+2026-02-04T12:02:39.748973 timeout_sampler INFO Elapsed time: 10.013789653778076 [0:00:10.013790]
+2026-02-04T12:02:39.749424 ocp_utilities.infra INFO Verify all nodes are in a healthy condition.
+2026-02-04T12:02:39.749203 conftest INFO Executing module fixture: cluster_sanity_scope_module
+2026-02-04T12:02:39.749313 utilities.infra INFO Running cluster sanity. (To skip cluster sanity check pass --cluster-sanity-skip-check to pytest)
+2026-02-04T12:02:39.749356 utilities.infra INFO Check storage classes sanity. (To skip storage class sanity check pass --cluster-sanity-skip-storage-check to pytest)
+2026-02-04T12:02:39.749394 utilities.infra INFO Check nodes sanity. (To skip nodes sanity check pass --cluster-sanity-skip-nodes-check to pytest)
+2026-02-04T12:02:39.753599 ocp_utilities.infra INFO Verify all nodes are schedulable.
+2026-02-04T12:02:39.756737 timeout_sampler INFO Waiting for 300 seconds [0:05:00], retry every 5 seconds. (Function: utilities.infra.get_pods  Kwargs: {'dyn_client': <kubernetes.dynamic.client.DynamicClient object at 0x7f86e96e2270>, 'namespace': <ocp_resources.namespace.Namespace object at 0x7f86e767f100>})
+2026-02-04T12:02:39.896308 timeout_sampler INFO Elapsed time: 0.00010061264038085938 [0:00:00.000101]
+2026-02-04T12:02:39.896528 timeout_sampler INFO Waiting for 600 seconds [0:10:00], retry every 5 seconds. (Function: utilities.infra.<locals>.lambda: dynamic_client.namespace.resource_kind.resource_name.list.get)
+2026-02-04T12:02:39.896447 utilities.infra INFO Waiting for resource to stabilize: resource_kind=HyperConverged conditions={'Available': 'True', 'Progressing': 'False', 'ReconcileComplete': 'True', 'Degraded': 'False', 'Upgradeable': 'True'} sleep=600 consecutive_checks_count=3
+2026-02-04T12:02:49.929069 timeout_sampler INFO Elapsed time: 10.025918245315552 [0:00:10.025918]
+2026-02-04T12:02:49.929285 conftest INFO Executing session fixture: ssh_key_tmpdir_scope_session
+2026-02-04T12:02:49.929743 conftest INFO Executing session fixture: generated_ssh_key_for_vm_access
+2026-02-04T12:02:50.013716 ocp_resources.resource INFO Trying to get client via new_client_from_config
+2026-02-04T12:02:50.013191 conftest INFO Executing function fixture: autouse_fixtures
+2026-02-04T12:02:50.013464 conftest INFO Executing session fixture: is_psi_cluster
+2026-02-04T12:02:50.020790 ocp_resources.resource INFO kind: Infrastructure api version: config.openshift.io/v1
+2026-02-04T12:02:50.027455 conftest INFO Executing session fixture: schedulable_nodes
+2026-02-04T12:02:50.045663 conftest INFO Executing session fixture: gpu_nodes
+2026-02-04T12:02:50.049857 conftest INFO Executing session fixture: nodes_with_supported_gpus
+2026-02-04T12:02:50.050012 conftest INFO Executing session fixture: sriov_workers
+2026-02-04T12:02:50.053396 conftest INFO Executing session fixture: nodes_cpu_vendor
+2026-02-04T12:02:50.060460 conftest INFO Executing session fixture: nodes_cpu_virt_extension
+2026-02-04T12:02:50.060621 conftest INFO Executing session fixture: allocatable_memory_per_node_scope_session
+2026-02-04T12:02:50.066769 tests.virt.utils INFO Node crc has 23.01947021484375 GiB of allocatable memory
+2026-02-04T12:02:50.066953 conftest INFO Executing session fixture: virt_special_infra_sanity
+2026-02-04T12:02:50.067105 tests.virt.conftest INFO Verifying that cluster has all required capabilities for special_infra marked tests
+2026-02-04T12:02:50.067422 conftest INFO Executing session fixture: unprivileged_secret
+2026-02-04T12:02:50.069496 ocp_resources.resource INFO Trying to get client via new_client_from_config
+2026-02-04T12:02:50.076009 ocp_resources Secret INFO Create Secret htpass-secret-for-cnv-tests
+2026-02-04T12:02:50.076098 ocp_resources Secret INFO Posting {'apiVersion': 'v1', 'kind': 'Secret', 'metadata': {'name': 'htpass-secret-for-cnv-tests', 'namespace': 'openshift-config'}, 'data': '*******'}
+2026-02-04T12:02:50.120006 ocp_resources.resource INFO ResourceEdit: Backing up old data
+2026-02-04T12:02:50.119781 conftest INFO Executing session fixture: identity_provider_with_htpasswd
+2026-02-04T12:02:50.128251 ocp_resources.resource INFO ResourceEdits: Updating data for resource OAuth cluster
+2026-02-04T12:02:50.128384 ocp_resources OAuth INFO Update OAuth cluster:
+{'metadata': {'name': 'cluster'}, 'spec': {'identityProviders': [{'name': 'htpasswd_provider', 'mappingMethod': 'claim', 'type': 'HTPasswd', 'htpasswd': {'fileData': {'name': 'htpass-secret-for-cnv-tests'}}}], 'tokenConfig': {'accessTokenMaxAgeSeconds': 604800, 'accessTokenInactivityTimeout': None}}}
+2026-02-04T12:02:50.147053 ocp_resources.resource INFO Trying to get client via new_client_from_config
+2026-02-04T12:02:50.154232 ocp_resources.resource INFO kind: Deployment api version: apps/v1
+2026-02-04T12:02:50.171995 timeout_sampler INFO Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: tests.conftest.<locals>.lambda: dp.instance.status.conditions)
+2026-02-04T12:02:50.171855 tests.conftest INFO Wait for oauth-openshift -> Type: Progressing -> Reason: ReplicaSetUpdated
+2026-02-04T12:03:50.412481 timeout_sampler INFO Elapsed time: 60.23741960525513 [0:01:00.237420]
+2026-02-04T12:03:50.412665 timeout_sampler INFO Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: tests.conftest.<locals>.lambda: dp.instance.status.conditions)
+2026-02-04T12:03:50.412589 tests.conftest INFO Wait for oauth-openshift -> Type: Progressing -> Reason: NewReplicaSetAvailable
+2026-02-04T12:04:17.531258 timeout_sampler INFO Elapsed time: 27.11544704437256 [0:00:27.115447]
+2026-02-04T12:04:17.531497 conftest INFO Executing session fixture: kubeconfig_export_path
+2026-02-04T12:04:17.531605 conftest INFO Executing session fixture: exported_kubeconfig
+2026-02-04T12:04:17.531889 tests.conftest INFO Setting KUBECONFIG dir for this run to point to: /tmp/tmpf8cgaigg-cnv-tests-kubeconfig
+2026-02-04T12:04:17.531946 tests.conftest INFO Copy KUBECONFIG to /tmp/tmpf8cgaigg-cnv-tests-kubeconfig/kubeconfig
+2026-02-04T12:04:17.532164 tests.conftest INFO Set: KUBECONFIG=/tmp/tmpf8cgaigg-cnv-tests-kubeconfig/kubeconfig
+2026-02-04T12:04:17.532274 conftest INFO Executing session fixture: unprivileged_client
+2026-02-04T12:04:17.601425 timeout_sampler INFO Waiting for 60 seconds [0:01:00], retry every 3 seconds. (Function: subprocess.Popen  Kwargs: {'args': 'oc login https://api.crc.testing:6443 -u unprivileged-user -p unprivileged-password', 'shell': True, 'stdout': -1, 'stderr': -1})
+2026-02-04T12:04:17.601259 utilities.infra INFO Trying to login to account
+2026-02-04T12:04:17.826922 timeout_sampler INFO Elapsed time: 0.00021505355834960938 [0:00:00.000215]
+2026-02-04T12:04:17.826726 utilities.infra INFO Login - success
+2026-02-04T12:04:17.831181 timeout_sampler INFO Waiting for 60 seconds [0:01:00], retry every 3 seconds. (Function: subprocess.Popen  Kwargs: {'args': 'oc login https://api.crc.testing:6443 -u kubeadmin', 'shell': True, 'stdout': -1, 'stderr': -1})
+2026-02-04T12:04:17.831066 utilities.infra INFO Trying to login to account
+2026-02-04T12:04:17.925577 timeout_sampler INFO Elapsed time: 0.0001304149627685547 [0:00:00.000130]
+2026-02-04T12:04:17.925944 ocp_resources.resource INFO Trying to get client via new_client_from_config
+2026-02-04T12:04:17.925391 utilities.infra INFO Login - success
+2026-02-04T12:04:17.933335 ocp_resources.resource INFO kind: ProjectRequest api version: project.openshift.io/v1
+2026-02-04T12:04:17.933464 ocp_resources ProjectRequest INFO Create ProjectRequest lifecycle-test-vm-reset-api
+2026-02-04T12:04:17.933516 ocp_resources ProjectRequest INFO Posting {'apiVersion': 'project.openshift.io/v1', 'kind': 'ProjectRequest', 'metadata': {'name': 'lifecycle-test-vm-reset-api'}}
+2026-02-04T12:04:17.933055 conftest INFO Executing module fixture: namespace
+2026-02-04T12:04:18.056559 ocp_resources.resource INFO kind: Project api version: project.openshift.io/v1
+2026-02-04T12:04:18.056686 ocp_resources Project INFO Wait for Project lifecycle-test-vm-reset-api status to be Active
+2026-02-04T12:04:18.056757 timeout_sampler INFO Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_for_status.lambda: self.exists)
+2026-02-04T12:04:18.062607 ocp_resources Project INFO Status of Project lifecycle-test-vm-reset-api is Active
+2026-02-04T12:04:18.062747 timeout_sampler INFO Elapsed time: 5.698204040527344e-05 [0:00:00.000057]
+2026-02-04T12:04:18.066876 ocp_resources Namespace INFO Wait for Namespace lifecycle-test-vm-reset-api status to be Active
+2026-02-04T12:04:18.067002 timeout_sampler INFO Waiting for 120 seconds [0:02:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_for_status.lambda: self.exists)
+2026-02-04T12:04:18.070120 ocp_resources Namespace INFO Status of Namespace lifecycle-test-vm-reset-api is Active
+2026-02-04T12:04:18.070292 timeout_sampler INFO Elapsed time: 7.009506225585938e-05 [0:00:00.000070]
+2026-02-04T12:04:18.070417 ocp_resources.resource INFO ResourceEdits: Updating data for resource Namespace lifecycle-test-vm-reset-api
+2026-02-04T12:04:18.070494 ocp_resources Namespace INFO Update Namespace lifecycle-test-vm-reset-api:
+{'metadata': {'labels': None, 'name': 'lifecycle-test-vm-reset-api'}}
+2026-02-04T12:04:18.102598 ocp_resources.resource INFO Trying to get client via new_client_from_config
+2026-02-04T12:04:18.102102 conftest INFO Executing function fixture: running_alpine_vmi
+2026-02-04T12:04:18.102326 conftest INFO Creating Alpine VMI: alpine-vmi-reset-test
+2026-02-04T12:04:18.177283 timeout_sampler INFO Waiting for 10 seconds [0:00:10], retry every 1 seconds. (Function: utilities.virt._get_image_json  Kwargs: {'cmd': 'oc image -o json info quay.io/openshift-cnv/qe-cnv-tests-fedora:41 --filter-by-os amd64 --registry-config=/tmp/tmpmzl4kqp_-cnv-tests-pull-secret/pull-secrets.json'})
+2026-02-04T12:04:18.177466 pyhelper_utils.shell INFO Running oc image -o json info quay.io/openshift-cnv/qe-cnv-tests-fedora:41 --filter-by-os amd64 --registry-config=/tmp/tmpmzl4kqp_-cnv-tests-pull-secret/pull-secrets.json command
+2026-02-04T12:04:20.194838 timeout_sampler INFO Elapsed time: 0.00013756752014160156 [0:00:00.000138]
+2026-02-04T12:04:20.197838 ocp_resources.resource INFO kind: VirtualMachine api version: kubevirt.io/v1
+2026-02-04T12:04:20.197942 utilities.virt WARNING `os_login_param` not defined for fedora
+2026-02-04T12:04:20.201637 utilities.virt INFO Setting random username and password
+2026-02-04T12:04:20.201962 utilities.virt WARNING Setting requests.memory value! (Users should set VM memory via memory.guest!)
+2026-02-04T12:04:20.235232 ocp_resources VirtualMachine INFO Create VirtualMachine alpine-vmi-reset-test-1770203060-1976576
+2026-02-04T12:04:20.235378 ocp_resources VirtualMachine INFO Posting {'apiVersion': 'kubevirt.io/v1', 'kind': 'VirtualMachine', 'metadata': {'creationTimestamp': None, 'labels': {'kubevirt.io/vm': 'alpine-vmi-reset-test'}, 'name': 'alpine-vmi-reset-test-1770203060-1976576'}, 'spec': {'template': {'metadata': {'creationTimestamp': None, 'labels': {'kubevirt.io/vm': 'alpine-vmi-reset-test-1770203060-1976576', 'kubevirt.io/domain': 'alpine-vmi-reset-test-1770203060-1976576', 'debugLogs': 'true'}}, 'spec': {'domain': {'cpu': {'cores': 1}, 'memory': {'guest': '1Gi'}, 'devices': {'disks': [{'disk': {'bus': 'virtio'}, 'name': 'containerdisk'}, {'disk': {'bus': 'virtio'}, 'name': 'cloudinitdisk'}], 'interfaces': [{'masquerade': {}, 'name': 'default'}], 'rng': {}}, 'machine': {'type': ''}, 'resources': {'requests': {'memory': '512Mi'}}}, 'networks': [{'name': 'default', 'pod': {}}], 'terminationGracePeriodSeconds': 30, 'volumes': [{'containerDisk': {'image': 'quay.io/openshift-cnv/qe-cnv-tests-fedora:41@sha256:a91659fba4e0258dda1be076dd6e56e34d9bf3dce082e57f939994ce0f124348'}, 'name': 'containerdisk'}, {'name': 'cloudinitdisk', 'cloudInitNoCloud': {'userData': '*******'}}]}}, 'runStrategy': 'Halted'}}
+2026-02-04T12:04:20.360650 timeout_sampler INFO Waiting for 5 seconds [0:00:05], retry every 1 seconds. (Function: utilities.virt.<locals>.lambda: vm.instance.get)
+2026-02-04T12:04:20.374700 timeout_sampler INFO Elapsed time: 0.000141143798828125 [0:00:00.000141]
+2026-02-04T12:04:20.374958 ocp_resources.resource INFO kind: VirtualMachineInstance api version: kubevirt.io/v1
+2026-02-04T12:04:20.375020 ocp_resources VirtualMachineInstance INFO Wait for VirtualMachineInstance alpine-vmi-reset-test-1770203060-1976576 status to be Running
+2026-02-04T12:04:20.375073 timeout_sampler INFO Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_for_status.lambda: self.exists)
+2026-02-04T12:04:21.388100 ocp_resources VirtualMachineInstance INFO Status of VirtualMachineInstance alpine-vmi-reset-test-1770203060-1976576 is Scheduling
+2026-02-04T12:08:20.561025 ocp_resources VirtualMachineInstance ERROR Status of VirtualMachineInstance alpine-vmi-reset-test-1770203060-1976576 is Scheduling
+2026-02-04T12:08:20.585434 ocp_resources Pod INFO Get Pod virt-launcher-alpine-vmi-reset-test-1770203060-1976576-7srth status
+2026-02-04T12:08:20.589015 ocp_resources VirtualMachineInstance ERROR Status of virt-launcher pod virt-launcher-alpine-vmi-reset-test-1770203060-1976576-7srth: Pending
+2026-02-04T12:08:20.603134 ocp_resources VirtualMachine INFO Delete VirtualMachine alpine-vmi-reset-test-1770203060-1976576
+2026-02-04T12:08:20.609936 ocp_resources VirtualMachine INFO Deleting {'apiVersion': 'kubevirt.io/v1', 'kind': 'VirtualMachine', 'metadata': {'annotations': {'kubemacpool.io/transaction-timestamp': '2026-02-04T11:04:20.377125879Z', 'kubevirt.io/latest-observed-api-version': 'v1', 'kubevirt.io/storage-observed-api-version': 'v1'}, 'creationTimestamp': '2026-02-04T11:04:20Z', 'finalizers': ['kubevirt.io/virtualMachineControllerFinalize'], 'generation': 2, 'labels': {'kubevirt.io/vm': 'alpine-vmi-reset-test'}, 'managedFields': [{'apiVersion': 'kubevirt.io/v1', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:labels': {'.': {}, 'f:kubevirt.io/vm': {}}}, 'f:spec': {'.': {}, 'f:template': {'.': {}, 'f:metadata': {'.': {}, 'f:creationTimestamp': {}, 'f:labels': {'.': {}, 'f:debugLogs': {}, 'f:kubevirt.io/domain': {}, 'f:kubevirt.io/vm': {}}}, 'f:spec': {'.': {}, 'f:domain': {'.': {}, 'f:cpu': {'.': {}, 'f:cores': {}}, 'f:devices': {'.': {}, 'f:disks': {}, 'f:interfaces': {}, 'f:rng': {}}, 'f:machine': {'.': {}, 'f:type': {}}, 'f:memory': {'.': {}, 'f:guest': {}}, 'f:resources': {'.': {}, 'f:requests': {'.': {}, 'f:memory': {}}}}, 'f:networks': {}, 'f:terminationGracePeriodSeconds': {}, 'f:volumes': {}}}}}, 'manager': 'OpenAPI-Generator', 'operation': 'Update', 'time': '2026-02-04T11:04:20Z'}, {'apiVersion': 'kubevirt.io/v1', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:spec': {'f:runStrategy': {}}}, 'manager': 'virt-api', 'operation': 'Update', 'time': '2026-02-04T11:04:20Z'}, {'apiVersion': 'kubevirt.io/v1', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:annotations': {'f:kubevirt.io/latest-observed-api-version': {}, 'f:kubevirt.io/storage-observed-api-version': {}}, 'f:finalizers': {'.': {}, 'v:"kubevirt.io/virtualMachineControllerFinalize"': {}}}}, 'manager': 'virt-controller', 'operation': 'Update', 'time': '2026-02-04T11:04:20Z'}, {'apiVersion': 'kubevirt.io/v1', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:status': {'.': {}, 'f:conditions': {}, 'f:created': {}, 'f:desiredGeneration': {}, 'f:observedGeneration': {}, 'f:printableStatus': {}, 'f:runStrategy': {}, 'f:volumeSnapshotStatuses': {}}}, 'manager': 'virt-controller', 'operation': 'Update', 'subresource': 'status', 'time': '2026-02-04T11:04:20Z'}], 'name': 'alpine-vmi-reset-test-1770203060-1976576', 'namespace': 'lifecycle-test-vm-reset-api', 'resourceVersion': '270034', 'uid': '11b439b2-6a83-4ae8-9587-f4907c87371d'}, 'spec': {'runStrategy': 'Always', 'template': {'metadata': {'creationTimestamp': None, 'labels': {'debugLogs': 'true', 'kubevirt.io/domain': 'alpine-vmi-reset-test-1770203060-1976576', 'kubevirt.io/vm': 'alpine-vmi-reset-test-1770203060-1976576'}}, 'spec': {'architecture': 'amd64', 'domain': {'cpu': {'cores': 1}, 'devices': {'disks': [{'disk': {'bus': 'virtio'}, 'name': 'containerdisk'}, {'disk': {'bus': 'virtio'}, 'name': 'cloudinitdisk'}], 'interfaces': [{'macAddress': '02:a4:a3:c6:6a:2d', 'masquerade': {}, 'name': 'default'}], 'rng': {}}, 'firmware': {'serial': '40b82e13-80ac-4cfd-bb42-1f67fd1b976e', 'uuid': '1e3838e8-b249-4368-8212-9192bd360de6'}, 'machine': {'type': 'pc-q35-rhel9.6.0'}, 'memory': {'guest': '1Gi'}, 'resources': {'requests': {'memory': '512Mi'}}}, 'networks': [{'name': 'default', 'pod': {}}], 'terminationGracePeriodSeconds': 30, 'volumes': [{'containerDisk': {'image': 'quay.io/openshift-cnv/qe-cnv-tests-fedora:41@sha256:a91659fba4e0258dda1be076dd6e56e34d9bf3dce082e57f939994ce0f124348'}, 'name': 'containerdisk'}, {'cloudInitNoCloud': {'userData': '*******'}, 'name': 'cloudinitdisk'}]}}}, 'status': {'conditions': [{'lastProbeTime': '2026-02-04T11:04:20Z', 'lastTransitionTime': '2026-02-04T11:04:20Z', 'message': 'Guest VM is not reported as running', 'reason': 'GuestNotRunning', 'status': 'False', 'type': 'Ready'}], 'created': True, 'desiredGeneration': 2, 'observedGeneration': 2, 'printableStatus': 'Starting', 'runStrategy': 'Always', 'volumeSnapshotStatuses': [{'enabled': False, 'name': 'containerdisk', 'reason': 'Snapshot is not supported for this volumeSource type [containerdisk]'}, {'enabled': False, 'name': 'cloudinitdisk', 'reason': 'Snapshot is not supported for this volumeSource type [cloudinitdisk]'}]}}
+2026-02-04T12:08:20.657046 ocp_resources VirtualMachine INFO Wait until VirtualMachine alpine-vmi-reset-test-1770203060-1976576 is deleted
+2026-02-04T12:08:20.657246 timeout_sampler INFO Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_deleted.lambda: self.exists)
+2026-02-04T12:08:31.701941 timeout_sampler INFO Elapsed time: 11.041288137435913 [0:00:11.041288]
+_________________________________________________________ ERROR at setup of TestVMIResetAPIErrorHandling.test_reset_on_paused_vmi __________________________________________________________
+
+unprivileged_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f86e76da550>, namespace = <ocp_resources.namespace.Namespace object at 0x7f86e69aab10>
+
+    @pytest.fixture()
+    def paused_vmi(
+        unprivileged_client: DynamicClient, namespace: Namespace
+    ) -> Generator[VirtualMachineForTests, None, None]:
+        """
+        Fixture providing a VMI in Paused state.
+    
+        Args:
+            unprivileged_client: Kubernetes client with unprivileged permissions
+            namespace: Test namespace
+    
+        Yields:
+            VirtualMachine: VM in Paused phase
+        """
+        name = "paused-vmi-reset-test"
+        LOGGER.info(f"Creating VMI to pause: {name}")
+    
+        with VirtualMachineForTests(
+            client=unprivileged_client,
+            name=name,
+            namespace=namespace.name,
+            body=fedora_vm_body(name=name),
+        ) as vm:
+            running_vm(vm=vm)
+            LOGGER.info(f"Pausing VMI {name}")
+>           vm.pause(wait=True)
+            ^^^^^^^^
+E           AttributeError: 'VirtualMachineForTests' object has no attribute 'pause'
+
+tests/virt/lifecycle/conftest.py:162: AttributeError
+---------------------------------------------------------------------------------- Captured stderr setup -----------------------------------------------------------------------------------
+------------------------------------------------------- TEARDOWN -------------------------------------------------------
+2026-02-04T12:12:25.690192 ocp_resources.resource INFO Trying to get client via new_client_from_config
+
+----------------------------------------------- test_reset_on_paused_vmi -----------------------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-04T12:12:25.689503 conftest INFO Executing function fixture: term_handler_scope_function
+2026-02-04T12:12:25.689734 conftest INFO Executing function fixture: autouse_fixtures
+2026-02-04T12:12:25.689945 conftest INFO Executing function fixture: paused_vmi
+2026-02-04T12:12:25.690001 conftest INFO Creating VMI to pause: paused-vmi-reset-test
+2026-02-04T12:12:25.735804 timeout_sampler INFO Waiting for 10 seconds [0:00:10], retry every 1 seconds. (Function: utilities.virt._get_image_json  Kwargs: {'cmd': 'oc image -o json info quay.io/openshift-cnv/qe-cnv-tests-fedora:41 --filter-by-os amd64 --registry-config=/tmp/tmpb8ida67n-cnv-tests-pull-secret/pull-secrets.json'})
+2026-02-04T12:12:25.735969 pyhelper_utils.shell INFO Running oc image -o json info quay.io/openshift-cnv/qe-cnv-tests-fedora:41 --filter-by-os amd64 --registry-config=/tmp/tmpb8ida67n-cnv-tests-pull-secret/pull-secrets.json command
+2026-02-04T12:12:27.475909 timeout_sampler INFO Elapsed time: 0.00013256072998046875 [0:00:00.000133]
+2026-02-04T12:12:27.478087 ocp_resources.resource INFO kind: VirtualMachine api version: kubevirt.io/v1
+2026-02-04T12:12:27.478193 utilities.virt WARNING `os_login_param` not defined for fedora
+2026-02-04T12:12:27.481870 utilities.virt INFO Setting random username and password
+2026-02-04T12:12:27.521397 ocp_resources VirtualMachine INFO Create VirtualMachine paused-vmi-reset-test-1770203547-4779701
+2026-02-04T12:12:27.521580 ocp_resources VirtualMachine INFO Posting {'apiVersion': 'kubevirt.io/v1', 'kind': 'VirtualMachine', 'metadata': {'creationTimestamp': None, 'labels': {'kubevirt.io/vm': 'paused-vmi-reset-test'}, 'name': 'paused-vmi-reset-test-1770203547-4779701'}, 'spec': {'template': {'metadata': {'creationTimestamp': None, 'labels': {'kubevirt.io/vm': 'paused-vmi-reset-test-1770203547-4779701', 'kubevirt.io/domain': 'paused-vmi-reset-test-1770203547-4779701', 'debugLogs': 'true'}}, 'spec': {'domain': {'cpu': {'cores': 1}, 'memory': {'guest': '1Gi'}, 'devices': {'disks': [{'disk': {'bus': 'virtio'}, 'name': 'containerdisk'}, {'disk': {'bus': 'virtio'}, 'name': 'cloudinitdisk'}], 'interfaces': [{'masquerade': {}, 'name': 'default'}], 'rng': {}}, 'machine': {'type': ''}}, 'networks': [{'name': 'default', 'pod': {}}], 'terminationGracePeriodSeconds': 30, 'volumes': [{'containerDisk': {'image': 'quay.io/openshift-cnv/qe-cnv-tests-fedora:41@sha256:a91659fba4e0258dda1be076dd6e56e34d9bf3dce082e57f939994ce0f124348'}, 'name': 'containerdisk'}, {'name': 'cloudinitdisk', 'cloudInitNoCloud': {'userData': '*******'}}]}}, 'runStrategy': 'Halted'}}
+2026-02-04T12:12:27.625835 timeout_sampler INFO Waiting for 5 seconds [0:00:05], retry every 1 seconds. (Function: utilities.virt.<locals>.lambda: vm.instance.get)
+2026-02-04T12:12:27.642186 timeout_sampler INFO Elapsed time: 0.0001430511474609375 [0:00:00.000143]
+2026-02-04T12:12:27.642391 ocp_resources.resource INFO kind: VirtualMachineInstance api version: kubevirt.io/v1
+2026-02-04T12:12:27.642478 ocp_resources VirtualMachineInstance INFO Wait for VirtualMachineInstance paused-vmi-reset-test-1770203547-4779701 status to be Running
+2026-02-04T12:12:27.642533 timeout_sampler INFO Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_for_status.lambda: self.exists)
+2026-02-04T12:12:28.649250 ocp_resources VirtualMachineInstance INFO Status of VirtualMachineInstance paused-vmi-reset-test-1770203547-4779701 is Scheduling
+2026-02-04T12:12:33.666826 ocp_resources VirtualMachineInstance INFO Status of VirtualMachineInstance paused-vmi-reset-test-1770203547-4779701 is Scheduled
+2026-02-04T12:12:36.679209 ocp_resources VirtualMachineInstance INFO Status of VirtualMachineInstance paused-vmi-reset-test-1770203547-4779701 is Running
+2026-02-04T12:12:36.679410 timeout_sampler INFO Elapsed time: 9.032982349395752 [0:00:09.032982]
+2026-02-04T12:12:36.679764 ocp_resources VirtualMachineInstance INFO Wait for VirtualMachineInstance/paused-vmi-reset-test-1770203547-4779701's 'AgentConnected' condition to be 'True'
+2026-02-04T12:12:36.679914 ocp_resources VirtualMachineInstance INFO Wait until VirtualMachineInstance paused-vmi-reset-test-1770203547-4779701 is created
+2026-02-04T12:12:36.679975 timeout_sampler INFO Waiting for 720 seconds [0:12:00], retry every 1 seconds. (Function: ocp_resources.resource.wait.lambda: self.exists)
+2026-02-04T12:12:36.679650 utilities.virt INFO Wait until guest agent is active on paused-vmi-reset-test-1770203547-4779701
+2026-02-04T12:12:36.682678 timeout_sampler INFO Elapsed time: 5.340576171875e-05 [0:00:00.000053]
+2026-02-04T12:12:36.682788 timeout_sampler INFO Waiting for 719.9971349239349 seconds [0:11:59.997135], retry every 1 seconds. (Function: ocp_resources.resource.wait_for_condition.lambda: self.instance)
+2026-02-04T12:12:55.771276 timeout_sampler INFO Elapsed time: 19.085747003555298 [0:00:19.085747]
+2026-02-04T12:12:55.771491 timeout_sampler INFO Waiting for 720 seconds [0:12:00], retry every 1 seconds. (Function: utilities.virt.<locals>.lambda: vmi.instance)
+2026-02-04T12:12:55.771404 utilities.virt INFO Wait for paused-vmi-reset-test-1770203547-4779701 network interfaces
+2026-02-04T12:12:55.773957 timeout_sampler INFO Elapsed time: 0.00012612342834472656 [0:00:00.000126]
+2026-02-04T12:12:55.774067 utilities.virt INFO Wait for paused-vmi-reset-test-1770203547-4779701 SSH connectivity.
+2026-02-04T12:12:55.774138 utilities.virt INFO SSH command: ssh -o 'ProxyCommand=virtctl port-forward --stdio=true vm/paused-vmi-reset-test-1770203547-4779701/lifecycle-test-vm-reset-api 22' EPhxNqq3raNzizmO@paused-vmi-reset-test-1770203547-4779701
+2026-02-04T12:13:07.657405 timeout_sampler INFO Waiting for 120 seconds [0:02:00], retry every 5 seconds. (Function: rrmngmnt.host.run_command  Kwargs: {'command': ['exit'], 'tcp_timeout': 60})
+2026-02-04T12:13:07.657520 Host INFO [paused-vmi-reset-test-1770203547-4779701] Executing command exit
+2026-02-04T12:13:07.708858 paramiko.transport INFO Connected (version 2.0, client OpenSSH_9.8)
+2026-02-04T12:13:07.732557 paramiko.transport INFO Authentication (publickey) successful!
+2026-02-04T12:13:07.974031 timeout_sampler INFO Elapsed time: 0.00013780593872070312 [0:00:00.000138]
+2026-02-04T12:13:07.974190 conftest INFO Pausing VMI paused-vmi-reset-test
+2026-02-04T12:13:08.033853 ocp_resources VirtualMachine INFO Wait for VirtualMachine paused-vmi-reset-test-1770203547-4779701 status to be None
+2026-02-04T12:13:08.034094 timeout_sampler INFO Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: kubernetes.dynamic.client.get  Kwargs: {'field_selector': 'metadata.name==paused-vmi-reset-test-1770203547-4779701', 'namespace': 'lifecycle-test-vm-reset-api'})
+2026-02-04T12:13:09.057294 timeout_sampler INFO Elapsed time: 1.0075664520263672 [0:00:01.007566]
+2026-02-04T12:13:09.057551 ocp_resources VirtualMachineInstance INFO Wait until VirtualMachineInstance paused-vmi-reset-test-1770203547-4779701 is deleted
+2026-02-04T12:13:09.057618 timeout_sampler INFO Waiting for 480 seconds [0:08:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_deleted.lambda: self.exists)
+2026-02-04T12:13:14.078184 timeout_sampler INFO Elapsed time: 5.016910076141357 [0:00:05.016910]
+2026-02-04T12:13:14.078298 ocp_resources VirtualMachine INFO Delete VirtualMachine paused-vmi-reset-test-1770203547-4779701
+2026-02-04T12:13:14.084470 ocp_resources VirtualMachine INFO Deleting {'apiVersion': 'kubevirt.io/v1', 'kind': 'VirtualMachine', 'metadata': {'annotations': {'kubemacpool.io/transaction-timestamp': '2026-02-04T11:13:07.996568244Z', 'kubevirt.io/latest-observed-api-version': 'v1', 'kubevirt.io/storage-observed-api-version': 'v1'}, 'creationTimestamp': '2026-02-04T11:12:27Z', 'finalizers': ['kubevirt.io/virtualMachineControllerFinalize'], 'generation': 3, 'labels': {'kubevirt.io/vm': 'paused-vmi-reset-test'}, 'managedFields': [{'apiVersion': 'kubevirt.io/v1', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:labels': {'.': {}, 'f:kubevirt.io/vm': {}}}, 'f:spec': {'.': {}, 'f:template': {'.': {}, 'f:metadata': {'.': {}, 'f:creationTimestamp': {}, 'f:labels': {'.': {}, 'f:debugLogs': {}, 'f:kubevirt.io/domain': {}, 'f:kubevirt.io/vm': {}}}, 'f:spec': {'.': {}, 'f:domain': {'.': {}, 'f:cpu': {'.': {}, 'f:cores': {}}, 'f:devices': {'.': {}, 'f:disks': {}, 'f:interfaces': {}, 'f:rng': {}}, 'f:machine': {'.': {}, 'f:type': {}}, 'f:memory': {'.': {}, 'f:guest': {}}}, 'f:networks': {}, 'f:terminationGracePeriodSeconds': {}, 'f:volumes': {}}}}}, 'manager': 'OpenAPI-Generator', 'operation': 'Update', 'time': '2026-02-04T11:12:27Z'}, {'apiVersion': 'kubevirt.io/v1', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:annotations': {'f:kubevirt.io/latest-observed-api-version': {}, 'f:kubevirt.io/storage-observed-api-version': {}}, 'f:finalizers': {'.': {}, 'v:"kubevirt.io/virtualMachineControllerFinalize"': {}}}}, 'manager': 'virt-controller', 'operation': 'Update', 'time': '2026-02-04T11:12:27Z'}, {'apiVersion': 'kubevirt.io/v1', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:spec': {'f:runStrategy': {}}}, 'manager': 'virt-api', 'operation': 'Update', 'time': '2026-02-04T11:13:07Z'}, {'apiVersion': 'kubevirt.io/v1', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:status': {'.': {}, 'f:conditions': {}, 'f:desiredGeneration': {}, 'f:observedGeneration': {}, 'f:printableStatus': {}, 'f:runStrategy': {}, 'f:volumeSnapshotStatuses': {}}}, 'manager': 'virt-controller', 'operation': 'Update', 'subresource': 'status', 'time': '2026-02-04T11:13:13Z'}], 'name': 'paused-vmi-reset-test-1770203547-4779701', 'namespace': 'lifecycle-test-vm-reset-api', 'resourceVersion': '274076', 'uid': 'd3e0f1c1-a43f-478c-a152-bc2e5b357c33'}, 'spec': {'runStrategy': 'Halted', 'template': {'metadata': {'creationTimestamp': None, 'labels': {'debugLogs': 'true', 'kubevirt.io/domain': 'paused-vmi-reset-test-1770203547-4779701', 'kubevirt.io/vm': 'paused-vmi-reset-test-1770203547-4779701'}}, 'spec': {'architecture': 'amd64', 'domain': {'cpu': {'cores': 1}, 'devices': {'disks': [{'disk': {'bus': 'virtio'}, 'name': 'containerdisk'}, {'disk': {'bus': 'virtio'}, 'name': 'cloudinitdisk'}], 'interfaces': [{'macAddress': '02:a4:a3:c6:6a:32', 'masquerade': {}, 'name': 'default'}], 'rng': {}}, 'firmware': {'serial': 'a8956552-dc7d-4a3e-8ed6-3b5296d65734', 'uuid': 'afae2780-5e5b-4900-884b-1466e7c05b17'}, 'machine': {'type': 'pc-q35-rhel9.6.0'}, 'memory': {'guest': '1Gi'}, 'resources': {}}, 'networks': [{'name': 'default', 'pod': {}}], 'terminationGracePeriodSeconds': 30, 'volumes': [{'containerDisk': {'image': 'quay.io/openshift-cnv/qe-cnv-tests-fedora:41@sha256:a91659fba4e0258dda1be076dd6e56e34d9bf3dce082e57f939994ce0f124348'}, 'name': 'containerdisk'}, {'cloudInitNoCloud': {'userData': '*******'}, 'name': 'cloudinitdisk'}]}}}, 'status': {'conditions': [{'lastProbeTime': '2026-02-04T11:13:13Z', 'lastTransitionTime': '2026-02-04T11:13:13Z', 'message': 'VMI does not exist', 'reason': 'VMINotExists', 'status': 'False', 'type': 'Ready'}, {'lastProbeTime': None, 'lastTransitionTime': None, 'status': 'True', 'type': 'LiveMigratable'}, {'lastProbeTime': None, 'lastTransitionTime': None, 'status': 'True', 'type': 'StorageLiveMigratable'}], 'desiredGeneration': 3, 'observedGeneration': 3, 'printableStatus': 'Stopped', 'runStrategy': 'Halted', 'volumeSnapshotStatuses': [{'enabled': False, 'name': 'containerdisk', 'reason': 'Snapshot is not supported for this volumeSource type [containerdisk]'}, {'enabled': False, 'name': 'cloudinitdisk', 'reason': 'Snapshot is not supported for this volumeSource type [cloudinitdisk]'}]}}
+2026-02-04T12:13:14.121380 ocp_resources VirtualMachine INFO Wait until VirtualMachine paused-vmi-reset-test-1770203547-4779701 is deleted
+2026-02-04T12:13:14.121554 timeout_sampler INFO Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_deleted.lambda: self.exists)
+2026-02-04T12:13:15.128510 timeout_sampler INFO Elapsed time: 1.0037143230438232 [0:00:01.003714]
+========================================================================================= FAILURES =========================================================================================
+____________________________________________________________________ TestVMIResetAPI.test_boot_time_changes_after_reset ____________________________________________________________________
+
+self = <test_vm_reset_api.TestVMIResetAPI object at 0x7f86e767c510>, running_alpine_vmi = <utilities.virt.VirtualMachineForTests object at 0x7f86e67dea50>
+
+    @pytest.mark.polarion("VIRTSTRAT-357-04")
+    def test_boot_time_changes_after_reset(self, running_alpine_vmi: VirtualMachineForTests) -> None:
+        """
+        Test that the guest OS boot time changes after reset, confirming actual reboot.
+    
+        Related: TS-11, AC-1
+    
+        Steps:
+            1. Execute 'uptime -s' command on the VMI to get boot time
+            2. Issue PUT request to /virtualmachineinstances/{name}/reset
+            3. Wait for VMI to become accessible
+            4. Execute 'uptime -s' command again on the VMI
+    
+        Expected:
+            - Boot time after reset is different from boot time before reset
+            - Time difference indicates recent reboot
+    
+        Args:
+            running_alpine_vmi: Running Alpine VM fixture
+        """
+        vm = running_alpine_vmi
+        LOGGER.info(f"Testing boot time change for VMI: {vm.name}")
+    
+        boot_time_before = get_boot_time_from_vm(vm=vm)
+        LOGGER.info(f"Boot time before reset: {boot_time_before}")
+    
+        LOGGER.info(f"Calling reset() on VMI {vm.vmi.name}")
+        vm.vmi.reset()
+    
+        LOGGER.info("Waiting for VMI to become accessible after reset")
+        vm.vmi.wait_until_running()
+        wait_for_ssh_connectivity(vm=vm, timeout=TIMEOUT_5MIN)
+    
+        boot_time_after = get_boot_time_from_vm(vm=vm)
+        LOGGER.info(f"Boot time after reset: {boot_time_after}")
+    
+>       assert boot_time_before != boot_time_after, (
+            f"Boot time should change after reset, indicating guest reboot. "
+            f"Before: {boot_time_before}, After: {boot_time_after}"
+        )
+E       AssertionError: Boot time should change after reset, indicating guest reboot. Before: , After: 
+E       assert '' != ''
+
+tests/virt/lifecycle/test_vm_reset_api.py:221: AssertionError
+---------------------------------------------------------------------------------- Captured stderr setup -----------------------------------------------------------------------------------
+2026-02-04T12:10:46.809669 ocp_resources.resource INFO Trying to get client via new_client_from_config --- [DuplicateFilter: Last log `kind: VirtualMachineInstance api version: kubevirt.io/v1` repeated 7 times]
+
+------------------------------------------ test_boot_time_changes_after_reset ------------------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-04T12:10:46.809100 conftest INFO Executing function fixture: term_handler_scope_function
+2026-02-04T12:10:46.809302 conftest INFO Executing function fixture: autouse_fixtures
+2026-02-04T12:10:46.809474 conftest INFO Executing function fixture: running_alpine_vmi
+2026-02-04T12:10:46.809523 conftest INFO Creating Alpine VMI: alpine-vmi-reset-test
+2026-02-04T12:10:46.891256 timeout_sampler INFO Waiting for 10 seconds [0:00:10], retry every 1 seconds. (Function: utilities.virt._get_image_json  Kwargs: {'cmd': 'oc image -o json info quay.io/openshift-cnv/qe-cnv-tests-fedora:41 --filter-by-os amd64 --registry-config=/tmp/tmptm4lwoaa-cnv-tests-pull-secret/pull-secrets.json'})
+2026-02-04T12:10:46.891438 pyhelper_utils.shell INFO Running oc image -o json info quay.io/openshift-cnv/qe-cnv-tests-fedora:41 --filter-by-os amd64 --registry-config=/tmp/tmptm4lwoaa-cnv-tests-pull-secret/pull-secrets.json command
+2026-02-04T12:10:48.669622 timeout_sampler INFO Elapsed time: 0.00014591217041015625 [0:00:00.000146]
+2026-02-04T12:10:48.671770 ocp_resources.resource INFO kind: VirtualMachine api version: kubevirt.io/v1
+2026-02-04T12:10:48.671869 utilities.virt WARNING `os_login_param` not defined for fedora
+2026-02-04T12:10:48.675315 utilities.virt INFO Setting random username and password
+2026-02-04T12:10:48.710263 ocp_resources VirtualMachine INFO Create VirtualMachine alpine-vmi-reset-test-1770203448-6716638
+2026-02-04T12:10:48.710484 ocp_resources VirtualMachine INFO Posting {'apiVersion': 'kubevirt.io/v1', 'kind': 'VirtualMachine', 'metadata': {'creationTimestamp': None, 'labels': {'kubevirt.io/vm': 'alpine-vmi-reset-test'}, 'name': 'alpine-vmi-reset-test-1770203448-6716638'}, 'spec': {'template': {'metadata': {'creationTimestamp': None, 'labels': {'kubevirt.io/vm': 'alpine-vmi-reset-test-1770203448-6716638', 'kubevirt.io/domain': 'alpine-vmi-reset-test-1770203448-6716638', 'debugLogs': 'true'}}, 'spec': {'domain': {'cpu': {'cores': 1}, 'memory': {'guest': '1Gi'}, 'devices': {'disks': [{'disk': {'bus': 'virtio'}, 'name': 'containerdisk'}, {'disk': {'bus': 'virtio'}, 'name': 'cloudinitdisk'}], 'interfaces': [{'masquerade': {}, 'name': 'default'}], 'rng': {}}, 'machine': {'type': ''}, 'resources': {'requests': {'memory': '512Mi'}}}, 'networks': [{'name': 'default', 'pod': {}}], 'terminationGracePeriodSeconds': 30, 'volumes': [{'containerDisk': {'image': 'quay.io/openshift-cnv/qe-cnv-tests-fedora:41@sha256:a91659fba4e0258dda1be076dd6e56e34d9bf3dce082e57f939994ce0f124348'}, 'name': 'containerdisk'}, {'name': 'cloudinitdisk', 'cloudInitNoCloud': {'userData': '*******'}}]}}, 'runStrategy': 'Halted'}}
+2026-02-04T12:10:48.675506 utilities.virt WARNING Setting requests.memory value! (Users should set VM memory via memory.guest!)
+2026-02-04T12:10:48.826196 timeout_sampler INFO Waiting for 5 seconds [0:00:05], retry every 1 seconds. (Function: utilities.virt.<locals>.lambda: vm.instance.get)
+2026-02-04T12:10:48.872343 timeout_sampler INFO Elapsed time: 0.0001723766326904297 [0:00:00.000172]
+2026-02-04T12:10:48.872548 ocp_resources.resource INFO kind: VirtualMachineInstance api version: kubevirt.io/v1
+2026-02-04T12:10:48.872613 ocp_resources VirtualMachineInstance INFO Wait for VirtualMachineInstance alpine-vmi-reset-test-1770203448-6716638 status to be Running
+2026-02-04T12:10:48.872675 timeout_sampler INFO Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_for_status.lambda: self.exists)
+2026-02-04T12:10:49.881395 ocp_resources VirtualMachineInstance INFO Status of VirtualMachineInstance alpine-vmi-reset-test-1770203448-6716638 is Scheduling
+2026-02-04T12:10:55.923563 ocp_resources VirtualMachineInstance INFO Status of VirtualMachineInstance alpine-vmi-reset-test-1770203448-6716638 is Scheduled
+2026-02-04T12:10:57.941606 ocp_resources VirtualMachineInstance INFO Status of VirtualMachineInstance alpine-vmi-reset-test-1770203448-6716638 is Running
+2026-02-04T12:10:57.941735 timeout_sampler INFO Elapsed time: 9.06551742553711 [0:00:09.065517]
+2026-02-04T12:10:57.941956 ocp_resources VirtualMachineInstance INFO Wait for VirtualMachineInstance/alpine-vmi-reset-test-1770203448-6716638's 'AgentConnected' condition to be 'True'
+2026-02-04T12:10:57.942005 ocp_resources VirtualMachineInstance INFO Wait until VirtualMachineInstance alpine-vmi-reset-test-1770203448-6716638 is created
+2026-02-04T12:10:57.942055 timeout_sampler INFO Waiting for 720 seconds [0:12:00], retry every 1 seconds. (Function: ocp_resources.resource.wait.lambda: self.exists)
+2026-02-04T12:10:57.941885 utilities.virt INFO Wait until guest agent is active on alpine-vmi-reset-test-1770203448-6716638
+2026-02-04T12:10:57.945899 timeout_sampler INFO Elapsed time: 4.6253204345703125e-05 [0:00:00.000046]
+2026-02-04T12:10:57.946042 timeout_sampler INFO Waiting for 719.995979309082 seconds [0:11:59.995979], retry every 1 seconds. (Function: ocp_resources.resource.wait_for_condition.lambda: self.instance)
+2026-02-04T12:11:18.184563 timeout_sampler INFO Elapsed time: 20.23464035987854 [0:00:20.234640]
+2026-02-04T12:11:18.184777 timeout_sampler INFO Waiting for 720 seconds [0:12:00], retry every 1 seconds. (Function: utilities.virt.<locals>.lambda: vmi.instance)
+2026-02-04T12:11:18.184697 utilities.virt INFO Wait for alpine-vmi-reset-test-1770203448-6716638 network interfaces
+2026-02-04T12:11:18.187625 timeout_sampler INFO Elapsed time: 0.00017881393432617188 [0:00:00.000179]
+2026-02-04T12:11:18.187708 utilities.virt INFO Wait for alpine-vmi-reset-test-1770203448-6716638 SSH connectivity.
+2026-02-04T12:11:18.187760 utilities.virt INFO SSH command: ssh -o 'ProxyCommand=virtctl port-forward --stdio=true vm/alpine-vmi-reset-test-1770203448-6716638/lifecycle-test-vm-reset-api 22' gnzpl8xuSYntUrGl@alpine-vmi-reset-test-1770203448-6716638
+2026-02-04T12:11:25.657464 timeout_sampler INFO Waiting for 120 seconds [0:02:00], retry every 5 seconds. (Function: rrmngmnt.host.run_command  Kwargs: {'command': ['exit'], 'tcp_timeout': 60})
+2026-02-04T12:11:25.657616 Host INFO [alpine-vmi-reset-test-1770203448-6716638] Executing command exit
+2026-02-04T12:11:25.705194 paramiko.transport INFO Connected (version 2.0, client OpenSSH_9.8)
+2026-02-04T12:11:25.723253 paramiko.transport INFO Authentication (publickey) successful!
+2026-02-04T12:11:25.983934 timeout_sampler INFO Elapsed time: 0.00018024444580078125 [0:00:00.000180]
+2026-02-04T12:11:25.984129 utilities.virt INFO Wait for alpine-vmi-reset-test-1770203448-6716638 SSH connectivity.
+2026-02-04T12:11:25.984215 utilities.virt INFO SSH command: ssh -o 'ProxyCommand=virtctl port-forward --stdio=true vm/alpine-vmi-reset-test-1770203448-6716638/lifecycle-test-vm-reset-api 22' gnzpl8xuSYntUrGl@alpine-vmi-reset-test-1770203448-6716638
+2026-02-04T12:11:33.407461 timeout_sampler INFO Waiting for 300 seconds [0:05:00], retry every 5 seconds. (Function: rrmngmnt.host.run_command  Kwargs: {'command': ['exit'], 'tcp_timeout': 60})
+2026-02-04T12:11:33.407590 Host INFO [alpine-vmi-reset-test-1770203448-6716638] Executing command exit
+2026-02-04T12:11:33.459600 paramiko.transport INFO Connected (version 2.0, client OpenSSH_9.8)
+2026-02-04T12:11:33.481635 paramiko.transport INFO Authentication (publickey) successful!
+2026-02-04T12:11:33.561622 timeout_sampler INFO Elapsed time: 0.0001556873321533203 [0:00:00.000156]
+----------------------------------------------------------------------------------- Captured stderr call -----------------------------------------------------------------------------------
+2026-02-04T12:11:33.561809 conftest INFO Alpine VMI alpine-vmi-reset-test is running and SSH accessible
+--------------------------------------------------------- CALL ---------------------------------------------------------
+2026-02-04T12:11:33.562569 test_vm_reset_api INFO Testing boot time change for VMI: alpine-vmi-reset-test-1770203448-6716638
+2026-02-04T12:11:33.562634 utilities.virt INFO SSH command: ssh -o 'ProxyCommand=virtctl port-forward --stdio=true vm/alpine-vmi-reset-test-1770203448-6716638/lifecycle-test-vm-reset-api 22' gnzpl8xuSYntUrGl@alpine-vmi-reset-test-1770203448-6716638
+2026-02-04T12:11:41.112590 Host INFO [alpine-vmi-reset-test-1770203448-6716638] Executing command u p t i m e   - s
+2026-02-04T12:11:41.161944 paramiko.transport INFO Connected (version 2.0, client OpenSSH_9.8)
+2026-02-04T12:11:41.181468 paramiko.transport INFO Authentication (publickey) successful!
+2026-02-04T12:11:41.265512 Host ERROR [alpine-vmi-reset-test-1770203448-6716638] Failed to run command uptime -s ERR: bash: line 1: u: command not found
+ OUT: 
+2026-02-04T12:11:41.265651 tests.virt.lifecycle.conftest INFO Boot time from VM alpine-vmi-reset-test-1770203448-6716638: 
+2026-02-04T12:11:41.265697 test_vm_reset_api INFO Boot time before reset: 
+2026-02-04T12:11:41.265840 test_vm_reset_api INFO Calling reset() on VMI alpine-vmi-reset-test-1770203448-6716638
+2026-02-04T12:11:41.355505 ocp_resources VirtualMachineInstance INFO Wait for VirtualMachineInstance alpine-vmi-reset-test-1770203448-6716638 status to be Running
+2026-02-04T12:11:41.355674 timeout_sampler INFO Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_for_status.lambda: self.exists)
+2026-02-04T12:11:41.355259 test_vm_reset_api INFO Waiting for VMI to become accessible after reset
+2026-02-04T12:11:41.368716 ocp_resources VirtualMachineInstance INFO Status of VirtualMachineInstance alpine-vmi-reset-test-1770203448-6716638 is Running
+2026-02-04T12:11:41.368845 timeout_sampler INFO Elapsed time: 0.00013828277587890625 [0:00:00.000138]
+2026-02-04T12:11:41.368921 utilities.virt INFO Wait for alpine-vmi-reset-test-1770203448-6716638 SSH connectivity.
+2026-02-04T12:11:41.368984 utilities.virt INFO SSH command: ssh -o 'ProxyCommand=virtctl port-forward --stdio=true vm/alpine-vmi-reset-test-1770203448-6716638/lifecycle-test-vm-reset-api 22' gnzpl8xuSYntUrGl@alpine-vmi-reset-test-1770203448-6716638
+2026-02-04T12:11:49.157419 timeout_sampler INFO Waiting for 300 seconds [0:05:00], retry every 5 seconds. (Function: rrmngmnt.host.run_command  Kwargs: {'command': ['exit'], 'tcp_timeout': 60})
+2026-02-04T12:11:49.157539 Host INFO [alpine-vmi-reset-test-1770203448-6716638] Executing command exit
+2026-02-04T12:12:04.215025 paramiko.transport ERROR Exception (client): Error reading SSH protocol banner
+2026-02-04T12:12:04.216000 paramiko.transport ERROR Traceback (most recent call last):
+2026-02-04T12:12:04.216121 paramiko.transport ERROR   File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/paramiko/transport.py", line 2363, in _check_banner
+2026-02-04T12:12:04.216169 paramiko.transport ERROR     buf = self.packetizer.readline(timeout)
+2026-02-04T12:12:04.216202 paramiko.transport ERROR   File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/paramiko/packet.py", line 395, in readline
+2026-02-04T12:12:04.216231 paramiko.transport ERROR     buf += self._read_timeout(timeout)
+2026-02-04T12:12:04.216259 paramiko.transport ERROR            ~~~~~~~~~~~~~~~~~~^^^^^^^^^
+2026-02-04T12:12:04.216285 paramiko.transport ERROR   File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/paramiko/packet.py", line 673, in _read_timeout
+2026-02-04T12:12:04.216312 paramiko.transport ERROR     raise socket.timeout()
+2026-02-04T12:12:04.216339 paramiko.transport ERROR TimeoutError
+2026-02-04T12:12:04.216365 paramiko.transport ERROR 
+2026-02-04T12:12:04.216393 paramiko.transport ERROR During handling of the above exception, another exception occurred:
+2026-02-04T12:12:04.216421 paramiko.transport ERROR 
+2026-02-04T12:12:04.216449 paramiko.transport ERROR Traceback (most recent call last):
+2026-02-04T12:12:04.216477 paramiko.transport ERROR   File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/paramiko/transport.py", line 2179, in run
+2026-02-04T12:12:04.216504 paramiko.transport ERROR     self._check_banner()
+2026-02-04T12:12:04.216529 paramiko.transport ERROR     ~~~~~~~~~~~~~~~~~~^^
+2026-02-04T12:12:04.216559 paramiko.transport ERROR   File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/paramiko/transport.py", line 2367, in _check_banner
+2026-02-04T12:12:04.216596 paramiko.transport ERROR     raise SSHException(
+2026-02-04T12:12:04.216625 paramiko.transport ERROR         "Error reading SSH protocol banner" + str(e)
+2026-02-04T12:12:04.216655 paramiko.transport ERROR     )
+2026-02-04T12:12:04.216681 paramiko.transport ERROR paramiko.ssh_exception.SSHException: Error reading SSH protocol banner
+2026-02-04T12:12:04.216708 paramiko.transport ERROR 
+2026-02-04T12:12:09.217261 Host INFO [alpine-vmi-reset-test-1770203448-6716638] Executing command exit
+2026-02-04T12:12:09.272348 paramiko.transport INFO Connected (version 2.0, client OpenSSH_9.8)
+2026-02-04T12:12:09.292046 paramiko.transport INFO Authentication (publickey) successful!
+2026-02-04T12:12:09.534371 timeout_sampler INFO Elapsed time: 20.05984354019165 [0:00:20.059844]
+2026-02-04T12:12:09.534526 utilities.virt INFO SSH command: ssh -o 'ProxyCommand=virtctl port-forward --stdio=true vm/alpine-vmi-reset-test-1770203448-6716638/lifecycle-test-vm-reset-api 22' gnzpl8xuSYntUrGl@alpine-vmi-reset-test-1770203448-6716638
+2026-02-04T12:12:17.407393 Host INFO [alpine-vmi-reset-test-1770203448-6716638] Executing command u p t i m e   - s
+2026-02-04T12:12:17.450625 paramiko.transport INFO Connected (version 2.0, client OpenSSH_9.8)
+2026-02-04T12:12:17.469419 paramiko.transport INFO Authentication (publickey) successful!
+--------------------------------------------------------------------------------- Captured stderr teardown ---------------------------------------------------------------------------------
+self = <test_vm_reset_api.TestVMIResetAPI object at 0x7f86e767c510>, running_alpine_vmi = <utilities.virt.VirtualMachineForTests object at 0x7f86e67dea50>
+
+    @pytest.mark.polarion("VIRTSTRAT-357-04")
+    def test_boot_time_changes_after_reset(self, running_alpine_vmi: VirtualMachineForTests) -> None:
+        """
+        Test that the guest OS boot time changes after reset, confirming actual reboot.
+    
+        Related: TS-11, AC-1
+    
+        Steps:
+            1. Execute 'uptime -s' command on the VMI to get boot time
+            2. Issue PUT request to /virtualmachineinstances/{name}/reset
+            3. Wait for VMI to become accessible
+            4. Execute 'uptime -s' command again on the VMI
+    
+        Expected:
+            - Boot time after reset is different from boot time before reset
+            - Time difference indicates recent reboot
+    
+        Args:
+            running_alpine_vmi: Running Alpine VM fixture
+        """
+        vm = running_alpine_vmi
+        LOGGER.info(f"Testing boot time change for VMI: {vm.name}")
+    
+        boot_time_before = get_boot_time_from_vm(vm=vm)
+        LOGGER.info(f"Boot time before reset: {boot_time_before}")
+    
+        LOGGER.info(f"Calling reset() on VMI {vm.vmi.name}")
+        vm.vmi.reset()
+    
+        LOGGER.info("Waiting for VMI to become accessible after reset")
+        vm.vmi.wait_until_running()
+        wait_for_ssh_connectivity(vm=vm, timeout=TIMEOUT_5MIN)
+    
+        boot_time_after = get_boot_time_from_vm(vm=vm)
+        LOGGER.info(f"Boot time after reset: {boot_time_after}")
+    
+>       assert boot_time_before != boot_time_after, (
+            f"Boot time should change after reset, indicating guest reboot. "
+            f"Before: {boot_time_before}, After: {boot_time_after}"
+        )
+E       AssertionError: Boot time should change after reset, indicating guest reboot. Before: , After: 
+E       assert '' != ''
+
+tests/virt/lifecycle/test_vm_reset_api.py:221: AssertionError
+------------------------------------------------------- TEARDOWN -------------------------------------------------------
+2026-02-04T12:12:17.585893 ocp_resources VirtualMachine INFO Wait for VirtualMachine alpine-vmi-reset-test-1770203448-6716638 status to be None
+2026-02-04T12:12:17.586236 timeout_sampler INFO Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: kubernetes.dynamic.client.get  Kwargs: {'field_selector': 'metadata.name==alpine-vmi-reset-test-1770203448-6716638', 'namespace': 'lifecycle-test-vm-reset-api'})
+2026-02-04T12:12:18.598795 timeout_sampler INFO Elapsed time: 1.0061790943145752 [0:00:01.006179]
+2026-02-04T12:12:18.599078 ocp_resources VirtualMachineInstance INFO Wait until VirtualMachineInstance alpine-vmi-reset-test-1770203448-6716638 is deleted
+2026-02-04T12:12:18.599197 timeout_sampler INFO Waiting for 480 seconds [0:08:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_deleted.lambda: self.exists)
+2026-02-04T12:12:22.621460 timeout_sampler INFO Elapsed time: 4.016720294952393 [0:00:04.016720]
+2026-02-04T12:12:22.621575 ocp_resources VirtualMachine INFO Delete VirtualMachine alpine-vmi-reset-test-1770203448-6716638
+2026-02-04T12:12:22.628278 ocp_resources VirtualMachine INFO Deleting {'apiVersion': 'kubevirt.io/v1', 'kind': 'VirtualMachine', 'metadata': {'annotations': {'kubemacpool.io/transaction-timestamp': '2026-02-04T11:12:17.560535411Z', 'kubevirt.io/latest-observed-api-version': 'v1', 'kubevirt.io/storage-observed-api-version': 'v1'}, 'creationTimestamp': '2026-02-04T11:10:48Z', 'finalizers': ['kubevirt.io/virtualMachineControllerFinalize'], 'generation': 3, 'labels': {'kubevirt.io/vm': 'alpine-vmi-reset-test'}, 'managedFields': [{'apiVersion': 'kubevirt.io/v1', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:labels': {'.': {}, 'f:kubevirt.io/vm': {}}}, 'f:spec': {'.': {}, 'f:template': {'.': {}, 'f:metadata': {'.': {}, 'f:creationTimestamp': {}, 'f:labels': {'.': {}, 'f:debugLogs': {}, 'f:kubevirt.io/domain': {}, 'f:kubevirt.io/vm': {}}}, 'f:spec': {'.': {}, 'f:domain': {'.': {}, 'f:cpu': {'.': {}, 'f:cores': {}}, 'f:devices': {'.': {}, 'f:disks': {}, 'f:interfaces': {}, 'f:rng': {}}, 'f:machine': {'.': {}, 'f:type': {}}, 'f:memory': {'.': {}, 'f:guest': {}}, 'f:resources': {'.': {}, 'f:requests': {'.': {}, 'f:memory': {}}}}, 'f:networks': {}, 'f:terminationGracePeriodSeconds': {}, 'f:volumes': {}}}}}, 'manager': 'OpenAPI-Generator', 'operation': 'Update', 'time': '2026-02-04T11:10:48Z'}, {'apiVersion': 'kubevirt.io/v1', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:annotations': {'f:kubevirt.io/latest-observed-api-version': {}, 'f:kubevirt.io/storage-observed-api-version': {}}, 'f:finalizers': {'.': {}, 'v:"kubevirt.io/virtualMachineControllerFinalize"': {}}}}, 'manager': 'virt-controller', 'operation': 'Update', 'time': '2026-02-04T11:10:48Z'}, {'apiVersion': 'kubevirt.io/v1', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:spec': {'f:runStrategy': {}}}, 'manager': 'virt-api', 'operation': 'Update', 'time': '2026-02-04T11:12:17Z'}, {'apiVersion': 'kubevirt.io/v1', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:status': {'.': {}, 'f:conditions': {}, 'f:desiredGeneration': {}, 'f:observedGeneration': {}, 'f:printableStatus': {}, 'f:runStrategy': {}, 'f:volumeSnapshotStatuses': {}}}, 'manager': 'virt-controller', 'operation': 'Update', 'subresource': 'status', 'time': '2026-02-04T11:12:21Z'}], 'name': 'alpine-vmi-reset-test-1770203448-6716638', 'namespace': 'lifecycle-test-vm-reset-api', 'resourceVersion': '273645', 'uid': '8cbe536e-1adc-4078-9c62-dfa5a24af341'}, 'spec': {'runStrategy': 'Halted', 'template': {'metadata': {'creationTimestamp': None, 'labels': {'debugLogs': 'true', 'kubevirt.io/domain': 'alpine-vmi-reset-test-1770203448-6716638', 'kubevirt.io/vm': 'alpine-vmi-reset-test-1770203448-6716638'}}, 'spec': {'architecture': 'amd64', 'domain': {'cpu': {'cores': 1}, 'devices': {'disks': [{'disk': {'bus': 'virtio'}, 'name': 'containerdisk'}, {'disk': {'bus': 'virtio'}, 'name': 'cloudinitdisk'}], 'interfaces': [{'macAddress': '02:a4:a3:c6:6a:30', 'masquerade': {}, 'name': 'default'}], 'rng': {}}, 'firmware': {'serial': '87f81a4f-b6cc-4ddd-b532-e01e0eccaf1c', 'uuid': 'b58cb797-97a2-4ca5-ab4b-2c8e115de915'}, 'machine': {'type': 'pc-q35-rhel9.6.0'}, 'memory': {'guest': '1Gi'}, 'resources': {'requests': {'memory': '512Mi'}}}, 'networks': [{'name': 'default', 'pod': {}}], 'terminationGracePeriodSeconds': 30, 'volumes': [{'containerDisk': {'image': 'quay.io/openshift-cnv/qe-cnv-tests-fedora:41@sha256:a91659fba4e0258dda1be076dd6e56e34d9bf3dce082e57f939994ce0f124348'}, 'name': 'containerdisk'}, {'cloudInitNoCloud': {'userData': '*******'}, 'name': 'cloudinitdisk'}]}}}, 'status': {'conditions': [{'lastProbeTime': '2026-02-04T11:12:21Z', 'lastTransitionTime': '2026-02-04T11:12:21Z', 'message': 'VMI does not exist', 'reason': 'VMINotExists', 'status': 'False', 'type': 'Ready'}, {'lastProbeTime': None, 'lastTransitionTime': None, 'status': 'True', 'type': 'LiveMigratable'}, {'lastProbeTime': None, 'lastTransitionTime': None, 'status': 'True', 'type': 'StorageLiveMigratable'}], 'desiredGeneration': 3, 'observedGeneration': 3, 'printableStatus': 'Stopped', 'runStrategy': 'Halted', 'volumeSnapshotStatuses': [{'enabled': False, 'name': 'containerdisk', 'reason': 'Snapshot is not supported for this volumeSource type [containerdisk]'}, {'enabled': False, 'name': 'cloudinitdisk', 'reason': 'Snapshot is not supported for this volumeSource type [cloudinitdisk]'}]}}
+2026-02-04T12:12:22.676777 ocp_resources VirtualMachine INFO Wait until VirtualMachine alpine-vmi-reset-test-1770203448-6716638 is deleted
+2026-02-04T12:12:22.676954 timeout_sampler INFO Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_deleted.lambda: self.exists)
+2026-02-04T12:12:23.683523 timeout_sampler INFO Elapsed time: 1.003408670425415 [0:00:01.003409]
+===================================================================================== warnings summary =====================================================================================
+tests/virt/lifecycle/test_vm_reset_api.py: 26 warnings
+tests/deprecated_api/test_deprecation_audit_logs.py: 4 warnings
+.venv/lib/python3.14/site-packages/kubernetes/client/exceptions.py:91: 2 warnings
+  /home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/exceptions.py:91: DeprecationWarning: HTTPResponse.getheaders() is deprecated and will be removed in urllib3 v2.1.0. Instead access HTTPResponse.headers directly.
+    self.headers = http_resp.getheaders()
+
+tests/virt/lifecycle/test_vm_reset_api.py::TestVMIResetAPI::test_reset_running_vmi_via_api
+tests/virt/lifecycle/test_vm_reset_api.py::TestVMIResetAPIErrorHandling::test_reset_fails_on_stopped_vmi
+tests/virt/lifecycle/test_vm_reset_api.py::TestVMIResetAPIErrorHandling::test_reset_fails_on_nonexistent_vmi
+  /home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/rest.py:44: DeprecationWarning: HTTPResponse.getheaders() is deprecated and will be removed in urllib3 v2.1.0. Instead access HTTPResponse.headers directly.
+    return self.urllib3_response.getheaders()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================================================================================= short test summary info ==================================================================================
+FAILED tests/virt/lifecycle/test_vm_reset_api.py::TestVMIResetAPI::test_boot_time_changes_after_reset - AssertionError: Boot time should change after reset, indicating guest reboot. Before: , After: 
+ERROR tests/virt/lifecycle/test_vm_reset_api.py::TestVMIResetAPI::test_reset_running_vmi_via_api - kubernetes.client.exceptions.ApiException: (400)
+ERROR tests/virt/lifecycle/test_vm_reset_api.py::TestVMIResetAPIErrorHandling::test_reset_on_paused_vmi - AttributeError: 'VirtualMachineForTests' object has no attribute 'pause'
+============================================================== 1 failed, 5 passed, 35 warnings, 2 errors in 761.12s (0:12:41) ==============================================================
+2026-02-04T12:14:52.892945 timeout_sampler INFO Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_deleted.lambda: self.exists)
+2026-02-04T12:14:52.908277 timeout_sampler INFO Elapsed time: 0.0001163482666015625 [0:00:00.000116]
+2026-02-04T12:14:52.926901 timeout_sampler INFO Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_deleted.lambda: self.exists)
+2026-02-04T12:14:58.946596 timeout_sampler INFO Elapsed time: 6.016007661819458 [0:00:06.016008]

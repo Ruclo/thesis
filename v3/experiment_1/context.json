@@ -1,0 +1,239 @@
+{
+  "utilities": {
+    "classes": [
+      "ResourceEditor",
+      "ResourceEditorValidateHCOReconcile",
+      "VirtualMachineForTests",
+      "DataVolumeForTests",
+      "ClusterHosts",
+      "ExecCommandOnPod",
+      "Prometheus"
+    ],
+    "methods": [
+      "wait_for_hco_conditions",
+      "wait_for_hco_post_update_stable_state",
+      "get_hco_namespace",
+      "get_hco_spec",
+      "get_hco_version",
+      "wait_for_hco_version",
+      "update_hco_annotations",
+      "is_hco_tainted",
+      "wait_for_auto_boot_config_stabilization",
+      "update_hco_templates_spec",
+      "enabled_aaq_in_hco",
+      "get_installed_hco_csv",
+      "wait_for_ssp_conditions",
+      "wait_for_deleted_data_import_crons",
+      "wait_for_at_least_one_auto_update_data_import_cron",
+      "get_ssp_resource",
+      "get_data_import_crons",
+      "get_hyperconverged_resource",
+      "wait_for_consistent_resource_conditions",
+      "get_subscription",
+      "get_csv_by_name",
+      "create_ns",
+      "generate_namespace_name",
+      "get_pod_by_name_prefix",
+      "wait_for_pods_running",
+      "get_daemonsets",
+      "get_deployments"
+    ],
+    "constants": [
+      "DEFAULT_HCO_CONDITIONS",
+      "EXPECTED_STATUS_CONDITIONS",
+      "HCO_SUBSCRIPTION",
+      "TIMEOUT_2MIN",
+      "TIMEOUT_4MIN",
+      "TIMEOUT_5MIN",
+      "TIMEOUT_10MIN",
+      "TIMEOUT_30MIN",
+      "ENABLE_COMMON_BOOT_IMAGE_IMPORT",
+      "SSP_CR_COMMON_TEMPLATES_LIST_KEY_NAME",
+      "IMAGE_CRON_STR",
+      "StorageClassNames",
+      "NamespacesNames",
+      "KUBERNETES_ARCH_LABEL",
+      "AMD_64",
+      "ARM_64",
+      "S390X",
+      "OS_FLAVOR_RHEL",
+      "OS_FLAVOR_FEDORA",
+      "OS_FLAVOR_WINDOWS",
+      "INSTANCE_TYPE_STR",
+      "PREFERENCE_STR",
+      "U1_SMALL"
+    ]
+  },
+  "fixtures": {
+    "common": [
+      "admin_client",
+      "hco_namespace",
+      "hyperconverged_resource_scope_function",
+      "hyperconverged_resource_scope_class",
+      "hyperconverged_resource_scope_module",
+      "hyperconverged_resource_scope_package",
+      "hyperconverged_resource_scope_session",
+      "hco_spec",
+      "hco_spec_scope_module",
+      "kubevirt_hyperconverged_spec_scope_function",
+      "kubevirt_hyperconverged_spec_scope_module",
+      "namespace",
+      "namespace_scope_function",
+      "namespace_scope_class",
+      "namespace_scope_module",
+      "namespace_scope_session",
+      "golden_images_namespace",
+      "csv_scope_session",
+      "installing_cnv",
+      "storage_class_matrix",
+      "cdi",
+      "mac_pool",
+      "cnv_pods"
+    ],
+    "scopes": {
+      "admin_client": "session",
+      "hco_namespace": "session",
+      "hyperconverged_resource_scope_function": "function",
+      "hyperconverged_resource_scope_class": "class",
+      "hyperconverged_resource_scope_module": "module",
+      "hyperconverged_resource_scope_session": "session",
+      "namespace_scope_function": "function",
+      "namespace_scope_class": "class",
+      "namespace_scope_module": "module",
+      "csv_scope_session": "session",
+      "golden_images_namespace": "session"
+    }
+  },
+  "imports": {
+    "common_patterns": [
+      "import pytest",
+      "import logging",
+      "from ocp_resources.hyperconverged import HyperConverged",
+      "from ocp_resources.ssp import SSP",
+      "from ocp_resources.cdi import CDI",
+      "from ocp_resources.kubevirt import KubeVirt",
+      "from ocp_resources.network_addons_config import NetworkAddonsConfig",
+      "from ocp_resources.virtual_machine_cluster_instancetype import VirtualMachineClusterInstancetype",
+      "from ocp_resources.virtual_machine_cluster_preference import VirtualMachineClusterPreference",
+      "from ocp_resources.virtual_machine_instancetype import VirtualMachineInstancetype",
+      "from ocp_resources.virtual_machine_preference import VirtualMachinePreference",
+      "from ocp_resources.resource import Resource, ResourceEditor",
+      "from ocp_resources.namespace import Namespace",
+      "from timeout_sampler import TimeoutSampler, TimeoutExpiredError",
+      "from utilities.hco import wait_for_hco_conditions, get_hco_namespace, ResourceEditorValidateHCOReconcile",
+      "from utilities.ssp import wait_for_ssp_conditions, get_ssp_resource, get_data_import_crons",
+      "from utilities.constants import TIMEOUT_2MIN, TIMEOUT_5MIN, TIMEOUT_10MIN",
+      "from utilities.infra import wait_for_consistent_resource_conditions, get_hyperconverged_resource"
+    ]
+  },
+  "conventions": {
+    "markers": [
+      "@pytest.mark.polarion('CNV-XXXXX')",
+      "@pytest.mark.tier1",
+      "@pytest.mark.tier2",
+      "@pytest.mark.tier3",
+      "@pytest.mark.gating",
+      "@pytest.mark.post_upgrade",
+      "@pytest.mark.arm64",
+      "@pytest.mark.s390x",
+      "@pytest.mark.sno",
+      "@pytest.mark.iuo",
+      "@pytest.mark.parametrize(...)"
+    ],
+    "naming": "test_<feature>_<specific_behavior>",
+    "file_structure": "tests/<domain>/<feature>/test_*.py",
+    "class_naming": "Test<FeatureName>",
+    "docstring_format": "Google-format docstrings",
+    "fixtures_location": "conftest.py files in test subdirectories",
+    "helper_utils_location": "utils.py files in test subdirectories or feature directories"
+  },
+  "precedents": {
+    "similar_tests": [
+      "tests/install_upgrade_operators/strict_reconciliation/test_hco_cr_defaults_on_stanza_deletion.py",
+      "tests/install_upgrade_operators/strict_reconciliation/test_hco_cr_nondefault_fields.py",
+      "tests/install_upgrade_operators/strict_reconciliation/test_hco_cr_modify_defaults.py",
+      "tests/install_upgrade_operators/hco_enablement_golden_image_updates/test_update_hco_cr.py",
+      "tests/install_upgrade_operators/feature_gates/test_update_featuregate_hco.py",
+      "tests/install_upgrade_operators/resource_params/test_hco_status_conditions.py"
+    ],
+    "hco_test_patterns": {
+      "edit_hco_cr": "Use ResourceEditorValidateHCOReconcile context manager with patches dict",
+      "wait_for_reconciliation": "Use wait_for_hco_conditions with list_dependent_crs_to_check parameter",
+      "check_hco_spec": "Access via hyperconverged_resource.instance.to_dict()['spec']",
+      "check_hco_status": "Access via hyperconverged_resource.instance.status",
+      "common_reconcile_resources": "[CDI, NetworkAddonsConfig, KubeVirt, SSP]"
+    },
+    "instancetype_patterns": {
+      "get_cluster_instancetypes": "VirtualMachineClusterInstancetype.get(dyn_client=admin_client)",
+      "check_existence": "Use resource.exists property",
+      "common_instancetypes": "Names like cx1.medium, cx1.large, u1.small, etc.",
+      "common_preferences": "Names like rhel.9, fedora, windows.10, etc."
+    }
+  },
+  "test_patterns": {
+    "hco_field_modification": {
+      "description": "Pattern for modifying HCO CR fields",
+      "example": "ResourceEditorValidateHCOReconcile(patches={hco: {'spec': {field: value}}}, list_resource_reconcile=[KubeVirt], wait_for_reconcile_post_update=True)"
+    },
+    "parametrized_tests": {
+      "description": "Use pytest.param with id and marks",
+      "example": "pytest.param({'field': 'value'}, expected_result, id='descriptive_id', marks=pytest.mark.polarion('CNV-12345'))"
+    },
+    "waiting_for_resources": {
+      "description": "Use TimeoutSampler for polling resources",
+      "example": "TimeoutSampler(wait_timeout=TIMEOUT_5MIN, sleep=5, func=resource.exists)"
+    },
+    "negative_tests": {
+      "description": "Tests that verify failure scenarios",
+      "marker_pattern": "Use descriptive test names like test_<action>_fails_when_<condition>"
+    }
+  },
+  "hco_specific": {
+    "hco_cr_path": "spec.commonInstancetypesDeployment",
+    "hco_namespace": "openshift-cnv",
+    "hco_resource_name": "kubevirt-hyperconverged",
+    "valid_values": {
+      "commonInstancetypesDeployment": ["Enabled", "Disabled"]
+    },
+    "related_operators": {
+      "SSP": "Manages common-instancetypes deployment",
+      "CDI": "Containerized Data Importer",
+      "KubeVirt": "Core virtualization operator",
+      "NetworkAddonsConfig": "Network configuration"
+    },
+    "status_conditions": {
+      "check_pattern": "hco.instance.status.conditions",
+      "condition_types": ["Available", "Progressing", "Degraded", "Reconciled"]
+    }
+  },
+  "resource_types": {
+    "instancetypes": {
+      "cluster_scope": "VirtualMachineClusterInstancetype",
+      "namespace_scope": "VirtualMachineInstancetype",
+      "list_method": "resource_class.get(dyn_client=admin_client)",
+      "common_examples": ["cx1.medium", "cx1.large", "u1.small", "u1.medium"]
+    },
+    "preferences": {
+      "cluster_scope": "VirtualMachineClusterPreference",
+      "namespace_scope": "VirtualMachinePreference",
+      "common_examples": ["rhel.9", "fedora", "windows.10", "windows.11"]
+    }
+  },
+  "logging": {
+    "logger_pattern": "LOGGER = logging.getLogger(__name__)",
+    "info_logs": "LOGGER.info(f'Descriptive message with {variable}')",
+    "error_logs": "LOGGER.error(f'Error description: {details}')"
+  },
+  "coding_standards": {
+    "use_absolute_imports": true,
+    "use_type_hints": true,
+    "use_google_docstrings": true,
+    "avoid_inline_comments": true,
+    "use_descriptive_names": true,
+    "fixtures_in_conftest_only": true,
+    "call_functions_with_argument_names": true,
+    "one_action_per_fixture": true,
+    "fixture_names_are_nouns": true,
+    "group_related_tests_in_classes": true
+  }
+}

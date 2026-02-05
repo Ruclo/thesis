@@ -1,0 +1,358 @@
+{
+  "repository": {
+    "name": "openshift-virtualization-tests",
+    "description": "Test suite for OpenShift Virtualization (CNV) using pytest framework",
+    "python_version": "3.11+",
+    "test_framework": "pytest",
+    "type_checking": "mypy (enforced)",
+    "style_enforcement": "ruff + flake8 (pre-commit hooks)"
+  },
+  "documentation": {
+    "coding_guide": "docs/CODING_AND_STYLE_GUIDE.md",
+    "developer_guide": "docs/DEVELOPER_GUIDE.md",
+    "running_tests": "docs/RUNNING_TESTS.md",
+    "docstring_style": "Google-style (required for all functions, classes, modules)",
+    "type_hints": "Required on all functions",
+    "import_style": "Absolute imports only",
+    "comments": "Avoid inline comments; prefer self-explanatory code"
+  },
+  "utilities": {
+    "core_classes": {
+      "VirtualMachineForTests": {
+        "location": "utilities/virt.py",
+        "description": "Main VM class extending ocp_resources.VirtualMachine",
+        "key_methods": [
+          "deploy()",
+          "clean_up()",
+          "to_dict()",
+          "set_hugepages_page_size()",
+          "wait_for_specific_status()"
+        ],
+        "properties": [
+          "ssh_exec - SSH access to VM",
+          "vmi - VirtualMachineInstance object"
+        ],
+        "usage": "Context manager for auto-cleanup"
+      },
+      "VirtualMachineForTestsFromTemplate": {
+        "location": "utilities/virt.py",
+        "description": "VM creation from templates"
+      },
+      "VirtualMachineForCloning": {
+        "location": "utilities/virt.py",
+        "description": "VM cloning operations"
+      },
+      "ServiceForVirtualMachineForTests": {
+        "location": "utilities/virt.py",
+        "description": "Kubernetes Service wrapper for VMs"
+      },
+      "ExecCommandOnPod": {
+        "location": "utilities/infra.py",
+        "description": "Execute commands in pods"
+      },
+      "ClusterHosts": {
+        "location": "utilities/infra.py",
+        "description": "Cluster hosts management with Type.VIRTUAL and Type.PHYSICAL"
+      }
+    },
+    "key_functions": {
+      "virt": {
+        "fedora_vm_body": "Creates Fedora VM body",
+        "running_vm": "Ensures VM is running",
+        "wait_for_vm_interfaces": "Waits for guest agent interfaces",
+        "wait_for_ssh_connectivity": "Waits for SSH to be ready",
+        "wait_for_windows_vm": "Windows-specific waiting",
+        "migrate_vm_and_verify": "VM migration operations",
+        "restart_vm_wait_for_running_vm": "Restart with verification (wait_for_interfaces, check_ssh_connectivity)"
+      },
+      "infra": {
+        "create_ns": "Create namespace with labels and auto-cleanup",
+        "label_project": "Add labels to namespace",
+        "get_pod_by_name_prefix": "Find pod by prefix",
+        "generate_namespace_name": "Generate namespace name from file path",
+        "login_with_user_password": "Authenticate with user/password",
+        "get_nodes_with_label": "Filter nodes by label",
+        "run_virtctl_command": "Execute virtctl commands"
+      }
+    },
+    "constants": {
+      "timeouts": [
+        "TIMEOUT_1SEC", "TIMEOUT_5SEC", "TIMEOUT_10SEC", "TIMEOUT_15SEC", "TIMEOUT_20SEC", "TIMEOUT_30SEC",
+        "TIMEOUT_40SEC", "TIMEOUT_90SEC", "TIMEOUT_1MIN", "TIMEOUT_2MIN", "TIMEOUT_3MIN", "TIMEOUT_4MIN",
+        "TIMEOUT_5MIN", "TIMEOUT_6MIN", "TIMEOUT_8MIN", "TIMEOUT_9MIN", "TIMEOUT_10MIN", "TIMEOUT_11MIN",
+        "TIMEOUT_12MIN", "TIMEOUT_15MIN", "TIMEOUT_20MIN", "TIMEOUT_25MIN", "TIMEOUT_30MIN", "TIMEOUT_35MIN",
+        "TIMEOUT_40MIN", "TIMEOUT_50MIN", "TIMEOUT_60MIN", "TIMEOUT_75MIN", "TIMEOUT_90MIN", "TIMEOUT_180MIN",
+        "TIMEOUT_12HRS"
+      ],
+      "images": {
+        "ArchImages.X86_64": "x86_64 architecture images",
+        "ArchImages.ARM64": "ARM64 architecture images",
+        "ArchImages.S390X": "s390x architecture images"
+      },
+      "components": [
+        "VIRT_LAUNCHER",
+        "VIRT_HANDLER",
+        "HCO_OPERATOR",
+        "CDI_OPERATOR"
+      ],
+      "network": [
+        "LINUX_BRIDGE",
+        "OVS_BRIDGE",
+        "SRIOV",
+        "IP_FAMILY_POLICY_PREFER_DUAL_STACK"
+      ],
+      "vm_status": {
+        "error_statuses": [
+          "VirtualMachine.Status.CRASH_LOOPBACK_OFF",
+          "VirtualMachine.Status.ERROR_UNSCHEDULABLE",
+          "VirtualMachine.Status.ERROR_PVC_NOT_FOUND",
+          "VirtualMachine.Status.IMAGE_PULL_BACK_OFF",
+          "VirtualMachine.Status.ERR_IMAGE_PULL"
+        ],
+        "run_strategies": [
+          "VirtualMachine.RunStrategy.MANUAL",
+          "VirtualMachine.RunStrategy.ALWAYS",
+          "VirtualMachine.RunStrategy.HALTED",
+          "VirtualMachine.RunStrategy.RERUNONFAILURE"
+        ]
+      },
+      "vmi_status": {
+        "conditions": [
+          "VirtualMachineInstance.Condition.Type.AGENT_CONNECTED",
+          "VirtualMachineInstance.Condition.Status.TRUE",
+          "VirtualMachineInstance.Condition.Status.FALSE"
+        ],
+        "statuses": [
+          "VirtualMachineInstance.Status.RUNNING",
+          "VirtualMachineInstance.Status.SUCCEEDED"
+        ]
+      }
+    }
+  },
+  "fixtures": {
+    "session_scope": {
+      "admin_client": "DynamicClient with admin privileges",
+      "unprivileged_client": "DynamicClient with limited privileges",
+      "unprivileged_secret": "Secret for unprivileged client creation",
+      "nodes": "All cluster nodes",
+      "workers": "Worker nodes only",
+      "control_plane_nodes": "Control plane nodes only",
+      "workers_utility_pods": "Utility pods on worker nodes",
+      "control_plane_utility_pods": "Utility pods on control plane",
+      "identity_provider_with_htpasswd": "OAuth identity provider",
+      "exportedkubeconfig": "KUBECONFIG export path",
+      "junitxml_polarion": "Polarion test metadata"
+    },
+    "module_scope": {
+      "namespace": "Namespace for tests, auto-generated from file path"
+    },
+    "function_or_class_scope": {
+      "data_volume_scope_function": "DataVolume creation (function scope)",
+      "data_volume_scope_class": "DataVolume creation (class scope)",
+      "golden_image_data_volume_scope_function": "Golden image data volume (function scope)",
+      "golden_image_data_volume_scope_class": "Golden image data volume (class scope)",
+      "golden_image_data_source_scope_function": "Golden image data source (function scope)",
+      "golden_image_data_source_scope_class": "Golden image data source (class scope)"
+    },
+    "vm_lifecycle_fixtures": {
+      "location": "tests/virt/cluster/vm_lifecycle/conftest.py",
+      "fixtures": {
+        "lifecycle_vm": "Main VM for lifecycle tests (uses matrix)",
+        "container_disk_vm": "VM with container disk",
+        "data_volume_vm": "VM with data volume"
+      }
+    },
+    "matrix_fixtures": {
+      "vm_volumes_matrix__class__": "VM storage type (container_disk_vm or data_volume_vm)",
+      "run_strategy_matrix__class__": "RunStrategy (MANUAL, ALWAYS, HALTED, RERUNONFAILURE)",
+      "storage_class_matrix": "Storage class selection",
+      "bridge_device_matrix": "Network bridge type (linux-bridge or ovs-bridge)"
+    },
+    "custom_fixture_pattern": "Define fixtures in conftest.py alongside test files; use descriptive names and scope appropriately"
+  },
+  "imports": {
+    "standard_pattern": [
+      "import logging",
+      "import pytest",
+      "from kubernetes.dynamic import DynamicClient",
+      "from ocp_resources.virtual_machine import VirtualMachine",
+      "from ocp_resources.virtual_machine_instance import VirtualMachineInstance",
+      "from timeout_sampler import TimeoutSampler"
+    ],
+    "utility_pattern": [
+      "from utilities.constants import TIMEOUT_*, Images, NamespacesNames",
+      "from utilities.virt import (",
+      "    VirtualMachineForTests,",
+      "    fedora_vm_body,",
+      "    running_vm,",
+      "    wait_for_vm_interfaces,",
+      ")",
+      "from utilities.infra import create_ns, run_virtctl_command"
+    ],
+    "test_specific": [
+      "from tests.os_params import RHEL_LATEST, WINDOWS_10, FEDORA_LATEST",
+      "from tests.utils import create_vms"
+    ],
+    "logger_pattern": "LOGGER = logging.getLogger(__name__)"
+  },
+  "conventions": {
+    "markers": {
+      "general": ["polarion", "jira", "incremental", "order", "first", "last", "early"],
+      "test_types": ["destructive", "sap_hana", "scale", "longevity", "node_remediation", "cclm"],
+      "architecture": ["arm64", "x86_64", "s390x"],
+      "hardware": ["special_infra", "gpu", "sriov", "single_nic", "bgp"],
+      "configuration": ["ipv4", "ipv6", "dpdk", "swap", "cpu_manager", "numa", "hugepages", "service_mesh"],
+      "resources": ["high_resource_vm"],
+      "ci": ["smoke", "ci", "tier2", "tier3", "ocp_interop", "ibm_bare_metal", "gating"],
+      "install_upgrade": ["install", "upgrade", "upgrade_custom", "product_upgrade_test", "post_upgrade"],
+      "teams": ["chaos", "gpfs", "virt", "network", "storage", "iuo", "observability", "sno", "infrastructure", "data_protection"],
+      "usage_examples": [
+        "@pytest.mark.polarion('CNV-XXXXX')",
+        "@pytest.mark.gating",
+        "@pytest.mark.arm64",
+        "@pytest.mark.post_upgrade",
+        "pytestmark = pytest.mark.arm64  # Module-level marker"
+      ]
+    },
+    "naming": {
+      "test_files": "test_<functionality>.py",
+      "test_functions": "test_<feature>_<scenario>",
+      "fixtures_file": "conftest.py in same directory as tests",
+      "utilities": "Descriptive names, no single-letter variables"
+    },
+    "file_structure": {
+      "pattern": "tests/<domain>/<feature>/test_*.py",
+      "examples": [
+        "tests/virt/cluster/vm_lifecycle/test_restart.py",
+        "tests/virt/cluster/vm_lifecycle/test_vm_run_strategy.py",
+        "tests/storage/snapshots/test_snapshots.py"
+      ]
+    },
+    "test_structure": {
+      "standalone_test": "Use function for single tests",
+      "grouped_tests": "Use class for related tests",
+      "module_markers": "Use pytestmark for module-level markers",
+      "parametrization": "Use @pytest.mark.parametrize for test matrices"
+    },
+    "fixture_scopes": {
+      "session": "Cluster-level resources (admin_client, nodes)",
+      "module": "File-level resources (namespace per module)",
+      "class": "Test class resources",
+      "function": "Per-test resources (default)"
+    }
+  },
+  "precedents": {
+    "vm_lifecycle_tests": {
+      "location": "tests/virt/cluster/vm_lifecycle/",
+      "similar_tests": [
+        {
+          "file": "test_restart.py",
+          "description": "VM restart, stop, start operations",
+          "markers": ["arm64", "polarion('CNV-1497')"],
+          "pattern": "restart, stop, start sequence with interface connectivity and SSH checks"
+        },
+        {
+          "file": "test_vm_run_strategy.py",
+          "description": "Tests all RunStrategy modes (MANUAL, ALWAYS, HALTED, RERUNONFAILURE)",
+          "markers": ["post_upgrade", "arm64", "gating", "rwx_default_storage", "parametrize"],
+          "pattern": "Parametrized tests with run_strategy matrix"
+        },
+        {
+          "file": "test_vm_data_persistency.py",
+          "description": "Data persistence during VM lifecycle operations",
+          "pattern": "Restart/stop/start with data verification, parametrized storage class matrix"
+        }
+      ]
+    },
+    "vm_methods": {
+      "lifecycle": [
+        "vm.restart(wait=True, timeout) - Restart VM",
+        "vm.stop(wait=True, vmi_delete_timeout) - Stop VM",
+        "vm.start(wait=True, timeout) - Start VM",
+        "vm.pause(wait=True) - Pause VM",
+        "vm.unpause(wait=True) - Unpause VM"
+      ],
+      "status_checks": [
+        "vm.vmi.wait_until_running() - Wait for VMI running status",
+        "vm.ssh_exec.executor().is_connective() - Check SSH connectivity"
+      ]
+    },
+    "test_helpers": [
+      "running_vm(vm) - Ensures VM is running",
+      "wait_for_vm_interfaces(vmi, timeout) - Wait for guest agent interfaces",
+      "wait_for_ssh_connectivity(vm, timeout) - Wait for SSH access",
+      "restart_vm_wait_for_running_vm(vm, wait_for_interfaces, check_ssh_connectivity) - Restart with checks"
+    ]
+  },
+  "global_config": {
+    "location": "tests/global_config.py",
+    "matrices": {
+      "vm_volumes_matrix": "['container_disk_vm', 'data_volume_vm']",
+      "run_strategy_matrix": "[MANUAL, ALWAYS, HALTED, RERUNONFAILURE]",
+      "storage_class_matrix": "Dynamic storage class configuration",
+      "bridge_device_matrix": "[LINUX_BRIDGE, OVS_BRIDGE]"
+    },
+    "os_params": {
+      "location": "tests/os_params.py",
+      "available": [
+        "RHEL_LATEST - Latest RHEL OS configuration",
+        "WINDOWS_10, WINDOWS_* - Windows OS configurations",
+        "FEDORA_LATEST - Latest Fedora configuration"
+      ]
+    }
+  },
+  "best_practices": [
+    "Use fixture composition: small, single-purpose fixtures composed together",
+    "Matrix testing: fixtures with __class__ suffix for parameterized matrix tests",
+    "Context managers: VirtualMachineForTests used as context manager for auto-cleanup",
+    "Timeout constants: all timeouts use named constants from utilities/constants.py",
+    "Logging: LOGGER = logging.getLogger(__name__) at module level",
+    "Type hints: full type hints on all functions (enforced by mypy)",
+    "Client pattern: separate admin_client and unprivileged_client fixtures",
+    "SSH testing: built-in SSH executor for Linux VMs via vm.ssh_exec",
+    "Cloud-Init: cloud-init data generation for user data injection",
+    "Polarion IDs: all tests have @pytest.mark.polarion() with test IDs for tracking"
+  ],
+  "directory_structure": {
+    "tests": "tests/",
+    "utilities": "utilities/",
+    "libs": "libs/",
+    "docs": "docs/",
+    "example_structure": {
+      "tests/": {
+        "conftest.py": "Session/module fixtures (2900+ lines)",
+        "global_config.py": "Matrices and configurations",
+        "os_params.py": "OS configurations",
+        "utils.py": "Helper functions",
+        "virt/": {
+          "conftest.py": "Virt-specific fixtures",
+          "cluster/": {
+            "vm_lifecycle/": {
+              "conftest.py": "Lifecycle fixtures",
+              "test_restart.py": "Restart tests",
+              "test_vm_run_strategy.py": "Run strategy tests",
+              "test_vm_data_persistency.py": "Data persistence tests"
+            }
+          }
+        },
+        "storage/": {},
+        "network/": {},
+        "infrastructure/": {}
+      }
+    }
+  },
+  "vm_reset_specific": {
+    "note": "No existing test_reset.py found for VM reset subresource API",
+    "related_apis": [
+      "vm.restart() - Restart operation (different from reset)",
+      "vm.pause() / vm.unpause() - Pause/unpause operations"
+    ],
+    "new_api_expected": {
+      "method": "vm.reset()",
+      "description": "Force/hard reset via /virtualmachineinstances/{name}/reset subresource",
+      "virtctl": "virtctl reset <vmi-name>",
+      "rbac_permission": "virtualmachineinstances/reset"
+    },
+    "test_location_recommendation": "tests/virt/cluster/vm_lifecycle/test_vm_reset.py"
+  }
+}

@@ -1,0 +1,1665 @@
+diff --git a/tests/virt/lifecycle/conftest.py b/tests/virt/lifecycle/conftest.py
+new file mode 100644
+index 0000000..c045b64
+--- /dev/null
++++ b/tests/virt/lifecycle/conftest.py
+@@ -0,0 +1,409 @@
++# -*- coding: utf-8 -*-
++
++"""
++Shared fixtures for VMI lifecycle tests including reset functionality.
++
++This module provides pytest fixtures for creating test VMs, managing
++RBAC test users, and handling boot time tracking utilities.
++"""
++
++import logging
++from contextlib import contextmanager
++from typing import Generator, Tuple
++
++import pytest
++from fake_kubernetes_client.dynamic_client import FakeDynamicClient
++from kubernetes.dynamic import DynamicClient
++from ocp_resources.cluster_role import ClusterRole
++from ocp_resources.cluster_role_binding import ClusterRoleBinding
++from ocp_resources.namespace import Namespace
++from ocp_resources.pod import Pod
++from ocp_resources.role import Role
++from ocp_resources.role_binding import RoleBinding
++from ocp_resources.secret import Secret
++from ocp_resources.service_account import ServiceAccount
++from ocp_resources.virtual_machine import VirtualMachine
++from ocp_resources.virtual_machine_instance import VirtualMachineInstance
++
++from utilities.constants import (
++    TIMEOUT_5MIN,
++    UNPRIVILEGED_PASSWORD,
++    UNPRIVILEGED_USER,
++    VIRT_LAUNCHER,
++    Images,
++)
++from utilities.infra import get_pod_by_name_prefix, login_with_user_password
++from utilities.virt import (
++    VirtualMachineForTests,
++    fedora_vm_body,
++    running_vm,
++    wait_for_ssh_connectivity,
++)
++
++LOGGER = logging.getLogger(__name__)
++
++
++@pytest.fixture()
++def running_alpine_vmi(
++    unprivileged_client: DynamicClient, namespace: Namespace
++) -> Generator[VirtualMachineForTests, None, None]:
++    """
++    Fixture providing a running Alpine Linux VMI with SSH access.
++
++    Args:
++        unprivileged_client: Kubernetes client with unprivileged permissions
++        namespace: Test namespace
++
++    Yields:
++        VirtualMachine: Running VM with SSH connectivity
++    """
++    name = "alpine-vmi-reset-test"
++    LOGGER.info(f"Creating Alpine VMI: {name}")
++
++    with VirtualMachineForTests(
++        client=unprivileged_client,
++        name=name,
++        namespace=namespace.name,
++        body=fedora_vm_body(name=name),
++        memory_requests="512Mi",
++    ) as vm:
++        running_vm(vm=vm)
++        wait_for_ssh_connectivity(vm=vm, timeout=TIMEOUT_5MIN)
++        LOGGER.info(f"Alpine VMI {name} is running and SSH accessible")
++        yield vm
++
++
++@pytest.fixture()
++def running_rhel9_vmi(
++    unprivileged_client: DynamicClient,
++    namespace: Namespace,
++    golden_image_data_volume_template_for_test_scope_function: dict,
++) -> Generator[VirtualMachineForTests, None, None]:
++    """
++    Fixture providing a running RHEL 9 VMI with SSH access.
++
++    Args:
++        unprivileged_client: Kubernetes client with unprivileged permissions
++        namespace: Test namespace
++        golden_image_data_volume_template_for_test_scope_function: RHEL image template
++
++    Yields:
++        VirtualMachine: Running VM with SSH connectivity
++    """
++    name = "rhel9-vmi-reset-test"
++    LOGGER.info(f"Creating RHEL 9 VMI: {name}")
++
++    with VirtualMachineForTests(
++        client=unprivileged_client,
++        name=name,
++        namespace=namespace.name,
++        memory_requests=Images.Rhel.DEFAULT_MEMORY_SIZE,
++        data_volume_template=golden_image_data_volume_template_for_test_scope_function,
++    ) as vm:
++        running_vm(vm=vm)
++        wait_for_ssh_connectivity(vm=vm, timeout=TIMEOUT_5MIN)
++        LOGGER.info(f"RHEL 9 VMI {name} is running and SSH accessible")
++        yield vm
++
++
++@pytest.fixture()
++def stopped_vmi(
++    unprivileged_client: DynamicClient, namespace: Namespace
++) -> Generator[VirtualMachineForTests, None, None]:
++    """
++    Fixture providing a VMI in Stopped state.
++
++    Args:
++        unprivileged_client: Kubernetes client with unprivileged permissions
++        namespace: Test namespace
++
++    Yields:
++        VirtualMachine: VM in Stopped phase
++    """
++    name = "stopped-vmi-reset-test"
++    LOGGER.info(f"Creating stopped VMI: {name}")
++
++    with VirtualMachineForTests(
++        client=unprivileged_client,
++        name=name,
++        namespace=namespace.name,
++        body=fedora_vm_body(name=name),
++        run_strategy=VirtualMachine.RunStrategy.MANUAL,
++    ) as vm:
++        LOGGER.info(f"VMI {name} created in stopped state")
++        yield vm
++
++
++@pytest.fixture()
++def paused_vmi(
++    unprivileged_client: DynamicClient, namespace: Namespace
++) -> Generator[VirtualMachineForTests, None, None]:
++    """
++    Fixture providing a VMI in Paused state.
++
++    Args:
++        unprivileged_client: Kubernetes client with unprivileged permissions
++        namespace: Test namespace
++
++    Yields:
++        VirtualMachine: VM in Paused phase
++    """
++    name = "paused-vmi-reset-test"
++    LOGGER.info(f"Creating VMI to pause: {name}")
++
++    with VirtualMachineForTests(
++        client=unprivileged_client,
++        name=name,
++        namespace=namespace.name,
++        body=fedora_vm_body(name=name),
++    ) as vm:
++        running_vm(vm=vm)
++        LOGGER.info(f"Pausing VMI {name}")
++        vm.pause(wait=True)
++        LOGGER.info(f"VMI {name} is paused")
++        yield vm
++
++
++@pytest.fixture()
++def vmi_with_persistent_disk(
++    unprivileged_client: DynamicClient,
++    namespace: Namespace,
++    golden_image_data_volume_template_for_test_scope_function: dict,
++) -> Generator[VirtualMachineForTests, None, None]:
++    """
++    Fixture providing a running VMI with persistent data volume.
++
++    Args:
++        unprivileged_client: Kubernetes client with unprivileged permissions
++        namespace: Test namespace
++        golden_image_data_volume_template_for_test_scope_function: Data volume template
++
++    Yields:
++        VirtualMachine: Running VM with persistent storage
++    """
++    name = "vmi-with-persistent-disk"
++    LOGGER.info(f"Creating VMI with persistent disk: {name}")
++
++    with VirtualMachineForTests(
++        client=unprivileged_client,
++        name=name,
++        namespace=namespace.name,
++        memory_requests=Images.Rhel.DEFAULT_MEMORY_SIZE,
++        data_volume_template=golden_image_data_volume_template_for_test_scope_function,
++    ) as vm:
++        running_vm(vm=vm)
++        wait_for_ssh_connectivity(vm=vm, timeout=TIMEOUT_5MIN)
++        LOGGER.info(f"VMI {name} is running with persistent disk")
++        yield vm
++
++
++@pytest.fixture()
++def test_user_with_edit_role(
++    admin_client: DynamicClient,
++    namespace: Namespace,
++    identity_provider_with_htpasswd,
++) -> Generator[DynamicClient | FakeDynamicClient, None, None]:
++    """
++    Fixture providing a test user with 'edit' role in test namespace.
++
++    Args:
++        admin_client: Admin Kubernetes client
++        namespace: Test namespace
++        identity_provider_with_htpasswd: Identity provider setup
++
++    Yields:
++        DynamicClient: Client configured with test user credentials
++    """
++    LOGGER.info(f"Creating test user {UNPRIVILEGED_USER} with edit role")
++
++    with RoleBinding(
++        name=f"{UNPRIVILEGED_USER}-edit",
++        namespace=namespace.name,
++        client=admin_client,
++        subjects_kind="User",
++        subjects_name=UNPRIVILEGED_USER,
++        role_ref_kind="ClusterRole",
++        role_ref_name="edit",
++    ):
++        login_with_user_password(
++            api_address=admin_client.configuration.host,
++            user=UNPRIVILEGED_USER,
++            password=UNPRIVILEGED_PASSWORD,
++        )
++        from ocp_resources.resource import get_client
++
++        user_client = get_client()
++        LOGGER.info(f"User {UNPRIVILEGED_USER} logged in with edit role")
++        yield user_client
++
++
++@pytest.fixture()
++def test_user_with_admin_role(
++    admin_client: DynamicClient,
++    namespace: Namespace,
++    identity_provider_with_htpasswd,
++) -> Generator[DynamicClient | FakeDynamicClient, None, None]:
++    """
++    Fixture providing a test user with 'admin' role in test namespace.
++
++    Args:
++        admin_client: Admin Kubernetes client
++        namespace: Test namespace
++        identity_provider_with_htpasswd: Identity provider setup
++
++    Yields:
++        DynamicClient: Client configured with test user credentials
++    """
++    LOGGER.info(f"Creating test user {UNPRIVILEGED_USER} with admin role")
++
++    with RoleBinding(
++        name=f"{UNPRIVILEGED_USER}-admin",
++        namespace=namespace.name,
++        client=admin_client,
++        subjects_kind="User",
++        subjects_name=UNPRIVILEGED_USER,
++        role_ref_kind="ClusterRole",
++        role_ref_name="admin",
++    ):
++        login_with_user_password(
++            api_address=admin_client.configuration.host,
++            user=UNPRIVILEGED_USER,
++            password=UNPRIVILEGED_PASSWORD,
++        )
++        from ocp_resources.resource import get_client
++
++        user_client = get_client()
++        LOGGER.info(f"User {UNPRIVILEGED_USER} logged in with admin role")
++        yield user_client
++
++
++@pytest.fixture()
++def test_user_with_view_role(
++    admin_client: DynamicClient,
++    namespace: Namespace,
++    identity_provider_with_htpasswd,
++) -> Generator[DynamicClient | FakeDynamicClient, None, None]:
++    """
++    Fixture providing a test user with 'view' role in test namespace.
++
++    Args:
++        admin_client: Admin Kubernetes client
++        namespace: Test namespace
++        identity_provider_with_htpasswd: Identity provider setup
++
++    Yields:
++        DynamicClient: Client configured with test user credentials
++    """
++    LOGGER.info(f"Creating test user {UNPRIVILEGED_USER} with view role")
++
++    with RoleBinding(
++        name=f"{UNPRIVILEGED_USER}-view",
++        namespace=namespace.name,
++        client=admin_client,
++        subjects_kind="User",
++        subjects_name=UNPRIVILEGED_USER,
++        role_ref_kind="ClusterRole",
++        role_ref_name="view",
++    ):
++        login_with_user_password(
++            api_address=admin_client.configuration.host,
++            user=UNPRIVILEGED_USER,
++            password=UNPRIVILEGED_PASSWORD,
++        )
++        from ocp_resources.resource import get_client
++
++        user_client = get_client()
++        LOGGER.info(f"User {UNPRIVILEGED_USER} logged in with view role")
++        yield user_client
++
++
++@pytest.fixture()
++def test_user_with_custom_role(
++    admin_client: DynamicClient,
++    namespace: Namespace,
++    identity_provider_with_htpasswd,
++) -> Generator[DynamicClient | FakeDynamicClient, None, None]:
++    """
++    Fixture providing a test user with custom role (VMI read/write, no reset).
++
++    Args:
++        admin_client: Admin Kubernetes client
++        namespace: Test namespace
++        identity_provider_with_htpasswd: Identity provider setup
++
++    Yields:
++        DynamicClient: Client configured with test user credentials
++    """
++    role_name = "vmi-readwrite-no-reset"
++    LOGGER.info(f"Creating custom role {role_name} for user {UNPRIVILEGED_USER}")
++
++    with Role(
++        name=role_name,
++        namespace=namespace.name,
++        client=admin_client,
++        rules=[
++            {
++                "apiGroups": ["kubevirt.io"],
++                "resources": ["virtualmachineinstances"],
++                "verbs": ["get", "list", "watch", "create", "update", "patch", "delete"],
++            },
++        ],
++    ):
++        with RoleBinding(
++            name=f"{UNPRIVILEGED_USER}-{role_name}",
++            namespace=namespace.name,
++            client=admin_client,
++            subjects_kind="User",
++            subjects_name=UNPRIVILEGED_USER,
++            role_ref_kind="Role",
++            role_ref_name=role_name,
++        ):
++            login_with_user_password(
++                api_address=admin_client.configuration.host,
++                user=UNPRIVILEGED_USER,
++                password=UNPRIVILEGED_PASSWORD,
++            )
++            from ocp_resources.resource import get_client
++
++            user_client = get_client()
++            LOGGER.info(f"User {UNPRIVILEGED_USER} logged in with custom role (no reset permission)")
++            yield user_client
++
++
++def get_vmi_launcher_pod(vmi: VirtualMachineInstance, namespace: str) -> Pod:
++    """
++    Get the virt-launcher pod for a VMI.
++
++    Args:
++        vmi: VirtualMachineInstance object
++        namespace: Namespace name
++
++    Returns:
++        Pod: The virt-launcher pod for the VMI
++    """
++    pod_prefix = f"{VIRT_LAUNCHER}-{vmi.name}"
++    pods = get_pod_by_name_prefix(
++        dyn_client=vmi.client,
++        pod_prefix=pod_prefix,
++        namespace=namespace,
++        get_all=True,
++    )
++    if isinstance(pods, list):
++        return Pod(name=pods[0].name, namespace=namespace, client=vmi.client)
++    return Pod(name=pods.name, namespace=namespace, client=vmi.client)
++
++
++def get_boot_time_from_vm(vm: VirtualMachine) -> str:
++    """
++    Get boot time from VM using 'uptime -s' command.
++
++    Args:
++        vm: VirtualMachine object with SSH access
++
++    Returns:
++        str: Boot time string from 'uptime -s'
++    """
++    result = vm.ssh_exec.run_command(command="uptime -s")  # type: ignore[attr-defined]
++    boot_time = result[1].strip()
++    LOGGER.info(f"Boot time from VM {vm.name}: {boot_time}")
++    return boot_time
+diff --git a/tests/virt/lifecycle/test_vm_reset_api.py b/tests/virt/lifecycle/test_vm_reset_api.py
+new file mode 100644
+index 0000000..2f7ce24
+--- /dev/null
++++ b/tests/virt/lifecycle/test_vm_reset_api.py
+@@ -0,0 +1,350 @@
++# -*- coding: utf-8 -*-
++
++"""
++VirtualMachineInstance Reset API Tests
++
++STP Reference: https://issues.redhat.com/browse/VIRTSTRAT-357
++
++This module contains tests for the VMI reset subresource API endpoint
++(/virtualmachineinstances/{name}/reset) and validates core reset functionality
++including guest reboots, UID preservation, and proper integration with
++virt-handler and virt-launcher components.
++"""
++
++import logging
++
++import pytest
++from utilities.virt import VirtualMachineForTests, wait_for_ssh_connectivity
++
++from tests.virt.lifecycle.conftest import get_boot_time_from_vm, get_vmi_launcher_pod
++from utilities.constants import TIMEOUT_5MIN
++
++pytestmark = pytest.mark.gating
++
++LOGGER = logging.getLogger(__name__)
++
++
++class TestVMIResetAPI:
++    """
++    Tests for VMI reset via subresource API.
++
++    Preconditions:
++        - CNV deployment with reset subresource support
++        - Test cluster meets minimum environment requirements (3-node cluster)
++        - Running VirtualMachineInstance with Alpine Linux
++        - VMI is SSH accessible
++        - Boot time tracking enabled in the guest
++    """
++
++    @pytest.mark.polarion("VIRTSTRAT-357-01")
++    def test_reset_running_vmi_via_api(self, running_alpine_vmi: VirtualMachineForTests) -> None:
++        """
++        Test that a running VMI can be reset via the subresource API and guest reboots.
++
++        Related: TS-01, AC-1, AC-2, AC-3
++
++        Steps:
++            1. Record current boot time from the running VMI
++            2. Issue PUT request to /virtualmachineinstances/{name}/reset
++            3. Wait for VMI to become accessible again
++            4. Record new boot time from the VMI
++
++        Expected:
++            - Reset API call succeeds with HTTP 200
++            - VMI remains in Running state
++            - Boot time is different (guest rebooted)
++            - VMI is SSH accessible after reset
++
++        Args:
++            running_alpine_vmi: Running Alpine VM fixture
++        """
++        vm = running_alpine_vmi
++        LOGGER.info(f"Testing reset API on VMI: {vm.name}")
++
++        initial_boot_time = get_boot_time_from_vm(vm=vm)
++        LOGGER.info(f"Initial boot time: {initial_boot_time}")
++
++        LOGGER.info(f"Calling reset() on VMI {vm.vmi.name}")
++        vm.vmi.reset()
++
++        LOGGER.info("Waiting for VMI to become accessible after reset")
++        vm.vmi.wait_until_running()
++        wait_for_ssh_connectivity(vm=vm, timeout=TIMEOUT_5MIN)
++
++        new_boot_time = get_boot_time_from_vm(vm=vm)
++        LOGGER.info(f"Boot time after reset: {new_boot_time}")
++
++        assert new_boot_time != initial_boot_time, (
++            f"Boot time should change after reset. "
++            f"Before: {initial_boot_time}, After: {new_boot_time}"
++        )
++
++        assert vm.vmi.instance.status.phase == "Running", (
++            f"VMI should remain in Running state. Current phase: {vm.vmi.instance.status.phase}"
++        )
++
++        LOGGER.info("Reset API test completed successfully")
++
++    @pytest.mark.polarion("VIRTSTRAT-357-02")
++    def test_vmi_uid_unchanged_after_reset(self, running_alpine_vmi: VirtualMachineForTests) -> None:
++        """
++        Test that VMI UID remains unchanged after reset operation.
++
++        Related: TS-03, AC-2
++
++        Steps:
++            1. Record VMI UID before reset
++            2. Issue PUT request to /virtualmachineinstances/{name}/reset
++            3. Wait for reset to complete
++            4. Retrieve VMI UID after reset
++
++        Expected:
++            - VMI UID before reset equals VMI UID after reset
++
++        Args:
++            running_alpine_vmi: Running Alpine VM fixture
++        """
++        vm = running_alpine_vmi
++        LOGGER.info(f"Testing VMI UID preservation for: {vm.name}")
++
++        vmi_uid_before = vm.vmi.instance.metadata.uid
++        LOGGER.info(f"VMI UID before reset: {vmi_uid_before}")
++
++        LOGGER.info(f"Calling reset() on VMI {vm.vmi.name}")
++        vm.vmi.reset()
++
++        LOGGER.info("Waiting for VMI to become accessible after reset")
++        vm.vmi.wait_until_running()
++        wait_for_ssh_connectivity(vm=vm, timeout=TIMEOUT_5MIN)
++
++        vmi_uid_after = vm.vmi.instance.metadata.uid
++        LOGGER.info(f"VMI UID after reset: {vmi_uid_after}")
++
++        assert vmi_uid_before == vmi_uid_after, (
++            f"VMI UID should not change after reset. "
++            f"Before: {vmi_uid_before}, After: {vmi_uid_after}"
++        )
++
++        LOGGER.info("VMI UID preservation test completed successfully")
++
++    @pytest.mark.polarion("VIRTSTRAT-357-03")
++    def test_pod_not_rescheduled_after_reset(
++        self, running_alpine_vmi: VirtualMachineForTests, namespace
++    ) -> None:
++        """
++        Test that the virt-launcher pod is not rescheduled during reset.
++
++        Related: AC-2
++
++        Steps:
++            1. Record virt-launcher pod name and UID before reset
++            2. Issue PUT request to /virtualmachineinstances/{name}/reset
++            3. Wait for reset to complete
++            4. Retrieve virt-launcher pod name and UID after reset
++
++        Expected:
++            - Pod name before reset equals pod name after reset
++            - Pod UID before reset equals pod UID after reset
++
++        Args:
++            running_alpine_vmi: Running Alpine VM fixture
++            namespace: Test namespace
++        """
++        vm = running_alpine_vmi
++        LOGGER.info(f"Testing pod non-rescheduling for VMI: {vm.name}")
++
++        launcher_pod_before = get_vmi_launcher_pod(vmi=vm.vmi, namespace=namespace.name)
++        pod_name_before = launcher_pod_before.name
++        pod_uid_before = launcher_pod_before.instance.metadata.uid
++        LOGGER.info(f"Launcher pod before reset: {pod_name_before}, UID: {pod_uid_before}")
++
++        LOGGER.info(f"Calling reset() on VMI {vm.vmi.name}")
++        vm.vmi.reset()
++
++        LOGGER.info("Waiting for VMI to become accessible after reset")
++        vm.vmi.wait_until_running()
++        wait_for_ssh_connectivity(vm=vm, timeout=TIMEOUT_5MIN)
++
++        launcher_pod_after = get_vmi_launcher_pod(vmi=vm.vmi, namespace=namespace.name)
++        pod_name_after = launcher_pod_after.name
++        pod_uid_after = launcher_pod_after.instance.metadata.uid
++        LOGGER.info(f"Launcher pod after reset: {pod_name_after}, UID: {pod_uid_after}")
++
++        assert pod_name_before == pod_name_after, (
++            f"Pod name should not change after reset. "
++            f"Before: {pod_name_before}, After: {pod_name_after}"
++        )
++
++        assert pod_uid_before == pod_uid_after, (
++            f"Pod UID should not change after reset. "
++            f"Before: {pod_uid_before}, After: {pod_uid_after}"
++        )
++
++        LOGGER.info("Pod non-rescheduling test completed successfully")
++
++    @pytest.mark.polarion("VIRTSTRAT-357-04")
++    def test_boot_time_changes_after_reset(self, running_alpine_vmi: VirtualMachineForTests) -> None:
++        """
++        Test that the guest OS boot time changes after reset, confirming actual reboot.
++
++        Related: TS-11, AC-1
++
++        Steps:
++            1. Execute 'uptime -s' command on the VMI to get boot time
++            2. Issue PUT request to /virtualmachineinstances/{name}/reset
++            3. Wait for VMI to become accessible
++            4. Execute 'uptime -s' command again on the VMI
++
++        Expected:
++            - Boot time after reset is different from boot time before reset
++            - Time difference indicates recent reboot
++
++        Args:
++            running_alpine_vmi: Running Alpine VM fixture
++        """
++        vm = running_alpine_vmi
++        LOGGER.info(f"Testing boot time change for VMI: {vm.name}")
++
++        boot_time_before = get_boot_time_from_vm(vm=vm)
++        LOGGER.info(f"Boot time before reset: {boot_time_before}")
++
++        LOGGER.info(f"Calling reset() on VMI {vm.vmi.name}")
++        vm.vmi.reset()
++
++        LOGGER.info("Waiting for VMI to become accessible after reset")
++        vm.vmi.wait_until_running()
++        wait_for_ssh_connectivity(vm=vm, timeout=TIMEOUT_5MIN)
++
++        boot_time_after = get_boot_time_from_vm(vm=vm)
++        LOGGER.info(f"Boot time after reset: {boot_time_after}")
++
++        assert boot_time_before != boot_time_after, (
++            f"Boot time should change after reset, indicating guest reboot. "
++            f"Before: {boot_time_before}, After: {boot_time_after}"
++        )
++
++        LOGGER.info("Boot time change test completed successfully")
++
++
++class TestVMIResetAPIErrorHandling:
++    """
++    Tests for VMI reset API error handling.
++
++    Preconditions:
++        - CNV deployment with reset subresource support
++    """
++
++    @pytest.mark.polarion("VIRTSTRAT-357-05")
++    def test_reset_fails_on_stopped_vmi(self, stopped_vmi: VirtualMachineForTests) -> None:
++        """
++        [NEGATIVE] Test that reset fails appropriately on a stopped VMI.
++
++        Related: TS-05, AC-6, KL-01
++
++        Preconditions:
++            - VirtualMachineInstance exists in Stopped state
++
++        Steps:
++            1. Issue PUT request to /virtualmachineinstances/{name}/reset
++
++        Expected:
++            - Reset API call fails with appropriate HTTP error code (4xx)
++            - Error message indicates VMI is not running
++
++        Args:
++            stopped_vmi: Stopped VM fixture
++        """
++        vm = stopped_vmi
++        LOGGER.info(f"Testing reset failure on stopped VMI: {vm.name}")
++
++        with pytest.raises(Exception) as exc_info:
++            vm.vmi.reset()
++
++        LOGGER.info(f"Reset on stopped VMI raised exception as expected: {exc_info.value}")
++
++        error_message = str(exc_info.value).lower()
++        assert any(
++            keyword in error_message
++            for keyword in ["not running", "stopped", "invalid", "cannot"]
++        ), f"Error message should indicate VMI is not running. Got: {exc_info.value}"
++
++        LOGGER.info("Reset failure on stopped VMI test completed successfully")
++
++    @pytest.mark.polarion("VIRTSTRAT-357-06")
++    def test_reset_fails_on_nonexistent_vmi(
++        self, unprivileged_client, namespace
++    ) -> None:
++        """
++        [NEGATIVE] Test that reset fails gracefully on non-existent VMI.
++
++        Related: TS-06, AC-6
++
++        Steps:
++            1. Issue PUT request to /virtualmachineinstances/nonexistent-vmi/reset
++
++        Expected:
++            - Reset API call fails with HTTP 404
++            - Error message indicates VMI not found
++
++        Args:
++            unprivileged_client: Unprivileged Kubernetes client
++            namespace: Test namespace
++        """
++        from ocp_resources.virtual_machine_instance import VirtualMachineInstance
++
++        nonexistent_vmi_name = "nonexistent-vmi-reset-test"
++        LOGGER.info(f"Testing reset failure on non-existent VMI: {nonexistent_vmi_name}")
++
++        vmi = VirtualMachineInstance(
++            name=nonexistent_vmi_name,
++            namespace=namespace.name,
++            client=unprivileged_client,
++        )
++
++        with pytest.raises(Exception) as exc_info:
++            vmi.reset()
++
++        LOGGER.info(f"Reset on non-existent VMI raised exception as expected: {exc_info.value}")
++
++        error_message = str(exc_info.value).lower()
++        assert any(
++            keyword in error_message for keyword in ["not found", "404", "does not exist"]
++        ), f"Error message should indicate VMI not found. Got: {exc_info.value}"
++
++        LOGGER.info("Reset failure on non-existent VMI test completed successfully")
++
++    @pytest.mark.polarion("VIRTSTRAT-357-07")
++    def test_reset_on_paused_vmi(self, paused_vmi: VirtualMachineForTests) -> None:
++        """
++        [NEGATIVE] Test reset behavior on a paused VMI.
++
++        Related: TS-12, AC-6, KL-01
++
++        Preconditions:
++            - Running VirtualMachineInstance
++            - VMI is paused via pause subresource
++
++        Steps:
++            1. Issue PUT request to /virtualmachineinstances/{name}/reset
++
++        Expected:
++            - Reset API call fails with appropriate HTTP error code
++            - Error message indicates VMI is paused
++
++        Args:
++            paused_vmi: Paused VM fixture
++        """
++        vm = paused_vmi
++        LOGGER.info(f"Testing reset failure on paused VMI: {vm.name}")
++
++        with pytest.raises(Exception) as exc_info:
++            vm.vmi.reset()
++
++        LOGGER.info(f"Reset on paused VMI raised exception as expected: {exc_info.value}")
++
++        error_message = str(exc_info.value).lower()
++        assert any(
++            keyword in error_message for keyword in ["paused", "invalid", "cannot"]
++        ), f"Error message should indicate VMI is paused. Got: {exc_info.value}"
++
++        LOGGER.info("Reset failure on paused VMI test completed successfully")
+diff --git a/tests/virt/lifecycle/test_vm_reset_integration.py b/tests/virt/lifecycle/test_vm_reset_integration.py
+new file mode 100644
+index 0000000..c565662
+--- /dev/null
++++ b/tests/virt/lifecycle/test_vm_reset_integration.py
+@@ -0,0 +1,313 @@
++# -*- coding: utf-8 -*-
++
++"""
++VirtualMachineInstance Reset Integration Tests
++
++STP Reference: https://issues.redhat.com/browse/VIRTSTRAT-357
++
++This module contains end-to-end integration tests for VMI reset functionality,
++validating the complete flow across virt-api, virt-handler, virt-launcher,
++and libvirt components.
++"""
++
++import logging
++import uuid
++
++import pytest
++from utilities.constants import TIMEOUT_5MIN
++from utilities.virt import VirtualMachineForTests, wait_for_ssh_connectivity
++
++pytestmark = pytest.mark.gating
++
++LOGGER = logging.getLogger(__name__)
++
++
++class TestVMIResetIntegration:
++    """
++    Tests for end-to-end VMI reset integration.
++
++    Parametrize:
++        - guest_os: [alpine, rhel9]
++
++    Preconditions:
++        - CNV deployment with reset subresource support
++        - Storage class supporting RWO PVCs available
++        - Running VirtualMachineInstance with parametrized guest OS
++        - VMI is SSH accessible
++        - Guest supports ACPI reset signal
++    """
++
++    @pytest.mark.parametrize(
++        "vmi_fixture_name",
++        ["running_alpine_vmi", "running_rhel9_vmi"],
++        ids=["alpine", "rhel9"],
++    )
++    @pytest.mark.polarion("VIRTSTRAT-357-18")
++    def test_reset_preserves_disk_data(
++        self, vmi_fixture_name: str, request
++    ) -> None:
++        """
++        Test that VMI reset preserves data on persistent disks.
++
++        Related: G-06
++
++        Preconditions:
++            - VMI has persistent data volume mounted
++            - Test file written to persistent storage
++
++        Steps:
++            1. Write unique content to file on persistent disk
++            2. Issue PUT request to /virtualmachineinstances/{name}/reset
++            3. Wait for VMI to become accessible
++            4. Read file content from persistent disk
++
++        Expected:
++            - File content after reset equals content written before reset
++
++        Args:
++            vmi_fixture_name: Name of the VM fixture (parametrized)
++            request: Pytest request fixture for indirect parametrization
++        """
++        vm: VirtualMachineForTests = request.getfixturevalue(vmi_fixture_name)  # type: ignore[assignment]
++        LOGGER.info(f"Testing disk data preservation on VMI: {vm.name}")
++
++        test_content = f"test-data-{uuid.uuid4().hex[:8]}"
++        test_file = "/tmp/persistent-test.txt"
++
++        LOGGER.info(f"Writing test content to {test_file}: {test_content}")
++        vm.ssh_exec.run_command(  # type: ignore[attr-defined]
++            command=f"echo '{test_content}' > {test_file}"
++        )
++
++        content_before = vm.ssh_exec.run_command(  # type: ignore[attr-defined]
++            command=f"cat {test_file}"
++        )[1].strip()
++        assert content_before == test_content, (
++            f"Failed to write test content. Expected: {test_content}, Got: {content_before}"
++        )
++
++        LOGGER.info(f"Calling reset() on VMI {vm.vmi.name}")
++        vm.vmi.reset()
++
++        LOGGER.info("Waiting for VMI to become accessible after reset")
++        vm.vmi.wait_until_running()
++        wait_for_ssh_connectivity(vm=vm, timeout=TIMEOUT_5MIN)
++
++        LOGGER.info(f"Reading content from {test_file} after reset")
++        content_after = vm.ssh_exec.run_command(  # type: ignore[attr-defined]
++            command=f"cat {test_file}"
++        )[1].strip()
++
++        assert content_after == test_content, (
++            f"File content should be preserved after reset. "
++            f"Expected: {test_content}, Got: {content_after}"
++        )
++
++        LOGGER.info("Disk data preservation test completed successfully")
++
++    @pytest.mark.parametrize(
++        "vmi_fixture_name",
++        ["running_alpine_vmi"],
++        ids=["alpine"],
++    )
++    @pytest.mark.polarion("VIRTSTRAT-357-19")
++    def test_reset_clears_memory_state(
++        self, vmi_fixture_name: str, request
++    ) -> None:
++        """
++        Test that VMI reset clears in-memory data.
++
++        Related: KL-02
++
++        Preconditions:
++            - VMI has tmpfs or ramdisk mounted
++
++        Steps:
++            1. Write unique content to tmpfs/ramdisk
++            2. Issue PUT request to /virtualmachineinstances/{name}/reset
++            3. Wait for VMI to become accessible
++            4. Check if tmpfs/ramdisk file exists
++
++        Expected:
++            - File in tmpfs/ramdisk does NOT exist after reset
++
++        Args:
++            vmi_fixture_name: Name of the VM fixture (parametrized)
++            request: Pytest request fixture for indirect parametrization
++        """
++        vm: VirtualMachineForTests = request.getfixturevalue(vmi_fixture_name)  # type: ignore[assignment]
++        LOGGER.info(f"Testing memory state clearing on VMI: {vm.name}")
++
++        test_content = f"memory-data-{uuid.uuid4().hex[:8]}"
++        tmpfs_file = "/dev/shm/memory-test.txt"
++
++        LOGGER.info(f"Writing test content to tmpfs {tmpfs_file}: {test_content}")
++        vm.ssh_exec.run_command(  # type: ignore[attr-defined]
++            command=f"echo '{test_content}' > {tmpfs_file}"
++        )
++
++        file_exists_before = vm.ssh_exec.run_command(  # type: ignore[attr-defined]
++            command=f"test -f {tmpfs_file} && echo 'exists' || echo 'not found'"
++        )[1].strip()
++        assert file_exists_before == "exists", (
++            f"Failed to create tmpfs file before reset"
++        )
++
++        LOGGER.info(f"Calling reset() on VMI {vm.vmi.name}")
++        vm.vmi.reset()
++
++        LOGGER.info("Waiting for VMI to become accessible after reset")
++        vm.vmi.wait_until_running()
++        wait_for_ssh_connectivity(vm=vm, timeout=TIMEOUT_5MIN)
++
++        LOGGER.info(f"Checking if {tmpfs_file} exists after reset")
++        file_exists_after = vm.ssh_exec.run_command(  # type: ignore[attr-defined]
++            command=f"test -f {tmpfs_file} && echo 'exists' || echo 'not found'"
++        )[1].strip()
++
++        assert file_exists_after == "not found", (
++            f"File in tmpfs should NOT exist after reset. Got: {file_exists_after}"
++        )
++
++        LOGGER.info("Memory state clearing test completed successfully")
++
++    @pytest.mark.polarion("VIRTSTRAT-357-20")
++    def test_reset_updates_vmi_status_phase(self, running_alpine_vmi: VirtualMachineForTests) -> None:
++        """
++        Test that VMI status is updated correctly during reset.
++
++        Steps:
++            1. Record initial VMI status phase
++            2. Issue PUT request to /virtualmachineinstances/{name}/reset
++            3. Monitor VMI status during reset operation
++            4. Wait for reset completion
++
++        Expected:
++            - VMI status remains Running throughout reset
++            - No transition to Stopped or Pending phase
++
++        Args:
++            running_alpine_vmi: Running Alpine VM fixture
++        """
++        vm = running_alpine_vmi
++        LOGGER.info(f"Testing VMI status phase during reset for: {vm.name}")
++
++        initial_phase = vm.vmi.instance.status.phase
++        LOGGER.info(f"Initial VMI phase: {initial_phase}")
++
++        assert initial_phase == "Running", (
++            f"VMI should be in Running phase before reset. Got: {initial_phase}"
++        )
++
++        LOGGER.info(f"Calling reset() on VMI {vm.vmi.name}")
++        vm.vmi.reset()
++
++        LOGGER.info("Waiting for VMI to become accessible after reset")
++        vm.vmi.wait_until_running()
++        wait_for_ssh_connectivity(vm=vm, timeout=TIMEOUT_5MIN)
++
++        final_phase = vm.vmi.instance.status.phase
++        LOGGER.info(f"Final VMI phase: {final_phase}")
++
++        assert final_phase == "Running", (
++            f"VMI should remain in Running phase after reset. Got: {final_phase}"
++        )
++
++        LOGGER.info("VMI status phase test completed successfully")
++
++    @pytest.mark.parametrize(
++        "vmi_fixture_name",
++        ["running_alpine_vmi"],
++        ids=["alpine"],
++    )
++    @pytest.mark.polarion("VIRTSTRAT-357-21")
++    def test_reset_triggers_guest_acpi_reset(
++        self, vmi_fixture_name: str, request
++    ) -> None:
++        """
++        Test that reset operation triggers ACPI reset signal to guest.
++
++        Related: KL-03
++
++        Preconditions:
++            - Guest OS logs ACPI events
++            - Access to guest system logs
++
++        Steps:
++            1. Issue PUT request to /virtualmachineinstances/{name}/reset
++            2. Wait for VMI to become accessible
++            3. Retrieve guest system logs (dmesg or journalctl)
++
++        Expected:
++            - Guest system logs contain ACPI reset event
++
++        Args:
++            vmi_fixture_name: Name of the VM fixture (parametrized)
++            request: Pytest request fixture for indirect parametrization
++        """
++        vm: VirtualMachineForTests = request.getfixturevalue(vmi_fixture_name)  # type: ignore[assignment]
++        LOGGER.info(f"Testing ACPI reset signal on VMI: {vm.name}")
++
++        LOGGER.info(f"Calling reset() on VMI {vm.vmi.name}")
++        vm.vmi.reset()
++
++        LOGGER.info("Waiting for VMI to become accessible after reset")
++        vm.vmi.wait_until_running()
++        wait_for_ssh_connectivity(vm=vm, timeout=TIMEOUT_5MIN)
++
++        LOGGER.info("Retrieving guest system logs")
++        dmesg_output = vm.ssh_exec.run_command(command="dmesg")[1]  # type: ignore[attr-defined]
++
++        LOGGER.info("Checking for ACPI/reboot events in logs")
++        log_keywords = ["reboot", "reset", "acpi", "restart", "shutdown"]
++        found_event = any(keyword in dmesg_output.lower() for keyword in log_keywords)
++
++        assert found_event, (
++            f"Guest system logs should contain reboot/ACPI event. "
++            f"Keywords searched: {log_keywords}"
++        )
++
++        LOGGER.info("ACPI reset signal test completed successfully")
++
++    @pytest.mark.polarion("VIRTSTRAT-357-22")
++    def test_multiple_sequential_resets(self, running_alpine_vmi: VirtualMachineForTests) -> None:
++        """
++        Test that multiple sequential reset operations work correctly.
++
++        Steps:
++            1. Issue PUT request to /virtualmachineinstances/{name}/reset
++            2. Wait for reset completion and VMI accessibility
++            3. Repeat steps 1-2 two more times
++
++        Expected:
++            - All three reset operations succeed
++            - VMI remains running and accessible after each reset
++
++        Args:
++            running_alpine_vmi: Running Alpine VM fixture
++        """
++        vm = running_alpine_vmi
++        LOGGER.info(f"Testing multiple sequential resets on VMI: {vm.name}")
++
++        num_resets = 3
++        for reset_num in range(1, num_resets + 1):
++            LOGGER.info(f"Performing reset #{reset_num} of {num_resets}")
++
++            vm.vmi.reset()
++
++            LOGGER.info(f"Waiting for VMI to become accessible after reset #{reset_num}")
++            vm.vmi.wait_until_running()
++            wait_for_ssh_connectivity(vm=vm, timeout=TIMEOUT_5MIN)
++
++            assert vm.vmi.instance.status.phase == "Running", (
++                f"VMI should be running after reset #{reset_num}. "
++                f"Got phase: {vm.vmi.instance.status.phase}"
++            )
++
++            assert vm.ssh_exec.executor().is_connective(), (  # type: ignore[attr-defined]
++                f"VMI should be SSH accessible after reset #{reset_num}"
++            )
++
++            LOGGER.info(f"Reset #{reset_num} completed successfully")
++
++        LOGGER.info(f"All {num_resets} sequential resets completed successfully")
+diff --git a/tests/virt/lifecycle/test_vm_reset_rbac.py b/tests/virt/lifecycle/test_vm_reset_rbac.py
+new file mode 100644
+index 0000000..6475dac
+--- /dev/null
++++ b/tests/virt/lifecycle/test_vm_reset_rbac.py
+@@ -0,0 +1,334 @@
++# -*- coding: utf-8 -*-
++
++"""
++VirtualMachineInstance Reset RBAC Tests
++
++STP Reference: https://issues.redhat.com/browse/VIRTSTRAT-357
++
++This module contains tests for RBAC permission enforcement on the VMI reset
++subresource, validating that appropriate permissions are required and enforced
++for reset operations.
++"""
++
++import logging
++
++import pytest
++from kubernetes.dynamic import DynamicClient
++from ocp_resources.cluster_role import ClusterRole
++
++from utilities.constants import TIMEOUT_5MIN
++from utilities.virt import VirtualMachineForTests, wait_for_ssh_connectivity
++
++pytestmark = pytest.mark.gating
++
++LOGGER = logging.getLogger(__name__)
++
++
++class TestVMIResetRBAC:
++    """
++    Tests for VMI reset RBAC permissions.
++
++    Preconditions:
++        - CNV deployment with reset subresource support
++        - RBAC manifests include virtualmachineinstances/reset permissions
++        - Running VirtualMachineInstance
++    """
++
++    @pytest.mark.polarion("VIRTSTRAT-357-12")
++    def test_user_with_edit_role_can_reset(
++        self, running_alpine_vmi: VirtualMachineForTests, test_user_with_edit_role: DynamicClient
++    ) -> None:
++        """
++        Test that a user with 'edit' role can reset a VMI in their namespace.
++
++        Related: TS-04, AC-5
++
++        Preconditions:
++            - Test user with 'edit' ClusterRole binding in test namespace
++            - User has valid kubeconfig
++
++        Steps:
++            1. Switch to test user context
++            2. Issue PUT request to /virtualmachineinstances/{name}/reset
++            3. Restore admin context
++
++        Expected:
++            - Reset API call succeeds with HTTP 200
++            - VMI reset operation completes successfully
++
++        Args:
++            running_alpine_vmi: Running Alpine VM fixture
++            test_user_with_edit_role: Test user with edit role
++        """
++        vm = running_alpine_vmi
++        LOGGER.info(f"Testing reset with user having edit role on VMI: {vm.vmi.name}")
++
++        from ocp_resources.virtual_machine_instance import VirtualMachineInstance
++
++        user_vmi = VirtualMachineInstance(
++            name=vm.vmi.name,
++            namespace=vm.namespace,
++            client=test_user_with_edit_role,
++        )
++
++        LOGGER.info("User with edit role calling reset()")
++        user_vmi.reset()
++
++        LOGGER.info("Waiting for VMI to become accessible after reset")
++        vm.vmi.wait_until_running()
++        wait_for_ssh_connectivity(vm=vm, timeout=TIMEOUT_5MIN)
++
++        assert vm.vmi.instance.status.phase == "Running", (
++            f"VMI should be running after reset. Current phase: {vm.vmi.instance.status.phase}"
++        )
++
++        LOGGER.info("User with edit role successfully reset VMI")
++
++    @pytest.mark.polarion("VIRTSTRAT-357-13")
++    def test_user_with_admin_role_can_reset(
++        self, running_alpine_vmi: VirtualMachineForTests, test_user_with_admin_role: DynamicClient
++    ) -> None:
++        """
++        Test that a user with 'admin' role can reset a VMI.
++
++        Related: AC-5
++
++        Preconditions:
++            - Test user with 'admin' ClusterRole binding in test namespace
++            - User has valid kubeconfig
++
++        Steps:
++            1. Switch to test user context
++            2. Issue PUT request to /virtualmachineinstances/{name}/reset
++            3. Restore admin context
++
++        Expected:
++            - Reset API call succeeds with HTTP 200
++            - VMI reset operation completes successfully
++
++        Args:
++            running_alpine_vmi: Running Alpine VM fixture
++            test_user_with_admin_role: Test user with admin role
++        """
++        vm = running_alpine_vmi
++        LOGGER.info(f"Testing reset with user having admin role on VMI: {vm.vmi.name}")
++
++        from ocp_resources.virtual_machine_instance import VirtualMachineInstance
++
++        user_vmi = VirtualMachineInstance(
++            name=vm.vmi.name,
++            namespace=vm.namespace,
++            client=test_user_with_admin_role,
++        )
++
++        LOGGER.info("User with admin role calling reset()")
++        user_vmi.reset()
++
++        LOGGER.info("Waiting for VMI to become accessible after reset")
++        vm.vmi.wait_until_running()
++        wait_for_ssh_connectivity(vm=vm, timeout=TIMEOUT_5MIN)
++
++        assert vm.vmi.instance.status.phase == "Running", (
++            f"VMI should be running after reset. Current phase: {vm.vmi.instance.status.phase}"
++        )
++
++        LOGGER.info("User with admin role successfully reset VMI")
++
++    @pytest.mark.polarion("VIRTSTRAT-357-14")
++    def test_user_with_view_role_cannot_reset(
++        self, running_alpine_vmi: VirtualMachineForTests, test_user_with_view_role: DynamicClient
++    ) -> None:
++        """
++        [NEGATIVE] Test that a user with only 'view' role cannot reset a VMI.
++
++        Related: TS-04, AC-5
++
++        Preconditions:
++            - Test user with 'view' ClusterRole binding in test namespace
++            - User has valid kubeconfig
++
++        Steps:
++            1. Switch to test user context
++            2. Attempt to issue PUT request to /virtualmachineinstances/{name}/reset
++            3. Restore admin context
++
++        Expected:
++            - Reset API call fails with HTTP 403 Forbidden
++            - Error message indicates insufficient permissions
++
++        Args:
++            running_alpine_vmi: Running Alpine VM fixture
++            test_user_with_view_role: Test user with view role
++        """
++        vm = running_alpine_vmi
++        LOGGER.info(f"Testing reset denial with user having view role on VMI: {vm.vmi.name}")
++
++        from ocp_resources.virtual_machine_instance import VirtualMachineInstance
++
++        user_vmi = VirtualMachineInstance(
++            name=vm.vmi.name,
++            namespace=vm.namespace,
++            client=test_user_with_view_role,
++        )
++
++        LOGGER.info("User with view role attempting reset()")
++        with pytest.raises(Exception) as exc_info:
++            user_vmi.reset()
++
++        LOGGER.info(f"Reset denied as expected: {exc_info.value}")
++
++        error_message = str(exc_info.value).lower()
++        assert any(
++            keyword in error_message for keyword in ["forbidden", "403", "permission", "denied"]
++        ), f"Error should indicate permission denied. Got: {exc_info.value}"
++
++        LOGGER.info("User with view role correctly denied reset permission")
++
++    @pytest.mark.polarion("VIRTSTRAT-357-15")
++    def test_user_without_reset_permission_cannot_reset(
++        self, running_alpine_vmi: VirtualMachineForTests, test_user_with_custom_role: DynamicClient
++    ) -> None:
++        """
++        [NEGATIVE] Test that a user without virtualmachineinstances/reset permission cannot reset.
++
++        Related: AC-5
++
++        Preconditions:
++            - Custom role with VMI read/write but NOT reset permission
++            - Test user with custom role binding
++            - User has valid kubeconfig
++
++        Steps:
++            1. Switch to test user context
++            2. Attempt to issue PUT request to /virtualmachineinstances/{name}/reset
++            3. Restore admin context
++
++        Expected:
++            - Reset API call fails with HTTP 403 Forbidden
++            - Error message indicates missing virtualmachineinstances/reset permission
++
++        Args:
++            running_alpine_vmi: Running Alpine VM fixture
++            test_user_with_custom_role: Test user with custom role (no reset permission)
++        """
++        vm = running_alpine_vmi
++        LOGGER.info(
++            f"Testing reset denial with user missing reset permission on VMI: {vm.vmi.name}"
++        )
++
++        from ocp_resources.virtual_machine_instance import VirtualMachineInstance
++
++        user_vmi = VirtualMachineInstance(
++            name=vm.vmi.name,
++            namespace=vm.namespace,
++            client=test_user_with_custom_role,
++        )
++
++        LOGGER.info("User without reset permission attempting reset()")
++        with pytest.raises(Exception) as exc_info:
++            user_vmi.reset()
++
++        LOGGER.info(f"Reset denied as expected: {exc_info.value}")
++
++        error_message = str(exc_info.value).lower()
++        assert any(
++            keyword in error_message for keyword in ["forbidden", "403", "permission", "denied"]
++        ), f"Error should indicate permission denied. Got: {exc_info.value}"
++
++        LOGGER.info("User without reset permission correctly denied")
++
++    @pytest.mark.polarion("VIRTSTRAT-357-16")
++    def test_reset_permission_in_admin_clusterrole(self, admin_client: DynamicClient) -> None:
++        """
++        Test that the 'admin' ClusterRole includes virtualmachineinstances/reset permission.
++
++        Related: AC-5
++
++        Steps:
++            1. Retrieve 'admin' ClusterRole definition
++            2. Check rules for virtualmachineinstances/reset verb
++
++        Expected:
++            - ClusterRole contains rule with resource 'virtualmachineinstances/reset'
++            - Verb 'update' or '*' is present for the resource
++
++        Args:
++            admin_client: Admin Kubernetes client
++        """
++        LOGGER.info("Checking 'admin' ClusterRole for reset permission")
++
++        admin_role = ClusterRole(name="admin", client=admin_client)
++        admin_role.wait_for_status(status=admin_role.Status.READY, timeout=30)
++
++        rules = admin_role.instance.rules
++        LOGGER.info(f"Found {len(rules)} rules in admin ClusterRole")
++
++        has_reset_permission = False
++        for rule in rules:
++            api_groups = rule.get("apiGroups", [])
++            resources = rule.get("resources", [])
++            verbs = rule.get("verbs", [])
++
++            if "kubevirt.io" in api_groups or "subresources.kubevirt.io" in api_groups:
++                if "virtualmachineinstances/reset" in resources or "*" in resources:
++                    if "update" in verbs or "*" in verbs:
++                        has_reset_permission = True
++                        LOGGER.info(
++                            f"Found reset permission: apiGroups={api_groups}, "
++                            f"resources={resources}, verbs={verbs}"
++                        )
++                        break
++
++        assert has_reset_permission, (
++            "Admin ClusterRole should include virtualmachineinstances/reset permission"
++        )
++
++        LOGGER.info("Admin ClusterRole correctly includes reset permission")
++
++    @pytest.mark.polarion("VIRTSTRAT-357-17")
++    def test_reset_permission_in_edit_clusterrole(self, admin_client: DynamicClient) -> None:
++        """
++        Test that the 'edit' ClusterRole includes virtualmachineinstances/reset permission.
++
++        Related: AC-5
++
++        Steps:
++            1. Retrieve 'edit' ClusterRole definition
++            2. Check rules for virtualmachineinstances/reset verb
++
++        Expected:
++            - ClusterRole contains rule with resource 'virtualmachineinstances/reset'
++            - Verb 'update' or '*' is present for the resource
++
++        Args:
++            admin_client: Admin Kubernetes client
++        """
++        LOGGER.info("Checking 'edit' ClusterRole for reset permission")
++
++        edit_role = ClusterRole(name="edit", client=admin_client)
++        edit_role.wait_for_status(status=edit_role.Status.READY, timeout=30)
++
++        rules = edit_role.instance.rules
++        LOGGER.info(f"Found {len(rules)} rules in edit ClusterRole")
++
++        has_reset_permission = False
++        for rule in rules:
++            api_groups = rule.get("apiGroups", [])
++            resources = rule.get("resources", [])
++            verbs = rule.get("verbs", [])
++
++            if "kubevirt.io" in api_groups or "subresources.kubevirt.io" in api_groups:
++                if "virtualmachineinstances/reset" in resources or "*" in resources:
++                    if "update" in verbs or "*" in verbs:
++                        has_reset_permission = True
++                        LOGGER.info(
++                            f"Found reset permission: apiGroups={api_groups}, "
++                            f"resources={resources}, verbs={verbs}"
++                        )
++                        break
++
++        assert has_reset_permission, (
++            "Edit ClusterRole should include virtualmachineinstances/reset permission"
++        )
++
++        LOGGER.info("Edit ClusterRole correctly includes reset permission")
+diff --git a/tests/virt/lifecycle/test_vm_reset_virtctl.py b/tests/virt/lifecycle/test_vm_reset_virtctl.py
+new file mode 100644
+index 0000000..600bad4
+--- /dev/null
++++ b/tests/virt/lifecycle/test_vm_reset_virtctl.py
+@@ -0,0 +1,229 @@
++# -*- coding: utf-8 -*-
++
++"""
++VirtualMachineInstance Reset via virtctl Tests
++
++STP Reference: https://issues.redhat.com/browse/VIRTSTRAT-357
++
++This module contains tests for the 'virtctl reset' command functionality,
++validating the CLI user experience and proper integration with the reset
++subresource API.
++"""
++
++import logging
++
++import pytest
++from utilities.virt import VirtualMachineForTests, wait_for_ssh_connectivity
++
++from tests.virt.lifecycle.conftest import get_boot_time_from_vm
++from utilities.constants import TIMEOUT_5MIN
++from utilities.infra import run_virtctl_command
++
++pytestmark = pytest.mark.gating
++
++LOGGER = logging.getLogger(__name__)
++
++
++class TestVirtctlReset:
++    """
++    Tests for VMI reset via virtctl command.
++
++    Preconditions:
++        - virtctl binary includes reset command
++        - CNV deployment with reset subresource support
++        - Running VirtualMachineInstance with Fedora
++        - VMI is SSH accessible
++    """
++
++    @pytest.mark.polarion("VIRTSTRAT-357-08")
++    def test_virtctl_reset_running_vmi(self, running_alpine_vmi: VirtualMachineForTests) -> None:
++        """
++        Test that 'virtctl reset' command successfully resets a running VMI.
++
++        Related: TS-02, AC-1, AC-4
++
++        Steps:
++            1. Record current boot time from the running VMI
++            2. Execute 'virtctl reset <vmi-name>' command
++            3. Wait for command completion
++            4. Wait for VMI to become accessible
++            5. Record new boot time from the VMI
++
++        Expected:
++            - virtctl reset command exits with code 0
++            - Command output confirms reset initiated
++            - Boot time is different (guest rebooted)
++            - VMI is SSH accessible after reset
++
++        Args:
++            running_alpine_vmi: Running Alpine VM fixture
++        """
++        vm = running_alpine_vmi
++        LOGGER.info(f"Testing virtctl reset on VMI: {vm.vmi.name}")
++
++        boot_time_before = get_boot_time_from_vm(vm=vm)
++        LOGGER.info(f"Boot time before reset: {boot_time_before}")
++
++        LOGGER.info(f"Executing: virtctl reset {vm.vmi.name}")
++        result = run_virtctl_command(
++            command=f"reset {vm.vmi.name}",
++            namespace=vm.namespace,
++        )
++
++        assert result[0] == 0, f"virtctl reset command should exit with code 0. Got: {result[0]}"
++
++        command_output = result[1].lower()
++        LOGGER.info(f"virtctl reset output: {result[1]}")
++
++        assert any(
++            keyword in command_output for keyword in ["reset", "success", "initiated"]
++        ), f"Command output should confirm reset initiated. Got: {result[1]}"
++
++        LOGGER.info("Waiting for VMI to become accessible after reset")
++        vm.vmi.wait_until_running()
++        wait_for_ssh_connectivity(vm=vm, timeout=TIMEOUT_5MIN)
++
++        boot_time_after = get_boot_time_from_vm(vm=vm)
++        LOGGER.info(f"Boot time after reset: {boot_time_after}")
++
++        assert boot_time_before != boot_time_after, (
++            f"Boot time should change after reset. "
++            f"Before: {boot_time_before}, After: {boot_time_after}"
++        )
++
++        assert vm.ssh_exec.executor().is_connective(), (  # type: ignore[attr-defined]
++            f"VMI should be SSH accessible after reset"
++        )
++
++        LOGGER.info("virtctl reset test completed successfully")
++
++    @pytest.mark.polarion("VIRTSTRAT-357-09")
++    def test_virtctl_reset_with_namespace_flag(
++        self, running_alpine_vmi: VirtualMachineForTests
++    ) -> None:
++        """
++        Test that 'virtctl reset' works with --namespace flag.
++
++        Related: AC-4
++
++        Preconditions:
++            - VirtualMachineInstance running in custom namespace
++
++        Steps:
++            1. Execute 'virtctl reset <vmi-name> --namespace <custom-ns>' command
++            2. Wait for command completion
++
++        Expected:
++            - virtctl reset command exits with code 0
++            - VMI in custom namespace is reset successfully
++
++        Args:
++            running_alpine_vmi: Running Alpine VM fixture
++        """
++        vm = running_alpine_vmi
++        LOGGER.info(f"Testing virtctl reset with --namespace flag for VMI: {vm.vmi.name}")
++
++        LOGGER.info(f"Executing: virtctl reset {vm.vmi.name} --namespace {vm.namespace}")
++        result = run_virtctl_command(
++            command=f"reset {vm.vmi.name} --namespace {vm.namespace}",
++        )
++
++        assert result[0] == 0, (
++            f"virtctl reset command with --namespace should exit with code 0. Got: {result[0]}"
++        )
++
++        LOGGER.info(f"virtctl reset output: {result[1]}")
++
++        LOGGER.info("Waiting for VMI to become accessible after reset")
++        vm.vmi.wait_until_running()
++        wait_for_ssh_connectivity(vm=vm, timeout=TIMEOUT_5MIN)
++
++        assert vm.ssh_exec.executor().is_connective(), (  # type: ignore[attr-defined]
++            f"VMI should be SSH accessible after reset"
++        )
++
++        LOGGER.info("virtctl reset with --namespace flag test completed successfully")
++
++    @pytest.mark.polarion("VIRTSTRAT-357-10")
++    def test_virtctl_reset_nonexistent_vmi(self, namespace) -> None:
++        """
++        [NEGATIVE] Test that 'virtctl reset' fails gracefully on non-existent VMI.
++
++        Related: TS-06, AC-6
++
++        Steps:
++            1. Execute 'virtctl reset nonexistent-vmi' command
++
++        Expected:
++            - virtctl reset command exits with non-zero code
++            - Error message indicates VMI not found
++
++        Args:
++            namespace: Test namespace
++        """
++        nonexistent_vmi_name = "nonexistent-vmi-virtctl-test"
++        LOGGER.info(f"Testing virtctl reset failure on non-existent VMI: {nonexistent_vmi_name}")
++
++        LOGGER.info(f"Executing: virtctl reset {nonexistent_vmi_name}")
++        result = run_virtctl_command(
++            command=f"reset {nonexistent_vmi_name}",
++            namespace=namespace.name,
++            check=False,
++        )
++
++        assert result[0] != 0, (
++            f"virtctl reset on non-existent VMI should exit with non-zero code. Got: {result[0]}"
++        )
++
++        error_output = result[1].lower()
++        LOGGER.info(f"virtctl reset error output: {result[1]}")
++
++        assert any(
++            keyword in error_output for keyword in ["not found", "does not exist", "error"]
++        ), f"Error message should indicate VMI not found. Got: {result[1]}"
++
++        LOGGER.info("virtctl reset failure on non-existent VMI test completed successfully")
++
++    @pytest.mark.polarion("VIRTSTRAT-357-11")
++    def test_virtctl_reset_stopped_vmi(self, stopped_vmi: VirtualMachineForTests) -> None:
++        """
++        [NEGATIVE] Test that 'virtctl reset' fails appropriately on stopped VMI.
++
++        Related: TS-05, AC-6
++
++        Preconditions:
++            - VirtualMachineInstance exists in Stopped state
++
++        Steps:
++            1. Execute 'virtctl reset <vmi-name>' command
++
++        Expected:
++            - virtctl reset command exits with non-zero code
++            - Error message indicates VMI is not running
++
++        Args:
++            stopped_vmi: Stopped VM fixture
++        """
++        vm = stopped_vmi
++        LOGGER.info(f"Testing virtctl reset failure on stopped VMI: {vm.name}")
++
++        LOGGER.info(f"Executing: virtctl reset {vm.name}")
++        result = run_virtctl_command(
++            command=f"reset {vm.name}",
++            namespace=vm.namespace,
++            check=False,
++        )
++
++        assert result[0] != 0, (
++            f"virtctl reset on stopped VMI should exit with non-zero code. Got: {result[0]}"
++        )
++
++        error_output = result[1].lower()
++        LOGGER.info(f"virtctl reset error output: {result[1]}")
++
++        assert any(
++            keyword in error_output
++            for keyword in ["not running", "stopped", "invalid", "error"]
++        ), f"Error message should indicate VMI is not running. Got: {result[1]}"
++
++        LOGGER.info("virtctl reset failure on stopped VMI test completed successfully")

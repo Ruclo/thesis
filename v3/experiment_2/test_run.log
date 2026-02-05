@@ -1,0 +1,2205 @@
+/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/exceptions.py:91: DeprecationWarning: HTTPResponse.getheaders() is deprecated and will be removed in urllib3 v2.1.0. Instead access HTTPResponse.headers directly.
+  self.headers = http_resp.getheaders()
+/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/exceptions.py:91: DeprecationWarning: HTTPResponse.getheaders() is deprecated and will be removed in urllib3 v2.1.0. Instead access HTTPResponse.headers directly.
+  self.headers = http_resp.getheaders()
+2026-02-04T11:49:00.184609 ocp_resources Namespace INFO Create Namespace cnv-tests-run-in-progress-ns
+2026-02-04T11:49:00.184736 ocp_resources Namespace INFO Posting {'apiVersion': 'v1', 'kind': 'Namespace', 'metadata': {'name': 'cnv-tests-run-in-progress-ns'}, 'spec': {}}
+2026-02-04T11:49:00.255390 ocp_resources Namespace INFO Wait until Namespace cnv-tests-run-in-progress-ns is created
+2026-02-04T11:49:00.296808 ocp_resources Namespace INFO Wait for Namespace cnv-tests-run-in-progress-ns status to be Active
+2026-02-04T11:49:00.319748 ocp_resources Namespace INFO Status of Namespace cnv-tests-run-in-progress-ns is Active
+2026-02-04T11:49:00.320070 ocp_resources Namespace INFO Update Namespace cnv-tests-run-in-progress-ns:
+{'metadata': {'labels': {'pod-security.kubernetes.io/enforce': 'privileged', 'security.openshift.io/scc.podSecurityLabelSync': 'false'}, 'name': 'cnv-tests-run-in-progress-ns'}}
+2026-02-04T11:49:00.342372 ocp_resources ConfigMap INFO Create ConfigMap cnv-tests-run-in-progress
+2026-02-04T11:49:00.342491 ocp_resources ConfigMap INFO Posting {'apiVersion': 'v1', 'kind': 'ConfigMap', 'metadata': {'name': 'cnv-tests-run-in-progress', 'namespace': 'cnv-tests-run-in-progress-ns'}, 'data': '*******'}
+2026-02-04T11:49:00.376512 ocp_resources ConfigMap INFO Wait until ConfigMap cnv-tests-run-in-progress is created
+=================================================================================== test session starts ====================================================================================
+platform linux -- Python 3.14.0, pytest-9.0.2, pluggy-1.6.0
+benchmark: 5.2.3 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /home/mvavrine/cnv/openshift-virtualization-tests
+configfile: pytest.ini (WARNING: ignoring pytest config in pyproject.toml!)
+plugins: anyio-4.12.0, html-4.1.1, order-1.3.0, repeat-0.9.4, progress-1.4.0, dependency-0.6.0, jira-0.3.22, metadata-3.1.1, testconfig-0.2.0, benchmark-5.2.3, mock-3.15.1
+collected 15 items                                                                                                                                                                         
+
+tests/virt/vnc_console/test_vnc_screenshot_stability.py 2026-02-04T11:51:13.630802 conftest INFO Executing class fixture: vm_with_vnc_console
+2026-02-04T11:51:13.630983 conftest INFO Creating VM with VNC console for testing
+E
+
+____________________________________________ ERROR at setup of TestVncScreenshotStability.test_vnc_remains_connected_with_concurrent_thumbnail _____________________________________________
+
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f511f1adbe0>, namespace = <ocp_resources.namespace.Namespace object at 0x7f511c1af100>
+
+
+TEST: TestVncScreenshotStability.test_vnc_remains_connected_with_concurrent_thumbnail [setup] STATUS: ERROR
+    @pytest.fixture(scope="class")
+    def vm_with_vnc_console(admin_client, namespace):
+        """
+        Fixture providing a running VM with VNC console configured.
+    
+        This fixture creates a Fedora VM with graphical display (VNC) configured,
+        suitable for VNC console and screenshot testing.
+    
+        Args:
+            admin_client: Kubernetes admin client
+            namespace: Test namespace
+    
+        Yields:
+            VirtualMachine: A running VM with VNC graphics device
+    
+        Cleanup:
+            Stops and deletes the VM after tests complete
+        """
+        LOGGER.info("Creating VM with VNC console for testing")
+    
+        with VirtualMachineForTests(
+            name="vnc-console-test-vm",
+            namespace=namespace.name,
+            client=admin_client,
+>           image=Images.Fedora.FEDORA_REGISTRY_GUEST_IMG,
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            os_flavor=OS_FLAVOR_FEDORA,
+            vm_instance_type=VirtualMachineClusterInstancetype(name=U1_SMALL, client=admin_client),
+            vm_preference=VirtualMachineClusterPreference(name="fedora", client=admin_client),
+            run_strategy=VirtualMachine.RunStrategy.ALWAYS,
+        ) as vm:
+E       AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+
+tests/virt/vnc_console/conftest.py:54: AttributeError
+---------------------------------------------------------------------------------- Captured stderr setup -----------------------------------------------------------------------------------
+
+--------------------------------- test_vnc_remains_connected_with_concurrent_thumbnail ---------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-04T11:49:00.490259 conftest INFO Executing session fixture: admin_client
+2026-02-04T11:49:00.490594 conftest INFO Executing session fixture: pytestconfig
+2026-02-04T11:49:00.490811 conftest INFO Executing session fixture: installing_cnv
+2026-02-04T11:49:00.490963 conftest INFO Executing session fixture: cnv_tests_utilities_namespace
+2026-02-04T11:49:00.512421 ocp_resources Namespace INFO Create Namespace cnv-tests-utilities
+2026-02-04T11:49:00.512580 ocp_resources Namespace INFO Posting {'apiVersion': 'v1', 'kind': 'Namespace', 'metadata': {'name': 'cnv-tests-utilities', 'labels': {'pod-security.kubernetes.io/enforce': 'privileged', 'security.openshift.io/scc.podSecurityLabelSync': 'false'}}, 'spec': {}}
+2026-02-04T11:49:00.583107 ocp_resources Namespace INFO Wait for Namespace cnv-tests-utilities status to be Active
+2026-02-04T11:49:00.583269 timeout_sampler INFO Waiting for 120 seconds [0:02:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_for_status.lambda: self.exists)
+2026-02-04T11:49:00.588552 ocp_resources Namespace INFO Status of Namespace cnv-tests-utilities is Active
+2026-02-04T11:49:00.588709 timeout_sampler INFO Elapsed time: 8.487701416015625e-05 [0:00:00.000085]
+2026-02-04T11:49:00.589352 ocp_resources.resource INFO kind: OAuth api version: config.openshift.io/v1
+2026-02-04T11:49:00.589741 ocp_resources.resource INFO kind: DaemonSet api version: apps/v1
+2026-02-04T11:49:00.588928 conftest INFO Executing session fixture: skip_unprivileged_client
+2026-02-04T11:49:00.589064 conftest INFO Executing session fixture: identity_provider_config
+2026-02-04T11:49:00.589468 conftest INFO Executing session fixture: leftovers_cleanup
+2026-02-04T11:49:00.589533 tests.conftest INFO Checking for leftover resources
+2026-02-04T11:49:00.677143 ocp_resources.resource INFO ResourceEdits: Updating data for resource OAuth cluster
+2026-02-04T11:49:00.677355 ocp_resources OAuth INFO Update OAuth cluster:
+{'metadata': {'name': 'cluster'}, 'spec': {'identityProviders': [{'htpasswd': {'fileData': {'name': 'htpass-secret'}}, 'mappingMethod': 'claim', 'name': 'developer', 'type': 'HTPasswd'}], 'tokenConfig': {'accessTokenMaxAgeSeconds': 31536000}}}
+2026-02-04T11:49:00.687485 conftest INFO Executing session fixture: artifactory_setup
+2026-02-04T11:49:00.687707 tests.conftest INFO Checking for artifactory credentials:
+2026-02-04T11:49:00.687809 tests.conftest WARNING Explicitly skipping artifactory setup check due to use of --skip-artifactory-check
+2026-02-04T11:49:00.687966 conftest INFO Executing session fixture: os_path_environment
+2026-02-04T11:49:00.688144 conftest INFO Executing session fixture: tmpdir_factory
+2026-02-04T11:49:00.688293 conftest INFO Executing session fixture: bin_directory
+2026-02-04T11:49:00.689561 ocp_resources.resource INFO Trying to get client via new_client_from_config
+2026-02-04T11:49:00.689272 conftest INFO Executing session fixture: virtctl_binary
+2026-02-04T11:49:00.701689 ocp_resources.resource INFO kind: ConsoleCLIDownload api version: console.openshift.io/v1
+2026-02-04T11:49:00.828456 utilities.infra INFO Downloading archive using: url=https://hyperconverged-cluster-cli-download-openshift-cnv.apps-crc.testing/amd64/linux/virtctl.tar.gz
+2026-02-04T11:49:01.003026 utilities.infra INFO Extract the downloaded archive.
+2026-02-04T11:49:01.598688 utilities.infra INFO Downloaded file: ['virtctl']
+2026-02-04T11:49:01.601031 ocp_resources.resource INFO Trying to get client via new_client_from_config
+2026-02-04T11:49:01.600328 conftest INFO Executing session fixture: oc_binary
+2026-02-04T11:49:01.611784 ocp_resources.resource INFO kind: ConsoleCLIDownload api version: console.openshift.io/v1
+2026-02-04T11:49:01.657314 utilities.infra INFO Downloading archive using: url=https://downloads-openshift-console.apps-crc.testing/amd64/linux/oc.tar
+2026-02-04T11:49:02.632595 utilities.infra INFO Extract the downloaded archive.
+2026-02-04T11:49:02.717145 utilities.infra INFO Downloaded file: ['oc']
+2026-02-04T11:49:02.738601 ocp_resources.resource INFO kind: ClusterVersion api version: config.openshift.io/v1
+2026-02-04T11:49:02.737618 conftest INFO Executing session fixture: bin_directory_to_os_path
+2026-02-04T11:49:02.738213 tests.conftest INFO Adding /tmp/pytest-VDfyUQF5AiNr6qmg3uS7LK/bin0 to $PATH
+2026-02-04T11:49:02.738401 conftest INFO Executing session fixture: openshift_current_version
+2026-02-04T11:49:02.778436 conftest INFO Executing session fixture: hco_namespace
+2026-02-04T11:49:02.782889 ocp_resources.resource INFO kind: Subscription api version: operators.coreos.com/v1alpha1
+2026-02-04T11:49:02.782434 conftest INFO Executing session fixture: csv_scope_session
+2026-02-04T11:49:02.796885 ocp_resources.resource INFO kind: ClusterServiceVersion api version: operators.coreos.com/v1alpha1
+2026-02-04T11:49:02.819759 conftest INFO Executing session fixture: cnv_current_version
+2026-02-04T11:49:02.846302 ocp_resources.resource INFO kind: Subscription api version: operators.coreos.com/v1alpha1
+2026-02-04T11:49:02.845501 conftest INFO Executing session fixture: cnv_subscription_scope_session
+2026-02-04T11:49:02.850771 conftest INFO Executing session fixture: hco_image
+2026-02-04T11:49:02.855443 ocp_resources.resource INFO kind: CatalogSource api version: operators.coreos.com/v1alpha1
+2026-02-04T11:49:02.868186 ocp_resources.resource INFO kind: StorageClass api version: storage.k8s.io/v1
+2026-02-04T11:49:02.867129 conftest INFO Executing session fixture: cluster_storage_classes
+2026-02-04T11:49:02.874590 conftest INFO Executing session fixture: ocs_storage_class
+2026-02-04T11:49:02.874884 conftest INFO Executing session fixture: ocs_current_version
+2026-02-04T11:49:02.875074 conftest INFO Executing session fixture: kubevirt_resource_scope_session
+2026-02-04T11:49:02.891582 ocp_resources.resource INFO kind: KubeVirt api version: kubevirt.io/v1
+2026-02-04T11:49:02.899199 ocp_resources.resource INFO kind: Network api version: config.openshift.io/v1
+2026-02-04T11:49:02.898849 conftest INFO Executing session fixture: cluster_service_network
+2026-02-04T11:49:02.903853 conftest INFO Executing session fixture: ipv6_supported_cluster
+2026-02-04T11:49:02.904200 conftest INFO Executing session fixture: ipv4_supported_cluster
+2026-02-04T11:49:02.904402 conftest INFO Executing session fixture: nodes
+2026-02-04T11:49:02.916238 conftest INFO Executing session fixture: workers
+2026-02-04T11:49:02.923592 ocp_resources.resource INFO Trying to get client via new_client_from_config
+2026-02-04T11:49:02.923094 conftest INFO Executing session fixture: cnv_source
+2026-02-04T11:49:02.923296 conftest INFO Executing session fixture: is_production_source
+2026-02-04T11:49:02.923384 conftest INFO Executing session fixture: generated_pulled_secret
+2026-02-04T11:49:02.950323 conftest INFO Executing session fixture: cnv_tests_utilities_service_account
+2026-02-04T11:49:02.978142 ocp_resources ServiceAccount INFO Create ServiceAccount cnv-tests-sa
+2026-02-04T11:49:02.978291 ocp_resources ServiceAccount INFO Posting {'apiVersion': 'v1', 'kind': 'ServiceAccount', 'metadata': {'name': 'cnv-tests-sa', 'namespace': 'cnv-tests-utilities'}}
+2026-02-04T11:49:03.120849 timeout_sampler INFO Waiting for 10 seconds [0:00:10], retry every 1 seconds. (Function: utilities.virt._get_image_json  Kwargs: {'cmd': 'oc image -o json info quay.io/openshift-cnv/qe-net-utils:latest --filter-by-os linux/amd64 --registry-config=/tmp/tmpc0inz1n6-cnv-tests-pull-secret/pull-secrets.json'})
+2026-02-04T11:49:03.121134 pyhelper_utils.shell INFO Running oc image -o json info quay.io/openshift-cnv/qe-net-utils:latest --filter-by-os linux/amd64 --registry-config=/tmp/tmpc0inz1n6-cnv-tests-pull-secret/pull-secrets.json command
+2026-02-04T11:49:03.120512 conftest INFO Executing session fixture: utility_daemonset
+2026-02-04T11:49:05.642508 timeout_sampler INFO Elapsed time: 0.0002009868621826172 [0:00:00.000201]
+2026-02-04T11:49:05.668250 ocp_resources.resource INFO kind: DaemonSet api version: apps/v1 --- [DuplicateFilter: Last log `Trying to get client via new_client_from_config` repeated 2 times]
+2026-02-04T11:49:05.678719 ocp_resources DaemonSet INFO Create DaemonSet utility
+2026-02-04T11:49:05.678960 ocp_resources DaemonSet INFO Posting {'apiVersion': 'apps/v1', 'kind': 'DaemonSet', 'metadata': {'annotations': {'deprecated.daemonset.template.generation': '0'}, 'creationTimestamp': None, 'labels': {'cnv-test': 'utility', 'tier': 'node'}, 'name': 'utility', 'namespace': 'cnv-tests-utilities'}, 'spec': {'revisionHistoryLimit': 10, 'selector': {'matchLabels': {'cnv-test': 'utility', 'tier': 'node'}}, 'template': {'metadata': {'creationTimestamp': None, 'labels': {'cnv-test': 'utility', 'tier': 'node'}}, 'spec': {'containers': [{'command': ['/bin/bash', '-c', 'echo ok > /tmp/healthy && sleep INF'], 'image': 'quay.io/openshift-cnv/qe-net-utils:latest@sha256:2c8e11ac0f0b36553bed603c1c67dccb703d7059ccbcf8c91e3a35c99719ce20', 'imagePullPolicy': 'IfNotPresent', 'name': 'utility', 'readinessProbe': {'exec': {'command': ['cat', '/tmp/healthy']}, 'failureThreshold': 3, 'initialDelaySeconds': 5, 'periodSeconds': 5, 'successThreshold': 1, 'timeoutSeconds': 1}, 'resources': {'limits': {'cpu': '100m', 'memory': '50Mi'}, 'requests': {'cpu': '100m', 'memory': '50Mi'}}, 'securityContext': {'privileged': True, 'runAsUser': 0}, 'stdin': True, 'stdinOnce': True, 'terminationMessagePath': '/dev/termination-log', 'terminationMessagePolicy': 'File', 'tty': True, 'volumeMounts': [{'mountPath': '/host', 'name': 'host'}, {'mountPath': '/var/run/secrets/kubernetes.io/serviceaccount', 'name': 'kube-api-access-m5ch7', 'readOnly': True}, {'mountPath': '/host/run/openvswitch', 'name': 'ovs-run'}, {'mountPath': '/run/dbus/system_bus_socket', 'name': 'dbus-socket'}, {'mountPath': '/host/dev', 'name': 'dev'}, {'mountPath': '/host/etc', 'name': 'etc'}, {'mountPath': '/host/var', 'name': 'var'}]}], 'dnsPolicy': 'ClusterFirst', 'enableServiceLinks': True, 'hostNetwork': True, 'hostPID': True, 'imagePullSecrets': [{'name': 'default-dockercfg-xrlbh'}], 'preemptionPolicy': 'PreemptLowerPriority', 'priority': 0, 'restartPolicy': 'Always', 'schedulerName': 'default-scheduler', 'securityContext': {'privileged': True}, 'serviceAccount': 'cnv-tests-sa', 'serviceAccountName': 'cnv-tests-sa', 'terminationGracePeriodSeconds': 30, 'tolerations': [{'effect': 'NoSchedule', 'key': 'node-role.kubernetes.io/master', 'operator': 'Exists'}], 'volumes': [{'hostPath': {'path': '/', 'type': 'Directory'}, 'name': 'host'}, {'hostPath': {'path': '/run/openvswitch', 'type': ''}, 'name': 'ovs-run'}, {'hostPath': {'path': '/run/dbus/system_bus_socket', 'type': 'Socket'}, 'name': 'dbus-socket'}, {'hostPath': {'path': '/dev', 'type': 'Directory'}, 'name': 'dev'}, {'hostPath': {'path': '/etc', 'type': 'Directory'}, 'name': 'etc'}, {'hostPath': {'path': '/var', 'type': 'Directory'}, 'name': 'var'}, {'name': 'kube-api-access-m5ch7', 'projected': {'defaultMode': 420, 'sources': [{'serviceAccountToken': {'path': 'token'}}, {'configMap': {'items': [{'key': 'ca.crt', 'path': 'ca.crt'}], 'name': 'kube-root-ca.crt'}}, {'downwardAPI': {'items': [{'fieldRef': {'apiVersion': 'v1', 'fieldPath': 'metadata.namespace'}, 'path': 'namespace'}]}}, {'configMap': {'items': [{'key': 'service-ca.crt', 'path': 'service-ca.crt'}], 'name': 'openshift-service-ca.crt'}}]}}]}}, 'updateStrategy': {'type': 'OnDelete'}}}
+2026-02-04T11:49:05.801354 ocp_resources DaemonSet INFO Wait for DaemonSet utility to deploy all desired pods
+2026-02-04T11:49:05.801617 timeout_sampler INFO Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: kubernetes.dynamic.client.get  Kwargs: {'field_selector': 'metadata.name==utility', 'namespace': 'cnv-tests-utilities'})
+2026-02-04T11:49:54.140414 timeout_sampler INFO Elapsed time: 48.33271050453186 [0:00:48.332711]
+2026-02-04T11:49:54.140644 conftest INFO Executing session fixture: workers_utility_pods
+2026-02-04T11:49:54.147180 conftest INFO Executing session fixture: workers_type
+2026-02-04T11:49:54.152587 ocp_resources Pod INFO Execute ['chroot', '/host', 'bash', '-c', 'systemd-detect-virt'] on utility-slcvp (crc)
+2026-02-04T11:49:54.185055 tests.conftest INFO Cluster workers are: virtual
+2026-02-04T11:49:54.185294 conftest INFO Executing session fixture: nodes_cpu_architecture
+2026-02-04T11:49:54.188972 pyhelper_utils.shell INFO Running virtctl version command
+2026-02-04T11:49:54.188855 conftest INFO Executing session fixture: cluster_info
+2026-02-04T11:49:54.205072 ocp_resources.resource INFO kind: Network api version: config.openshift.io/v1
+2026-02-04T11:49:54.207253 tests.conftest INFO 
+Cluster info:
+	Openshift version: 4.20.5
+	CNV version: 4.20.3
+	HCO image: registry.redhat.io/redhat/redhat-operator-index:v4.20
+	OCS version: None
+	CNI type: OVNKubernetes
+	Workers type: virtual
+	Cluster CPU Architecture: amd64
+	IPv4 cluster: True
+	IPv6 cluster: False
+	Virtctl version: 
+	Client Version: version.Info{GitVersion:"v1.6.3-42-gf72ce58db2", GitCommit:"f72ce58db218d0dfe60ce157ea6c37032a0fda17", GitTreeState:"clean", BuildDate:"2025-12-07T09:01:32Z", GoVersion:"go1.24.6 (Red Hat 1.24.6-1.module+el8.10.0+23407+428597c7) X:strictfipsruntime", Compiler:"gc", Platform:"linux/amd64"}
+	Server Version: version.Info{GitVersion:"v1.6.3-42-gf72ce58db2", GitCommit:"f72ce58db218d0dfe60ce157ea6c37032a0fda17", GitTreeState:"clean", BuildDate:"2025-12-12T08:29:44Z", GoVersion:"go1.24.6 (Red Hat 1.24.6-1.el9_6) X:strictfipsruntime", Compiler:"gc", Platform:"linux/amd64"}
+
+2026-02-04T11:49:54.207464 conftest INFO Executing function fixture: term_handler_scope_function
+2026-02-04T11:49:54.207570 conftest INFO Executing class fixture: term_handler_scope_class
+2026-02-04T11:49:54.207646 conftest INFO Executing module fixture: term_handler_scope_module
+2026-02-04T11:49:54.207722 conftest INFO Executing session fixture: term_handler_scope_session
+2026-02-04T11:49:54.207855 conftest INFO Executing session fixture: record_testsuite_property
+2026-02-04T11:49:54.207961 conftest INFO Executing session fixture: junitxml_polarion
+2026-02-04T11:49:54.208076 conftest INFO Executing session fixture: cluster_storage_classes_names
+2026-02-04T11:49:54.208205 conftest INFO Executing session fixture: junitxml_plugin
+2026-02-04T11:49:54.208309 conftest INFO Executing session fixture: hyperconverged_resource_scope_session
+2026-02-04T11:49:54.217041 ocp_resources.resource INFO kind: HyperConverged api version: hco.kubevirt.io/v1beta1
+2026-02-04T11:49:54.220906 ocp_utilities.infra INFO Verify all nodes are in a healthy condition.
+2026-02-04T11:49:54.220653 conftest INFO Executing session fixture: cluster_sanity_scope_session
+2026-02-04T11:49:54.220788 utilities.infra INFO Running cluster sanity. (To skip cluster sanity check pass --cluster-sanity-skip-check to pytest)
+2026-02-04T11:49:54.220832 utilities.infra INFO Check storage classes sanity. (To skip storage class sanity check pass --cluster-sanity-skip-storage-check to pytest)
+2026-02-04T11:49:54.220873 utilities.infra INFO Check nodes sanity. (To skip nodes sanity check pass --cluster-sanity-skip-nodes-check to pytest)
+2026-02-04T11:49:54.223957 ocp_utilities.infra INFO Verify all nodes are schedulable.
+2026-02-04T11:49:54.227098 timeout_sampler INFO Waiting for 300 seconds [0:05:00], retry every 5 seconds. (Function: utilities.infra.get_pods  Kwargs: {'dyn_client': <kubernetes.dynamic.client.DynamicClient object at 0x7f511f1adbe0>, 'namespace': <ocp_resources.namespace.Namespace object at 0x7f511d159e00>})
+2026-02-04T11:49:54.475498 timeout_sampler INFO Elapsed time: 9.799003601074219e-05 [0:00:00.000098]
+2026-02-04T11:49:54.475695 timeout_sampler INFO Waiting for 600 seconds [0:10:00], retry every 5 seconds. (Function: utilities.infra.<locals>.lambda: dynamic_client.namespace.resource_kind.resource_name.list.get)
+2026-02-04T11:49:54.475622 utilities.infra INFO Waiting for resource to stabilize: resource_kind=HyperConverged conditions={'Available': 'True', 'Progressing': 'False', 'ReconcileComplete': 'True', 'Degraded': 'False', 'Upgradeable': 'True'} sleep=600 consecutive_checks_count=3
+2026-02-04T11:50:04.495397 timeout_sampler INFO Elapsed time: 10.013479948043823 [0:00:10.013480]
+2026-02-04T11:50:04.495840 ocp_utilities.infra INFO Verify all nodes are in a healthy condition.
+2026-02-04T11:50:04.495611 conftest INFO Executing module fixture: cluster_sanity_scope_module
+2026-02-04T11:50:04.495716 utilities.infra INFO Running cluster sanity. (To skip cluster sanity check pass --cluster-sanity-skip-check to pytest)
+2026-02-04T11:50:04.495759 utilities.infra INFO Check storage classes sanity. (To skip storage class sanity check pass --cluster-sanity-skip-storage-check to pytest)
+2026-02-04T11:50:04.495808 utilities.infra INFO Check nodes sanity. (To skip nodes sanity check pass --cluster-sanity-skip-nodes-check to pytest)
+2026-02-04T11:50:04.499263 ocp_utilities.infra INFO Verify all nodes are schedulable.
+2026-02-04T11:50:04.502320 timeout_sampler INFO Waiting for 300 seconds [0:05:00], retry every 5 seconds. (Function: utilities.infra.get_pods  Kwargs: {'dyn_client': <kubernetes.dynamic.client.DynamicClient object at 0x7f511f1adbe0>, 'namespace': <ocp_resources.namespace.Namespace object at 0x7f511d159e00>})
+2026-02-04T11:50:04.625674 timeout_sampler INFO Elapsed time: 8.273124694824219e-05 [0:00:00.000083]
+2026-02-04T11:50:04.625907 timeout_sampler INFO Waiting for 600 seconds [0:10:00], retry every 5 seconds. (Function: utilities.infra.<locals>.lambda: dynamic_client.namespace.resource_kind.resource_name.list.get)
+2026-02-04T11:50:04.625830 utilities.infra INFO Waiting for resource to stabilize: resource_kind=HyperConverged conditions={'Available': 'True', 'Progressing': 'False', 'ReconcileComplete': 'True', 'Degraded': 'False', 'Upgradeable': 'True'} sleep=600 consecutive_checks_count=3
+2026-02-04T11:50:14.643458 timeout_sampler INFO Elapsed time: 10.011333227157593 [0:00:10.011333]
+2026-02-04T11:50:14.643646 conftest INFO Executing session fixture: ssh_key_tmpdir_scope_session
+2026-02-04T11:50:14.656074 ocp_resources.resource INFO Trying to get client via new_client_from_config
+2026-02-04T11:50:14.644115 conftest INFO Executing session fixture: generated_ssh_key_for_vm_access
+2026-02-04T11:50:14.655751 conftest INFO Executing function fixture: autouse_fixtures
+2026-02-04T11:50:14.655909 conftest INFO Executing session fixture: is_psi_cluster
+2026-02-04T11:50:14.662390 ocp_resources.resource INFO kind: Infrastructure api version: config.openshift.io/v1
+2026-02-04T11:50:14.667445 conftest INFO Executing session fixture: schedulable_nodes
+2026-02-04T11:50:14.681886 conftest INFO Executing session fixture: gpu_nodes
+2026-02-04T11:50:14.684726 conftest INFO Executing session fixture: nodes_with_supported_gpus
+2026-02-04T11:50:14.684837 conftest INFO Executing session fixture: sriov_workers
+2026-02-04T11:50:14.687593 conftest INFO Executing session fixture: nodes_cpu_vendor
+2026-02-04T11:50:14.693332 conftest INFO Executing session fixture: nodes_cpu_virt_extension
+2026-02-04T11:50:14.693473 conftest INFO Executing session fixture: allocatable_memory_per_node_scope_session
+2026-02-04T11:50:14.699747 tests.virt.utils INFO Node crc has 23.01947021484375 GiB of allocatable memory
+2026-02-04T11:50:14.699857 conftest INFO Executing session fixture: virt_special_infra_sanity
+2026-02-04T11:50:14.699957 tests.virt.conftest INFO Verifying that cluster has all required capabilities for special_infra marked tests
+2026-02-04T11:50:14.700020 tests.virt.conftest INFO Verifying tests run on BM cluster
+2026-02-04T11:50:14.700053 tests.virt.conftest INFO Verifing cluster nodes support VMX cpu fixture
+2026-02-04T11:50:14.703647 conftest INFO Executing session fixture: unprivileged_secret
+2026-02-04T11:50:14.705460 ocp_resources.resource INFO Trying to get client via new_client_from_config
+2026-02-04T11:50:14.711038 ocp_resources Secret INFO Create Secret htpass-secret-for-cnv-tests
+2026-02-04T11:50:14.711105 ocp_resources Secret INFO Posting {'apiVersion': 'v1', 'kind': 'Secret', 'metadata': {'name': 'htpass-secret-for-cnv-tests', 'namespace': 'openshift-config'}, 'data': '*******'}
+2026-02-04T11:50:14.740690 ocp_resources.resource INFO ResourceEdit: Backing up old data
+2026-02-04T11:50:14.740475 conftest INFO Executing session fixture: identity_provider_with_htpasswd
+2026-02-04T11:50:14.744523 ocp_resources.resource INFO ResourceEdits: Updating data for resource OAuth cluster
+2026-02-04T11:50:14.744686 ocp_resources OAuth INFO Update OAuth cluster:
+{'metadata': {'name': 'cluster'}, 'spec': {'identityProviders': [{'name': 'htpasswd_provider', 'mappingMethod': 'claim', 'type': 'HTPasswd', 'htpasswd': {'fileData': {'name': 'htpass-secret-for-cnv-tests'}}}], 'tokenConfig': {'accessTokenMaxAgeSeconds': 604800, 'accessTokenInactivityTimeout': None}}}
+2026-02-04T11:50:14.764240 ocp_resources.resource INFO Trying to get client via new_client_from_config
+2026-02-04T11:50:14.771055 ocp_resources.resource INFO kind: Deployment api version: apps/v1
+2026-02-04T11:50:14.784257 timeout_sampler INFO Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: tests.conftest.<locals>.lambda: dp.instance.status.conditions)
+2026-02-04T11:50:14.784109 tests.conftest INFO Wait for oauth-openshift -> Type: Progressing -> Reason: ReplicaSetUpdated
+2026-02-04T11:50:45.929974 timeout_sampler INFO Elapsed time: 31.11253571510315 [0:00:31.112536]
+2026-02-04T11:50:45.930321 timeout_sampler INFO Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: tests.conftest.<locals>.lambda: dp.instance.status.conditions)
+2026-02-04T11:50:45.930140 tests.conftest INFO Wait for oauth-openshift -> Type: Progressing -> Reason: NewReplicaSetAvailable
+2026-02-04T11:51:13.068009 timeout_sampler INFO Elapsed time: 27.134995698928833 [0:00:27.134996]
+2026-02-04T11:51:13.068219 conftest INFO Executing session fixture: kubeconfig_export_path
+2026-02-04T11:51:13.068322 conftest INFO Executing session fixture: exported_kubeconfig
+2026-02-04T11:51:13.068647 tests.conftest INFO Setting KUBECONFIG dir for this run to point to: /tmp/tmpbo83skg6-cnv-tests-kubeconfig
+2026-02-04T11:51:13.068703 tests.conftest INFO Copy KUBECONFIG to /tmp/tmpbo83skg6-cnv-tests-kubeconfig/kubeconfig
+2026-02-04T11:51:13.068919 tests.conftest INFO Set: KUBECONFIG=/tmp/tmpbo83skg6-cnv-tests-kubeconfig/kubeconfig
+2026-02-04T11:51:13.069042 conftest INFO Executing session fixture: unprivileged_client
+2026-02-04T11:51:13.124969 timeout_sampler INFO Waiting for 60 seconds [0:01:00], retry every 3 seconds. (Function: subprocess.Popen  Kwargs: {'args': 'oc login https://api.crc.testing:6443 -u unprivileged-user -p unprivileged-password', 'shell': True, 'stdout': -1, 'stderr': -1})
+2026-02-04T11:51:13.124814 utilities.infra INFO Trying to login to account
+2026-02-04T11:51:13.356455 timeout_sampler INFO Elapsed time: 0.00015735626220703125 [0:00:00.000157]
+2026-02-04T11:51:13.360165 timeout_sampler INFO Waiting for 60 seconds [0:01:00], retry every 3 seconds. (Function: subprocess.Popen  Kwargs: {'args': 'oc login https://api.crc.testing:6443 -u kubeadmin', 'shell': True, 'stdout': -1, 'stderr': -1})
+2026-02-04T11:51:13.356309 utilities.infra INFO Login - success
+2026-02-04T11:51:13.360073 utilities.infra INFO Trying to login to account
+2026-02-04T11:51:13.441103 timeout_sampler INFO Elapsed time: 0.00015354156494140625 [0:00:00.000154]
+2026-02-04T11:51:13.441370 ocp_resources.resource INFO Trying to get client via new_client_from_config
+2026-02-04T11:51:13.440962 utilities.infra INFO Login - success
+2026-02-04T11:51:13.447473 ocp_resources.resource INFO kind: ProjectRequest api version: project.openshift.io/v1
+2026-02-04T11:51:13.447627 ocp_resources ProjectRequest INFO Create ProjectRequest vnc-console-test-vnc-screenshot-stabilit
+2026-02-04T11:51:13.447753 ocp_resources ProjectRequest INFO Posting {'apiVersion': 'project.openshift.io/v1', 'kind': 'ProjectRequest', 'metadata': {'name': 'vnc-console-test-vnc-screenshot-stabilit'}}
+2026-02-04T11:51:13.447234 conftest INFO Executing module fixture: namespace
+2026-02-04T11:51:13.548857 ocp_resources.resource INFO kind: Project api version: project.openshift.io/v1
+2026-02-04T11:51:13.548964 ocp_resources Project INFO Wait for Project vnc-console-test-vnc-screenshot-stabilit status to be Active
+2026-02-04T11:51:13.549021 timeout_sampler INFO Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_for_status.lambda: self.exists)
+2026-02-04T11:51:13.567426 ocp_resources Project INFO Status of Project vnc-console-test-vnc-screenshot-stabilit is Active
+2026-02-04T11:51:13.567536 timeout_sampler INFO Elapsed time: 4.9114227294921875e-05 [0:00:00.000049]
+2026-02-04T11:51:13.586975 ocp_resources Namespace INFO Wait for Namespace vnc-console-test-vnc-screenshot-stabilit status to be Active
+2026-02-04T11:51:13.587090 timeout_sampler INFO Waiting for 120 seconds [0:02:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_for_status.lambda: self.exists)
+2026-02-04T11:51:13.592482 ocp_resources Namespace INFO Status of Namespace vnc-console-test-vnc-screenshot-stabilit is Active
+2026-02-04T11:51:13.592584 timeout_sampler INFO Elapsed time: 5.841255187988281e-05 [0:00:00.000058]
+2026-02-04T11:51:13.592653 ocp_resources.resource INFO ResourceEdits: Updating data for resource Namespace vnc-console-test-vnc-screenshot-stabilit
+2026-02-04T11:51:13.592713 ocp_resources Namespace INFO Update Namespace vnc-console-test-vnc-screenshot-stabilit:
+{'metadata': {'labels': None, 'name': 'vnc-console-test-vnc-screenshot-stabilit'}}
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f511f1adbe0>, namespace = <ocp_resources.namespace.Namespace object at 0x7f511c1af100>
+
+    @pytest.fixture(scope="class")
+    def vm_with_vnc_console(admin_client, namespace):
+        """
+        Fixture providing a running VM with VNC console configured.
+    
+        This fixture creates a Fedora VM with graphical display (VNC) configured,
+        suitable for VNC console and screenshot testing.
+    
+        Args:
+            admin_client: Kubernetes admin client
+            namespace: Test namespace
+    
+        Yields:
+            VirtualMachine: A running VM with VNC graphics device
+    
+        Cleanup:
+            Stops and deletes the VM after tests complete
+        """
+        LOGGER.info("Creating VM with VNC console for testing")
+    
+        with VirtualMachineForTests(
+            name="vnc-console-test-vm",
+            namespace=namespace.name,
+            client=admin_client,
+>           image=Images.Fedora.FEDORA_REGISTRY_GUEST_IMG,
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            os_flavor=OS_FLAVOR_FEDORA,
+            vm_instance_type=VirtualMachineClusterInstancetype(name=U1_SMALL, client=admin_client),
+            vm_preference=VirtualMachineClusterPreference(name="fedora", client=admin_client),
+            run_strategy=VirtualMachine.RunStrategy.ALWAYS,
+        ) as vm:
+E       AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+
+tests/virt/vnc_console/conftest.py:54: AttributeError
+------------------------------------------------------- TEARDOWN -------------------------------------------------------
+______________________________________________________ 1 of 15 completed, 0 Pass, 0 Fail, 0 Skip, 0 XPass, 0 XFail, 1 Error, 0 ReRun _______________________________________________________
+
+tests/virt/vnc_console/test_vnc_screenshot_stability.py 
+----------------------------------- test_thumbnail_updates_without_disconnecting_vnc -----------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-04T11:51:13.701733 conftest INFO Executing function fixture: term_handler_scope_function
+2026-02-04T11:51:13.701913 conftest INFO Executing function fixture: autouse_fixtures
+E
+
+______________________________________________ ERROR at setup of TestVncScreenshotStability.test_thumbnail_updates_without_disconnecting_vnc _______________________________________________
+
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f511f1adbe0>, namespace = <ocp_resources.namespace.Namespace object at 0x7f511c1af100>
+
+    @pytest.fixture(scope="class")
+    def vm_with_vnc_console(admin_client, namespace):
+        """
+        Fixture providing a running VM with VNC console configured.
+    
+        This fixture creates a Fedora VM with graphical display (VNC) configured,
+        suitable for VNC console and screenshot testing.
+    
+        Args:
+            admin_client: Kubernetes admin client
+            namespace: Test namespace
+    
+        Yields:
+            VirtualMachine: A running VM with VNC graphics device
+    
+        Cleanup:
+            Stops and deletes the VM after tests complete
+        """
+        LOGGER.info("Creating VM with VNC console for testing")
+    
+        with VirtualMachineForTests(
+            name="vnc-console-test-vm",
+            namespace=namespace.name,
+            client=admin_client,
+>           image=Images.Fedora.FEDORA_REGISTRY_GUEST_IMG,
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            os_flavor=OS_FLAVOR_FEDORA,
+            vm_instance_type=VirtualMachineClusterInstancetype(name=U1_SMALL, client=admin_client),
+            vm_preference=VirtualMachineClusterPreference(name="fedora", client=admin_client),
+
+TEST: TestVncScreenshotStability.test_thumbnail_updates_without_disconnecting_vnc [setup] STATUS: ERROR
+            run_strategy=VirtualMachine.RunStrategy.ALWAYS,
+        ) as vm:
+E       AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+
+tests/virt/vnc_console/conftest.py:54: AttributeError
+______________________________________________________ 2 of 15 completed, 0 Pass, 0 Fail, 0 Skip, 0 XPass, 0 XFail, 2 Error, 0 ReRun _______________________________________________________
+
+tests/virt/vnc_console/test_vnc_screenshot_stability.py admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f511f1adbe0>, namespace = <ocp_resources.namespace.Namespace object at 0x7f511c1af100>
+
+    @pytest.fixture(scope="class")
+    def vm_with_vnc_console(admin_client, namespace):
+        """
+        Fixture providing a running VM with VNC console configured.
+    
+        This fixture creates a Fedora VM with graphical display (VNC) configured,
+        suitable for VNC console and screenshot testing.
+    
+        Args:
+            admin_client: Kubernetes admin client
+            namespace: Test namespace
+    
+        Yields:
+            VirtualMachine: A running VM with VNC graphics device
+    
+        Cleanup:
+            Stops and deletes the VM after tests complete
+        """
+        LOGGER.info("Creating VM with VNC console for testing")
+    
+        with VirtualMachineForTests(
+            name="vnc-console-test-vm",
+            namespace=namespace.name,
+            client=admin_client,
+>           image=Images.Fedora.FEDORA_REGISTRY_GUEST_IMG,
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            os_flavor=OS_FLAVOR_FEDORA,
+            vm_instance_type=VirtualMachineClusterInstancetype(name=U1_SMALL, client=admin_client),
+            vm_preference=VirtualMachineClusterPreference(name="fedora", client=admin_client),
+            run_strategy=VirtualMachine.RunStrategy.ALWAYS,
+        ) as vm:
+E       AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+
+tests/virt/vnc_console/conftest.py:54: AttributeError
+
+------------------------------------------- test_extended_dual_tab_vnc_usage -------------------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-04T11:51:13.707400 conftest INFO Executing function fixture: term_handler_scope_function
+E
+
+2026-02-04T11:51:13.707563 conftest INFO Executing function fixture: autouse_fixtures
+______________________________________________________ ERROR at setup of TestVncScreenshotStability.test_extended_dual_tab_vnc_usage _______________________________________________________
+
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f511f1adbe0>, namespace = <ocp_resources.namespace.Namespace object at 0x7f511c1af100>
+
+    @pytest.fixture(scope="class")
+    def vm_with_vnc_console(admin_client, namespace):
+        """
+        Fixture providing a running VM with VNC console configured.
+    
+        This fixture creates a Fedora VM with graphical display (VNC) configured,
+        suitable for VNC console and screenshot testing.
+    
+        Args:
+
+TEST: TestVncScreenshotStability.test_extended_dual_tab_vnc_usage [setup] STATUS: ERROR
+            admin_client: Kubernetes admin client
+            namespace: Test namespace
+    
+        Yields:
+            VirtualMachine: A running VM with VNC graphics device
+    
+        Cleanup:
+            Stops and deletes the VM after tests complete
+        """
+        LOGGER.info("Creating VM with VNC console for testing")
+    
+        with VirtualMachineForTests(
+            name="vnc-console-test-vm",
+            namespace=namespace.name,
+            client=admin_client,
+>           image=Images.Fedora.FEDORA_REGISTRY_GUEST_IMG,
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            os_flavor=OS_FLAVOR_FEDORA,
+            vm_instance_type=VirtualMachineClusterInstancetype(name=U1_SMALL, client=admin_client),
+            vm_preference=VirtualMachineClusterPreference(name="fedora", client=admin_client),
+            run_strategy=VirtualMachine.RunStrategy.ALWAYS,
+        ) as vm:
+E       AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+
+tests/virt/vnc_console/conftest.py:54: AttributeError
+---------------------------------------------------------------------------------- Captured stderr setup -----------------------------------------------------------------------------------
+------------------------------------------------------- TEARDOWN -------------------------------------------------------
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f511f1adbe0>, namespace = <ocp_resources.namespace.Namespace object at 0x7f511c1af100>
+
+    @pytest.fixture(scope="class")
+    def vm_with_vnc_console(admin_client, namespace):
+        """
+        Fixture providing a running VM with VNC console configured.
+    
+        This fixture creates a Fedora VM with graphical display (VNC) configured,
+        suitable for VNC console and screenshot testing.
+    
+        Args:
+            admin_client: Kubernetes admin client
+            namespace: Test namespace
+    
+        Yields:
+            VirtualMachine: A running VM with VNC graphics device
+    
+        Cleanup:
+            Stops and deletes the VM after tests complete
+        """
+        LOGGER.info("Creating VM with VNC console for testing")
+    
+        with VirtualMachineForTests(
+            name="vnc-console-test-vm",
+            namespace=namespace.name,
+            client=admin_client,
+>           image=Images.Fedora.FEDORA_REGISTRY_GUEST_IMG,
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            os_flavor=OS_FLAVOR_FEDORA,
+            vm_instance_type=VirtualMachineClusterInstancetype(name=U1_SMALL, client=admin_client),
+            vm_preference=VirtualMachineClusterPreference(name="fedora", client=admin_client),
+            run_strategy=VirtualMachine.RunStrategy.ALWAYS,
+        ) as vm:
+E       AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+
+tests/virt/vnc_console/conftest.py:54: AttributeError
+------------------------------------------------------- TEARDOWN -------------------------------------------------------
+______________________________________________________ 3 of 15 completed, 0 Pass, 0 Fail, 0 Skip, 0 XPass, 0 XFail, 3 Error, 0 ReRun _______________________________________________________
+
+tests/virt/vnc_console/test_vnc_screenshot_stability.py 
+----------------------------------- test_screenshot_api_works_without_vnc_connection -----------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-04T11:51:13.712864 conftest INFO Executing function fixture: term_handler_scope_function
+E
+
+______________________________________________ ERROR at setup of TestScreenshotApiWithoutVnc.test_screenshot_api_works_without_vnc_connection ______________________________________________
+2026-02-04T11:51:13.712983 conftest INFO Executing class fixture: term_handler_scope_class
+
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f511f1adbe0>, namespace = <ocp_resources.namespace.Namespace object at 0x7f511c1af100>
+
+    @pytest.fixture(scope="class")
+    def vm_with_vnc_console(admin_client, namespace):
+        """
+        Fixture providing a running VM with VNC console configured.
+    
+        This fixture creates a Fedora VM with graphical display (VNC) configured,
+2026-02-04T11:51:13.713188 conftest INFO Executing function fixture: autouse_fixtures
+        suitable for VNC console and screenshot testing.
+    
+        Args:
+            admin_client: Kubernetes admin client
+            namespace: Test namespace
+    
+        Yields:
+            VirtualMachine: A running VM with VNC graphics device
+    
+        Cleanup:
+            Stops and deletes the VM after tests complete
+        """
+        LOGGER.info("Creating VM with VNC console for testing")
+    
+        with VirtualMachineForTests(
+            name="vnc-console-test-vm",
+            namespace=namespace.name,
+            client=admin_client,
+>           image=Images.Fedora.FEDORA_REGISTRY_GUEST_IMG,
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            os_flavor=OS_FLAVOR_FEDORA,
+            vm_instance_type=VirtualMachineClusterInstancetype(name=U1_SMALL, client=admin_client),
+            vm_preference=VirtualMachineClusterPreference(name="fedora", client=admin_client),
+            run_strategy=VirtualMachine.RunStrategy.ALWAYS,
+        ) as vm:
+E       AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+
+tests/virt/vnc_console/conftest.py:54: AttributeError
+2026-02-04T11:51:13.713394 conftest INFO Executing class fixture: vm_with_vnc_console
+______________________________________________________ 4 of 15 completed, 0 Pass, 0 Fail, 0 Skip, 0 XPass, 0 XFail, 4 Error, 0 ReRun _______________________________________________________
+
+tests/virt/vnc_console/test_vnc_screenshot_stability.py 
+TEST: TestScreenshotApiWithoutVnc.test_screenshot_api_works_without_vnc_connection [setup] STATUS: ERROR
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f511f1adbe0>, namespace = <ocp_resources.namespace.Namespace object at 0x7f511c1af100>
+
+    @pytest.fixture(scope="class")
+    def vm_with_vnc_console(admin_client, namespace):
+        """
+        Fixture providing a running VM with VNC console configured.
+    
+        This fixture creates a Fedora VM with graphical display (VNC) configured,
+        suitable for VNC console and screenshot testing.
+    
+        Args:
+            admin_client: Kubernetes admin client
+            namespace: Test namespace
+    
+        Yields:
+            VirtualMachine: A running VM with VNC graphics device
+    
+        Cleanup:
+            Stops and deletes the VM after tests complete
+        """
+        LOGGER.info("Creating VM with VNC console for testing")
+    
+        with VirtualMachineForTests(
+            name="vnc-console-test-vm",
+            namespace=namespace.name,
+            client=admin_client,
+>           image=Images.Fedora.FEDORA_REGISTRY_GUEST_IMG,
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            os_flavor=OS_FLAVOR_FEDORA,
+            vm_instance_type=VirtualMachineClusterInstancetype(name=U1_SMALL, client=admin_client),
+            vm_preference=VirtualMachineClusterPreference(name="fedora", client=admin_client),
+            run_strategy=VirtualMachine.RunStrategy.ALWAYS,
+        ) as vm:
+E       AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+
+tests/virt/vnc_console/conftest.py:54: AttributeError
+------------------------------------------------------- TEARDOWN -------------------------------------------------------
+
+--------------------------------------- test_screenshot_quality_shows_vm_content ---------------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-04T11:51:13.720207 conftest INFO Executing function fixture: term_handler_scope_function
+E
+2026-02-04T11:51:13.720369 conftest INFO Executing function fixture: autouse_fixtures
+
+__________________________________________________ ERROR at setup of TestScreenshotApiWithoutVnc.test_screenshot_quality_shows_vm_content __________________________________________________
+
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f511f1adbe0>, namespace = <ocp_resources.namespace.Namespace object at 0x7f511c1af100>
+
+    @pytest.fixture(scope="class")
+    def vm_with_vnc_console(admin_client, namespace):
+        """
+        Fixture providing a running VM with VNC console configured.
+    
+        This fixture creates a Fedora VM with graphical display (VNC) configured,
+        suitable for VNC console and screenshot testing.
+    
+        Args:
+            admin_client: Kubernetes admin client
+            namespace: Test namespace
+    
+        Yields:
+            VirtualMachine: A running VM with VNC graphics device
+    
+        Cleanup:
+            Stops and deletes the VM after tests complete
+        """
+        LOGGER.info("Creating VM with VNC console for testing")
+    
+        with VirtualMachineForTests(
+            name="vnc-console-test-vm",
+            namespace=namespace.name,
+            client=admin_client,
+>           image=Images.Fedora.FEDORA_REGISTRY_GUEST_IMG,
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            os_flavor=OS_FLAVOR_FEDORA,
+            vm_instance_type=VirtualMachineClusterInstancetype(name=U1_SMALL, client=admin_client),
+            vm_preference=VirtualMachineClusterPreference(name="fedora", client=admin_client),
+            run_strategy=VirtualMachine.RunStrategy.ALWAYS,
+        ) as vm:
+E       AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+
+tests/virt/vnc_console/conftest.py:54: AttributeError
+---------------------------------------------------------------------------------- Captured stderr setup -----------------------------------------------------------------------------------
+2026-02-04T11:51:13.713440 conftest INFO Creating VM with VNC console for testing
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f511f1adbe0>, namespace = <ocp_resources.namespace.Namespace object at 0x7f511c1af100>
+
+    @pytest.fixture(scope="class")
+    def vm_with_vnc_console(admin_client, namespace):
+        """
+        Fixture providing a running VM with VNC console configured.
+    
+        This fixture creates a Fedora VM with graphical display (VNC) configured,
+        suitable for VNC console and screenshot testing.
+    
+        Args:
+            admin_client: Kubernetes admin client
+            namespace: Test namespace
+    
+        Yields:
+            VirtualMachine: A running VM with VNC graphics device
+    
+        Cleanup:
+            Stops and deletes the VM after tests complete
+        """
+        LOGGER.info("Creating VM with VNC console for testing")
+    
+        with VirtualMachineForTests(
+            name="vnc-console-test-vm",
+            namespace=namespace.name,
+            client=admin_client,
+>           image=Images.Fedora.FEDORA_REGISTRY_GUEST_IMG,
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            os_flavor=OS_FLAVOR_FEDORA,
+            vm_instance_type=VirtualMachineClusterInstancetype(name=U1_SMALL, client=admin_client),
+            vm_preference=VirtualMachineClusterPreference(name="fedora", client=admin_client),
+            run_strategy=VirtualMachine.RunStrategy.ALWAYS,
+        ) as vm:
+E       AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+
+tests/virt/vnc_console/conftest.py:54: AttributeError
+______________________________________________________ 5 of 15 completed, 0 Pass, 0 Fail, 0 Skip, 0 XPass, 0 XFail, 5 Error, 0 ReRun _______________________________________________________
+
+tests/virt/vnc_console/test_vnc_screenshot_stability.py 
+------------------------------------------- test_screenshot_from_stopped_vm -------------------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-04T11:51:13.726602 conftest INFO Executing function fixture: term_handler_scope_function
+2026-02-04T11:51:13.726765 conftest INFO Executing function fixture: autouse_fixtures
+E
+
+______________________________________________________ ERROR at setup of TestScreenshotApiWithoutVnc.test_screenshot_from_stopped_vm _______________________________________________________
+
+TEST: TestScreenshotApiWithoutVnc.test_screenshot_from_stopped_vm [setup] STATUS: ERROR
+
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f511f1adbe0>, namespace = <ocp_resources.namespace.Namespace object at 0x7f511c1af100>
+
+    @pytest.fixture(scope="class")
+    def vm_with_vnc_console(admin_client, namespace):
+        """
+        Fixture providing a running VM with VNC console configured.
+    
+        This fixture creates a Fedora VM with graphical display (VNC) configured,
+        suitable for VNC console and screenshot testing.
+    
+        Args:
+            admin_client: Kubernetes admin client
+            namespace: Test namespace
+    
+        Yields:
+            VirtualMachine: A running VM with VNC graphics device
+    
+        Cleanup:
+            Stops and deletes the VM after tests complete
+        """
+        LOGGER.info("Creating VM with VNC console for testing")
+    
+        with VirtualMachineForTests(
+            name="vnc-console-test-vm",
+            namespace=namespace.name,
+            client=admin_client,
+>           image=Images.Fedora.FEDORA_REGISTRY_GUEST_IMG,
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            os_flavor=OS_FLAVOR_FEDORA,
+            vm_instance_type=VirtualMachineClusterInstancetype(name=U1_SMALL, client=admin_client),
+            vm_preference=VirtualMachineClusterPreference(name="fedora", client=admin_client),
+            run_strategy=VirtualMachine.RunStrategy.ALWAYS,
+        ) as vm:
+E       AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+
+tests/virt/vnc_console/conftest.py:54: AttributeError
+---------------------------------------------------------------------------------- Captured stderr setup -----------------------------------------------------------------------------------
+------------------------------------------------------- TEARDOWN -------------------------------------------------------
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f511f1adbe0>, namespace = <ocp_resources.namespace.Namespace object at 0x7f511c1af100>
+
+    @pytest.fixture(scope="class")
+    def vm_with_vnc_console(admin_client, namespace):
+        """
+        Fixture providing a running VM with VNC console configured.
+    
+        This fixture creates a Fedora VM with graphical display (VNC) configured,
+        suitable for VNC console and screenshot testing.
+    
+        Args:
+            admin_client: Kubernetes admin client
+            namespace: Test namespace
+    
+        Yields:
+            VirtualMachine: A running VM with VNC graphics device
+    
+        Cleanup:
+            Stops and deletes the VM after tests complete
+        """
+        LOGGER.info("Creating VM with VNC console for testing")
+    
+        with VirtualMachineForTests(
+            name="vnc-console-test-vm",
+            namespace=namespace.name,
+            client=admin_client,
+>           image=Images.Fedora.FEDORA_REGISTRY_GUEST_IMG,
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            os_flavor=OS_FLAVOR_FEDORA,
+            vm_instance_type=VirtualMachineClusterInstancetype(name=U1_SMALL, client=admin_client),
+            vm_preference=VirtualMachineClusterPreference(name="fedora", client=admin_client),
+            run_strategy=VirtualMachine.RunStrategy.ALWAYS,
+        ) as vm:
+E       AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+
+tests/virt/vnc_console/conftest.py:54: AttributeError
+______________________________________________________ 6 of 15 completed, 0 Pass, 0 Fail, 0 Skip, 0 XPass, 0 XFail, 6 Error, 0 ReRun _______________________________________________________
+
+------------------------------------------------------- TEARDOWN -------------------------------------------------------
+tests/virt/vnc_console/test_vnc_screenshot_stability.py 
+------------------------------------------ test_screenshot_with_fedora_guest ------------------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-04T11:51:13.732792 conftest INFO Executing function fixture: term_handler_scope_function
+2026-02-04T11:51:13.732903 conftest INFO Executing class fixture: term_handler_scope_class
+E
+
+________________________________________________ ERROR at setup of TestScreenshotMultiGuestCompatibility.test_screenshot_with_fedora_guest _________________________________________________
+
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f511f1adbe0>, namespace = <ocp_resources.namespace.Namespace object at 0x7f511c1af100>
+
+    @pytest.fixture(scope="class")
+    def fedora_vm_with_graphical_display(admin_client, namespace):
+        """
+        Fixture providing a Fedora VM with graphical display configured.
+    
+        Args:
+            admin_client: Kubernetes admin client
+            namespace: Test namespace
+    
+        Yields:
+            VirtualMachine: Running Fedora VM with VNC/SPICE graphics
+    
+        Cleanup:
+            Stops and deletes the VM after tests complete
+        """
+        LOGGER.info("Creating Fedora VM with graphical display")
+    
+        with VirtualMachineForTests(
+            name="fedora-graphical-vm",
+            namespace=namespace.name,
+            client=admin_client,
+>           image=Images.Fedora.FEDORA_REGISTRY_GUEST_IMG,
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            os_flavor=OS_FLAVOR_FEDORA,
+            vm_instance_type=VirtualMachineClusterInstancetype(name=U1_SMALL, client=admin_client),
+            vm_preference=VirtualMachineClusterPreference(name="fedora", client=admin_client),
+            run_strategy=VirtualMachine.RunStrategy.ALWAYS,
+        ) as vm:
+E       AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+
+tests/virt/vnc_console/conftest.py:142: AttributeError
+2026-02-04T11:51:13.733255 conftest INFO Executing class fixture: fedora_vm_with_graphical_display
+______________________________________________________ 7 of 15 completed, 0 Pass, 0 Fail, 0 Skip, 0 XPass, 0 XFail, 7 Error, 0 ReRun _______________________________________________________
+2026-02-04T11:51:13.733306 conftest INFO Creating Fedora VM with graphical display
+
+tests/virt/vnc_console/test_vnc_screenshot_stability.py ------------------------------------------------------- TEARDOWN -------------------------------------------------------
+
+------------------------------------------- test_screenshot_with_rhel_guest -------------------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-04T11:51:13.738461 conftest INFO Executing function fixture: term_handler_scope_function
+2026-02-04T11:51:13.738615 conftest INFO Executing function fixture: autouse_fixtures
+E
+
+_________________________________________________ ERROR at setup of TestScreenshotMultiGuestCompatibility.test_screenshot_with_rhel_guest __________________________________________________
+
+
+TEST: TestScreenshotMultiGuestCompatibility.test_screenshot_with_rhel_guest [setup] STATUS: ERROR
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f511f1adbe0>, namespace = <ocp_resources.namespace.Namespace object at 0x7f511c1af100>
+
+    @pytest.fixture(scope="class")
+    def fedora_vm_with_graphical_display(admin_client, namespace):
+        """
+        Fixture providing a Fedora VM with graphical display configured.
+    
+        Args:
+            admin_client: Kubernetes admin client
+            namespace: Test namespace
+    
+        Yields:
+            VirtualMachine: Running Fedora VM with VNC/SPICE graphics
+    
+        Cleanup:
+            Stops and deletes the VM after tests complete
+        """
+        LOGGER.info("Creating Fedora VM with graphical display")
+    
+        with VirtualMachineForTests(
+            name="fedora-graphical-vm",
+            namespace=namespace.name,
+            client=admin_client,
+>           image=Images.Fedora.FEDORA_REGISTRY_GUEST_IMG,
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            os_flavor=OS_FLAVOR_FEDORA,
+            vm_instance_type=VirtualMachineClusterInstancetype(name=U1_SMALL, client=admin_client),
+            vm_preference=VirtualMachineClusterPreference(name="fedora", client=admin_client),
+            run_strategy=VirtualMachine.RunStrategy.ALWAYS,
+        ) as vm:
+E       AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+
+tests/virt/vnc_console/conftest.py:142: AttributeError
+---------------------------------------------------------------------------------- Captured stderr setup -----------------------------------------------------------------------------------
+
+TEST: TestScreenshotMultiGuestCompatibility.test_screenshot_with_fedora_guest [setup] STATUS: ERROR
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f511f1adbe0>, namespace = <ocp_resources.namespace.Namespace object at 0x7f511c1af100>
+
+    @pytest.fixture(scope="class")
+    def fedora_vm_with_graphical_display(admin_client, namespace):
+        """
+        Fixture providing a Fedora VM with graphical display configured.
+    
+        Args:
+            admin_client: Kubernetes admin client
+            namespace: Test namespace
+    
+        Yields:
+            VirtualMachine: Running Fedora VM with VNC/SPICE graphics
+    
+        Cleanup:
+            Stops and deletes the VM after tests complete
+        """
+        LOGGER.info("Creating Fedora VM with graphical display")
+    
+        with VirtualMachineForTests(
+            name="fedora-graphical-vm",
+            namespace=namespace.name,
+            client=admin_client,
+>           image=Images.Fedora.FEDORA_REGISTRY_GUEST_IMG,
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            os_flavor=OS_FLAVOR_FEDORA,
+            vm_instance_type=VirtualMachineClusterInstancetype(name=U1_SMALL, client=admin_client),
+            vm_preference=VirtualMachineClusterPreference(name="fedora", client=admin_client),
+            run_strategy=VirtualMachine.RunStrategy.ALWAYS,
+        ) as vm:
+E       AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+
+tests/virt/vnc_console/conftest.py:142: AttributeError
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f511f1adbe0>, namespace = <ocp_resources.namespace.Namespace object at 0x7f511c1af100>
+
+    @pytest.fixture(scope="class")
+    def fedora_vm_with_graphical_display(admin_client, namespace):
+        """
+        Fixture providing a Fedora VM with graphical display configured.
+    
+        Args:
+            admin_client: Kubernetes admin client
+            namespace: Test namespace
+    
+        Yields:
+            VirtualMachine: Running Fedora VM with VNC/SPICE graphics
+    
+        Cleanup:
+            Stops and deletes the VM after tests complete
+        """
+        LOGGER.info("Creating Fedora VM with graphical display")
+    
+        with VirtualMachineForTests(
+            name="fedora-graphical-vm",
+            namespace=namespace.name,
+            client=admin_client,
+>           image=Images.Fedora.FEDORA_REGISTRY_GUEST_IMG,
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            os_flavor=OS_FLAVOR_FEDORA,
+            vm_instance_type=VirtualMachineClusterInstancetype(name=U1_SMALL, client=admin_client),
+            vm_preference=VirtualMachineClusterPreference(name="fedora", client=admin_client),
+            run_strategy=VirtualMachine.RunStrategy.ALWAYS,
+        ) as vm:
+E       AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+
+tests/virt/vnc_console/conftest.py:142: AttributeError
+______________________________________________________ 8 of 15 completed, 0 Pass, 0 Fail, 0 Skip, 0 XPass, 0 XFail, 8 Error, 0 ReRun _______________________________________________________
+------------------------------------------------------- TEARDOWN -------------------------------------------------------
+
+tests/virt/vnc_console/test_vnc_screenshot_stability.py 
+------------------------------------------ test_screenshot_with_windows_guest ------------------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-04T11:51:13.744605 conftest INFO Executing function fixture: term_handler_scope_function
+2026-02-04T11:51:13.744822 conftest INFO Executing function fixture: autouse_fixtures
+E
+
+
+TEST: TestScreenshotMultiGuestCompatibility.test_screenshot_with_windows_guest [setup] STATUS: ERROR
+________________________________________________ ERROR at setup of TestScreenshotMultiGuestCompatibility.test_screenshot_with_windows_guest ________________________________________________
+
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f511f1adbe0>, namespace = <ocp_resources.namespace.Namespace object at 0x7f511c1af100>
+
+    @pytest.fixture(scope="class")
+    def fedora_vm_with_graphical_display(admin_client, namespace):
+        """
+        Fixture providing a Fedora VM with graphical display configured.
+    
+        Args:
+            admin_client: Kubernetes admin client
+            namespace: Test namespace
+    
+        Yields:
+            VirtualMachine: Running Fedora VM with VNC/SPICE graphics
+    
+        Cleanup:
+            Stops and deletes the VM after tests complete
+        """
+        LOGGER.info("Creating Fedora VM with graphical display")
+    
+        with VirtualMachineForTests(
+            name="fedora-graphical-vm",
+            namespace=namespace.name,
+            client=admin_client,
+>           image=Images.Fedora.FEDORA_REGISTRY_GUEST_IMG,
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            os_flavor=OS_FLAVOR_FEDORA,
+            vm_instance_type=VirtualMachineClusterInstancetype(name=U1_SMALL, client=admin_client),
+            vm_preference=VirtualMachineClusterPreference(name="fedora", client=admin_client),
+            run_strategy=VirtualMachine.RunStrategy.ALWAYS,
+        ) as vm:
+E       AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+
+tests/virt/vnc_console/conftest.py:142: AttributeError
+______________________________________________________ 9 of 15 completed, 0 Pass, 0 Fail, 0 Skip, 0 XPass, 0 XFail, 9 Error, 0 ReRun _______________________________________________________
+
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f511f1adbe0>, namespace = <ocp_resources.namespace.Namespace object at 0x7f511c1af100>
+
+    @pytest.fixture(scope="class")
+    def fedora_vm_with_graphical_display(admin_client, namespace):
+        """
+        Fixture providing a Fedora VM with graphical display configured.
+    
+        Args:
+            admin_client: Kubernetes admin client
+            namespace: Test namespace
+    
+        Yields:
+            VirtualMachine: Running Fedora VM with VNC/SPICE graphics
+    
+        Cleanup:
+            Stops and deletes the VM after tests complete
+        """
+        LOGGER.info("Creating Fedora VM with graphical display")
+    
+        with VirtualMachineForTests(
+            name="fedora-graphical-vm",
+            namespace=namespace.name,
+            client=admin_client,
+>           image=Images.Fedora.FEDORA_REGISTRY_GUEST_IMG,
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            os_flavor=OS_FLAVOR_FEDORA,
+            vm_instance_type=VirtualMachineClusterInstancetype(name=U1_SMALL, client=admin_client),
+            vm_preference=VirtualMachineClusterPreference(name="fedora", client=admin_client),
+            run_strategy=VirtualMachine.RunStrategy.ALWAYS,
+        ) as vm:
+E       AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+
+tests/virt/vnc_console/conftest.py:142: AttributeError
+tests/virt/vnc_console/test_vnc_screenshot_stability.py 
+--------------------------------------- test_vnc_connect_while_thumbnail_active ---------------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-04T11:51:13.751835 conftest INFO Executing function fixture: term_handler_scope_function
+2026-02-04T11:51:13.751981 conftest INFO Executing class fixture: term_handler_scope_class
+2026-02-04T11:51:13.752203 conftest INFO Executing function fixture: autouse_fixtures
+2026-02-04T11:51:13.752452 conftest INFO Executing class fixture: vm_with_vnc_console
+2026-02-04T11:51:13.752521 conftest INFO Creating VM with VNC console for testing
+E
+
+________________________________________________ ERROR at setup of TestVncAndThumbnailCombinations.test_vnc_connect_while_thumbnail_active _________________________________________________
+
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f511f1adbe0>, namespace = <ocp_resources.namespace.Namespace object at 0x7f511c1af100>
+
+    @pytest.fixture(scope="class")
+    def vm_with_vnc_console(admin_client, namespace):
+        """
+        Fixture providing a running VM with VNC console configured.
+    
+        This fixture creates a Fedora VM with graphical display (VNC) configured,
+        suitable for VNC console and screenshot testing.
+
+TEST: TestVncAndThumbnailCombinations.test_vnc_connect_while_thumbnail_active [setup] STATUS: ERROR
+    
+        Args:
+            admin_client: Kubernetes admin client
+            namespace: Test namespace
+    
+        Yields:
+            VirtualMachine: A running VM with VNC graphics device
+    
+        Cleanup:
+            Stops and deletes the VM after tests complete
+        """
+        LOGGER.info("Creating VM with VNC console for testing")
+    
+        with VirtualMachineForTests(
+            name="vnc-console-test-vm",
+            namespace=namespace.name,
+            client=admin_client,
+>           image=Images.Fedora.FEDORA_REGISTRY_GUEST_IMG,
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            os_flavor=OS_FLAVOR_FEDORA,
+            vm_instance_type=VirtualMachineClusterInstancetype(name=U1_SMALL, client=admin_client),
+            vm_preference=VirtualMachineClusterPreference(name="fedora", client=admin_client),
+            run_strategy=VirtualMachine.RunStrategy.ALWAYS,
+        ) as vm:
+E       AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+
+tests/virt/vnc_console/conftest.py:54: AttributeError
+---------------------------------------------------------------------------------- Captured stderr setup -----------------------------------------------------------------------------------
+------------------------------------------------------- TEARDOWN -------------------------------------------------------
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f511f1adbe0>, namespace = <ocp_resources.namespace.Namespace object at 0x7f511c1af100>
+
+    @pytest.fixture(scope="class")
+    def vm_with_vnc_console(admin_client, namespace):
+        """
+        Fixture providing a running VM with VNC console configured.
+    
+        This fixture creates a Fedora VM with graphical display (VNC) configured,
+        suitable for VNC console and screenshot testing.
+    
+        Args:
+            admin_client: Kubernetes admin client
+            namespace: Test namespace
+    
+        Yields:
+            VirtualMachine: A running VM with VNC graphics device
+    
+        Cleanup:
+            Stops and deletes the VM after tests complete
+        """
+        LOGGER.info("Creating VM with VNC console for testing")
+    
+        with VirtualMachineForTests(
+            name="vnc-console-test-vm",
+            namespace=namespace.name,
+            client=admin_client,
+>           image=Images.Fedora.FEDORA_REGISTRY_GUEST_IMG,
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            os_flavor=OS_FLAVOR_FEDORA,
+            vm_instance_type=VirtualMachineClusterInstancetype(name=U1_SMALL, client=admin_client),
+            vm_preference=VirtualMachineClusterPreference(name="fedora", client=admin_client),
+            run_strategy=VirtualMachine.RunStrategy.ALWAYS,
+        ) as vm:
+E       AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+
+tests/virt/vnc_console/conftest.py:54: AttributeError
+_____________________________________________________ 10 of 15 completed, 0 Pass, 0 Fail, 0 Skip, 0 XPass, 0 XFail, 10 Error, 0 ReRun ______________________________________________________
+
+tests/virt/vnc_console/test_vnc_screenshot_stability.py ------------------------------------------------------- TEARDOWN -------------------------------------------------------
+
+---------------------------------------- test_thumbnail_loads_while_vnc_active ----------------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-04T11:51:13.758447 conftest INFO Executing function fixture: term_handler_scope_function
+2026-02-04T11:51:13.758674 conftest INFO Executing function fixture: autouse_fixtures
+E
+
+_________________________________________________ ERROR at setup of TestVncAndThumbnailCombinations.test_thumbnail_loads_while_vnc_active __________________________________________________
+
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f511f1adbe0>, namespace = <ocp_resources.namespace.Namespace object at 0x7f511c1af100>
+
+    @pytest.fixture(scope="class")
+    def vm_with_vnc_console(admin_client, namespace):
+        """
+        Fixture providing a running VM with VNC console configured.
+
+TEST: TestVncAndThumbnailCombinations.test_thumbnail_loads_while_vnc_active [setup] STATUS: ERROR
+    
+        This fixture creates a Fedora VM with graphical display (VNC) configured,
+        suitable for VNC console and screenshot testing.
+    
+        Args:
+            admin_client: Kubernetes admin client
+            namespace: Test namespace
+    
+        Yields:
+            VirtualMachine: A running VM with VNC graphics device
+    
+        Cleanup:
+            Stops and deletes the VM after tests complete
+        """
+        LOGGER.info("Creating VM with VNC console for testing")
+    
+        with VirtualMachineForTests(
+            name="vnc-console-test-vm",
+            namespace=namespace.name,
+            client=admin_client,
+>           image=Images.Fedora.FEDORA_REGISTRY_GUEST_IMG,
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            os_flavor=OS_FLAVOR_FEDORA,
+            vm_instance_type=VirtualMachineClusterInstancetype(name=U1_SMALL, client=admin_client),
+            vm_preference=VirtualMachineClusterPreference(name="fedora", client=admin_client),
+            run_strategy=VirtualMachine.RunStrategy.ALWAYS,
+        ) as vm:
+E       AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+
+tests/virt/vnc_console/conftest.py:54: AttributeError
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f511f1adbe0>, namespace = <ocp_resources.namespace.Namespace object at 0x7f511c1af100>
+
+    @pytest.fixture(scope="class")
+    def vm_with_vnc_console(admin_client, namespace):
+        """
+        Fixture providing a running VM with VNC console configured.
+    
+        This fixture creates a Fedora VM with graphical display (VNC) configured,
+        suitable for VNC console and screenshot testing.
+    
+        Args:
+            admin_client: Kubernetes admin client
+            namespace: Test namespace
+    
+        Yields:
+            VirtualMachine: A running VM with VNC graphics device
+    
+        Cleanup:
+            Stops and deletes the VM after tests complete
+        """
+        LOGGER.info("Creating VM with VNC console for testing")
+    
+        with VirtualMachineForTests(
+            name="vnc-console-test-vm",
+            namespace=namespace.name,
+            client=admin_client,
+>           image=Images.Fedora.FEDORA_REGISTRY_GUEST_IMG,
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            os_flavor=OS_FLAVOR_FEDORA,
+            vm_instance_type=VirtualMachineClusterInstancetype(name=U1_SMALL, client=admin_client),
+            vm_preference=VirtualMachineClusterPreference(name="fedora", client=admin_client),
+            run_strategy=VirtualMachine.RunStrategy.ALWAYS,
+        ) as vm:
+E       AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+
+tests/virt/vnc_console/conftest.py:54: AttributeError
+_____________________________________________________ 11 of 15 completed, 0 Pass, 0 Fail, 0 Skip, 0 XPass, 0 XFail, 11 Error, 0 ReRun ______________________________________________________
+
+------------------------------------------------------- TEARDOWN -------------------------------------------------------
+tests/virt/vnc_console/test_vnc_screenshot_stability.py 
+---------------------------------- test_rapid_tab_switching_between_vnc_and_overview ----------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-04T11:51:13.764806 conftest INFO Executing function fixture: term_handler_scope_function
+2026-02-04T11:51:13.765013 conftest INFO Executing function fixture: autouse_fixtures
+E
+
+___________________________________________ ERROR at setup of TestVncAndThumbnailCombinations.test_rapid_tab_switching_between_vnc_and_overview ____________________________________________
+
+
+TEST: TestVncAndThumbnailCombinations.test_rapid_tab_switching_between_vnc_and_overview [setup] STATUS: ERROR
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f511f1adbe0>, namespace = <ocp_resources.namespace.Namespace object at 0x7f511c1af100>
+
+    @pytest.fixture(scope="class")
+    def vm_with_vnc_console(admin_client, namespace):
+        """
+        Fixture providing a running VM with VNC console configured.
+    
+        This fixture creates a Fedora VM with graphical display (VNC) configured,
+        suitable for VNC console and screenshot testing.
+    
+        Args:
+            admin_client: Kubernetes admin client
+            namespace: Test namespace
+    
+        Yields:
+            VirtualMachine: A running VM with VNC graphics device
+    
+        Cleanup:
+            Stops and deletes the VM after tests complete
+        """
+        LOGGER.info("Creating VM with VNC console for testing")
+    
+        with VirtualMachineForTests(
+            name="vnc-console-test-vm",
+            namespace=namespace.name,
+            client=admin_client,
+>           image=Images.Fedora.FEDORA_REGISTRY_GUEST_IMG,
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            os_flavor=OS_FLAVOR_FEDORA,
+            vm_instance_type=VirtualMachineClusterInstancetype(name=U1_SMALL, client=admin_client),
+            vm_preference=VirtualMachineClusterPreference(name="fedora", client=admin_client),
+            run_strategy=VirtualMachine.RunStrategy.ALWAYS,
+        ) as vm:
+E       AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+
+tests/virt/vnc_console/conftest.py:54: AttributeError
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f511f1adbe0>, namespace = <ocp_resources.namespace.Namespace object at 0x7f511c1af100>
+
+    @pytest.fixture(scope="class")
+    def vm_with_vnc_console(admin_client, namespace):
+        """
+        Fixture providing a running VM with VNC console configured.
+    
+        This fixture creates a Fedora VM with graphical display (VNC) configured,
+        suitable for VNC console and screenshot testing.
+    
+        Args:
+            admin_client: Kubernetes admin client
+            namespace: Test namespace
+    
+        Yields:
+            VirtualMachine: A running VM with VNC graphics device
+    
+        Cleanup:
+            Stops and deletes the VM after tests complete
+        """
+        LOGGER.info("Creating VM with VNC console for testing")
+    
+        with VirtualMachineForTests(
+            name="vnc-console-test-vm",
+            namespace=namespace.name,
+            client=admin_client,
+>           image=Images.Fedora.FEDORA_REGISTRY_GUEST_IMG,
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            os_flavor=OS_FLAVOR_FEDORA,
+            vm_instance_type=VirtualMachineClusterInstancetype(name=U1_SMALL, client=admin_client),
+            vm_preference=VirtualMachineClusterPreference(name="fedora", client=admin_client),
+            run_strategy=VirtualMachine.RunStrategy.ALWAYS,
+        ) as vm:
+E       AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+
+tests/virt/vnc_console/conftest.py:54: AttributeError
+_____________________________________________________ 12 of 15 completed, 0 Pass, 0 Fail, 0 Skip, 0 XPass, 0 XFail, 12 Error, 0 ReRun ______________________________________________________
+
+------------------------------------------------------- TEARDOWN -------------------------------------------------------
+tests/virt/vnc_console/test_vnc_screenshot_stability.py 
+----------------------------------------- test_screenshot_api_endpoint_exists -----------------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-04T11:51:13.770817 conftest INFO Executing function fixture: term_handler_scope_function
+E2026-02-04T11:51:13.770904 conftest INFO Executing class fixture: term_handler_scope_class
+2026-02-04T11:51:13.771039 conftest INFO Executing function fixture: autouse_fixtures
+
+
+_______________________________________________ ERROR at setup of TestScreenshotApiBackwardCompatibility.test_screenshot_api_endpoint_exists _______________________________________________
+
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f511f1adbe0>, namespace = <ocp_resources.namespace.Namespace object at 0x7f511c1af100>
+
+    @pytest.fixture(scope="class")
+    def vm_with_vnc_console(admin_client, namespace):
+        """
+2026-02-04T11:51:13.771212 conftest INFO Executing class fixture: vm_with_vnc_console
+        Fixture providing a running VM with VNC console configured.
+    
+        This fixture creates a Fedora VM with graphical display (VNC) configured,
+        suitable for VNC console and screenshot testing.
+    
+        Args:
+            admin_client: Kubernetes admin client
+2026-02-04T11:51:13.771260 conftest INFO Creating VM with VNC console for testing
+            namespace: Test namespace
+    
+        Yields:
+            VirtualMachine: A running VM with VNC graphics device
+    
+        Cleanup:
+            Stops and deletes the VM after tests complete
+        """
+        LOGGER.info("Creating VM with VNC console for testing")
+    
+        with VirtualMachineForTests(
+            name="vnc-console-test-vm",
+            namespace=namespace.name,
+            client=admin_client,
+>           image=Images.Fedora.FEDORA_REGISTRY_GUEST_IMG,
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            os_flavor=OS_FLAVOR_FEDORA,
+            vm_instance_type=VirtualMachineClusterInstancetype(name=U1_SMALL, client=admin_client),
+            vm_preference=VirtualMachineClusterPreference(name="fedora", client=admin_client),
+            run_strategy=VirtualMachine.RunStrategy.ALWAYS,
+        ) as vm:
+E       AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+
+tests/virt/vnc_console/conftest.py:54: AttributeError
+_____________________________________________________ 13 of 15 completed, 0 Pass, 0 Fail, 0 Skip, 0 XPass, 0 XFail, 13 Error, 0 ReRun ______________________________________________________
+
+tests/virt/vnc_console/test_vnc_screenshot_stability.py admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f511f1adbe0>, namespace = <ocp_resources.namespace.Namespace object at 0x7f511c1af100>
+
+    @pytest.fixture(scope="class")
+    def vm_with_vnc_console(admin_client, namespace):
+        """
+        Fixture providing a running VM with VNC console configured.
+    
+        This fixture creates a Fedora VM with graphical display (VNC) configured,
+        suitable for VNC console and screenshot testing.
+    
+        Args:
+            admin_client: Kubernetes admin client
+            namespace: Test namespace
+    
+        Yields:
+            VirtualMachine: A running VM with VNC graphics device
+    
+        Cleanup:
+            Stops and deletes the VM after tests complete
+        """
+        LOGGER.info("Creating VM with VNC console for testing")
+    
+        with VirtualMachineForTests(
+            name="vnc-console-test-vm",
+            namespace=namespace.name,
+            client=admin_client,
+>           image=Images.Fedora.FEDORA_REGISTRY_GUEST_IMG,
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            os_flavor=OS_FLAVOR_FEDORA,
+            vm_instance_type=VirtualMachineClusterInstancetype(name=U1_SMALL, client=admin_client),
+            vm_preference=VirtualMachineClusterPreference(name="fedora", client=admin_client),
+            run_strategy=VirtualMachine.RunStrategy.ALWAYS,
+        ) as vm:
+E       AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+
+tests/virt/vnc_console/conftest.py:54: AttributeError
+------------------------------------------------------- TEARDOWN -------------------------------------------------------
+
+------------------------------------------- test_screenshot_response_format -------------------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-04T11:51:13.776516 conftest INFO Executing function fixture: term_handler_scope_function
+E
+
+_________________________________________________ ERROR at setup of TestScreenshotApiBackwardCompatibility.test_screenshot_response_format _________________________________________________
+2026-02-04T11:51:13.776678 conftest INFO Executing function fixture: autouse_fixtures
+
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f511f1adbe0>, namespace = <ocp_resources.namespace.Namespace object at 0x7f511c1af100>
+
+    @pytest.fixture(scope="class")
+    def vm_with_vnc_console(admin_client, namespace):
+        """
+
+TEST: TestScreenshotApiBackwardCompatibility.test_screenshot_response_format [setup] STATUS: ERROR
+        Fixture providing a running VM with VNC console configured.
+    
+        This fixture creates a Fedora VM with graphical display (VNC) configured,
+        suitable for VNC console and screenshot testing.
+    
+        Args:
+            admin_client: Kubernetes admin client
+            namespace: Test namespace
+    
+        Yields:
+            VirtualMachine: A running VM with VNC graphics device
+    
+        Cleanup:
+            Stops and deletes the VM after tests complete
+        """
+        LOGGER.info("Creating VM with VNC console for testing")
+    
+        with VirtualMachineForTests(
+            name="vnc-console-test-vm",
+            namespace=namespace.name,
+            client=admin_client,
+>           image=Images.Fedora.FEDORA_REGISTRY_GUEST_IMG,
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            os_flavor=OS_FLAVOR_FEDORA,
+            vm_instance_type=VirtualMachineClusterInstancetype(name=U1_SMALL, client=admin_client),
+            vm_preference=VirtualMachineClusterPreference(name="fedora", client=admin_client),
+            run_strategy=VirtualMachine.RunStrategy.ALWAYS,
+        ) as vm:
+E       AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+
+tests/virt/vnc_console/conftest.py:54: AttributeError
+---------------------------------------------------------------------------------- Captured stderr setup -----------------------------------------------------------------------------------
+
+TEST: TestScreenshotApiBackwardCompatibility.test_screenshot_api_endpoint_exists [setup] STATUS: ERROR
+_____________________________________________________ 14 of 15 completed, 0 Pass, 0 Fail, 0 Skip, 0 XPass, 0 XFail, 14 Error, 0 ReRun ______________________________________________________
+
+tests/deprecated_api/test_deprecation_audit_logs.py .--------------------------------------------------------- CALL ---------------------------------------------------------
+
+_____________________________________________________ 15 of 15 completed, 1 Pass, 0 Fail, 0 Skip, 0 XPass, 0 XFail, 14 Error, 0 ReRun ______________________________________________________
+                                                                                                                                                                                     [100%]2026-02-04T11:53:04.143506 ocp_resources ConfigMap INFO Delete ConfigMap cnv-tests-run-in-progress
+2026-02-04T11:53:04.148355 ocp_resources ConfigMap INFO Deleting {'kind': 'ConfigMap', 'apiVersion': 'v1', 'metadata': {'name': 'cnv-tests-run-in-progress', 'namespace': 'cnv-tests-run-in-progress-ns', 'uid': '080b078f-d93e-457b-8eb7-f38304ba0e1d', 'resourceVersion': '262175', 'creationTimestamp': '2026-02-04T10:49:00Z', 'managedFields': [{'manager': 'OpenAPI-Generator', 'operation': 'Update', 'apiVersion': 'v1', 'time': '2026-02-04T10:49:00Z', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:data': {'.': {}, 'f:host': {}, 'f:pytest_cmd': {}, 'f:run-in-container': {}, 'f:running_from_dir': {}, 'f:session-id': {}, 'f:user': {}}}}]}, 'data': '*******'}
+2026-02-04T11:53:04.162355 ocp_resources ConfigMap INFO Wait until ConfigMap cnv-tests-run-in-progress is deleted
+2026-02-04T11:53:04.166572 ocp_resources Namespace INFO Delete Namespace cnv-tests-run-in-progress-ns
+2026-02-04T11:53:04.169728 ocp_resources Namespace INFO Deleting {'kind': 'Namespace', 'apiVersion': 'v1', 'metadata': {'name': 'cnv-tests-run-in-progress-ns', 'uid': '5d247b83-1a00-4b1f-8dbe-99bebeca06e1', 'resourceVersion': '262173', 'creationTimestamp': '2026-02-04T10:49:00Z', 'labels': {'kubernetes.io/metadata.name': 'cnv-tests-run-in-progress-ns', 'pod-security.kubernetes.io/audit': 'restricted', 'pod-security.kubernetes.io/audit-version': 'latest', 'pod-security.kubernetes.io/enforce': 'privileged', 'pod-security.kubernetes.io/warn': 'restricted', 'pod-security.kubernetes.io/warn-version': 'latest', 'security.openshift.io/scc.podSecurityLabelSync': 'false'}, 'annotations': {'openshift.io/sa.scc.mcs': 's0:c28,c17', 'openshift.io/sa.scc.supplemental-groups': '1000790000/10000', 'openshift.io/sa.scc.uid-range': '1000790000/10000', 'security.openshift.io/MinimallySufficientPodSecurityStandard': 'restricted'}, 'managedFields': [{'manager': 'pod-security-admission-label-synchronization-controller', 'operation': 'Apply', 'apiVersion': 'v1', 'time': '2026-02-04T10:49:00Z', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:annotations': {'f:security.openshift.io/MinimallySufficientPodSecurityStandard': {}}, 'f:labels': {'f:pod-security.kubernetes.io/audit': {}, 'f:pod-security.kubernetes.io/audit-version': {}, 'f:pod-security.kubernetes.io/warn': {}, 'f:pod-security.kubernetes.io/warn-version': {}}}}}, {'manager': 'OpenAPI-Generator', 'operation': 'Update', 'apiVersion': 'v1', 'time': '2026-02-04T10:49:00Z', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:labels': {'.': {}, 'f:kubernetes.io/metadata.name': {}, 'f:pod-security.kubernetes.io/enforce': {}, 'f:security.openshift.io/scc.podSecurityLabelSync': {}}}}}, {'manager': 'cluster-policy-controller', 'operation': 'Update', 'apiVersion': 'v1', 'time': '2026-02-04T10:49:00Z', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:annotations': {'.': {}, 'f:openshift.io/sa.scc.mcs': {}, 'f:openshift.io/sa.scc.supplemental-groups': {}, 'f:openshift.io/sa.scc.uid-range': {}}}}}]}, 'spec': {'finalizers': ['kubernetes']}, 'status': {'phase': 'Active'}}
+2026-02-04T11:53:04.186808 ocp_resources Namespace INFO Wait until Namespace cnv-tests-run-in-progress-ns is deleted
+================================================================== 1 passed, 10 warnings, 14 errors in 249.76s (0:04:09) ===================================================================
+
+========================================================================================== ERRORS ==========================================================================================
+____________________________________________ ERROR at setup of TestVncScreenshotStability.test_vnc_remains_connected_with_concurrent_thumbnail _____________________________________________
+
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f511f1adbe0>, namespace = <ocp_resources.namespace.Namespace object at 0x7f511c1af100>
+
+    @pytest.fixture(scope="class")
+    def vm_with_vnc_console(admin_client, namespace):
+        """
+        Fixture providing a running VM with VNC console configured.
+    
+        This fixture creates a Fedora VM with graphical display (VNC) configured,
+        suitable for VNC console and screenshot testing.
+    
+        Args:
+            admin_client: Kubernetes admin client
+            namespace: Test namespace
+    
+        Yields:
+            VirtualMachine: A running VM with VNC graphics device
+    
+        Cleanup:
+            Stops and deletes the VM after tests complete
+        """
+        LOGGER.info("Creating VM with VNC console for testing")
+    
+        with VirtualMachineForTests(
+            name="vnc-console-test-vm",
+            namespace=namespace.name,
+            client=admin_client,
+>           image=Images.Fedora.FEDORA_REGISTRY_GUEST_IMG,
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            os_flavor=OS_FLAVOR_FEDORA,
+            vm_instance_type=VirtualMachineClusterInstancetype(name=U1_SMALL, client=admin_client),
+            vm_preference=VirtualMachineClusterPreference(name="fedora", client=admin_client),
+            run_strategy=VirtualMachine.RunStrategy.ALWAYS,
+        ) as vm:
+E       AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+
+tests/virt/vnc_console/conftest.py:54: AttributeError
+---------------------------------------------------------------------------------- Captured stderr setup -----------------------------------------------------------------------------------
+
+--------------------------------- test_vnc_remains_connected_with_concurrent_thumbnail ---------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-04T11:49:00.490259 conftest INFO Executing session fixture: admin_client
+2026-02-04T11:49:00.490594 conftest INFO Executing session fixture: pytestconfig
+2026-02-04T11:49:00.490811 conftest INFO Executing session fixture: installing_cnv
+2026-02-04T11:49:00.490963 conftest INFO Executing session fixture: cnv_tests_utilities_namespace
+2026-02-04T11:49:00.512421 ocp_resources Namespace INFO Create Namespace cnv-tests-utilities
+2026-02-04T11:49:00.512580 ocp_resources Namespace INFO Posting {'apiVersion': 'v1', 'kind': 'Namespace', 'metadata': {'name': 'cnv-tests-utilities', 'labels': {'pod-security.kubernetes.io/enforce': 'privileged', 'security.openshift.io/scc.podSecurityLabelSync': 'false'}}, 'spec': {}}
+2026-02-04T11:49:00.583107 ocp_resources Namespace INFO Wait for Namespace cnv-tests-utilities status to be Active
+2026-02-04T11:49:00.583269 timeout_sampler INFO Waiting for 120 seconds [0:02:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_for_status.lambda: self.exists)
+2026-02-04T11:49:00.588552 ocp_resources Namespace INFO Status of Namespace cnv-tests-utilities is Active
+2026-02-04T11:49:00.588709 timeout_sampler INFO Elapsed time: 8.487701416015625e-05 [0:00:00.000085]
+2026-02-04T11:49:00.589352 ocp_resources.resource INFO kind: OAuth api version: config.openshift.io/v1
+2026-02-04T11:49:00.589741 ocp_resources.resource INFO kind: DaemonSet api version: apps/v1
+2026-02-04T11:49:00.588928 conftest INFO Executing session fixture: skip_unprivileged_client
+2026-02-04T11:49:00.589064 conftest INFO Executing session fixture: identity_provider_config
+2026-02-04T11:49:00.589468 conftest INFO Executing session fixture: leftovers_cleanup
+2026-02-04T11:49:00.589533 tests.conftest INFO Checking for leftover resources
+2026-02-04T11:49:00.677143 ocp_resources.resource INFO ResourceEdits: Updating data for resource OAuth cluster
+2026-02-04T11:49:00.677355 ocp_resources OAuth INFO Update OAuth cluster:
+{'metadata': {'name': 'cluster'}, 'spec': {'identityProviders': [{'htpasswd': {'fileData': {'name': 'htpass-secret'}}, 'mappingMethod': 'claim', 'name': 'developer', 'type': 'HTPasswd'}], 'tokenConfig': {'accessTokenMaxAgeSeconds': 31536000}}}
+2026-02-04T11:49:00.687485 conftest INFO Executing session fixture: artifactory_setup
+2026-02-04T11:49:00.687707 tests.conftest INFO Checking for artifactory credentials:
+2026-02-04T11:49:00.687809 tests.conftest WARNING Explicitly skipping artifactory setup check due to use of --skip-artifactory-check
+2026-02-04T11:49:00.687966 conftest INFO Executing session fixture: os_path_environment
+2026-02-04T11:49:00.688144 conftest INFO Executing session fixture: tmpdir_factory
+2026-02-04T11:49:00.688293 conftest INFO Executing session fixture: bin_directory
+2026-02-04T11:49:00.689561 ocp_resources.resource INFO Trying to get client via new_client_from_config
+2026-02-04T11:49:00.689272 conftest INFO Executing session fixture: virtctl_binary
+2026-02-04T11:49:00.701689 ocp_resources.resource INFO kind: ConsoleCLIDownload api version: console.openshift.io/v1
+2026-02-04T11:49:00.828456 utilities.infra INFO Downloading archive using: url=https://hyperconverged-cluster-cli-download-openshift-cnv.apps-crc.testing/amd64/linux/virtctl.tar.gz
+2026-02-04T11:49:01.003026 utilities.infra INFO Extract the downloaded archive.
+2026-02-04T11:49:01.598688 utilities.infra INFO Downloaded file: ['virtctl']
+2026-02-04T11:49:01.601031 ocp_resources.resource INFO Trying to get client via new_client_from_config
+2026-02-04T11:49:01.600328 conftest INFO Executing session fixture: oc_binary
+2026-02-04T11:49:01.611784 ocp_resources.resource INFO kind: ConsoleCLIDownload api version: console.openshift.io/v1
+2026-02-04T11:49:01.657314 utilities.infra INFO Downloading archive using: url=https://downloads-openshift-console.apps-crc.testing/amd64/linux/oc.tar
+2026-02-04T11:49:02.632595 utilities.infra INFO Extract the downloaded archive.
+2026-02-04T11:49:02.717145 utilities.infra INFO Downloaded file: ['oc']
+2026-02-04T11:49:02.738601 ocp_resources.resource INFO kind: ClusterVersion api version: config.openshift.io/v1
+2026-02-04T11:49:02.737618 conftest INFO Executing session fixture: bin_directory_to_os_path
+2026-02-04T11:49:02.738213 tests.conftest INFO Adding /tmp/pytest-VDfyUQF5AiNr6qmg3uS7LK/bin0 to $PATH
+2026-02-04T11:49:02.738401 conftest INFO Executing session fixture: openshift_current_version
+2026-02-04T11:49:02.778436 conftest INFO Executing session fixture: hco_namespace
+2026-02-04T11:49:02.782889 ocp_resources.resource INFO kind: Subscription api version: operators.coreos.com/v1alpha1
+2026-02-04T11:49:02.782434 conftest INFO Executing session fixture: csv_scope_session
+2026-02-04T11:49:02.796885 ocp_resources.resource INFO kind: ClusterServiceVersion api version: operators.coreos.com/v1alpha1
+2026-02-04T11:49:02.819759 conftest INFO Executing session fixture: cnv_current_version
+2026-02-04T11:49:02.846302 ocp_resources.resource INFO kind: Subscription api version: operators.coreos.com/v1alpha1
+2026-02-04T11:49:02.845501 conftest INFO Executing session fixture: cnv_subscription_scope_session
+2026-02-04T11:49:02.850771 conftest INFO Executing session fixture: hco_image
+2026-02-04T11:49:02.855443 ocp_resources.resource INFO kind: CatalogSource api version: operators.coreos.com/v1alpha1
+2026-02-04T11:49:02.868186 ocp_resources.resource INFO kind: StorageClass api version: storage.k8s.io/v1
+2026-02-04T11:49:02.867129 conftest INFO Executing session fixture: cluster_storage_classes
+2026-02-04T11:49:02.874590 conftest INFO Executing session fixture: ocs_storage_class
+2026-02-04T11:49:02.874884 conftest INFO Executing session fixture: ocs_current_version
+2026-02-04T11:49:02.875074 conftest INFO Executing session fixture: kubevirt_resource_scope_session
+2026-02-04T11:49:02.891582 ocp_resources.resource INFO kind: KubeVirt api version: kubevirt.io/v1
+2026-02-04T11:49:02.899199 ocp_resources.resource INFO kind: Network api version: config.openshift.io/v1
+2026-02-04T11:49:02.898849 conftest INFO Executing session fixture: cluster_service_network
+2026-02-04T11:49:02.903853 conftest INFO Executing session fixture: ipv6_supported_cluster
+2026-02-04T11:49:02.904200 conftest INFO Executing session fixture: ipv4_supported_cluster
+2026-02-04T11:49:02.904402 conftest INFO Executing session fixture: nodes
+2026-02-04T11:49:02.916238 conftest INFO Executing session fixture: workers
+2026-02-04T11:49:02.923592 ocp_resources.resource INFO Trying to get client via new_client_from_config
+2026-02-04T11:49:02.923094 conftest INFO Executing session fixture: cnv_source
+2026-02-04T11:49:02.923296 conftest INFO Executing session fixture: is_production_source
+2026-02-04T11:49:02.923384 conftest INFO Executing session fixture: generated_pulled_secret
+2026-02-04T11:49:02.950323 conftest INFO Executing session fixture: cnv_tests_utilities_service_account
+2026-02-04T11:49:02.978142 ocp_resources ServiceAccount INFO Create ServiceAccount cnv-tests-sa
+2026-02-04T11:49:02.978291 ocp_resources ServiceAccount INFO Posting {'apiVersion': 'v1', 'kind': 'ServiceAccount', 'metadata': {'name': 'cnv-tests-sa', 'namespace': 'cnv-tests-utilities'}}
+2026-02-04T11:49:03.120849 timeout_sampler INFO Waiting for 10 seconds [0:00:10], retry every 1 seconds. (Function: utilities.virt._get_image_json  Kwargs: {'cmd': 'oc image -o json info quay.io/openshift-cnv/qe-net-utils:latest --filter-by-os linux/amd64 --registry-config=/tmp/tmpc0inz1n6-cnv-tests-pull-secret/pull-secrets.json'})
+2026-02-04T11:49:03.121134 pyhelper_utils.shell INFO Running oc image -o json info quay.io/openshift-cnv/qe-net-utils:latest --filter-by-os linux/amd64 --registry-config=/tmp/tmpc0inz1n6-cnv-tests-pull-secret/pull-secrets.json command
+2026-02-04T11:49:03.120512 conftest INFO Executing session fixture: utility_daemonset
+2026-02-04T11:49:05.642508 timeout_sampler INFO Elapsed time: 0.0002009868621826172 [0:00:00.000201]
+2026-02-04T11:49:05.668250 ocp_resources.resource INFO kind: DaemonSet api version: apps/v1 --- [DuplicateFilter: Last log `Trying to get client via new_client_from_config` repeated 2 times]
+2026-02-04T11:49:05.678719 ocp_resources DaemonSet INFO Create DaemonSet utility
+2026-02-04T11:49:05.678960 ocp_resources DaemonSet INFO Posting {'apiVersion': 'apps/v1', 'kind': 'DaemonSet', 'metadata': {'annotations': {'deprecated.daemonset.template.generation': '0'}, 'creationTimestamp': None, 'labels': {'cnv-test': 'utility', 'tier': 'node'}, 'name': 'utility', 'namespace': 'cnv-tests-utilities'}, 'spec': {'revisionHistoryLimit': 10, 'selector': {'matchLabels': {'cnv-test': 'utility', 'tier': 'node'}}, 'template': {'metadata': {'creationTimestamp': None, 'labels': {'cnv-test': 'utility', 'tier': 'node'}}, 'spec': {'containers': [{'command': ['/bin/bash', '-c', 'echo ok > /tmp/healthy && sleep INF'], 'image': 'quay.io/openshift-cnv/qe-net-utils:latest@sha256:2c8e11ac0f0b36553bed603c1c67dccb703d7059ccbcf8c91e3a35c99719ce20', 'imagePullPolicy': 'IfNotPresent', 'name': 'utility', 'readinessProbe': {'exec': {'command': ['cat', '/tmp/healthy']}, 'failureThreshold': 3, 'initialDelaySeconds': 5, 'periodSeconds': 5, 'successThreshold': 1, 'timeoutSeconds': 1}, 'resources': {'limits': {'cpu': '100m', 'memory': '50Mi'}, 'requests': {'cpu': '100m', 'memory': '50Mi'}}, 'securityContext': {'privileged': True, 'runAsUser': 0}, 'stdin': True, 'stdinOnce': True, 'terminationMessagePath': '/dev/termination-log', 'terminationMessagePolicy': 'File', 'tty': True, 'volumeMounts': [{'mountPath': '/host', 'name': 'host'}, {'mountPath': '/var/run/secrets/kubernetes.io/serviceaccount', 'name': 'kube-api-access-m5ch7', 'readOnly': True}, {'mountPath': '/host/run/openvswitch', 'name': 'ovs-run'}, {'mountPath': '/run/dbus/system_bus_socket', 'name': 'dbus-socket'}, {'mountPath': '/host/dev', 'name': 'dev'}, {'mountPath': '/host/etc', 'name': 'etc'}, {'mountPath': '/host/var', 'name': 'var'}]}], 'dnsPolicy': 'ClusterFirst', 'enableServiceLinks': True, 'hostNetwork': True, 'hostPID': True, 'imagePullSecrets': [{'name': 'default-dockercfg-xrlbh'}], 'preemptionPolicy': 'PreemptLowerPriority', 'priority': 0, 'restartPolicy': 'Always', 'schedulerName': 'default-scheduler', 'securityContext': {'privileged': True}, 'serviceAccount': 'cnv-tests-sa', 'serviceAccountName': 'cnv-tests-sa', 'terminationGracePeriodSeconds': 30, 'tolerations': [{'effect': 'NoSchedule', 'key': 'node-role.kubernetes.io/master', 'operator': 'Exists'}], 'volumes': [{'hostPath': {'path': '/', 'type': 'Directory'}, 'name': 'host'}, {'hostPath': {'path': '/run/openvswitch', 'type': ''}, 'name': 'ovs-run'}, {'hostPath': {'path': '/run/dbus/system_bus_socket', 'type': 'Socket'}, 'name': 'dbus-socket'}, {'hostPath': {'path': '/dev', 'type': 'Directory'}, 'name': 'dev'}, {'hostPath': {'path': '/etc', 'type': 'Directory'}, 'name': 'etc'}, {'hostPath': {'path': '/var', 'type': 'Directory'}, 'name': 'var'}, {'name': 'kube-api-access-m5ch7', 'projected': {'defaultMode': 420, 'sources': [{'serviceAccountToken': {'path': 'token'}}, {'configMap': {'items': [{'key': 'ca.crt', 'path': 'ca.crt'}], 'name': 'kube-root-ca.crt'}}, {'downwardAPI': {'items': [{'fieldRef': {'apiVersion': 'v1', 'fieldPath': 'metadata.namespace'}, 'path': 'namespace'}]}}, {'configMap': {'items': [{'key': 'service-ca.crt', 'path': 'service-ca.crt'}], 'name': 'openshift-service-ca.crt'}}]}}]}}, 'updateStrategy': {'type': 'OnDelete'}}}
+2026-02-04T11:49:05.801354 ocp_resources DaemonSet INFO Wait for DaemonSet utility to deploy all desired pods
+2026-02-04T11:49:05.801617 timeout_sampler INFO Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: kubernetes.dynamic.client.get  Kwargs: {'field_selector': 'metadata.name==utility', 'namespace': 'cnv-tests-utilities'})
+2026-02-04T11:49:54.140414 timeout_sampler INFO Elapsed time: 48.33271050453186 [0:00:48.332711]
+2026-02-04T11:49:54.140644 conftest INFO Executing session fixture: workers_utility_pods
+2026-02-04T11:49:54.147180 conftest INFO Executing session fixture: workers_type
+2026-02-04T11:49:54.152587 ocp_resources Pod INFO Execute ['chroot', '/host', 'bash', '-c', 'systemd-detect-virt'] on utility-slcvp (crc)
+2026-02-04T11:49:54.185055 tests.conftest INFO Cluster workers are: virtual
+2026-02-04T11:49:54.185294 conftest INFO Executing session fixture: nodes_cpu_architecture
+2026-02-04T11:49:54.188972 pyhelper_utils.shell INFO Running virtctl version command
+2026-02-04T11:49:54.188855 conftest INFO Executing session fixture: cluster_info
+2026-02-04T11:49:54.205072 ocp_resources.resource INFO kind: Network api version: config.openshift.io/v1
+2026-02-04T11:49:54.207253 tests.conftest INFO 
+Cluster info:
+	Openshift version: 4.20.5
+	CNV version: 4.20.3
+	HCO image: registry.redhat.io/redhat/redhat-operator-index:v4.20
+	OCS version: None
+	CNI type: OVNKubernetes
+	Workers type: virtual
+	Cluster CPU Architecture: amd64
+	IPv4 cluster: True
+	IPv6 cluster: False
+	Virtctl version: 
+	Client Version: version.Info{GitVersion:"v1.6.3-42-gf72ce58db2", GitCommit:"f72ce58db218d0dfe60ce157ea6c37032a0fda17", GitTreeState:"clean", BuildDate:"2025-12-07T09:01:32Z", GoVersion:"go1.24.6 (Red Hat 1.24.6-1.module+el8.10.0+23407+428597c7) X:strictfipsruntime", Compiler:"gc", Platform:"linux/amd64"}
+	Server Version: version.Info{GitVersion:"v1.6.3-42-gf72ce58db2", GitCommit:"f72ce58db218d0dfe60ce157ea6c37032a0fda17", GitTreeState:"clean", BuildDate:"2025-12-12T08:29:44Z", GoVersion:"go1.24.6 (Red Hat 1.24.6-1.el9_6) X:strictfipsruntime", Compiler:"gc", Platform:"linux/amd64"}
+
+2026-02-04T11:49:54.207464 conftest INFO Executing function fixture: term_handler_scope_function
+2026-02-04T11:49:54.207570 conftest INFO Executing class fixture: term_handler_scope_class
+2026-02-04T11:49:54.207646 conftest INFO Executing module fixture: term_handler_scope_module
+2026-02-04T11:49:54.207722 conftest INFO Executing session fixture: term_handler_scope_session
+2026-02-04T11:49:54.207855 conftest INFO Executing session fixture: record_testsuite_property
+2026-02-04T11:49:54.207961 conftest INFO Executing session fixture: junitxml_polarion
+2026-02-04T11:49:54.208076 conftest INFO Executing session fixture: cluster_storage_classes_names
+2026-02-04T11:49:54.208205 conftest INFO Executing session fixture: junitxml_plugin
+2026-02-04T11:49:54.208309 conftest INFO Executing session fixture: hyperconverged_resource_scope_session
+2026-02-04T11:49:54.217041 ocp_resources.resource INFO kind: HyperConverged api version: hco.kubevirt.io/v1beta1
+2026-02-04T11:49:54.220906 ocp_utilities.infra INFO Verify all nodes are in a healthy condition.
+2026-02-04T11:49:54.220653 conftest INFO Executing session fixture: cluster_sanity_scope_session
+2026-02-04T11:49:54.220788 utilities.infra INFO Running cluster sanity. (To skip cluster sanity check pass --cluster-sanity-skip-check to pytest)
+2026-02-04T11:49:54.220832 utilities.infra INFO Check storage classes sanity. (To skip storage class sanity check pass --cluster-sanity-skip-storage-check to pytest)
+2026-02-04T11:49:54.220873 utilities.infra INFO Check nodes sanity. (To skip nodes sanity check pass --cluster-sanity-skip-nodes-check to pytest)
+2026-02-04T11:49:54.223957 ocp_utilities.infra INFO Verify all nodes are schedulable.
+2026-02-04T11:49:54.227098 timeout_sampler INFO Waiting for 300 seconds [0:05:00], retry every 5 seconds. (Function: utilities.infra.get_pods  Kwargs: {'dyn_client': <kubernetes.dynamic.client.DynamicClient object at 0x7f511f1adbe0>, 'namespace': <ocp_resources.namespace.Namespace object at 0x7f511d159e00>})
+2026-02-04T11:49:54.475498 timeout_sampler INFO Elapsed time: 9.799003601074219e-05 [0:00:00.000098]
+2026-02-04T11:49:54.475695 timeout_sampler INFO Waiting for 600 seconds [0:10:00], retry every 5 seconds. (Function: utilities.infra.<locals>.lambda: dynamic_client.namespace.resource_kind.resource_name.list.get)
+2026-02-04T11:49:54.475622 utilities.infra INFO Waiting for resource to stabilize: resource_kind=HyperConverged conditions={'Available': 'True', 'Progressing': 'False', 'ReconcileComplete': 'True', 'Degraded': 'False', 'Upgradeable': 'True'} sleep=600 consecutive_checks_count=3
+2026-02-04T11:50:04.495397 timeout_sampler INFO Elapsed time: 10.013479948043823 [0:00:10.013480]
+2026-02-04T11:50:04.495840 ocp_utilities.infra INFO Verify all nodes are in a healthy condition.
+2026-02-04T11:50:04.495611 conftest INFO Executing module fixture: cluster_sanity_scope_module
+2026-02-04T11:50:04.495716 utilities.infra INFO Running cluster sanity. (To skip cluster sanity check pass --cluster-sanity-skip-check to pytest)
+2026-02-04T11:50:04.495759 utilities.infra INFO Check storage classes sanity. (To skip storage class sanity check pass --cluster-sanity-skip-storage-check to pytest)
+2026-02-04T11:50:04.495808 utilities.infra INFO Check nodes sanity. (To skip nodes sanity check pass --cluster-sanity-skip-nodes-check to pytest)
+2026-02-04T11:50:04.499263 ocp_utilities.infra INFO Verify all nodes are schedulable.
+2026-02-04T11:50:04.502320 timeout_sampler INFO Waiting for 300 seconds [0:05:00], retry every 5 seconds. (Function: utilities.infra.get_pods  Kwargs: {'dyn_client': <kubernetes.dynamic.client.DynamicClient object at 0x7f511f1adbe0>, 'namespace': <ocp_resources.namespace.Namespace object at 0x7f511d159e00>})
+2026-02-04T11:50:04.625674 timeout_sampler INFO Elapsed time: 8.273124694824219e-05 [0:00:00.000083]
+2026-02-04T11:50:04.625907 timeout_sampler INFO Waiting for 600 seconds [0:10:00], retry every 5 seconds. (Function: utilities.infra.<locals>.lambda: dynamic_client.namespace.resource_kind.resource_name.list.get)
+2026-02-04T11:50:04.625830 utilities.infra INFO Waiting for resource to stabilize: resource_kind=HyperConverged conditions={'Available': 'True', 'Progressing': 'False', 'ReconcileComplete': 'True', 'Degraded': 'False', 'Upgradeable': 'True'} sleep=600 consecutive_checks_count=3
+2026-02-04T11:50:14.643458 timeout_sampler INFO Elapsed time: 10.011333227157593 [0:00:10.011333]
+2026-02-04T11:50:14.643646 conftest INFO Executing session fixture: ssh_key_tmpdir_scope_session
+2026-02-04T11:50:14.656074 ocp_resources.resource INFO Trying to get client via new_client_from_config
+2026-02-04T11:50:14.644115 conftest INFO Executing session fixture: generated_ssh_key_for_vm_access
+2026-02-04T11:50:14.655751 conftest INFO Executing function fixture: autouse_fixtures
+2026-02-04T11:50:14.655909 conftest INFO Executing session fixture: is_psi_cluster
+2026-02-04T11:50:14.662390 ocp_resources.resource INFO kind: Infrastructure api version: config.openshift.io/v1
+2026-02-04T11:50:14.667445 conftest INFO Executing session fixture: schedulable_nodes
+2026-02-04T11:50:14.681886 conftest INFO Executing session fixture: gpu_nodes
+2026-02-04T11:50:14.684726 conftest INFO Executing session fixture: nodes_with_supported_gpus
+2026-02-04T11:50:14.684837 conftest INFO Executing session fixture: sriov_workers
+2026-02-04T11:50:14.687593 conftest INFO Executing session fixture: nodes_cpu_vendor
+2026-02-04T11:50:14.693332 conftest INFO Executing session fixture: nodes_cpu_virt_extension
+2026-02-04T11:50:14.693473 conftest INFO Executing session fixture: allocatable_memory_per_node_scope_session
+2026-02-04T11:50:14.699747 tests.virt.utils INFO Node crc has 23.01947021484375 GiB of allocatable memory
+2026-02-04T11:50:14.699857 conftest INFO Executing session fixture: virt_special_infra_sanity
+2026-02-04T11:50:14.699957 tests.virt.conftest INFO Verifying that cluster has all required capabilities for special_infra marked tests
+2026-02-04T11:50:14.700020 tests.virt.conftest INFO Verifying tests run on BM cluster
+2026-02-04T11:50:14.700053 tests.virt.conftest INFO Verifing cluster nodes support VMX cpu fixture
+2026-02-04T11:50:14.703647 conftest INFO Executing session fixture: unprivileged_secret
+2026-02-04T11:50:14.705460 ocp_resources.resource INFO Trying to get client via new_client_from_config
+2026-02-04T11:50:14.711038 ocp_resources Secret INFO Create Secret htpass-secret-for-cnv-tests
+2026-02-04T11:50:14.711105 ocp_resources Secret INFO Posting {'apiVersion': 'v1', 'kind': 'Secret', 'metadata': {'name': 'htpass-secret-for-cnv-tests', 'namespace': 'openshift-config'}, 'data': '*******'}
+2026-02-04T11:50:14.740690 ocp_resources.resource INFO ResourceEdit: Backing up old data
+2026-02-04T11:50:14.740475 conftest INFO Executing session fixture: identity_provider_with_htpasswd
+2026-02-04T11:50:14.744523 ocp_resources.resource INFO ResourceEdits: Updating data for resource OAuth cluster
+2026-02-04T11:50:14.744686 ocp_resources OAuth INFO Update OAuth cluster:
+{'metadata': {'name': 'cluster'}, 'spec': {'identityProviders': [{'name': 'htpasswd_provider', 'mappingMethod': 'claim', 'type': 'HTPasswd', 'htpasswd': {'fileData': {'name': 'htpass-secret-for-cnv-tests'}}}], 'tokenConfig': {'accessTokenMaxAgeSeconds': 604800, 'accessTokenInactivityTimeout': None}}}
+2026-02-04T11:50:14.764240 ocp_resources.resource INFO Trying to get client via new_client_from_config
+2026-02-04T11:50:14.771055 ocp_resources.resource INFO kind: Deployment api version: apps/v1
+2026-02-04T11:50:14.784257 timeout_sampler INFO Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: tests.conftest.<locals>.lambda: dp.instance.status.conditions)
+2026-02-04T11:50:14.784109 tests.conftest INFO Wait for oauth-openshift -> Type: Progressing -> Reason: ReplicaSetUpdated
+2026-02-04T11:50:45.929974 timeout_sampler INFO Elapsed time: 31.11253571510315 [0:00:31.112536]
+2026-02-04T11:50:45.930321 timeout_sampler INFO Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: tests.conftest.<locals>.lambda: dp.instance.status.conditions)
+2026-02-04T11:50:45.930140 tests.conftest INFO Wait for oauth-openshift -> Type: Progressing -> Reason: NewReplicaSetAvailable
+2026-02-04T11:51:13.068009 timeout_sampler INFO Elapsed time: 27.134995698928833 [0:00:27.134996]
+2026-02-04T11:51:13.068219 conftest INFO Executing session fixture: kubeconfig_export_path
+2026-02-04T11:51:13.068322 conftest INFO Executing session fixture: exported_kubeconfig
+2026-02-04T11:51:13.068647 tests.conftest INFO Setting KUBECONFIG dir for this run to point to: /tmp/tmpbo83skg6-cnv-tests-kubeconfig
+2026-02-04T11:51:13.068703 tests.conftest INFO Copy KUBECONFIG to /tmp/tmpbo83skg6-cnv-tests-kubeconfig/kubeconfig
+2026-02-04T11:51:13.068919 tests.conftest INFO Set: KUBECONFIG=/tmp/tmpbo83skg6-cnv-tests-kubeconfig/kubeconfig
+2026-02-04T11:51:13.069042 conftest INFO Executing session fixture: unprivileged_client
+2026-02-04T11:51:13.124969 timeout_sampler INFO Waiting for 60 seconds [0:01:00], retry every 3 seconds. (Function: subprocess.Popen  Kwargs: {'args': 'oc login https://api.crc.testing:6443 -u unprivileged-user -p unprivileged-password', 'shell': True, 'stdout': -1, 'stderr': -1})
+2026-02-04T11:51:13.124814 utilities.infra INFO Trying to login to account
+2026-02-04T11:51:13.356455 timeout_sampler INFO Elapsed time: 0.00015735626220703125 [0:00:00.000157]
+2026-02-04T11:51:13.360165 timeout_sampler INFO Waiting for 60 seconds [0:01:00], retry every 3 seconds. (Function: subprocess.Popen  Kwargs: {'args': 'oc login https://api.crc.testing:6443 -u kubeadmin', 'shell': True, 'stdout': -1, 'stderr': -1})
+2026-02-04T11:51:13.356309 utilities.infra INFO Login - success
+2026-02-04T11:51:13.360073 utilities.infra INFO Trying to login to account
+2026-02-04T11:51:13.441103 timeout_sampler INFO Elapsed time: 0.00015354156494140625 [0:00:00.000154]
+2026-02-04T11:51:13.441370 ocp_resources.resource INFO Trying to get client via new_client_from_config
+2026-02-04T11:51:13.440962 utilities.infra INFO Login - success
+2026-02-04T11:51:13.447473 ocp_resources.resource INFO kind: ProjectRequest api version: project.openshift.io/v1
+2026-02-04T11:51:13.447627 ocp_resources ProjectRequest INFO Create ProjectRequest vnc-console-test-vnc-screenshot-stabilit
+2026-02-04T11:51:13.447753 ocp_resources ProjectRequest INFO Posting {'apiVersion': 'project.openshift.io/v1', 'kind': 'ProjectRequest', 'metadata': {'name': 'vnc-console-test-vnc-screenshot-stabilit'}}
+2026-02-04T11:51:13.447234 conftest INFO Executing module fixture: namespace
+2026-02-04T11:51:13.548857 ocp_resources.resource INFO kind: Project api version: project.openshift.io/v1
+2026-02-04T11:51:13.548964 ocp_resources Project INFO Wait for Project vnc-console-test-vnc-screenshot-stabilit status to be Active
+2026-02-04T11:51:13.549021 timeout_sampler INFO Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_for_status.lambda: self.exists)
+2026-02-04T11:51:13.567426 ocp_resources Project INFO Status of Project vnc-console-test-vnc-screenshot-stabilit is Active
+2026-02-04T11:51:13.567536 timeout_sampler INFO Elapsed time: 4.9114227294921875e-05 [0:00:00.000049]
+2026-02-04T11:51:13.586975 ocp_resources Namespace INFO Wait for Namespace vnc-console-test-vnc-screenshot-stabilit status to be Active
+2026-02-04T11:51:13.587090 timeout_sampler INFO Waiting for 120 seconds [0:02:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_for_status.lambda: self.exists)
+2026-02-04T11:51:13.592482 ocp_resources Namespace INFO Status of Namespace vnc-console-test-vnc-screenshot-stabilit is Active
+2026-02-04T11:51:13.592584 timeout_sampler INFO Elapsed time: 5.841255187988281e-05 [0:00:00.000058]
+2026-02-04T11:51:13.592653 ocp_resources.resource INFO ResourceEdits: Updating data for resource Namespace vnc-console-test-vnc-screenshot-stabilit
+2026-02-04T11:51:13.592713 ocp_resources Namespace INFO Update Namespace vnc-console-test-vnc-screenshot-stabilit:
+{'metadata': {'labels': None, 'name': 'vnc-console-test-vnc-screenshot-stabilit'}}
+______________________________________________ ERROR at setup of TestVncScreenshotStability.test_thumbnail_updates_without_disconnecting_vnc _______________________________________________
+
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f511f1adbe0>, namespace = <ocp_resources.namespace.Namespace object at 0x7f511c1af100>
+
+    @pytest.fixture(scope="class")
+    def vm_with_vnc_console(admin_client, namespace):
+        """
+        Fixture providing a running VM with VNC console configured.
+    
+        This fixture creates a Fedora VM with graphical display (VNC) configured,
+        suitable for VNC console and screenshot testing.
+    
+        Args:
+            admin_client: Kubernetes admin client
+            namespace: Test namespace
+    
+        Yields:
+            VirtualMachine: A running VM with VNC graphics device
+    
+        Cleanup:
+            Stops and deletes the VM after tests complete
+        """
+        LOGGER.info("Creating VM with VNC console for testing")
+    
+        with VirtualMachineForTests(
+            name="vnc-console-test-vm",
+            namespace=namespace.name,
+            client=admin_client,
+>           image=Images.Fedora.FEDORA_REGISTRY_GUEST_IMG,
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            os_flavor=OS_FLAVOR_FEDORA,
+            vm_instance_type=VirtualMachineClusterInstancetype(name=U1_SMALL, client=admin_client),
+            vm_preference=VirtualMachineClusterPreference(name="fedora", client=admin_client),
+            run_strategy=VirtualMachine.RunStrategy.ALWAYS,
+        ) as vm:
+E       AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+
+tests/virt/vnc_console/conftest.py:54: AttributeError
+______________________________________________________ ERROR at setup of TestVncScreenshotStability.test_extended_dual_tab_vnc_usage _______________________________________________________
+
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f511f1adbe0>, namespace = <ocp_resources.namespace.Namespace object at 0x7f511c1af100>
+
+    @pytest.fixture(scope="class")
+    def vm_with_vnc_console(admin_client, namespace):
+        """
+        Fixture providing a running VM with VNC console configured.
+    
+        This fixture creates a Fedora VM with graphical display (VNC) configured,
+        suitable for VNC console and screenshot testing.
+    
+        Args:
+            admin_client: Kubernetes admin client
+            namespace: Test namespace
+    
+        Yields:
+            VirtualMachine: A running VM with VNC graphics device
+    
+        Cleanup:
+            Stops and deletes the VM after tests complete
+        """
+        LOGGER.info("Creating VM with VNC console for testing")
+    
+        with VirtualMachineForTests(
+            name="vnc-console-test-vm",
+            namespace=namespace.name,
+            client=admin_client,
+>           image=Images.Fedora.FEDORA_REGISTRY_GUEST_IMG,
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            os_flavor=OS_FLAVOR_FEDORA,
+            vm_instance_type=VirtualMachineClusterInstancetype(name=U1_SMALL, client=admin_client),
+            vm_preference=VirtualMachineClusterPreference(name="fedora", client=admin_client),
+            run_strategy=VirtualMachine.RunStrategy.ALWAYS,
+        ) as vm:
+E       AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+
+tests/virt/vnc_console/conftest.py:54: AttributeError
+---------------------------------------------------------------------------------- Captured stderr setup -----------------------------------------------------------------------------------
+------------------------------------------------------- TEARDOWN -------------------------------------------------------
+______________________________________________ ERROR at setup of TestScreenshotApiWithoutVnc.test_screenshot_api_works_without_vnc_connection ______________________________________________
+
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f511f1adbe0>, namespace = <ocp_resources.namespace.Namespace object at 0x7f511c1af100>
+
+    @pytest.fixture(scope="class")
+    def vm_with_vnc_console(admin_client, namespace):
+        """
+        Fixture providing a running VM with VNC console configured.
+    
+        This fixture creates a Fedora VM with graphical display (VNC) configured,
+        suitable for VNC console and screenshot testing.
+    
+        Args:
+            admin_client: Kubernetes admin client
+            namespace: Test namespace
+    
+        Yields:
+            VirtualMachine: A running VM with VNC graphics device
+    
+        Cleanup:
+            Stops and deletes the VM after tests complete
+        """
+        LOGGER.info("Creating VM with VNC console for testing")
+    
+        with VirtualMachineForTests(
+            name="vnc-console-test-vm",
+            namespace=namespace.name,
+            client=admin_client,
+>           image=Images.Fedora.FEDORA_REGISTRY_GUEST_IMG,
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            os_flavor=OS_FLAVOR_FEDORA,
+            vm_instance_type=VirtualMachineClusterInstancetype(name=U1_SMALL, client=admin_client),
+            vm_preference=VirtualMachineClusterPreference(name="fedora", client=admin_client),
+            run_strategy=VirtualMachine.RunStrategy.ALWAYS,
+        ) as vm:
+E       AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+
+tests/virt/vnc_console/conftest.py:54: AttributeError
+__________________________________________________ ERROR at setup of TestScreenshotApiWithoutVnc.test_screenshot_quality_shows_vm_content __________________________________________________
+
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f511f1adbe0>, namespace = <ocp_resources.namespace.Namespace object at 0x7f511c1af100>
+
+    @pytest.fixture(scope="class")
+    def vm_with_vnc_console(admin_client, namespace):
+        """
+        Fixture providing a running VM with VNC console configured.
+    
+        This fixture creates a Fedora VM with graphical display (VNC) configured,
+        suitable for VNC console and screenshot testing.
+    
+        Args:
+            admin_client: Kubernetes admin client
+            namespace: Test namespace
+    
+        Yields:
+            VirtualMachine: A running VM with VNC graphics device
+    
+        Cleanup:
+            Stops and deletes the VM after tests complete
+        """
+        LOGGER.info("Creating VM with VNC console for testing")
+    
+        with VirtualMachineForTests(
+            name="vnc-console-test-vm",
+            namespace=namespace.name,
+            client=admin_client,
+>           image=Images.Fedora.FEDORA_REGISTRY_GUEST_IMG,
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            os_flavor=OS_FLAVOR_FEDORA,
+            vm_instance_type=VirtualMachineClusterInstancetype(name=U1_SMALL, client=admin_client),
+            vm_preference=VirtualMachineClusterPreference(name="fedora", client=admin_client),
+            run_strategy=VirtualMachine.RunStrategy.ALWAYS,
+        ) as vm:
+E       AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+
+tests/virt/vnc_console/conftest.py:54: AttributeError
+---------------------------------------------------------------------------------- Captured stderr setup -----------------------------------------------------------------------------------
+2026-02-04T11:51:13.713440 conftest INFO Creating VM with VNC console for testing
+______________________________________________________ ERROR at setup of TestScreenshotApiWithoutVnc.test_screenshot_from_stopped_vm _______________________________________________________
+
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f511f1adbe0>, namespace = <ocp_resources.namespace.Namespace object at 0x7f511c1af100>
+
+    @pytest.fixture(scope="class")
+    def vm_with_vnc_console(admin_client, namespace):
+        """
+        Fixture providing a running VM with VNC console configured.
+    
+        This fixture creates a Fedora VM with graphical display (VNC) configured,
+        suitable for VNC console and screenshot testing.
+    
+        Args:
+            admin_client: Kubernetes admin client
+            namespace: Test namespace
+    
+        Yields:
+            VirtualMachine: A running VM with VNC graphics device
+    
+        Cleanup:
+            Stops and deletes the VM after tests complete
+        """
+        LOGGER.info("Creating VM with VNC console for testing")
+    
+        with VirtualMachineForTests(
+            name="vnc-console-test-vm",
+            namespace=namespace.name,
+            client=admin_client,
+>           image=Images.Fedora.FEDORA_REGISTRY_GUEST_IMG,
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            os_flavor=OS_FLAVOR_FEDORA,
+            vm_instance_type=VirtualMachineClusterInstancetype(name=U1_SMALL, client=admin_client),
+            vm_preference=VirtualMachineClusterPreference(name="fedora", client=admin_client),
+            run_strategy=VirtualMachine.RunStrategy.ALWAYS,
+        ) as vm:
+E       AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+
+tests/virt/vnc_console/conftest.py:54: AttributeError
+---------------------------------------------------------------------------------- Captured stderr setup -----------------------------------------------------------------------------------
+------------------------------------------------------- TEARDOWN -------------------------------------------------------
+________________________________________________ ERROR at setup of TestScreenshotMultiGuestCompatibility.test_screenshot_with_fedora_guest _________________________________________________
+
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f511f1adbe0>, namespace = <ocp_resources.namespace.Namespace object at 0x7f511c1af100>
+
+    @pytest.fixture(scope="class")
+    def fedora_vm_with_graphical_display(admin_client, namespace):
+        """
+        Fixture providing a Fedora VM with graphical display configured.
+    
+        Args:
+            admin_client: Kubernetes admin client
+            namespace: Test namespace
+    
+        Yields:
+            VirtualMachine: Running Fedora VM with VNC/SPICE graphics
+    
+        Cleanup:
+            Stops and deletes the VM after tests complete
+        """
+        LOGGER.info("Creating Fedora VM with graphical display")
+    
+        with VirtualMachineForTests(
+            name="fedora-graphical-vm",
+            namespace=namespace.name,
+            client=admin_client,
+>           image=Images.Fedora.FEDORA_REGISTRY_GUEST_IMG,
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            os_flavor=OS_FLAVOR_FEDORA,
+            vm_instance_type=VirtualMachineClusterInstancetype(name=U1_SMALL, client=admin_client),
+            vm_preference=VirtualMachineClusterPreference(name="fedora", client=admin_client),
+            run_strategy=VirtualMachine.RunStrategy.ALWAYS,
+        ) as vm:
+E       AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+
+tests/virt/vnc_console/conftest.py:142: AttributeError
+_________________________________________________ ERROR at setup of TestScreenshotMultiGuestCompatibility.test_screenshot_with_rhel_guest __________________________________________________
+
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f511f1adbe0>, namespace = <ocp_resources.namespace.Namespace object at 0x7f511c1af100>
+
+    @pytest.fixture(scope="class")
+    def fedora_vm_with_graphical_display(admin_client, namespace):
+        """
+        Fixture providing a Fedora VM with graphical display configured.
+    
+        Args:
+            admin_client: Kubernetes admin client
+            namespace: Test namespace
+    
+        Yields:
+            VirtualMachine: Running Fedora VM with VNC/SPICE graphics
+    
+        Cleanup:
+            Stops and deletes the VM after tests complete
+        """
+        LOGGER.info("Creating Fedora VM with graphical display")
+    
+        with VirtualMachineForTests(
+            name="fedora-graphical-vm",
+            namespace=namespace.name,
+            client=admin_client,
+>           image=Images.Fedora.FEDORA_REGISTRY_GUEST_IMG,
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            os_flavor=OS_FLAVOR_FEDORA,
+            vm_instance_type=VirtualMachineClusterInstancetype(name=U1_SMALL, client=admin_client),
+            vm_preference=VirtualMachineClusterPreference(name="fedora", client=admin_client),
+            run_strategy=VirtualMachine.RunStrategy.ALWAYS,
+        ) as vm:
+E       AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+
+tests/virt/vnc_console/conftest.py:142: AttributeError
+---------------------------------------------------------------------------------- Captured stderr setup -----------------------------------------------------------------------------------
+
+TEST: TestScreenshotMultiGuestCompatibility.test_screenshot_with_fedora_guest [setup] STATUS: ERROR
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f511f1adbe0>, namespace = <ocp_resources.namespace.Namespace object at 0x7f511c1af100>
+
+    @pytest.fixture(scope="class")
+    def fedora_vm_with_graphical_display(admin_client, namespace):
+        """
+        Fixture providing a Fedora VM with graphical display configured.
+    
+        Args:
+            admin_client: Kubernetes admin client
+            namespace: Test namespace
+    
+        Yields:
+            VirtualMachine: Running Fedora VM with VNC/SPICE graphics
+    
+        Cleanup:
+            Stops and deletes the VM after tests complete
+        """
+        LOGGER.info("Creating Fedora VM with graphical display")
+    
+        with VirtualMachineForTests(
+            name="fedora-graphical-vm",
+            namespace=namespace.name,
+            client=admin_client,
+>           image=Images.Fedora.FEDORA_REGISTRY_GUEST_IMG,
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            os_flavor=OS_FLAVOR_FEDORA,
+            vm_instance_type=VirtualMachineClusterInstancetype(name=U1_SMALL, client=admin_client),
+            vm_preference=VirtualMachineClusterPreference(name="fedora", client=admin_client),
+            run_strategy=VirtualMachine.RunStrategy.ALWAYS,
+        ) as vm:
+E       AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+
+tests/virt/vnc_console/conftest.py:142: AttributeError
+________________________________________________ ERROR at setup of TestScreenshotMultiGuestCompatibility.test_screenshot_with_windows_guest ________________________________________________
+
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f511f1adbe0>, namespace = <ocp_resources.namespace.Namespace object at 0x7f511c1af100>
+
+    @pytest.fixture(scope="class")
+    def fedora_vm_with_graphical_display(admin_client, namespace):
+        """
+        Fixture providing a Fedora VM with graphical display configured.
+    
+        Args:
+            admin_client: Kubernetes admin client
+            namespace: Test namespace
+    
+        Yields:
+            VirtualMachine: Running Fedora VM with VNC/SPICE graphics
+    
+        Cleanup:
+            Stops and deletes the VM after tests complete
+        """
+        LOGGER.info("Creating Fedora VM with graphical display")
+    
+        with VirtualMachineForTests(
+            name="fedora-graphical-vm",
+            namespace=namespace.name,
+            client=admin_client,
+>           image=Images.Fedora.FEDORA_REGISTRY_GUEST_IMG,
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            os_flavor=OS_FLAVOR_FEDORA,
+            vm_instance_type=VirtualMachineClusterInstancetype(name=U1_SMALL, client=admin_client),
+            vm_preference=VirtualMachineClusterPreference(name="fedora", client=admin_client),
+            run_strategy=VirtualMachine.RunStrategy.ALWAYS,
+        ) as vm:
+E       AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+
+tests/virt/vnc_console/conftest.py:142: AttributeError
+________________________________________________ ERROR at setup of TestVncAndThumbnailCombinations.test_vnc_connect_while_thumbnail_active _________________________________________________
+
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f511f1adbe0>, namespace = <ocp_resources.namespace.Namespace object at 0x7f511c1af100>
+
+    @pytest.fixture(scope="class")
+    def vm_with_vnc_console(admin_client, namespace):
+        """
+        Fixture providing a running VM with VNC console configured.
+    
+        This fixture creates a Fedora VM with graphical display (VNC) configured,
+        suitable for VNC console and screenshot testing.
+    
+        Args:
+            admin_client: Kubernetes admin client
+            namespace: Test namespace
+    
+        Yields:
+            VirtualMachine: A running VM with VNC graphics device
+    
+        Cleanup:
+            Stops and deletes the VM after tests complete
+        """
+        LOGGER.info("Creating VM with VNC console for testing")
+    
+        with VirtualMachineForTests(
+            name="vnc-console-test-vm",
+            namespace=namespace.name,
+            client=admin_client,
+>           image=Images.Fedora.FEDORA_REGISTRY_GUEST_IMG,
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            os_flavor=OS_FLAVOR_FEDORA,
+            vm_instance_type=VirtualMachineClusterInstancetype(name=U1_SMALL, client=admin_client),
+            vm_preference=VirtualMachineClusterPreference(name="fedora", client=admin_client),
+            run_strategy=VirtualMachine.RunStrategy.ALWAYS,
+        ) as vm:
+E       AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+
+tests/virt/vnc_console/conftest.py:54: AttributeError
+---------------------------------------------------------------------------------- Captured stderr setup -----------------------------------------------------------------------------------
+------------------------------------------------------- TEARDOWN -------------------------------------------------------
+_________________________________________________ ERROR at setup of TestVncAndThumbnailCombinations.test_thumbnail_loads_while_vnc_active __________________________________________________
+
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f511f1adbe0>, namespace = <ocp_resources.namespace.Namespace object at 0x7f511c1af100>
+
+    @pytest.fixture(scope="class")
+    def vm_with_vnc_console(admin_client, namespace):
+        """
+        Fixture providing a running VM with VNC console configured.
+    
+        This fixture creates a Fedora VM with graphical display (VNC) configured,
+        suitable for VNC console and screenshot testing.
+    
+        Args:
+            admin_client: Kubernetes admin client
+            namespace: Test namespace
+    
+        Yields:
+            VirtualMachine: A running VM with VNC graphics device
+    
+        Cleanup:
+            Stops and deletes the VM after tests complete
+        """
+        LOGGER.info("Creating VM with VNC console for testing")
+    
+        with VirtualMachineForTests(
+            name="vnc-console-test-vm",
+            namespace=namespace.name,
+            client=admin_client,
+>           image=Images.Fedora.FEDORA_REGISTRY_GUEST_IMG,
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            os_flavor=OS_FLAVOR_FEDORA,
+            vm_instance_type=VirtualMachineClusterInstancetype(name=U1_SMALL, client=admin_client),
+            vm_preference=VirtualMachineClusterPreference(name="fedora", client=admin_client),
+            run_strategy=VirtualMachine.RunStrategy.ALWAYS,
+        ) as vm:
+E       AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+
+tests/virt/vnc_console/conftest.py:54: AttributeError
+___________________________________________ ERROR at setup of TestVncAndThumbnailCombinations.test_rapid_tab_switching_between_vnc_and_overview ____________________________________________
+
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f511f1adbe0>, namespace = <ocp_resources.namespace.Namespace object at 0x7f511c1af100>
+
+    @pytest.fixture(scope="class")
+    def vm_with_vnc_console(admin_client, namespace):
+        """
+        Fixture providing a running VM with VNC console configured.
+    
+        This fixture creates a Fedora VM with graphical display (VNC) configured,
+        suitable for VNC console and screenshot testing.
+    
+        Args:
+            admin_client: Kubernetes admin client
+            namespace: Test namespace
+    
+        Yields:
+            VirtualMachine: A running VM with VNC graphics device
+    
+        Cleanup:
+            Stops and deletes the VM after tests complete
+        """
+        LOGGER.info("Creating VM with VNC console for testing")
+    
+        with VirtualMachineForTests(
+            name="vnc-console-test-vm",
+            namespace=namespace.name,
+            client=admin_client,
+>           image=Images.Fedora.FEDORA_REGISTRY_GUEST_IMG,
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            os_flavor=OS_FLAVOR_FEDORA,
+            vm_instance_type=VirtualMachineClusterInstancetype(name=U1_SMALL, client=admin_client),
+            vm_preference=VirtualMachineClusterPreference(name="fedora", client=admin_client),
+            run_strategy=VirtualMachine.RunStrategy.ALWAYS,
+        ) as vm:
+E       AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+
+tests/virt/vnc_console/conftest.py:54: AttributeError
+_______________________________________________ ERROR at setup of TestScreenshotApiBackwardCompatibility.test_screenshot_api_endpoint_exists _______________________________________________
+
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f511f1adbe0>, namespace = <ocp_resources.namespace.Namespace object at 0x7f511c1af100>
+
+    @pytest.fixture(scope="class")
+    def vm_with_vnc_console(admin_client, namespace):
+        """
+        Fixture providing a running VM with VNC console configured.
+    
+        This fixture creates a Fedora VM with graphical display (VNC) configured,
+        suitable for VNC console and screenshot testing.
+    
+        Args:
+            admin_client: Kubernetes admin client
+            namespace: Test namespace
+    
+        Yields:
+            VirtualMachine: A running VM with VNC graphics device
+    
+        Cleanup:
+            Stops and deletes the VM after tests complete
+        """
+        LOGGER.info("Creating VM with VNC console for testing")
+    
+        with VirtualMachineForTests(
+            name="vnc-console-test-vm",
+            namespace=namespace.name,
+            client=admin_client,
+>           image=Images.Fedora.FEDORA_REGISTRY_GUEST_IMG,
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            os_flavor=OS_FLAVOR_FEDORA,
+            vm_instance_type=VirtualMachineClusterInstancetype(name=U1_SMALL, client=admin_client),
+            vm_preference=VirtualMachineClusterPreference(name="fedora", client=admin_client),
+            run_strategy=VirtualMachine.RunStrategy.ALWAYS,
+        ) as vm:
+E       AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+
+tests/virt/vnc_console/conftest.py:54: AttributeError
+_________________________________________________ ERROR at setup of TestScreenshotApiBackwardCompatibility.test_screenshot_response_format _________________________________________________
+
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f511f1adbe0>, namespace = <ocp_resources.namespace.Namespace object at 0x7f511c1af100>
+
+    @pytest.fixture(scope="class")
+    def vm_with_vnc_console(admin_client, namespace):
+        """
+        Fixture providing a running VM with VNC console configured.
+    
+        This fixture creates a Fedora VM with graphical display (VNC) configured,
+        suitable for VNC console and screenshot testing.
+    
+        Args:
+            admin_client: Kubernetes admin client
+            namespace: Test namespace
+    
+        Yields:
+            VirtualMachine: A running VM with VNC graphics device
+    
+        Cleanup:
+            Stops and deletes the VM after tests complete
+        """
+        LOGGER.info("Creating VM with VNC console for testing")
+    
+        with VirtualMachineForTests(
+            name="vnc-console-test-vm",
+            namespace=namespace.name,
+            client=admin_client,
+>           image=Images.Fedora.FEDORA_REGISTRY_GUEST_IMG,
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            os_flavor=OS_FLAVOR_FEDORA,
+            vm_instance_type=VirtualMachineClusterInstancetype(name=U1_SMALL, client=admin_client),
+            vm_preference=VirtualMachineClusterPreference(name="fedora", client=admin_client),
+            run_strategy=VirtualMachine.RunStrategy.ALWAYS,
+        ) as vm:
+E       AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+
+tests/virt/vnc_console/conftest.py:54: AttributeError
+---------------------------------------------------------------------------------- Captured stderr setup -----------------------------------------------------------------------------------
+
+TEST: TestScreenshotApiBackwardCompatibility.test_screenshot_api_endpoint_exists [setup] STATUS: ERROR
+===================================================================================== warnings summary =====================================================================================
+tests/virt/vnc_console/test_vnc_screenshot_stability.py:36
+  /home/mvavrine/cnv/openshift-virtualization-tests/tests/virt/vnc_console/test_vnc_screenshot_stability.py:36: PytestUnknownMarkWarning: Unknown pytest.mark.ui - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.ui
+
+tests/virt/vnc_console/test_vnc_screenshot_stability.py: 5 warnings
+tests/deprecated_api/test_deprecation_audit_logs.py: 4 warnings
+.venv/lib/python3.14/site-packages/kubernetes/client/exceptions.py:91: 2 warnings
+  /home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/exceptions.py:91: DeprecationWarning: HTTPResponse.getheaders() is deprecated and will be removed in urllib3 v2.1.0. Instead access HTTPResponse.headers directly.
+    self.headers = http_resp.getheaders()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================================================================================= short test summary info ==================================================================================
+ERROR tests/virt/vnc_console/test_vnc_screenshot_stability.py::TestVncScreenshotStability::test_vnc_remains_connected_with_concurrent_thumbnail - AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+ERROR tests/virt/vnc_console/test_vnc_screenshot_stability.py::TestVncScreenshotStability::test_thumbnail_updates_without_disconnecting_vnc - AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+ERROR tests/virt/vnc_console/test_vnc_screenshot_stability.py::TestVncScreenshotStability::test_extended_dual_tab_vnc_usage - AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+ERROR tests/virt/vnc_console/test_vnc_screenshot_stability.py::TestScreenshotApiWithoutVnc::test_screenshot_api_works_without_vnc_connection - AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+ERROR tests/virt/vnc_console/test_vnc_screenshot_stability.py::TestScreenshotApiWithoutVnc::test_screenshot_quality_shows_vm_content - AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+ERROR tests/virt/vnc_console/test_vnc_screenshot_stability.py::TestScreenshotApiWithoutVnc::test_screenshot_from_stopped_vm - AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+ERROR tests/virt/vnc_console/test_vnc_screenshot_stability.py::TestScreenshotMultiGuestCompatibility::test_screenshot_with_fedora_guest - AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+ERROR tests/virt/vnc_console/test_vnc_screenshot_stability.py::TestScreenshotMultiGuestCompatibility::test_screenshot_with_rhel_guest - AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+ERROR tests/virt/vnc_console/test_vnc_screenshot_stability.py::TestScreenshotMultiGuestCompatibility::test_screenshot_with_windows_guest - AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+ERROR tests/virt/vnc_console/test_vnc_screenshot_stability.py::TestVncAndThumbnailCombinations::test_vnc_connect_while_thumbnail_active - AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+ERROR tests/virt/vnc_console/test_vnc_screenshot_stability.py::TestVncAndThumbnailCombinations::test_thumbnail_loads_while_vnc_active - AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+ERROR tests/virt/vnc_console/test_vnc_screenshot_stability.py::TestVncAndThumbnailCombinations::test_rapid_tab_switching_between_vnc_and_overview - AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+ERROR tests/virt/vnc_console/test_vnc_screenshot_stability.py::TestScreenshotApiBackwardCompatibility::test_screenshot_api_endpoint_exists - AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+ERROR tests/virt/vnc_console/test_vnc_screenshot_stability.py::TestScreenshotApiBackwardCompatibility::test_screenshot_response_format - AttributeError: 'Fedora' object has no attribute 'FEDORA_REGISTRY_GUEST_IMG'
+================================================================== 1 passed, 12 warnings, 14 errors in 249.77s (0:04:09) ===================================================================
+2026-02-04T11:53:04.162459 timeout_sampler INFO Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_deleted.lambda: self.exists)
+2026-02-04T11:53:04.164782 timeout_sampler INFO Elapsed time: 7.62939453125e-05 [0:00:00.000076]
+2026-02-04T11:53:04.186950 timeout_sampler INFO Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_deleted.lambda: self.exists)
+2026-02-04T11:53:10.204944 timeout_sampler INFO Elapsed time: 6.014820575714111 [0:00:06.014821]

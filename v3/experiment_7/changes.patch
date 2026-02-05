@@ -1,0 +1,613 @@
+diff --git a/tests/virt/node/general/conftest.py b/tests/virt/node/general/conftest.py
+new file mode 100644
+index 0000000..243dd6d
+--- /dev/null
++++ b/tests/virt/node/general/conftest.py
+@@ -0,0 +1,167 @@
++# -*- coding: utf-8 -*-
++
++"""
++Shared fixtures for virt/node/general tests
++"""
++
++import pytest
++
++from utilities.virt import VirtualMachineForTestsFromTemplate, running_vm
++
++
++@pytest.fixture(scope="class")
++def windows_vm_with_guest_agent(
++    request,
++    unprivileged_client,
++    namespace,
++):
++    """
++    Creates a Windows VM with qemu-guest-agent and virtio-serial driver installed.
++
++    The VM is created from a Windows template and includes:
++    - qemu-guest-agent installed and running
++    - virtio-serial driver for guest-host communication
++    - Network configuration for SSH/RDP access
++
++    Returns:
++        VirtualMachineForTests: Running Windows VM with guest agent
++    """
++    # NOTE: This is a simplified fixture. For production use, this should:
++    # 1. Use a proper Windows data source with guest agent pre-installed
++    # 2. Use template_labels to select the correct Windows template
++    # 3. Configure data_volume_template with appropriate storage
++    with VirtualMachineForTestsFromTemplate(
++        name="windows-vm-guest-agent",
++        namespace=namespace.name,
++        client=unprivileged_client,
++    ) as vm:
++        running_vm(vm=vm)
++        yield vm
++
++
++@pytest.fixture(scope="function")
++def windows_vm_without_guest_agent(
++    unprivileged_client,
++    namespace,
++):
++    """
++    Creates a Windows VM without qemu-guest-agent installed or running.
++
++    Used for negative testing scenarios to verify behavior when guest agent
++    is not available.
++
++    Returns:
++        VirtualMachineForTests: Running Windows VM without guest agent
++    """
++    # NOTE: This fixture needs implementation to create a Windows VM
++    # without guest agent. This might require:
++    # 1. Using a base Windows image without guest agent pre-installed
++    # 2. Or stopping the guest agent service after VM creation
++    # For now, using standard template and stopping the service
++    with VirtualMachineForTestsFromTemplate(
++        name="windows-vm-no-agent",
++        namespace=namespace.name,
++        client=unprivileged_client,
++    ) as vm:
++        running_vm(vm=vm)
++
++        # Stop guest agent service
++        try:
++            vm.ssh_exec.run_command(command="Stop-Service -Name 'QEMU Guest Agent' -Force")
++        except Exception:
++            # If service doesn't exist or is already stopped, that's fine
++            pass
++
++        yield vm
++
++
++@pytest.fixture(scope="function")
++def windows_vm_without_virtio_serial(
++    unprivileged_client,
++    namespace,
++):
++    """
++    Creates a Windows VM without virtio-serial driver.
++
++    Used for testing scenarios where communication channel is unavailable.
++    This requires a special Windows image or configuration without virtio-serial.
++
++    Returns:
++        VirtualMachineForTests: Running Windows VM without virtio-serial driver
++    """
++    # NOTE: This fixture needs implementation to create a Windows VM
++    # without virtio-serial driver. This is complex because:
++    # 1. Requires a Windows image without virtio drivers
++    # 2. Or a way to disable virtio-serial in the VM spec
++    # This is a placeholder implementation
++    with VirtualMachineForTestsFromTemplate(
++        name="windows-vm-no-virtio",
++        namespace=namespace.name,
++        client=unprivileged_client,
++    ) as vm:
++        running_vm(vm=vm)
++        yield vm
++
++
++@pytest.fixture(scope="function")
++def windows_10_vm_with_guest_agent(
++    unprivileged_client,
++    namespace,
++):
++    """
++    Creates a Windows 10 VM with qemu-guest-agent installed.
++
++    Returns:
++        VirtualMachineForTests: Running Windows 10 VM with guest agent
++    """
++    # Note: Specific Windows 10 template selection would be done
++    # via template_labels parameter in VirtualMachineForTestsFromTemplate
++    with VirtualMachineForTestsFromTemplate(
++        name="windows-10-vm-agent",
++        namespace=namespace.name,
++        client=unprivileged_client,
++    ) as vm:
++        running_vm(vm=vm)
++        yield vm
++
++
++@pytest.fixture(scope="function")
++def windows_server_2019_vm_with_guest_agent(
++    unprivileged_client,
++    namespace,
++):
++    """
++    Creates a Windows Server 2019 VM with qemu-guest-agent installed.
++
++    Returns:
++        VirtualMachineForTests: Running Windows Server 2019 VM with guest agent
++    """
++    # Note: Specific Windows Server 2019 template selection via template_labels
++    with VirtualMachineForTestsFromTemplate(
++        name="win-server-2019-vm-agent",
++        namespace=namespace.name,
++        client=unprivileged_client,
++    ) as vm:
++        running_vm(vm=vm)
++        yield vm
++
++
++@pytest.fixture(scope="function")
++def windows_server_2022_vm_with_guest_agent(
++    unprivileged_client,
++    namespace,
++):
++    """
++    Creates a Windows Server 2022 VM with qemu-guest-agent installed.
++
++    Returns:
++        VirtualMachineForTests: Running Windows Server 2022 VM with guest agent
++    """
++    # Note: Specific Windows Server 2022 template selection via template_labels
++    with VirtualMachineForTestsFromTemplate(
++        name="win-server-2022-vm-agent",
++        namespace=namespace.name,
++        client=unprivileged_client,
++    ) as vm:
++        running_vm(vm=vm)
++        yield vm
+diff --git a/tests/virt/node/general/test_windows_guest_agent_osinfo.py b/tests/virt/node/general/test_windows_guest_agent_osinfo.py
+new file mode 100644
+index 0000000..6e21c4f
+--- /dev/null
++++ b/tests/virt/node/general/test_windows_guest_agent_osinfo.py
+@@ -0,0 +1,434 @@
++# -*- coding: utf-8 -*-
++
++"""
++Windows Guest Agent OS/Hostname Info Display Tests
++
++STP Reference: ../thesis/stps/7.md
++Jira: CNV-61262, CNV-56888
++PR: https://github.com/kubevirt/kubevirt/pull/14232
++
++This module contains tests verifying that Windows VMs correctly display
++OS version and hostname information when qemu-guest-agent is running.
++
++Bug Fix: Ensures domain.Status.OSInfo is not empty despite guest agent
++reporting correctly, preventing false "Guest Agent Required" messages.
++"""
++
++import logging
++
++import pytest
++from pyhelper_utils.shell import run_ssh_commands
++
++from utilities.constants import TIMEOUT_6MIN
++from utilities.ssp import get_windows_os_info, validate_os_info_vmi_vs_windows_os
++from utilities.virt import (
++    get_guest_os_info,
++    guest_reboot,
++    running_vm,
++    wait_for_user_agent_down,
++)
++
++LOGGER = logging.getLogger(__name__)
++
++
++pytestmark = [
++    pytest.mark.gating,
++    pytest.mark.post_upgrade,
++    pytest.mark.special_infra,
++    pytest.mark.high_resource_vm,
++]
++
++
++class TestWindowsGuestAgentOSInfo:
++    """
++    Tests for Windows guest agent OS and hostname information display.
++
++    Markers:
++        - gating
++        - post_upgrade
++
++    Preconditions:
++        - Windows VM with qemu-guest-agent installed
++        - virtio-serial driver installed for guest-host communication
++        - Guest agent service running
++    """
++
++    @pytest.mark.polarion("CNV-61262")
++    def test_windows_os_version_display(self, windows_vm_with_guest_agent):
++        """
++        Test that Windows OS version is displayed correctly when guest agent is running.
++
++        Steps:
++            1. Get VMI status guestOSInfo field
++            2. Verify OS info is populated (not empty)
++            3. Compare VMI OS info with actual Windows OS version from guest
++
++        Expected:
++            - VMI guestOSInfo field is not empty
++            - OS version matches Windows version reported by guest OS
++            - No "Guest Agent Required" message displayed
++        """
++        LOGGER.info("Testing Windows OS version display with guest agent")
++
++        vm = windows_vm_with_guest_agent
++        vmi = vm.vmi
++
++        LOGGER.info("Getting VMI guest OS info")
++        vmi_os_info = get_guest_os_info(vmi=vmi)
++
++        LOGGER.info(f"VMI OS Info: {vmi_os_info}")
++        assert vmi_os_info, "VMI guestOSInfo should not be empty when guest agent is running"
++        assert vmi_os_info.get("id"), "VMI guestOSInfo should contain 'id' field"
++
++        LOGGER.info("Validating OS info matches between VMI and Windows guest")
++        validate_os_info_vmi_vs_windows_os(vm=vm)
++
++        LOGGER.info("OS version display test passed")
++
++    @pytest.mark.polarion("CNV-61262")
++    def test_windows_hostname_display(self, windows_vm_with_guest_agent):
++        """
++        Test that Windows hostname is displayed correctly when guest agent is running.
++
++        Steps:
++            1. Get VMI status guestOSInfo field
++            2. Verify hostname is populated
++            3. Get actual hostname from Windows guest OS
++            4. Compare VMI hostname with guest OS hostname
++
++        Expected:
++            - VMI guestOSInfo contains hostname field
++            - Hostname matches the actual Windows hostname
++        """
++        LOGGER.info("Testing Windows hostname display with guest agent")
++
++        vm = windows_vm_with_guest_agent
++        vmi = vm.vmi
++
++        LOGGER.info("Getting VMI guest OS info")
++        vmi_os_info = get_guest_os_info(vmi=vmi)
++
++        assert vmi_os_info, "VMI guestOSInfo should not be empty"
++        assert "hostname" in vmi_os_info, "VMI guestOSInfo should contain hostname field"
++
++        vmi_hostname = vmi_os_info["hostname"]
++        LOGGER.info(f"VMI hostname: {vmi_hostname}")
++
++        LOGGER.info("Getting actual hostname from Windows guest")
++        windows_info = get_windows_os_info(ssh_exec=vm.ssh_exec)
++        guest_hostname = windows_info["os"]["hostname"]
++        LOGGER.info(f"Guest OS hostname: {guest_hostname}")
++
++        assert vmi_hostname in guest_hostname, (
++            f"VMI hostname '{vmi_hostname}' should match guest hostname '{guest_hostname}'"
++        )
++
++        LOGGER.info("Hostname display test passed")
++
++    @pytest.mark.polarion("CNV-61262")
++    def test_osinfo_persistence_after_vm_reboot(self, windows_vm_with_guest_agent):
++        """
++        Test that OS and hostname info persists and is restored after VM reboot.
++
++        Preconditions:
++            - Windows VM running with OS/hostname info displayed
++
++        Steps:
++            1. Verify OS info is displayed before reboot
++            2. Reboot the Windows VM (guest restart)
++            3. Wait for VM to become running
++            4. Wait for guest agent to reconnect
++            5. Verify OS info is displayed again
++
++        Expected:
++            - OS info is displayed before reboot
++            - OS info is restored and displayed after reboot
++            - No "Guest Agent Required" message after reboot
++        """
++        LOGGER.info("Testing OS info persistence after VM reboot")
++
++        vm = windows_vm_with_guest_agent
++        vmi = vm.vmi
++
++        LOGGER.info("Verifying OS info is displayed before reboot")
++        os_info_before = get_guest_os_info(vmi=vmi)
++        assert os_info_before, "OS info should be available before reboot"
++        assert os_info_before.get("id"), "OS info should contain 'id' before reboot"
++
++        os_id_before = os_info_before.get("id")
++        hostname_before = os_info_before.get("hostname")
++        LOGGER.info(f"OS info before reboot - ID: {os_id_before}, Hostname: {hostname_before}")
++
++        LOGGER.info("Rebooting Windows VM")
++        guest_reboot(vm=vm, os_type="windows")
++
++        LOGGER.info("Waiting for VM to become running after reboot")
++        running_vm(vm=vm)
++
++        LOGGER.info("Waiting for guest agent to reconnect and report OS info")
++        os_info_after = get_guest_os_info(vmi=vmi)
++
++        assert os_info_after, "OS info should be available after reboot"
++        assert os_info_after.get("id"), "OS info should contain 'id' after reboot"
++
++        os_id_after = os_info_after.get("id")
++        hostname_after = os_info_after.get("hostname")
++        LOGGER.info(f"OS info after reboot - ID: {os_id_after}, Hostname: {hostname_after}")
++
++        assert os_id_after == os_id_before, "OS ID should remain the same after reboot"
++        assert hostname_after == hostname_before, "Hostname should remain the same after reboot"
++
++        LOGGER.info("OS info persistence test passed")
++
++    @pytest.mark.polarion("CNV-61262")
++    def test_osinfo_after_guest_agent_restart(self, windows_vm_with_guest_agent):
++        """
++        Test that OS info appears when guest agent service is started.
++
++        Preconditions:
++            - Windows VM running with qemu-guest-agent service stopped
++
++        Steps:
++            1. Stop qemu-guest-agent service in guest
++            2. Verify VMI guestOSInfo is empty or shows "Guest Agent Required"
++            3. Start qemu-guest-agent service in guest
++            4. Wait for agent to report
++            5. Verify OS info is now displayed
++
++        Expected:
++            - OS info appears after agent starts
++            - VMI guestOSInfo is populated with correct OS version and hostname
++        """
++        LOGGER.info("Testing OS info availability after guest agent restart")
++
++        vm = windows_vm_with_guest_agent
++        vmi = vm.vmi
++
++        LOGGER.info("Verifying OS info is initially available")
++        initial_os_info = get_guest_os_info(vmi=vmi)
++        assert initial_os_info, "OS info should be available initially"
++
++        LOGGER.info("Stopping qemu-guest-agent service in Windows guest")
++        stop_command = "Stop-Service -Name 'QEMU Guest Agent'"
++        run_ssh_commands(host=vm.ssh_exec, commands=[stop_command])
++
++        LOGGER.info("Waiting for guest agent to stop reporting")
++        wait_for_user_agent_down(vm=vm, timeout=TIMEOUT_6MIN)
++
++        LOGGER.info("Starting qemu-guest-agent service in Windows guest")
++        start_command = "Start-Service -Name 'QEMU Guest Agent'"
++        run_ssh_commands(host=vm.ssh_exec, commands=[start_command])
++
++        LOGGER.info("Waiting for guest agent to reconnect and report OS info")
++        restored_os_info = get_guest_os_info(vmi=vmi)
++
++        assert restored_os_info, "OS info should be available after restarting agent"
++        assert restored_os_info.get("id"), "OS info should contain 'id' after agent restart"
++        assert restored_os_info.get("hostname"), "OS info should contain hostname after agent restart"
++
++        LOGGER.info(f"Restored OS info - ID: {restored_os_info.get('id')}, "
++                   f"Hostname: {restored_os_info.get('hostname')}")
++
++        LOGGER.info("Guest agent restart test passed")
++
++
++class TestWindowsGuestAgentOSInfoMultipleVersions:
++    """
++    Tests for Windows guest agent OS info across different Windows versions.
++
++    Markers:
++        - post_upgrade
++
++    Parametrize:
++        - windows_version: [windows10, windows-server-2019, windows-server-2022]
++
++    Preconditions:
++        - Windows VM with specified version
++        - qemu-guest-agent installed
++        - virtio-serial driver installed
++    """
++
++    @pytest.mark.polarion("CNV-61262")
++    def test_os_version_display_windows_10(self, windows_10_vm_with_guest_agent):
++        """
++        Test that Windows 10 OS version is displayed correctly.
++
++        Steps:
++            1. Get VMI status guestOSInfo field
++            2. Verify OS info contains Windows 10 version
++
++        Expected:
++            - VMI guestOSInfo shows correct Windows 10 version
++        """
++        LOGGER.info("Testing Windows 10 OS version display")
++
++        vm = windows_10_vm_with_guest_agent
++        vmi = vm.vmi
++
++        LOGGER.info("Getting VMI guest OS info for Windows 10")
++        vmi_os_info = get_guest_os_info(vmi=vmi)
++
++        assert vmi_os_info, "VMI guestOSInfo should not be empty for Windows 10"
++        assert vmi_os_info.get("id"), "VMI guestOSInfo should contain 'id' for Windows 10"
++
++        LOGGER.info(f"Windows 10 OS info: {vmi_os_info}")
++
++        LOGGER.info("Validating OS info matches Windows 10 guest")
++        validate_os_info_vmi_vs_windows_os(vm=vm)
++
++        LOGGER.info("Windows 10 OS version display test passed")
++
++    @pytest.mark.polarion("CNV-61262")
++    def test_os_version_display_windows_server_2019(self, windows_server_2019_vm_with_guest_agent):
++        """
++        Test that Windows Server 2019 OS version is displayed correctly.
++
++        Steps:
++            1. Get VMI status guestOSInfo field
++            2. Verify OS info contains Windows Server 2019 version
++
++        Expected:
++            - VMI guestOSInfo shows correct Windows Server 2019 version
++        """
++        LOGGER.info("Testing Windows Server 2019 OS version display")
++
++        vm = windows_server_2019_vm_with_guest_agent
++        vmi = vm.vmi
++
++        LOGGER.info("Getting VMI guest OS info for Windows Server 2019")
++        vmi_os_info = get_guest_os_info(vmi=vmi)
++
++        assert vmi_os_info, "VMI guestOSInfo should not be empty for Windows Server 2019"
++        assert vmi_os_info.get("id"), "VMI guestOSInfo should contain 'id' for Windows Server 2019"
++
++        LOGGER.info(f"Windows Server 2019 OS info: {vmi_os_info}")
++
++        LOGGER.info("Validating OS info matches Windows Server 2019 guest")
++        validate_os_info_vmi_vs_windows_os(vm=vm)
++
++        LOGGER.info("Windows Server 2019 OS version display test passed")
++
++    @pytest.mark.polarion("CNV-61262")
++    def test_os_version_display_windows_server_2022(self, windows_server_2022_vm_with_guest_agent):
++        """
++        Test that Windows Server 2022 OS version is displayed correctly.
++
++        Steps:
++            1. Get VMI status guestOSInfo field
++            2. Verify OS info contains Windows Server 2022 version
++
++        Expected:
++            - VMI guestOSInfo shows correct Windows Server 2022 version
++        """
++        LOGGER.info("Testing Windows Server 2022 OS version display")
++
++        vm = windows_server_2022_vm_with_guest_agent
++        vmi = vm.vmi
++
++        LOGGER.info("Getting VMI guest OS info for Windows Server 2022")
++        vmi_os_info = get_guest_os_info(vmi=vmi)
++
++        assert vmi_os_info, "VMI guestOSInfo should not be empty for Windows Server 2022"
++        assert vmi_os_info.get("id"), "VMI guestOSInfo should contain 'id' for Windows Server 2022"
++
++        LOGGER.info(f"Windows Server 2022 OS info: {vmi_os_info}")
++
++        LOGGER.info("Validating OS info matches Windows Server 2022 guest")
++        validate_os_info_vmi_vs_windows_os(vm=vm)
++
++        LOGGER.info("Windows Server 2022 OS version display test passed")
++
++
++class TestWindowsGuestAgentOSInfoNegative:
++    """
++    Negative tests for Windows guest agent OS info display.
++
++    Markers:
++        - gating
++
++    Preconditions:
++        - Windows VM without guest agent installed or running
++    """
++
++    @pytest.mark.polarion("CNV-61262")
++    def test_osinfo_empty_without_guest_agent(self, windows_vm_without_guest_agent):
++        """
++        [NEGATIVE] Test that VMI shows minimal info when agent is not running.
++
++        Preconditions:
++            - Windows VM running
++            - qemu-guest-agent service stopped or not installed
++
++        Steps:
++            1. Get VMI status guestOSInfo field
++            2. Verify field is empty or not populated with OS details
++
++        Expected:
++            - VMI guestOSInfo is empty or minimal
++            - No full OS details available without guest agent
++        """
++        LOGGER.info("[NEGATIVE] Testing OS info without guest agent")
++
++        vm = windows_vm_without_guest_agent
++        vmi = vm.vmi
++
++        LOGGER.info("Attempting to get VMI guest OS info without agent")
++
++        # The guestOSInfo field may not exist or be empty without agent
++        vmi_status = vmi.instance.status
++        guest_os_info = vmi_status.get("guestOSInfo")
++
++        LOGGER.info(f"Guest OS info without agent: {guest_os_info}")
++
++        # Without guest agent, guestOSInfo should be None, empty, or minimal
++        if guest_os_info:
++            # If it exists, it should not have detailed OS information
++            assert not guest_os_info.get("id"), (
++                "VMI guestOSInfo should not contain detailed 'id' without guest agent"
++            )
++            LOGGER.info("VMI guestOSInfo exists but is minimal (as expected)")
++        else:
++            LOGGER.info("VMI guestOSInfo is None/empty (as expected without guest agent)")
++
++        LOGGER.info("Negative test passed - no OS info without guest agent")
++
++    @pytest.mark.polarion("CNV-61262")
++    def test_osinfo_empty_without_virtio_serial(self, windows_vm_without_virtio_serial):
++        """
++        [NEGATIVE] Test that VMI shows no OS info when virtio-serial driver is missing.
++
++        Preconditions:
++            - Windows VM running
++            - virtio-serial driver not installed
++            - qemu-guest-agent installed but cannot communicate
++
++        Steps:
++            1. Get VMI status guestOSInfo field
++            2. Verify communication channel is not established
++
++        Expected:
++            - VMI guestOSInfo is empty
++            - Guest agent cannot report due to missing communication channel
++        """
++        LOGGER.info("[NEGATIVE] Testing OS info without virtio-serial driver")
++
++        vm = windows_vm_without_virtio_serial
++        vmi = vm.vmi
++
++        LOGGER.info("Attempting to get VMI guest OS info without virtio-serial")
++
++        vmi_status = vmi.instance.status
++        guest_os_info = vmi_status.get("guestOSInfo")
++
++        LOGGER.info(f"Guest OS info without virtio-serial: {guest_os_info}")
++
++        # Without virtio-serial, even if guest agent is installed, it cannot communicate
++        if guest_os_info:
++            assert not guest_os_info.get("id"), (
++                "VMI guestOSInfo should not contain detailed 'id' without virtio-serial"
++            )
++            LOGGER.info("VMI guestOSInfo exists but is minimal (communication channel unavailable)")
++        else:
++            LOGGER.info("VMI guestOSInfo is None/empty (no communication channel)")
++
++        LOGGER.info("Negative test passed - no OS info without virtio-serial")

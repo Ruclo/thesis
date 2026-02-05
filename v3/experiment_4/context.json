@@ -1,0 +1,325 @@
+{
+  "repository": {
+    "name": "openshift-virtualization-tests",
+    "organization": "RedHatQE",
+    "purpose": "Pytest-based test suite for OpenShift Virtualization (CNV)"
+  },
+  "structure": {
+    "tests_root": "tests/",
+    "utilities_root": "utilities/",
+    "docs_root": "docs/",
+    "pattern": "tests/<component>/<feature>/test_*.py"
+  },
+  "utilities": {
+    "classes": [
+      "VirtualMachine",
+      "VirtualMachineInstance",
+      "VirtualMachineSnapshot",
+      "VirtualMachineRestore",
+      "DataVolume",
+      "PersistentVolumeClaim",
+      "VolumeSnapshot",
+      "VolumeSnapshotClass",
+      "Namespace",
+      "Pod",
+      "Node",
+      "Secret",
+      "ConfigMap",
+      "StorageClass",
+      "StorageProfile",
+      "Console",
+      "TimeoutSampler"
+    ],
+    "methods": [
+      "wait_for_vm_interfaces",
+      "generate_cloud_init_data",
+      "running_vm",
+      "wait_for_vm_running",
+      "wait_ready_to_use",
+      "wait_snapshot_done",
+      "wait_restore_done",
+      "run_ssh_commands",
+      "create_dv",
+      "validate_file_exists_in_url",
+      "expected_output_after_restore",
+      "start_windows_vm_after_restore",
+      "fail_to_create_snapshot_no_permissions"
+    ],
+    "constants": [
+      "TIMEOUT_1MIN",
+      "TIMEOUT_2MIN",
+      "TIMEOUT_3MIN",
+      "TIMEOUT_4MIN",
+      "TIMEOUT_5MIN",
+      "TIMEOUT_6MIN",
+      "TIMEOUT_8MIN",
+      "TIMEOUT_10MIN",
+      "TIMEOUT_12MIN",
+      "TIMEOUT_25MIN",
+      "TIMEOUT_30MIN",
+      "TIMEOUT_60MIN",
+      "TIMEOUT_1SEC",
+      "TIMEOUT_5SEC",
+      "TIMEOUT_10SEC",
+      "TIMEOUT_20SEC",
+      "TIMEOUT_30SEC",
+      "OS_FLAVOR_CIRROS",
+      "OS_FLAVOR_ALPINE",
+      "OS_FLAVOR_WINDOWS",
+      "OS_FLAVOR_RHEL",
+      "OS_FLAVOR_FEDORA",
+      "UNPRIVILEGED_USER",
+      "AMD_64",
+      "ARM_64",
+      "S390X",
+      "LINUX_STR"
+    ],
+    "key_files": {
+      "virt": "utilities/virt.py",
+      "storage": "utilities/storage.py",
+      "constants": "utilities/constants.py",
+      "infra": "utilities/infra.py",
+      "network": "utilities/network.py"
+    }
+  },
+  "fixtures": {
+    "common": [
+      "namespace",
+      "admin_client",
+      "unprivileged_client",
+      "storage_class_matrix__function__",
+      "storage_class_matrix__module__",
+      "storage_class_matrix_snapshot_matrix__module__",
+      "storage_class_for_snapshot",
+      "skip_if_no_storage_class_for_snapshot",
+      "data_volume_multi_storage_scope_function",
+      "data_volume_multi_storage_scope_module",
+      "data_volume_scope_function",
+      "data_volume_scope_class",
+      "schedulable_nodes",
+      "kubevirt_feature_gates",
+      "modern_cpu_for_migration"
+    ],
+    "snapshot_specific": [
+      "windows_vm_for_snapshot",
+      "snapshot_windows_directory",
+      "windows_snapshot",
+      "snapshot_dirctory_removed",
+      "file_created_during_snapshot",
+      "permissions_for_dv"
+    ],
+    "scopes": {
+      "namespace": "function",
+      "admin_client": "session",
+      "unprivileged_client": "session",
+      "storage_class_matrix__function__": "function",
+      "storage_class_matrix__module__": "module",
+      "kubevirt_feature_gates": "session",
+      "data_volume_scope_function": "function",
+      "data_volume_scope_class": "class",
+      "modern_cpu_for_migration": "session"
+    }
+  },
+  "imports": {
+    "common_patterns": [
+      "import logging",
+      "import pytest",
+      "from ocp_resources.virtual_machine import VirtualMachine",
+      "from ocp_resources.virtual_machine_instance import VirtualMachineInstance",
+      "from ocp_resources.virtual_machine_snapshot import VirtualMachineSnapshot",
+      "from ocp_resources.virtual_machine_restore import VirtualMachineRestore",
+      "from ocp_resources.datavolume import DataVolume",
+      "from ocp_resources.namespace import Namespace",
+      "from timeout_sampler import TimeoutExpiredError, TimeoutSampler",
+      "from utilities.constants import TIMEOUT_10MIN, TIMEOUT_5MIN",
+      "from utilities.virt import running_vm",
+      "from pyhelper_utils.shell import run_ssh_commands"
+    ],
+    "snapshot_specific": [
+      "from tests.storage.snapshots.utils import expected_output_after_restore, start_windows_vm_after_restore",
+      "from tests.storage.snapshots.constants import ERROR_MSG_USER_CANNOT_CREATE_VM_RESTORE"
+    ]
+  },
+  "conventions": {
+    "markers": {
+      "required": [
+        "@pytest.mark.polarion('CNV-XXXXX')"
+      ],
+      "common": [
+        "@pytest.mark.gating",
+        "@pytest.mark.tier2",
+        "@pytest.mark.tier3",
+        "@pytest.mark.storage",
+        "@pytest.mark.virt",
+        "@pytest.mark.arm64",
+        "@pytest.mark.x86_64",
+        "@pytest.mark.s390x"
+      ],
+      "architecture": [
+        "@pytest.mark.arm64",
+        "@pytest.mark.x86_64",
+        "@pytest.mark.s390x"
+      ],
+      "special": [
+        "@pytest.mark.parametrize(...)",
+        "@pytest.mark.usefixtures(...)",
+        "@pytest.mark.incremental",
+        "@pytest.mark.jira('CNV-XXXXX')"
+      ]
+    },
+    "naming": {
+      "test_function": "test_<feature>_<scenario>",
+      "test_class": "Test<FeatureName>",
+      "fixture": "descriptive_noun_name",
+      "file": "test_<feature_name>.py"
+    },
+    "file_structure": {
+      "pattern": "tests/<domain>/<feature>/test_*.py",
+      "examples": [
+        "tests/storage/snapshots/test_snapshots.py",
+        "tests/virt/cluster/vm_lifecycle/test_vm_lifecycle.py",
+        "tests/network/flat_overlay/test_flat_overlay.py"
+      ]
+    },
+    "docstrings": {
+      "format": "Google-format",
+      "sections": [
+        "Brief description",
+        "Args (if applicable)",
+        "Returns (if applicable)",
+        "Raises (if applicable)"
+      ]
+    },
+    "test_structure": {
+      "module_docstring": "Required - brief description of what module tests",
+      "class_docstring": "Optional but recommended - shared preconditions for grouped tests",
+      "test_docstring": "Required - describes what the test verifies",
+      "parametrization": "Use pytest.mark.parametrize with descriptive param names",
+      "fixtures_before_params": "Pytest native fixtures first, then session, then others"
+    }
+  },
+  "precedents": {
+    "snapshot_tests": [
+      "tests/storage/snapshots/test_snapshots.py:42 - test_snapshot_feature_gate_present",
+      "tests/storage/snapshots/test_snapshots.py:49 - TestRestoreSnapshots class",
+      "tests/storage/snapshots/test_snapshots.py:50-63 - Parametrized snapshot restore test",
+      "tests/storage/snapshots/conftest.py:28 - permissions_for_dv fixture",
+      "tests/storage/snapshots/conftest.py:48 - windows_vm_for_snapshot fixture",
+      "tests/storage/snapshots/conftest.py:72 - windows_snapshot fixture"
+    ],
+    "similar_patterns": [
+      "tests/storage/snapshots/test_snapshots.py - VirtualMachineSnapshot and VirtualMachineRestore usage",
+      "tests/storage/snapshots/utils.py - Helper functions for snapshot testing",
+      "tests/storage/snapshots/conftest.py - Snapshot-specific fixtures"
+    ],
+    "vm_lifecycle_tests": [
+      "Class-based grouping of related tests",
+      "Shared preconditions in class docstring",
+      "Use of parametrization for multiple scenarios"
+    ]
+  },
+  "external_dependencies": {
+    "ocp_resources": {
+      "description": "openshift-python-wrapper - Python wrapper for OpenShift/Kubernetes resources",
+      "repo": "https://github.com/RedHatQE/openshift-python-wrapper",
+      "key_classes": [
+        "VirtualMachine",
+        "VirtualMachineInstance",
+        "VirtualMachineSnapshot",
+        "VirtualMachineRestore",
+        "DataVolume",
+        "Namespace",
+        "Pod"
+      ]
+    },
+    "pytest_plugins": [
+      "pytest-testconfig - Test configuration management",
+      "pytest-dependency - Test dependency management",
+      "timeout-sampler - Timeout and retry utilities"
+    ]
+  },
+  "coding_standards": {
+    "style_guide": "Google Python Style Guide",
+    "type_checking": "mypy - enforced via pyproject.toml",
+    "pre_commit": "Required - enforces code quality",
+    "imports": {
+      "style": "Absolute imports only",
+      "from_conftest": "Forbidden - conftest.py should only contain fixtures"
+    },
+    "functions": {
+      "caching": "Use @functools.cache when applicable to reduce load",
+      "naming": "Descriptive names over short names",
+      "arguments": "Call functions using argument names for clarity"
+    },
+    "fixtures": {
+      "single_purpose": "Each fixture should do one action/functionality",
+      "naming": "Noun describing what fixture provides, not verb",
+      "scope_suffix": "Add _scope_<scope> suffix for fixtures with same functionality but different scope",
+      "ordering": "Pytest native fixtures first, then session-scoped, then others"
+    },
+    "tests": {
+      "independence": "Tests should be independent; use pytest-dependency if needed",
+      "single_aspect": "Each test should verify a single aspect",
+      "markers": "Apply relevant markers from pytest.ini",
+      "classes": "Group related tests; don't group unrelated tests"
+    }
+  },
+  "test_development_workflow": {
+    "steps": [
+      "1. Read existing code before modifying",
+      "2. Search for duplicate functionality before writing new code",
+      "3. Write clear, descriptive names for tests, variables, functions",
+      "4. Add docstrings to functions, classes, and modules",
+      "5. Run pre-commit checks before committing",
+      "6. Verify tests locally before submitting PR"
+    ],
+    "pr_requirements": [
+      "PRs must be verified and marked with 'verified' label",
+      "At least two reviewers must approve (/lgtm)",
+      "At least one approver from OWNERS must approve (/approve)",
+      "All CI checks must pass",
+      "Address all CodeRabbit comments"
+    ]
+  },
+  "snapshot_testing_specifics": {
+    "key_resources": {
+      "VirtualMachineSnapshot": {
+        "methods": ["wait_ready_to_use", "wait_snapshot_done"],
+        "typical_timeout": "TIMEOUT_10MIN"
+      },
+      "VirtualMachineRestore": {
+        "methods": ["wait_restore_done"],
+        "typical_timeout": "TIMEOUT_10MIN"
+      }
+    },
+    "common_patterns": {
+      "create_snapshot": "Use VirtualMachineSnapshot context manager with vm_name parameter",
+      "restore_snapshot": "Use VirtualMachineRestore context manager",
+      "data_validation": "Write files before snapshot, verify after restore",
+      "vm_state": "Stop VM before restore, start after restore completes"
+    },
+    "helper_functions": {
+      "expected_output_after_restore": "Returns expected file list after restore",
+      "start_windows_vm_after_restore": "Waits for restore completion and starts VM",
+      "fail_to_create_snapshot_no_permissions": "Negative test helper for RBAC"
+    }
+  },
+  "run_strategies": {
+    "values": [
+      "Always",
+      "Manual",
+      "Halted",
+      "RerunOnFailure",
+      "Once"
+    ],
+    "description": "VM field controlling automatic start behavior"
+  },
+  "common_test_scenarios": {
+    "snapshot_restore": {
+      "basic": "Create snapshot -> Stop VM -> Restore -> Verify completion",
+      "with_data": "Write data -> Snapshot -> Modify data -> Restore -> Verify original data",
+      "multiple_snapshots": "Create multiple snapshots -> Restore specific snapshot",
+      "negative": "Test restore failures, permission errors"
+    }
+  }
+}
