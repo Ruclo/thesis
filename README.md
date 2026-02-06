@@ -13,7 +13,31 @@ The research is divided into phases to measure the impact of Context Engineering
 * **Phase 1 (Context Retrieval):** Augmented generation using a custom MCP (Model Context Protocol) server to fetch repo-specific utilities and constants.
 * **Phase 2 (Agentic Loop):** Closed-loop generation where the agent iteratively fixes compilation/linting errors.
 
-## 3. Repository Structure
+## 3. Setup
+
+Run the setup script from the thesis directory:
+
+```bash
+./setup.sh
+```
+
+The setup script will:
+1. Clone the openshift-virtualization-tests repository once
+2. Set up Python environment with `uv`
+3. Install and verify `pyright` works
+4. Configure Claude Code commands and skills:
+   - **v0**: Each experiment prompt → `.claude/commands/v0-experiment-*.md`
+   - **v1**: Unified prompt → `.claude/commands/v1-unified-prompt.md`
+   - **v2**: Orchestrator → `.claude/commands/v2-orchestrator.md` + skills → `.claude/skills/`
+
+After setup, navigate to the repository:
+```bash
+cd openshift-virtualization-tests
+```
+
+All version-specific commands and skills will be available through Claude Code.
+
+## 4. Repository Structure
 
 ### `/v0` - Baseline Experiments (Control Group)
 This folder contains the "Naive" generation attempts. In these experiments, the LLM was given the Test Plan and basic instructions but **no access** to the repository's helper functions, constants, or fixture definitions.
