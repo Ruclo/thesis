@@ -112,8 +112,64 @@ else
     print_error "v1/prompt.md not found"
 fi
 
+# v2.1: Copy orchestrator as command with v2.1- prefix and skills
+print_info "Setting up v2.1 command and skills..."
+if [ -f "$THESIS_DIR/v2.1/orchestrator.md" ]; then
+    cp "$THESIS_DIR/v2.1/orchestrator.md" ".claude/commands/v2.1-orchestrator.md"
+    print_success "v2.1 orchestrator command set up"
+else
+    print_error "v2.1/orchestrator.md not found"
+fi
+
+# Copy v2.1 skills
+if [ -d "$THESIS_DIR/v2.1/skills" ]; then
+    print_info "Copying v2.1 skills to .claude/skills/"
+    for skill_dir in "$THESIS_DIR"/v2.1/skills/*/; do
+        if [ -d "$skill_dir" ]; then
+            skill_name=$(basename "$skill_dir")
+            skill_name_v21="v2.1-$skill_name"
+            mkdir -p ".claude/skills/$skill_name_v21"
+            if [ -f "$skill_dir/SKILL.md" ]; then
+                cp "$skill_dir/SKILL.md" ".claude/skills/$skill_name_v21/"
+                print_info "  Copied skill: $skill_name_v21"
+            fi
+        fi
+    done
+    print_success "v2.1 skills set up"
+else
+    print_error "v2.1/skills directory not found"
+fi
+
+# v2.2: Copy orchestrator as command with v2.2- prefix and skills
+print_info "Setting up v2.2 command and skills..."
+if [ -f "$THESIS_DIR/v2.2/orchestrator.md" ]; then
+    cp "$THESIS_DIR/v2.2/orchestrator.md" ".claude/commands/v2.2-orchestrator.md"
+    print_success "v2.2 orchestrator command set up"
+else
+    print_error "v2.2/orchestrator.md not found"
+fi
+
+# Copy v2.2 skills
+if [ -d "$THESIS_DIR/v2.2/skills" ]; then
+    print_info "Copying v2.2 skills to .claude/skills/"
+    for skill_dir in "$THESIS_DIR"/v2.2/skills/*/; do
+        if [ -d "$skill_dir" ]; then
+            skill_name=$(basename "$skill_dir")
+            skill_name_v22="v2.2-$skill_name"
+            mkdir -p ".claude/skills/$skill_name_v22"
+            if [ -f "$skill_dir/SKILL.md" ]; then
+                cp "$skill_dir/SKILL.md" ".claude/skills/$skill_name_v22/"
+                print_info "  Copied skill: $skill_name_v22"
+            fi
+        fi
+    done
+    print_success "v2.2 skills set up"
+else
+    print_error "v2.2/skills directory not found"
+fi
+
 # v2: Copy orchestrator as command with v2- prefix and skills
-print_info "Setting up v2 command and skills..."
+print_info "Setting up v2 (full) command and skills..."
 if [ -f "$THESIS_DIR/v2/orchestrator.md" ]; then
     cp "$THESIS_DIR/v2/orchestrator.md" ".claude/commands/v2-orchestrator.md"
     print_success "v2 orchestrator command set up"
@@ -127,10 +183,11 @@ if [ -d "$THESIS_DIR/v2/skills" ]; then
     for skill_dir in "$THESIS_DIR"/v2/skills/*/; do
         if [ -d "$skill_dir" ]; then
             skill_name=$(basename "$skill_dir")
-            mkdir -p ".claude/skills/$skill_name"
+            skill_name_v2="v2-$skill_name"
+            mkdir -p ".claude/skills/$skill_name_v2"
             if [ -f "$skill_dir/SKILL.md" ]; then
-                cp "$skill_dir/SKILL.md" ".claude/skills/$skill_name/"
-                print_info "  Copied skill: $skill_name"
+                cp "$skill_dir/SKILL.md" ".claude/skills/$skill_name_v2/"
+                print_info "  Copied skill: $skill_name_v2"
             fi
         fi
     done
@@ -148,10 +205,17 @@ echo ""
 echo "Available commands:"
 echo "  v0-experiment-* : Individual experiment prompts from v0"
 echo "  v1-unified-prompt : Single unified prompt from v1"
-echo "  v2-orchestrator : Orchestrator command from v2"
+echo "  v2.1-orchestrator : Orchestrator command from v2.1 (modular, no context.json)"
+echo "  v2.2-orchestrator : Orchestrator command from v2.2 (+ STD generation)"
+echo "  v2-orchestrator : Orchestrator command from v2 (full, with context.json)"
 echo ""
-echo "Available skills (from v2):"
+echo "Available skills:"
 ls -1 "$TARGET_DIR/.claude/skills/" 2>/dev/null | sed 's/^/  /'
+echo ""
+echo "Skill versions:"
+echo "  v2.1-* : Skills from v2.1 (exploration outputs verbal summary, no context.json)"
+echo "  v2.2-* : Skills from v2.2 (adds STD generation)"
+echo "  v2-* : Skills from v2 (full version with context.json caching)"
 echo ""
 echo "Next steps:"
 echo "  cd $TARGET_DIR"
