@@ -1,10 +1,10 @@
-# Skill: /generate-pytest
+# Skill: /v2.2-generate-pytest
 
 **Purpose**: Generate executable pytest code from Software Test Description (STD) using repository context
 
 ## Input
 - **Required**: Path to STD markdown file
-- **Prerequisite**: Repository context should be explored using `/explore-test-context` first
+- **Prerequisite**: Repository context should be explored using `/v2.2-explore-test-context` first
 - **Optional**: `--output-dir` - target directory (default: infer from repository conventions)
 
 ## Output
@@ -23,7 +23,7 @@ You must follow this strict two-phase workflow:
 
 ### Phase 1: Parse STD and Design Test Structure
 
-**Note:** This assumes repository context has been explored via `/explore-test-context`
+**Note:** This assumes repository context has been explored via `/v2.2-explore-test-context`
 
 1. **Read STD file:**
    - Extract test scenarios from the STD
@@ -129,7 +129,7 @@ def test_{scenario_name}({fixtures}):
 ## Key Principles
 
 1. **No Hallucination**: Only use utilities/classes/methods discovered in exploration
-2. **Use Exploration Findings**: Leverage the patterns, utilities, and conventions from `/explore-test-context`
+2. **Use Exploration Findings**: Leverage the patterns, utilities, and conventions from `/v2.2-explore-test-context`
 3. **Follow Conventions**: Match existing test patterns and structure from exploration
 4. **STD Fidelity**: Implement exactly what's in the STD
 5. **Verify Imports**: Ensure all imports match the patterns discovered
@@ -138,10 +138,10 @@ def test_{scenario_name}({fixtures}):
 
 ```bash
 # Standard usage
-/generate-pytest std_vm_reset.md
+/v2.2-generate-pytest std_vm_reset.md
 
 # Custom output directory
-/generate-pytest std_feature.md --output-dir tests/custom/
+/v2.2-generate-pytest std_feature.md --output-dir tests/custom/
 
 # Output: tests/virt/lifecycle/test_vm_reset.py
 ```

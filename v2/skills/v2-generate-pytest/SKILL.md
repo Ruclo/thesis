@@ -1,10 +1,10 @@
-# Skill: /generate-pytest
+# Skill: /v2-generate-pytest
 
 **Purpose**: Generate executable pytest code from Software Test Description (STD) and repository context
 
 ## Input
 - **Required**: Path to STD markdown file
-- **Required**: Path to context.json (from `/explore-test-context`)
+- **Required**: Path to context.json (from `/v2-explore-test-context`)
 - **Optional**: `--output-dir` - target directory (default: infer from context)
 
 ## Output
@@ -260,10 +260,10 @@ def test_reset_via_virtctl(namespace, admin_client):
 
 ```bash
 # Standard usage
-/generate-pytest std_vm_reset.md context.json
+/v2-generate-pytest std_vm_reset.md context.json
 
 # Custom output directory
-/generate-pytest std_feature.md context.json --output-dir tests/custom/
+/v2-generate-pytest std_feature.md context.json --output-dir tests/custom/
 
 # Output: tests/virt/lifecycle/test_vm_reset.py
 ```
@@ -273,7 +273,7 @@ def test_reset_via_virtctl(namespace, admin_client):
 If context.json is missing/invalid:
 ```
 ERROR: context.json not found or invalid
-HINT: Run `/explore-test-context` first to generate context
+HINT: Run `/v2-explore-test-context` first to generate context
 ```
 
 If STD is malformed:
@@ -295,7 +295,7 @@ ACTION: Implementing locally using base Kubernetes client
 - Pattern is reusable across different repos with similar structure
 
 ## Dependencies
-- STD file (from `/generate-std` or manual)
-- context.json (from `/explore-test-context`)
+- STD file (from `/v2-generate-std` or manual)
+- context.json (from `/v2-explore-test-context`)
 - Read tool
 - Write tool

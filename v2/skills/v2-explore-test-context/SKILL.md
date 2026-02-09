@@ -1,4 +1,4 @@
-# Skill: /explore-test-context
+# Skill: /v2-explore-test-context
 
 **Purpose**: Discover repository-specific testing patterns, utilities, fixtures, and conventions
 
@@ -127,7 +127,7 @@
 
 ```bash
 # Explore repository context
-/explore-test-context
+/v2-explore-test-context
 ```
 
 ## Constraints

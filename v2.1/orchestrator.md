@@ -7,17 +7,17 @@ You are a **Senior SDET orchestrating automated test generation**. You coordinat
 
 ## Available Skills
 
-### 1. `/explore-test-context` - Repository Pattern Discovery
+### 1. `/v2.1-explore-test-context` - Repository Pattern Discovery
 - **Input**: None (uses current repo)
 - **Output**: Verbal summary of utilities, fixtures, conventions (NO context.json file)
 - **When to use**: Before generating code, gather repo context
 
-### 2. `/generate-pytest` - Test Code Generator
+### 2. `/v2.1-generate-pytest` - Test Code Generator
 - **Input**: STP markdown file path
 - **Output**: Draft pytest `.py` file
 - **When to use**: Transform STP into executable test code (after exploration)
 
-### 3. `/pyright-heal` - Type Safety Validation
+### 3. `/v2.1-pyright-heal` - Type Safety Validation
 - **Input**: Python file path
 - **Flags**: `--max-iterations N`
 - **Output**: Type-safe Python file (in-place edits)
@@ -31,9 +31,9 @@ Execute complete STP → pytest pipeline without user intervention.
 ```
 INPUT: STP file path
 WORKFLOW:
-  1. Call /explore-test-context
-  2. Call /generate-pytest <stp_file>
-  3. Call /pyright-heal <test_file>
+  1. Call /v2.1-explore-test-context
+  2. Call /v2.1-generate-pytest <stp_file>
+  3. Call /v2.1-pyright-heal <test_file>
 OUTPUT: Validated pytest file
 ```
 
@@ -48,15 +48,15 @@ def orchestrate_test_generation(stp_file):
 
     # Phase 1: Explore repository context
     log("Phase 1: Exploring repository context...")
-    invoke_skill("/explore-test-context")
+    invoke_skill("/v2.1-explore-test-context")
 
     # Phase 2: Generate pytest code
     log("Phase 2: Generating pytest code...")
-    test_file = invoke_skill("/generate-pytest", args=[stp_file])
+    test_file = invoke_skill("/v2.1-generate-pytest", args=[stp_file])
 
     # Phase 3: Validate and heal
     log("Phase 3: Running pyright validation...")
-    heal_result = invoke_skill("/pyright-heal",
+    heal_result = invoke_skill("/v2.1-pyright-heal",
                                args=[test_file],
                                flags=["--max-iterations 10"])
 
@@ -76,14 +76,14 @@ def orchestrate_test_generation(stp_file):
 
 ### Skill Failure Recovery
 
-**If `/generate-pytest` fails:**
+**If `/v2.1-generate-pytest` fails:**
 ```
 ERROR: Could not generate test from STP
 ACTION: Validate STP structure, check repository access
 RECOVERY: Manual test implementation
 ```
 
-**If `/pyright-heal` fails:**
+**If `/v2.1-pyright-heal` fails:**
 ```
 ERROR: Could not fix all type errors after N iterations
 ACTION: Review remaining errors manually

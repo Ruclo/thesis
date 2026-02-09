@@ -1,4 +1,4 @@
-# Skill: /pyright-heal
+# Skill: /v2-pyright-heal
 
 **Purpose**: Universal Python type checker and self-healing fixer for ANY Python file
 
@@ -208,18 +208,18 @@ Result: ✓ Clean (2 iterations, 2 fixes applied)
 
 ```bash
 # Standard usage
-/pyright-heal tests/test_new_feature.py
+/v2-pyright-heal tests/test_new_feature.py
 
 # With max iterations limit
-/pyright-heal utilities/helper.py --max-iterations 5
+/v2-pyright-heal utilities/helper.py --max-iterations 5
 
 # Strict mode
-/pyright-heal conftest.py --strict
+/v2-pyright-heal conftest.py --strict
 
 # Works on ANY Python file!
-/pyright-heal scripts/automation.py
-/pyright-heal fixtures/base_fixtures.py
-/pyright-heal utilities/custom_helper.py
+/v2-pyright-heal scripts/automation.py
+/v2-pyright-heal fixtures/base_fixtures.py
+/v2-pyright-heal utilities/custom_helper.py
 ```
 
 ## Constraints

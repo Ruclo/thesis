@@ -1,10 +1,10 @@
-# Skill: /generate-pytest
+# Skill: /v2.1-generate-pytest
 
 **Purpose**: Generate executable pytest code from Software Test Plan (STP) using repository context
 
 ## Input
 - **Required**: Path to STP markdown file
-- **Prerequisite**: Repository context should be explored using `/explore-test-context` first
+- **Prerequisite**: Repository context should be explored using `/v2.1-explore-test-context` first
 
 ## Output
 - **File**: `test_<feature_name>.py`
@@ -21,7 +21,7 @@ You must follow this strict two-phase workflow:
 
 ### Phase 1: Parse STP and Design Test Structure
 
-**Note:** This assumes repository context has been explored via `/explore-test-context`
+**Note:** This assumes repository context has been explored via `/v2.1-explore-test-context`
 
 1. **Read STP file:**
    - Extract test scenarios and requirements
@@ -48,7 +48,7 @@ You must follow this strict two-phase workflow:
 ## Key Principles
 
 1. **No Hallucination**: Only use utilities/classes/methods discovered in exploration
-2. **Use Exploration Findings**: Leverage the patterns, utilities, and conventions from `/explore-test-context`
+2. **Use Exploration Findings**: Leverage the patterns, utilities, and conventions from `/v2.1-explore-test-context`
 3. **Follow Conventions**: Match existing test patterns and structure from exploration
 4. **Verify Imports**: Ensure all imports match the patterns discovered
 
@@ -56,7 +56,7 @@ You must follow this strict two-phase workflow:
 
 ```bash
 # Generate pytest from STP
-/generate-pytest stps/3.md
+/v2.1-generate-pytest stps/3.md
 ```
 
 ## Dependencies

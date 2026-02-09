@@ -1,4 +1,4 @@
-# Skill: /explore-test-context
+# Skill: /v2.2-explore-test-context
 
 **Purpose**: Discover repository-specific testing patterns, utilities, fixtures, and conventions
 
@@ -145,14 +145,14 @@ Repository Exploration Complete
 
 ```bash
 # Explore repository context
-/explore-test-context
+/v2.2-explore-test-context
 
-# The findings will be used by subsequent /generate-pytest calls
+# The findings will be used by subsequent /v2.2-generate-pytest or /v2.2-generate-std calls
 ```
 
 ## Difference from V2 (Full)
 
-In v2.1, this skill:
+In v2.2, this skill:
 - ❌ Does NOT create context.json
 - ✅ Reports findings in conversation
 - ✅ Findings are used immediately but not cached

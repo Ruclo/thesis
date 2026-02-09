@@ -1,4 +1,4 @@
-# Skill: /generate-std
+# Skill: /v2.2-generate-std
 
 > _This document was created with the assistance of Claude (Anthropic)._
 

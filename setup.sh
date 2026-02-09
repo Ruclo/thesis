@@ -121,17 +121,16 @@ else
     print_error "v2.1/orchestrator.md not found"
 fi
 
-# Copy v2.1 skills
+# Copy v2.1 skills (directories already have v2.1- prefix)
 if [ -d "$THESIS_DIR/v2.1/skills" ]; then
     print_info "Copying v2.1 skills to .claude/skills/"
     for skill_dir in "$THESIS_DIR"/v2.1/skills/*/; do
         if [ -d "$skill_dir" ]; then
             skill_name=$(basename "$skill_dir")
-            skill_name_v21="v2.1-$skill_name"
-            mkdir -p ".claude/skills/$skill_name_v21"
+            mkdir -p ".claude/skills/$skill_name"
             if [ -f "$skill_dir/SKILL.md" ]; then
-                cp "$skill_dir/SKILL.md" ".claude/skills/$skill_name_v21/"
-                print_info "  Copied skill: $skill_name_v21"
+                cp "$skill_dir/SKILL.md" ".claude/skills/$skill_name/"
+                print_info "  Copied skill: $skill_name"
             fi
         fi
     done
@@ -149,17 +148,16 @@ else
     print_error "v2.2/orchestrator.md not found"
 fi
 
-# Copy v2.2 skills
+# Copy v2.2 skills (directories already have v2.2- prefix)
 if [ -d "$THESIS_DIR/v2.2/skills" ]; then
     print_info "Copying v2.2 skills to .claude/skills/"
     for skill_dir in "$THESIS_DIR"/v2.2/skills/*/; do
         if [ -d "$skill_dir" ]; then
             skill_name=$(basename "$skill_dir")
-            skill_name_v22="v2.2-$skill_name"
-            mkdir -p ".claude/skills/$skill_name_v22"
+            mkdir -p ".claude/skills/$skill_name"
             if [ -f "$skill_dir/SKILL.md" ]; then
-                cp "$skill_dir/SKILL.md" ".claude/skills/$skill_name_v22/"
-                print_info "  Copied skill: $skill_name_v22"
+                cp "$skill_dir/SKILL.md" ".claude/skills/$skill_name/"
+                print_info "  Copied skill: $skill_name"
             fi
         fi
     done
@@ -177,17 +175,16 @@ else
     print_error "v2/orchestrator.md not found"
 fi
 
-# Copy v2 skills
+# Copy v2 skills (directories already have v2- prefix)
 if [ -d "$THESIS_DIR/v2/skills" ]; then
     print_info "Copying v2 skills to .claude/skills/"
     for skill_dir in "$THESIS_DIR"/v2/skills/*/; do
         if [ -d "$skill_dir" ]; then
             skill_name=$(basename "$skill_dir")
-            skill_name_v2="v2-$skill_name"
-            mkdir -p ".claude/skills/$skill_name_v2"
+            mkdir -p ".claude/skills/$skill_name"
             if [ -f "$skill_dir/SKILL.md" ]; then
-                cp "$skill_dir/SKILL.md" ".claude/skills/$skill_name_v2/"
-                print_info "  Copied skill: $skill_name_v2"
+                cp "$skill_dir/SKILL.md" ".claude/skills/$skill_name/"
+                print_info "  Copied skill: $skill_name"
             fi
         fi
     done
