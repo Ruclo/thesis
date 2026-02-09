@@ -108,19 +108,19 @@ run_experiment() {
     case $VERSION in
         v1)
             # For v1, use the unified prompt with STP content
-            prompt="$(cat "$THESIS_DIR/v1/prompt.md")\n\nSTP File: $stp_file"
+            prompt="$(cat "$THESIS_DIR/v1/prompt.md") STP File: $stp_file"
             ;;
         v2.1)
             # For v2.1, invoke the orchestrator
-            prompt="/v2.1-orchestrator\n\nSTP file path: ../../../stps/${stp_num}.md"
+            prompt="/v2.1-orchestrator STP file path: $stp_file"
             ;;
         v2.2)
             # For v2.2, invoke the orchestrator
-            prompt="/v2.2-orchestrator\n\nSTP file path: ../../../stps/${stp_num}.md"
+            prompt="/v2.2-orchestrator STP file path: $stp_file"
             ;;
         v2)
             # For v2, invoke the orchestrator
-            prompt="/v2-orchestrator\n\nSTP file path: ../../../stps/${stp_num}.md"
+            prompt="/v2-orchestrator STP file path: $stp_file"
             ;;
     esac
 

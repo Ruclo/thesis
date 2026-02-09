@@ -81,56 +81,43 @@ done
 
 print_header "Copying Skills and Commands to Each Clone"
 
-# Function to copy skills and commands to a target directory
-setup_version_skills() {
-    local version=$1
-    local target_dir=$2
-    local version_dir="$THESIS_DIR/$version"
-
-    # Create .claude directories
-    mkdir -p "$target_dir/.claude/commands"
-    mkdir -p "$target_dir/.claude/skills"
-
-    # Copy orchestrator as command
-    if [ -f "$version_dir/orchestrator.md" ]; then
-        cp "$version_dir/orchestrator.md" "$target_dir/.claude/commands/${version}-orchestrator.md"
-    fi
-
-    # Copy skills
-    if [ -d "$version_dir/skills" ]; then
-        for skill_dir in "$version_dir"/skills/*/; do
-            if [ -d "$skill_dir" ]; then
-                skill_name=$(basename "$skill_dir")
-                skill_target="${version}-${skill_name}"
-                mkdir -p "$target_dir/.claude/skills/$skill_target"
-                if [ -f "$skill_dir/SKILL.md" ]; then
-                    cp "$skill_dir/SKILL.md" "$target_dir/.claude/skills/$skill_target/"
-                fi
-            fi
-        done
-    fi
-}
-
 # Set up all versions in each clone
 for i in $(seq 1 $STP_COUNT); do
     TARGET_DIR="$PARALLEL_DIR/${i}-openshift-virtualization-tests"
 
     print_info "[$i/$STP_COUNT] Setting up versions in $TARGET_DIR..."
 
+    mkdir -p "$TARGET_DIR/.claude/commands"
+    mkdir -p "$TARGET_DIR/.claude/skills"
+
     # Set up v1
     if [ -f "$THESIS_DIR/v1/prompt.md" ]; then
-        mkdir -p "$TARGET_DIR/.claude/commands"
         cp "$THESIS_DIR/v1/prompt.md" "$TARGET_DIR/.claude/commands/v1-unified-prompt.md"
     fi
 
     # Set up v2.1
-    setup_version_skills "v2.1" "$TARGET_DIR"
+    if [ -f "$THESIS_DIR/v2.1/orchestrator.md" ]; then
+        cp "$THESIS_DIR/v2.1/orchestrator.md" "$TARGET_DIR/.claude/commands/v2.1-orchestrator.md"
+    fi
+    if [ -d "$THESIS_DIR/v2.1/skills" ]; then
+        cp -r "$THESIS_DIR/v2.1/skills/"* "$TARGET_DIR/.claude/skills/"
+    fi
 
     # Set up v2.2
-    setup_version_skills "v2.2" "$TARGET_DIR"
+    if [ -f "$THESIS_DIR/v2.2/orchestrator.md" ]; then
+        cp "$THESIS_DIR/v2.2/orchestrator.md" "$TARGET_DIR/.claude/commands/v2.2-orchestrator.md"
+    fi
+    if [ -d "$THESIS_DIR/v2.2/skills" ]; then
+        cp -r "$THESIS_DIR/v2.2/skills/"* "$TARGET_DIR/.claude/skills/"
+    fi
 
     # Set up v2
-    setup_version_skills "v2" "$TARGET_DIR"
+    if [ -f "$THESIS_DIR/v2/orchestrator.md" ]; then
+        cp "$THESIS_DIR/v2/orchestrator.md" "$TARGET_DIR/.claude/commands/v2-orchestrator.md"
+    fi
+    if [ -d "$THESIS_DIR/v2/skills" ]; then
+        cp -r "$THESIS_DIR/v2/skills/"* "$TARGET_DIR/.claude/skills/"
+    fi
 
     print_success "[$i/$STP_COUNT] All versions configured"
 done
