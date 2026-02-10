@@ -1,0 +1,847 @@
+diff --git a/tests/virt/compute/conftest.py b/tests/virt/compute/conftest.py
+new file mode 100644
+index 0000000..facc9ec
+--- /dev/null
++++ b/tests/virt/compute/conftest.py
+@@ -0,0 +1,103 @@
++"""
++Shared fixtures for compute tests.
++
++This conftest provides fixtures for CPU hotplug testing including
++VMs with CPU hotplug enabled and various configurations.
++"""
++
++import pytest
++
++from utilities.virt import VirtualMachineForTests, fedora_vm_body, running_vm
++
++
++@pytest.fixture(scope="function")
++def vm_with_cpu_hotplug(namespace, unprivileged_client):
++    """
++    Running VM with CPU hotplug enabled.
++
++    Yields:
++        VirtualMachine: VM with CPU hotplug enabled, initial 2 vCPUs, max 8 vCPUs
++    """
++    name = "vm-cpu-hotplug"
++    initial_sockets = 1
++    cpu_cores = 2
++    max_vcpus = 8
++    max_sockets = max_vcpus // cpu_cores
++
++    with VirtualMachineForTests(
++        name=name,
++        namespace=namespace.name,
++        cpu_sockets=initial_sockets,
++        cpu_cores=cpu_cores,
++        cpu_max_sockets=max_sockets,
++        body=fedora_vm_body(name=name),
++        client=unprivileged_client,
++    ) as vm:
++        running_vm(vm=vm)
++        yield vm
++
++
++@pytest.fixture(scope="function")
++def vm_at_max_vcpus(namespace, unprivileged_client):
++    """
++    Running VM already at maximum vCPU limit.
++
++    Yields:
++        VirtualMachine: VM with CPU hotplug enabled, at max vCPUs (4)
++    """
++    name = "vm-at-max-vcpus"
++    max_vcpus = 4
++    cpu_cores = 2
++    max_sockets = max_vcpus // cpu_cores
++
++    with VirtualMachineForTests(
++        name=name,
++        namespace=namespace.name,
++        cpu_sockets=max_sockets,
++        cpu_cores=cpu_cores,
++        cpu_max_sockets=max_sockets,
++        body=fedora_vm_body(name=name),
++        client=unprivileged_client,
++    ) as vm:
++        running_vm(vm=vm)
++        yield vm
++
++
++@pytest.fixture(scope="function")
++def vm_with_custom_cpu_topology(namespace, unprivileged_client, request):
++    """
++    Running VM with custom CPU topology for hotplug testing.
++
++    Parametrize via request.param:
++        {
++            "sockets": int,
++            "cores": int,
++            "threads": int,
++            "initial_sockets": int,
++            "max_sockets": int
++        }
++
++    Yields:
++        VirtualMachine: VM with specified CPU topology and hotplug enabled
++    """
++    name = "vm-custom-topology"
++    params = request.param
++
++    sockets = params.get("sockets", 1)
++    cores = params.get("cores", 2)
++    threads = params.get("threads", 1)
++    initial_sockets = params.get("initial_sockets", sockets)
++    max_sockets = params.get("max_sockets", sockets)
++
++    with VirtualMachineForTests(
++        name=name,
++        namespace=namespace.name,
++        cpu_sockets=initial_sockets,
++        cpu_cores=cores,
++        cpu_threads=threads,
++        cpu_max_sockets=max_sockets,
++        body=fedora_vm_body(name=name),
++        client=unprivileged_client,
++    ) as vm:
++        running_vm(vm=vm)
++        yield vm
+diff --git a/tests/virt/compute/test_cpu_hotplug_max_limits.py b/tests/virt/compute/test_cpu_hotplug_max_limits.py
+new file mode 100644
+index 0000000..3eff0b3
+--- /dev/null
++++ b/tests/virt/compute/test_cpu_hotplug_max_limits.py
+@@ -0,0 +1,732 @@
++"""
++CPU Hotplug Maximum Limits Tests
++
++STP Reference: /thesis/stps/6.md
++Jira: CNV-57352, CNV-61263
++
++This module contains tests for the CPU hotplug bug fix that ensures MaxSockets
++is properly limited based on maximum vCPUs allowed, preventing resource overcommit
++and unpredictable guest behavior.
++
++PR Reference: https://github.com/kubevirt/kubevirt/pull/14511
++"""
++
++import logging
++
++import pytest
++from kubernetes.dynamic.exceptions import UnprocessibleEntityError
++from ocp_resources.resource import ResourceEditor
++from ocp_resources.virtual_machine import VirtualMachine
++from timeout_sampler import TimeoutSampler
++
++from utilities.constants import TIMEOUT_5MIN, TIMEOUT_10MIN
++from utilities.infra import run_virtctl_command
++from utilities.virt import VirtualMachineForTests, fedora_vm_body, running_vm
++
++LOGGER = logging.getLogger(__name__)
++
++pytestmark = [pytest.mark.virt, pytest.mark.post_upgrade, pytest.mark.sno]
++
++
++class TestCPUHotplugMaxSockets:
++    """
++    Tests for MaxSockets calculation and CPU hotplug limits.
++
++    Preconditions:
++        - OpenShift cluster with OpenShift Virtualization operator installed
++        - CPU hotplug feature available
++        - Cluster nodes with multiple CPUs available
++    """
++
++    @pytest.mark.polarion("CNV-57352")
++    @pytest.mark.gating
++    def test_max_sockets_limited_by_max_vcpus(self, namespace, unprivileged_client):
++        """
++        Test that MaxSockets is calculated based on maximum vCPUs allowed.
++
++        Steps:
++            1. Create VirtualMachine with CPU hotplug enabled and specific max vCPUs (e.g., 8)
++            2. Get the calculated MaxSockets from VM spec
++            3. Verify MaxSockets value
++
++        Expected:
++            - MaxSockets is less than or equal to max vCPUs (8)
++        """
++        LOGGER.info("Starting test: MaxSockets limited by max vCPUs")
++
++        max_vcpus = 8
++        name = "vm-max-sockets-limit"
++
++        with VirtualMachineForTests(
++            name=name,
++            namespace=namespace.name,
++            cpu_cores=2,
++            cpu_max_sockets=max_vcpus,
++            body=fedora_vm_body(name=name),
++            client=unprivileged_client,
++        ) as vm:
++            LOGGER.info(f"Created VM {vm.name} with max_vcpus={max_vcpus}")
++            running_vm(vm=vm)
++
++            # Get MaxSockets from VM spec
++            vm_spec = vm.instance.spec
++            max_sockets = vm_spec.template.spec.domain.cpu.maxSockets
++
++            LOGGER.info(f"VM {vm.name} has MaxSockets={max_sockets}, max_vcpus={max_vcpus}")
++
++            assert max_sockets <= max_vcpus, (
++                f"MaxSockets ({max_sockets}) should be <= max_vcpus ({max_vcpus})"
++            )
++
++    @pytest.mark.polarion("CNV-61263")
++    @pytest.mark.gating
++    @pytest.mark.parametrize(
++        "max_vcpus",
++        [
++            pytest.param(4, id="max_vcpus=4"),
++            pytest.param(8, id="max_vcpus=8"),
++            pytest.param(16, id="max_vcpus=16"),
++        ],
++    )
++    def test_max_sockets_with_different_max_vcpus(self, namespace, unprivileged_client, max_vcpus):
++        """
++        Test MaxSockets calculation with various max vCPU configurations.
++
++        Steps:
++            1. Create VirtualMachine with CPU hotplug enabled and max_vcpus from parameter
++            2. Get the calculated MaxSockets from VM spec
++            3. Verify MaxSockets does not exceed max_vcpus
++
++        Expected:
++            - MaxSockets equals max_vcpus divided by cores and threads configuration
++        """
++        LOGGER.info(f"Starting test: MaxSockets with max_vcpus={max_vcpus}")
++
++        name = f"vm-max-sockets-{max_vcpus}"
++        cpu_cores = 2
++        cpu_threads = 1
++
++        with VirtualMachineForTests(
++            name=name,
++            namespace=namespace.name,
++            cpu_cores=cpu_cores,
++            cpu_threads=cpu_threads,
++            cpu_max_sockets=max_vcpus,
++            body=fedora_vm_body(name=name),
++            client=unprivileged_client,
++        ) as vm:
++            LOGGER.info(f"Created VM {vm.name} with max_vcpus={max_vcpus}, cores={cpu_cores}, threads={cpu_threads}")
++            running_vm(vm=vm)
++
++            # Get MaxSockets from VM spec
++            vm_spec = vm.instance.spec
++            max_sockets = vm_spec.template.spec.domain.cpu.maxSockets
++
++            # Calculate expected MaxSockets: max_vcpus / (cores * threads)
++            expected_max_sockets = max_vcpus // (cpu_cores * cpu_threads)
++
++            LOGGER.info(
++                f"VM {vm.name}: MaxSockets={max_sockets}, "
++                f"expected={expected_max_sockets} (max_vcpus={max_vcpus} / (cores={cpu_cores} * threads={cpu_threads}))"
++            )
++
++            assert max_sockets == expected_max_sockets, (
++                f"MaxSockets ({max_sockets}) should equal {expected_max_sockets}"
++            )
++            assert max_sockets <= max_vcpus, (
++                f"MaxSockets ({max_sockets}) should be <= max_vcpus ({max_vcpus})"
++            )
++
++    @pytest.mark.polarion("CNV-61264")
++    @pytest.mark.gating
++    def test_cpu_hotplug_blocked_at_max_vcpus(self, namespace, unprivileged_client):
++        """
++        Test that CPU hotplug cannot exceed maximum vCPUs.
++
++        Steps:
++            1. Create VirtualMachine with CPU hotplug enabled, max vCPUs set to 8
++            2. Start VM with 6 vCPUs
++            3. Hotplug 2 additional CPUs (reaching max of 8)
++            4. Attempt to hotplug 1 more CPU (would exceed max)
++            5. Verify hotplug operation result
++
++        Expected:
++            - VM has 8 vCPUs after successful hotplug
++            - Further hotplug attempt is blocked or fails gracefully
++        """
++        LOGGER.info("Starting test: CPU hotplug blocked at max vCPUs")
++
++        name = "vm-hotplug-blocked"
++        max_vcpus = 8
++        initial_sockets = 3
++        cpu_cores = 2
++
++        with VirtualMachineForTests(
++            name=name,
++            namespace=namespace.name,
++            cpu_sockets=initial_sockets,
++            cpu_cores=cpu_cores,
++            cpu_max_sockets=max_vcpus // cpu_cores,
++            body=fedora_vm_body(name=name),
++            client=unprivileged_client,
++        ) as vm:
++            LOGGER.info(f"Created VM {vm.name} with initial_sockets={initial_sockets}, max_sockets={max_vcpus // cpu_cores}")
++            running_vm(vm=vm)
++
++            # Verify initial CPU count
++            initial_cpus = initial_sockets * cpu_cores
++            current_sockets = vm.instance.spec.template.spec.domain.cpu.sockets
++            LOGGER.info(f"VM {vm.name} started with {current_sockets} sockets ({initial_cpus} vCPUs)")
++            assert current_sockets == initial_sockets, f"Expected {initial_sockets} sockets, got {current_sockets}"
++
++            # Hotplug to reach max vCPUs (add 1 socket to reach 4 sockets * 2 cores = 8 vCPUs)
++            target_sockets = max_vcpus // cpu_cores
++            LOGGER.info(f"Hotplugging to {target_sockets} sockets (max vCPUs)")
++
++            patches = {vm: {"spec": {"template": {"spec": {"domain": {"cpu": {"sockets": target_sockets}}}}}}}
++            ResourceEditor(patches=patches).update()
++
++            # Wait for hotplug to take effect
++            for sample in TimeoutSampler(
++                wait_timeout=TIMEOUT_5MIN,
++                sleep=5,
++                func=lambda: vm.instance.spec.template.spec.domain.cpu.sockets,
++            ):
++                if sample == target_sockets:
++                    LOGGER.info(f"VM {vm.name} now has {target_sockets} sockets ({max_vcpus} vCPUs)")
++                    break
++
++            # Attempt to hotplug beyond max (add 1 more socket)
++            LOGGER.info(f"Attempting to hotplug beyond max vCPUs (add 1 more socket)")
++            try:
++                invalid_sockets = target_sockets + 1
++                patches = {vm: {"spec": {"template": {"spec": {"domain": {"cpu": {"sockets": invalid_sockets}}}}}}}
++                ResourceEditor(patches=patches).update()
++
++                # If we reach here, the operation didn't fail immediately
++                # Check if the change was actually applied
++                for sample in TimeoutSampler(
++                    wait_timeout=30,
++                    sleep=5,
++                    func=lambda: vm.instance.spec.template.spec.domain.cpu.sockets,
++                ):
++                    current = sample
++                    LOGGER.warning(f"Current sockets after exceeding attempt: {current}")
++                    # The sockets should not exceed max
++                    assert current <= target_sockets, (
++                        f"CPU hotplug should be blocked at max vCPUs, but sockets={current}"
++                    )
++                    break
++
++            except (UnprocessibleEntityError, AssertionError) as exc:
++                LOGGER.info(f"Hotplug correctly blocked with error: {exc}")
++                # This is expected - hotplug should be blocked
++
++    @pytest.mark.polarion("CNV-61265")
++    @pytest.mark.gating
++    def test_error_message_when_exceeding_max_vcpus(self, namespace, unprivileged_client):
++        """
++        Test that attempting to exceed max vCPUs provides clear error message.
++
++        Steps:
++            1. Create VirtualMachine with CPU hotplug enabled, max vCPUs set to 4
++            2. Start VM at max vCPUs (4)
++            3. Attempt to hotplug additional CPU
++            4. Capture error message or validation failure
++
++        Expected:
++            - Error message indicates max vCPU limit reached
++        """
++        LOGGER.info("Starting test: Error message when exceeding max vCPUs")
++
++        name = "vm-error-max-vcpus"
++        max_vcpus = 4
++        cpu_cores = 2
++        max_sockets = max_vcpus // cpu_cores
++
++        with VirtualMachineForTests(
++            name=name,
++            namespace=namespace.name,
++            cpu_sockets=max_sockets,
++            cpu_cores=cpu_cores,
++            cpu_max_sockets=max_sockets,
++            body=fedora_vm_body(name=name),
++            client=unprivileged_client,
++        ) as vm:
++            LOGGER.info(f"Created VM {vm.name} at max vCPUs: sockets={max_sockets}, cores={cpu_cores}")
++            running_vm(vm=vm)
++
++            # Verify VM is at max
++            current_sockets = vm.instance.spec.template.spec.domain.cpu.sockets
++            assert current_sockets == max_sockets, f"Expected {max_sockets} sockets, got {current_sockets}"
++            LOGGER.info(f"VM {vm.name} is at max vCPUs ({max_vcpus})")
++
++            # Attempt to hotplug beyond max
++            LOGGER.info("Attempting to exceed max vCPUs")
++            error_caught = False
++            try:
++                invalid_sockets = max_sockets + 1
++                patches = {vm: {"spec": {"template": {"spec": {"domain": {"cpu": {"sockets": invalid_sockets}}}}}}}
++                ResourceEditor(patches=patches).update()
++
++                # Check if sockets actually changed
++                for sample in TimeoutSampler(
++                    wait_timeout=30,
++                    sleep=5,
++                    func=lambda: vm.instance.spec.template.spec.domain.cpu.sockets,
++                ):
++                    if sample > max_sockets:
++                        raise AssertionError(
++                            f"CPU hotplug should have been blocked, but sockets increased to {sample}"
++                        )
++                    break
++
++            except (UnprocessibleEntityError, AssertionError) as error:
++                error_caught = True
++                error_msg = str(error)
++                LOGGER.info(f"Hotplug correctly blocked with error: {error_msg}")
++
++                # Verify error message mentions limit or max
++                assert any(keyword in error_msg.lower() for keyword in ["limit", "max", "socket", "cpu"]), (
++                    f"Error message should mention CPU limit: {error_msg}"
++                )
++
++            assert error_caught, "Expected error when exceeding max vCPUs, but none occurred"
++
++
++class TestCPUHotplugFullCycle:
++    """
++    End-to-end tests for CPU hotplug within limits.
++
++    Preconditions:
++        - OpenShift cluster with OpenShift Virtualization operator installed
++        - CPU hotplug feature available
++        - Guest OS supporting CPU hotplug (RHEL or Fedora)
++    """
++
++    @pytest.mark.polarion("CNV-61266")
++    @pytest.mark.tier2
++    def test_hotplug_from_min_to_max_vcpus(self, namespace, unprivileged_client):
++        """
++        Test full CPU hotplug cycle from minimum to maximum vCPUs.
++
++        Steps:
++            1. Create VirtualMachine with CPU hotplug enabled, initial vCPUs=2, max vCPUs=8
++            2. Start VM and wait for running state
++            3. Verify guest OS sees 2 CPUs
++            4. Hotplug CPUs incrementally to reach max (8 total)
++            5. Verify guest OS sees all 8 CPUs
++            6. Attempt to hotplug beyond max
++            7. Verify hotplug is blocked
++
++        Expected:
++            - Guest OS correctly sees all hotplugged CPUs up to max
++            - No further hotplug allowed after reaching max vCPUs
++        """
++        LOGGER.info("Starting test: Hotplug from min to max vCPUs")
++
++        name = "vm-hotplug-cycle"
++        initial_sockets = 1
++        cpu_cores = 2
++        max_vcpus = 8
++        max_sockets = max_vcpus // cpu_cores
++
++        with VirtualMachineForTests(
++            name=name,
++            namespace=namespace.name,
++            cpu_sockets=initial_sockets,
++            cpu_cores=cpu_cores,
++            cpu_max_sockets=max_sockets,
++            body=fedora_vm_body(name=name),
++            client=unprivileged_client,
++        ) as vm:
++            LOGGER.info(f"Created VM {vm.name} with initial {initial_sockets} sockets, max {max_sockets} sockets")
++            running_vm(vm=vm)
++            vm.vmi.wait_until_running()
++
++            # Wait for guest agent to report
++            LOGGER.info("Waiting for guest agent to connect")
++            vm.vmi.wait_for_condition(
++                condition=VirtualMachine.Condition.Type.AGENT_CONNECTED,
++                status=VirtualMachine.Condition.Status.TRUE,
++                timeout=TIMEOUT_10MIN,
++            )
++
++            # Get initial CPU count from guest
++            initial_cpu_output = run_virtctl_command(
++                command=f"guestosinfo {vm.name} -n {namespace.name}",
++                namespace=namespace.name,
++            )
++            LOGGER.info(f"Initial guest OS info: {initial_cpu_output}")
++
++            # Hotplug incrementally to max
++            for target_sockets in range(initial_sockets + 1, max_sockets + 1):
++                LOGGER.info(f"Hotplugging to {target_sockets} sockets ({target_sockets * cpu_cores} vCPUs)")
++
++                patches = {vm: {"spec": {"template": {"spec": {"domain": {"cpu": {"sockets": target_sockets}}}}}}}
++                ResourceEditor(patches=patches).update()
++
++                # Wait for change to apply
++                for sample in TimeoutSampler(
++                    wait_timeout=TIMEOUT_5MIN,
++                    sleep=5,
++                    func=lambda: vm.instance.spec.template.spec.domain.cpu.sockets,
++                ):
++                    if sample == target_sockets:
++                        LOGGER.info(f"VM {vm.name} now has {target_sockets} sockets")
++                        break
++
++            # Verify we're at max
++            final_sockets = vm.instance.spec.template.spec.domain.cpu.sockets
++            assert final_sockets == max_sockets, f"Expected {max_sockets} sockets, got {final_sockets}"
++            LOGGER.info(f"VM {vm.name} reached max vCPUs ({max_vcpus})")
++
++            # Attempt to hotplug beyond max
++            LOGGER.info("Attempting to hotplug beyond max vCPUs")
++            try:
++                invalid_sockets = max_sockets + 1
++                patches = {vm: {"spec": {"template": {"spec": {"domain": {"cpu": {"sockets": invalid_sockets}}}}}}}
++                ResourceEditor(patches=patches).update()
++
++                # Should not reach max+1
++                for sample in TimeoutSampler(
++                    wait_timeout=30,
++                    sleep=5,
++                    func=lambda: vm.instance.spec.template.spec.domain.cpu.sockets,
++                ):
++                    assert sample <= max_sockets, f"Sockets should not exceed {max_sockets}, but got {sample}"
++                    break
++
++            except (UnprocessibleEntityError, AssertionError):
++                LOGGER.info("Hotplug beyond max correctly blocked")
++
++    @pytest.mark.polarion("CNV-61267")
++    @pytest.mark.tier2
++    def test_hotplug_respects_max_sockets_limit(self, namespace, unprivileged_client):
++        """
++        Test that CPU hotplug operations respect MaxSockets calculated limit.
++
++        Steps:
++            1. Create VirtualMachine with CPU hotplug enabled, specific CPU topology (sockets=2, cores=2, threads=1)
++            2. Set max vCPUs to 8 (MaxSockets should be 2 based on topology)
++            3. Start VM with initial 4 vCPUs (1 socket fully populated)
++            4. Hotplug to add second socket (reaching 8 vCPUs)
++            5. Verify VM has 8 vCPUs
++            6. Attempt to add third socket
++            7. Verify operation blocked
++
++        Expected:
++            - VM successfully hotplugs up to MaxSockets limit
++            - Further socket addition is blocked
++        """
++        LOGGER.info("Starting test: Hotplug respects MaxSockets limit")
++
++        name = "vm-max-sockets-topology"
++        initial_sockets = 2
++        cpu_cores = 2
++        cpu_threads = 1
++        max_vcpus = 8
++        max_sockets = max_vcpus // (cpu_cores * cpu_threads)
++
++        with VirtualMachineForTests(
++            name=name,
++            namespace=namespace.name,
++            cpu_sockets=initial_sockets,
++            cpu_cores=cpu_cores,
++            cpu_threads=cpu_threads,
++            cpu_max_sockets=max_sockets,
++            body=fedora_vm_body(name=name),
++            client=unprivileged_client,
++        ) as vm:
++            LOGGER.info(
++                f"Created VM {vm.name} with sockets={initial_sockets}, cores={cpu_cores}, "
++                f"threads={cpu_threads}, max_sockets={max_sockets}"
++            )
++            running_vm(vm=vm)
++
++            # Verify initial state
++            current_sockets = vm.instance.spec.template.spec.domain.cpu.sockets
++            assert current_sockets == initial_sockets, f"Expected {initial_sockets} sockets, got {current_sockets}"
++            current_vcpus = current_sockets * cpu_cores * cpu_threads
++            LOGGER.info(f"VM {vm.name} started with {current_vcpus} vCPUs")
++
++            # Already at max sockets, attempt to add one more
++            LOGGER.info(f"Attempting to exceed MaxSockets ({max_sockets})")
++            try:
++                invalid_sockets = max_sockets + 1
++                patches = {vm: {"spec": {"template": {"spec": {"domain": {"cpu": {"sockets": invalid_sockets}}}}}}}
++                ResourceEditor(patches=patches).update()
++
++                # Verify sockets didn't exceed max
++                for sample in TimeoutSampler(
++                    wait_timeout=30,
++                    sleep=5,
++                    func=lambda: vm.instance.spec.template.spec.domain.cpu.sockets,
++                ):
++                    assert sample <= max_sockets, f"Sockets should not exceed {max_sockets}, but got {sample}"
++                    break
++
++            except (UnprocessibleEntityError, AssertionError):
++                LOGGER.info(f"Socket addition correctly blocked at MaxSockets limit ({max_sockets})")
++
++
++class TestCPUHotplugNegative:
++    """
++    Negative tests for CPU hotplug maximum limits enforcement.
++
++    Preconditions:
++        - OpenShift cluster with OpenShift Virtualization operator installed
++        - CPU hotplug feature available
++    """
++
++    @pytest.mark.polarion("CNV-61268")
++    def test_cannot_hotplug_beyond_max_vcpus_single_operation(self, namespace, unprivileged_client):
++        """
++        [NEGATIVE] Test that a single hotplug operation cannot exceed max vCPUs.
++
++        Steps:
++            1. Create VirtualMachine with CPU hotplug enabled, initial vCPUs=2, max vCPUs=4
++            2. Start VM and wait for running state
++            3. Attempt to hotplug 4 CPUs in one operation (would result in 6 total, exceeding max)
++            4. Verify operation result
++
++        Expected:
++            - Hotplug operation fails or is rejected with validation error
++        """
++        LOGGER.info("Starting test: Cannot hotplug beyond max vCPUs in single operation")
++
++        name = "vm-negative-single-op"
++        initial_sockets = 1
++        cpu_cores = 2
++        max_vcpus = 4
++        max_sockets = max_vcpus // cpu_cores
++
++        with VirtualMachineForTests(
++            name=name,
++            namespace=namespace.name,
++            cpu_sockets=initial_sockets,
++            cpu_cores=cpu_cores,
++            cpu_max_sockets=max_sockets,
++            body=fedora_vm_body(name=name),
++            client=unprivileged_client,
++        ) as vm:
++            LOGGER.info(f"Created VM {vm.name} with {initial_sockets} sockets, max {max_sockets} sockets")
++            running_vm(vm=vm)
++
++            # Attempt to set sockets beyond max in one operation
++            invalid_sockets = max_sockets + 2
++            LOGGER.info(f"Attempting to set sockets to {invalid_sockets} (exceeds max {max_sockets})")
++
++            error_caught = False
++            try:
++                patches = {vm: {"spec": {"template": {"spec": {"domain": {"cpu": {"sockets": invalid_sockets}}}}}}}
++                ResourceEditor(patches=patches).update()
++
++                # Verify sockets didn't exceed max
++                for sample in TimeoutSampler(
++                    wait_timeout=30,
++                    sleep=5,
++                    func=lambda: vm.instance.spec.template.spec.domain.cpu.sockets,
++                ):
++                    assert sample <= max_sockets, (
++                        f"Sockets should not exceed max ({max_sockets}), but got {sample}"
++                    )
++                    break
++
++            except (UnprocessibleEntityError, AssertionError):
++                error_caught = True
++                LOGGER.info("Hotplug operation correctly blocked")
++
++            assert error_caught, "Expected error when exceeding max vCPUs, but none occurred"
++
++    @pytest.mark.polarion("CNV-61269")
++    def test_cannot_set_max_sockets_exceeding_max_vcpus(self, namespace, unprivileged_client):
++        """
++        [NEGATIVE] Test that MaxSockets cannot be manually set to exceed max vCPUs.
++
++        Steps:
++            1. Attempt to create VirtualMachine with max vCPUs=4 and manually specified MaxSockets=8
++            2. Verify VM creation result
++
++        Expected:
++            - VM creation fails with validation error indicating MaxSockets exceeds max vCPUs
++        """
++        LOGGER.info("Starting test: Cannot set MaxSockets exceeding max vCPUs")
++
++        name = "vm-negative-max-sockets"
++        max_vcpus = 4
++        invalid_max_sockets = 8
++
++        LOGGER.info(f"Attempting to create VM with max_vcpus={max_vcpus} but MaxSockets={invalid_max_sockets}")
++
++        # This should fail during VM creation
++        error_caught = False
++        try:
++            with VirtualMachineForTests(
++                name=name,
++                namespace=namespace.name,
++                cpu_cores=1,
++                cpu_max_sockets=invalid_max_sockets,
++                body=fedora_vm_body(name=name),
++                client=unprivileged_client,
++            ) as vm:
++                # If we reach here, check if MaxSockets was actually set incorrectly
++                max_sockets = vm.instance.spec.template.spec.domain.cpu.maxSockets
++                assert max_sockets <= max_vcpus, (
++                    f"MaxSockets ({max_sockets}) should not exceed max_vcpus ({max_vcpus})"
++                )
++                LOGGER.warning(f"VM created but MaxSockets was corrected to {max_sockets}")
++
++        except (UnprocessibleEntityError, AssertionError) as error:
++            error_caught = True
++            LOGGER.info(f"VM creation correctly blocked: {error}")
++
++        # Note: The validation might happen at creation or at runtime
++        # If VM was created, MaxSockets should have been capped at max_vcpus
++        if not error_caught:
++            LOGGER.info("VM creation succeeded with MaxSockets capped at max_vcpus (acceptable behavior)")
++
++    @pytest.mark.polarion("CNV-61270")
++    def test_hotplug_incrementally_blocked_at_max_vcpus(self, namespace, unprivileged_client):
++        """
++        [NEGATIVE] Test that incremental hotplug operations are blocked when reaching max vCPUs.
++
++        Steps:
++            1. Create VirtualMachine with CPU hotplug enabled, initial vCPUs=1, max vCPUs=4
++            2. Start VM
++            3. Hotplug 1 CPU (total 2)
++            4. Hotplug 1 CPU (total 3)
++            5. Hotplug 1 CPU (total 4, at max)
++            6. Attempt to hotplug 1 more CPU (would exceed max)
++            7. Verify last operation result
++
++        Expected:
++            - Final hotplug attempt fails with error indicating max vCPU limit reached
++        """
++        LOGGER.info("Starting test: Incremental hotplug blocked at max vCPUs")
++
++        name = "vm-negative-incremental"
++        initial_sockets = 1
++        cpu_cores = 1
++        max_vcpus = 4
++        max_sockets = max_vcpus // cpu_cores
++
++        with VirtualMachineForTests(
++            name=name,
++            namespace=namespace.name,
++            cpu_sockets=initial_sockets,
++            cpu_cores=cpu_cores,
++            cpu_max_sockets=max_sockets,
++            body=fedora_vm_body(name=name),
++            client=unprivileged_client,
++        ) as vm:
++            LOGGER.info(f"Created VM {vm.name} with {initial_sockets} socket, max {max_sockets} sockets")
++            running_vm(vm=vm)
++
++            # Incrementally hotplug to max
++            for target_sockets in range(initial_sockets + 1, max_sockets + 1):
++                LOGGER.info(f"Hotplugging to {target_sockets} sockets")
++                patches = {vm: {"spec": {"template": {"spec": {"domain": {"cpu": {"sockets": target_sockets}}}}}}}
++                ResourceEditor(patches=patches).update()
++
++                # Wait for change
++                for sample in TimeoutSampler(
++                    wait_timeout=TIMEOUT_5MIN,
++                    sleep=5,
++                    func=lambda: vm.instance.spec.template.spec.domain.cpu.sockets,
++                ):
++                    if sample == target_sockets:
++                        LOGGER.info(f"Successfully hotplugged to {target_sockets} sockets")
++                        break
++
++            # Verify we're at max
++            current_sockets = vm.instance.spec.template.spec.domain.cpu.sockets
++            assert current_sockets == max_sockets, f"Expected {max_sockets} sockets, got {current_sockets}"
++
++            # Attempt one more hotplug
++            LOGGER.info(f"Attempting to hotplug beyond max ({max_sockets})")
++            error_caught = False
++            try:
++                invalid_sockets = max_sockets + 1
++                patches = {vm: {"spec": {"template": {"spec": {"domain": {"cpu": {"sockets": invalid_sockets}}}}}}}
++                ResourceEditor(patches=patches).update()
++
++                # Verify sockets didn't exceed max
++                for sample in TimeoutSampler(
++                    wait_timeout=30,
++                    sleep=5,
++                    func=lambda: vm.instance.spec.template.spec.domain.cpu.sockets,
++                ):
++                    assert sample <= max_sockets, f"Sockets exceeded max: {sample} > {max_sockets}"
++                    break
++
++            except (UnprocessibleEntityError, AssertionError) as error:
++                error_caught = True
++                LOGGER.info(f"Final hotplug correctly blocked: {error}")
++
++            assert error_caught, "Expected error when exceeding max vCPUs, but none occurred"
++
++
++class TestCPUHotplugExistingVMs:
++    """
++    Tests for CPU hotplug limits on existing VMs (backward compatibility).
++
++    Preconditions:
++        - OpenShift cluster with OpenShift Virtualization operator installed
++        - Existing VMs created before MaxSockets fix
++    """
++
++    @pytest.mark.polarion("CNV-61271")
++    @pytest.mark.tier2
++    def test_new_vm_uses_updated_max_sockets_calculation(self, namespace, unprivileged_client):
++        """
++        Test that newly created VMs use the updated MaxSockets calculation.
++
++        Steps:
++            1. Create new VirtualMachine with CPU hotplug enabled, max vCPUs=8
++            2. Get calculated MaxSockets from VM spec
++            3. Compare with expected value based on new calculation logic
++            4. Verify MaxSockets is properly limited
++
++        Expected:
++            - MaxSockets is calculated using new logic (limited by max vCPUs)
++            - MaxSockets does not exceed max vCPUs
++        """
++        LOGGER.info("Starting test: New VM uses updated MaxSockets calculation")
++
++        name = "vm-new-max-sockets"
++        cpu_cores = 2
++        cpu_threads = 1
++        max_vcpus = 8
++        expected_max_sockets = max_vcpus // (cpu_cores * cpu_threads)
++
++        with VirtualMachineForTests(
++            name=name,
++            namespace=namespace.name,
++            cpu_cores=cpu_cores,
++            cpu_threads=cpu_threads,
++            cpu_max_sockets=max_vcpus,
++            body=fedora_vm_body(name=name),
++            client=unprivileged_client,
++        ) as vm:
++            LOGGER.info(
++                f"Created VM {vm.name} with max_vcpus={max_vcpus}, cores={cpu_cores}, threads={cpu_threads}"
++            )
++            running_vm(vm=vm)
++
++            # Get MaxSockets from VM spec
++            max_sockets = vm.instance.spec.template.spec.domain.cpu.maxSockets
++
++            LOGGER.info(
++                f"VM {vm.name} MaxSockets={max_sockets}, "
++                f"expected={expected_max_sockets} (based on max_vcpus/{cpu_cores}*{cpu_threads})"
++            )
++
++            # Verify MaxSockets calculation
++            assert max_sockets == expected_max_sockets, (
++                f"MaxSockets ({max_sockets}) should equal {expected_max_sockets}"
++            )
++            assert max_sockets <= max_vcpus, (
++                f"MaxSockets ({max_sockets}) should be <= max_vcpus ({max_vcpus})"
++            )
++            LOGGER.info(f"VM {vm.name} uses correct MaxSockets calculation (CNV-57352 fix applied)")

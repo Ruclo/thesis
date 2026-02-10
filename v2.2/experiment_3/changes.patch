@@ -1,0 +1,566 @@
+diff --git a/tests/virt/node/general/test_vmi_reset_comprehensive.py b/tests/virt/node/general/test_vmi_reset_comprehensive.py
+new file mode 100644
+index 0000000..c3abe66
+--- /dev/null
++++ b/tests/virt/node/general/test_vmi_reset_comprehensive.py
+@@ -0,0 +1,560 @@
++# -*- coding: utf-8 -*-
++
++"""
++VMI Force/Hard Reset Tests
++
++STP Reference: https://issues.redhat.com/browse/VIRTSTRAT-357
++
++This module contains comprehensive tests for the VMI Force/Hard Reset feature,
++which allows resetting a running VMI without requiring pod rescheduling.
++"""
++
++import logging
++import shlex
++
++import pytest
++from kubernetes.client import ApiException
++from ocp_resources.resource import get_client
++from ocp_resources.role_binding import RoleBinding
++from ocp_resources.service_account import ServiceAccount
++from ocp_resources.virtual_machine import VirtualMachine
++from ocp_resources.virtual_machine_instance import VirtualMachineInstance
++from pyhelper_utils.shell import run_ssh_commands
++from timeout_sampler import TimeoutSampler
++
++from utilities.constants import TIMEOUT_2MIN, TIMEOUT_5MIN
++from utilities.infra import run_virtctl_command
++from utilities.virt import (
++    VirtualMachineForTests,
++    fedora_vm_body,
++    running_vm,
++    wait_for_running_vm,
++)
++
++pytestmark = [pytest.mark.gating, pytest.mark.virt]
++
++LOGGER = logging.getLogger(__name__)
++
++
++def get_vm_boot_count(vm: VirtualMachineForTests) -> int:
++    """
++    Get the number of times a VM has booted.
++
++    Args:
++        vm: VirtualMachineForTests instance with SSH access
++
++    Returns:
++        int: Number of boot entries
++    """
++    reboot_count = run_ssh_commands(
++        host=vm.ssh_exec,
++        commands=[shlex.split("journalctl --list-boots | wc -l")],
++    )[0].strip()
++    return int(reboot_count)
++
++
++@pytest.fixture(scope="class")
++def running_fedora_vm(unprivileged_client, namespace):
++    """
++    Running Fedora VirtualMachine with SSH access for reset testing.
++
++    Yields:
++        VirtualMachine: Running VM with Fedora
++    """
++    name = "vm-for-reset-test"
++    with VirtualMachineForTests(
++        client=unprivileged_client,
++        name=name,
++        namespace=namespace.name,
++        body=fedora_vm_body(name=name),
++    ) as vm:
++        running_vm(vm=vm)
++        yield vm
++
++
++@pytest.fixture(scope="class")
++def stopped_fedora_vm(unprivileged_client, namespace):
++    """
++    Stopped Fedora VirtualMachine for negative testing.
++
++    Yields:
++        VirtualMachine: Stopped VM
++    """
++    name = "vm-stopped-for-reset-test"
++    with VirtualMachineForTests(
++        client=unprivileged_client,
++        name=name,
++        namespace=namespace.name,
++        body=fedora_vm_body(name=name),
++    ) as vm:
++        vm.stop(wait=True)
++        yield vm
++
++
++@pytest.fixture(scope="function")
++def paused_fedora_vm(running_fedora_vm):
++    """
++    Paused Fedora VirtualMachine for negative testing.
++
++    Yields:
++        VirtualMachine: Paused VM
++    """
++    LOGGER.info(f"Pausing VM {running_fedora_vm.name}")
++    running_fedora_vm.vmi.pause()
++    running_fedora_vm.vmi.wait_for_status(status=VirtualMachine.Status.PAUSED)
++    yield running_fedora_vm
++    # Unpause after test
++    LOGGER.info(f"Unpausing VM {running_fedora_vm.name}")
++    running_fedora_vm.vmi.unpause()
++    wait_for_running_vm(vm=running_fedora_vm)
++
++
++@pytest.fixture(scope="class")
++def service_account_with_edit_role(admin_client, namespace):
++    """
++    Service account with 'edit' ClusterRole binding in the namespace.
++
++    Yields:
++        ServiceAccount: Service account with edit permissions
++    """
++    sa_name = "vmi-reset-edit-sa"
++    with ServiceAccount(
++        client=admin_client,
++        name=sa_name,
++        namespace=namespace.name,
++    ) as sa:
++        with RoleBinding(
++            client=admin_client,
++            name=f"{sa_name}-edit-binding",
++            namespace=namespace.name,
++            subjects_kind="ServiceAccount",
++            subjects_name=sa_name,
++            role_ref_kind="ClusterRole",
++            role_ref_name="edit",
++        ):
++            yield sa
++
++
++@pytest.fixture(scope="class")
++def service_account_without_reset_permission(admin_client, namespace):
++    """
++    Service account with view-only ClusterRole binding (no reset permission).
++
++    Yields:
++        ServiceAccount: Service account without reset permission
++    """
++    sa_name = "vmi-reset-view-sa"
++    with ServiceAccount(
++        client=admin_client,
++        name=sa_name,
++        namespace=namespace.name,
++    ) as sa:
++        with RoleBinding(
++            client=admin_client,
++            name=f"{sa_name}-view-binding",
++            namespace=namespace.name,
++            subjects_kind="ServiceAccount",
++            subjects_name=sa_name,
++            role_ref_kind="ClusterRole",
++            role_ref_name="view",
++        ):
++            yield sa
++
++
++@pytest.mark.usefixtures("running_fedora_vm")
++class TestVMIReset:
++    """
++    Tests for VMI Force/Hard Reset functionality.
++
++    Preconditions:
++        - Running Fedora VirtualMachine with SSH access
++        - VMI is in Running state with guest agent
++    """
++
++    @pytest.mark.polarion("CNV-12373")
++    def test_reset_running_vmi_via_api(self, running_fedora_vm):
++        """
++        Test that a running VMI can be reset via the API and the guest reboots.
++
++        Steps:
++            1. Get initial boot count from the running VMI via SSH
++            2. Execute reset operation via the VMI reset subresource API
++            3. Wait for VMI to become accessible after reset
++            4. Get new boot count from the VMI via SSH
++
++        Expected:
++            - Reset operation succeeds without error
++            - VMI remains in Running state
++            - Boot count has increased by 1 (indicating guest rebooted)
++        """
++        LOGGER.info(f"Getting initial boot count for VM {running_fedora_vm.name}")
++        boot_count_before = get_vm_boot_count(vm=running_fedora_vm)
++        LOGGER.info(f"Boot count before reset: {boot_count_before}")
++
++        LOGGER.info(f"Executing reset on VMI {running_fedora_vm.vmi.name}")
++        running_fedora_vm.vmi.reset()
++
++        LOGGER.info("Waiting for VM to be running after reset")
++        wait_for_running_vm(vm=running_fedora_vm)
++
++        LOGGER.info("Getting boot count after reset")
++        boot_count_after = get_vm_boot_count(vm=running_fedora_vm)
++        LOGGER.info(f"Boot count after reset: {boot_count_after}")
++
++        assert boot_count_after - boot_count_before == 1, (
++            f"Expected boot count to increase by 1, but got {boot_count_after - boot_count_before}"
++        )
++
++    @pytest.mark.polarion("CNV-12374")
++    def test_reset_running_vmi_via_virtctl(self, running_fedora_vm):
++        """
++        Test that a running VMI can be reset via virtctl command.
++
++        Steps:
++            1. Get initial boot count from the running VMI via SSH
++            2. Execute 'virtctl reset <vmi-name>' command
++            3. Wait for VMI to become accessible after reset
++            4. Get new boot count from the VMI via SSH
++
++        Expected:
++            - virtctl command succeeds with appropriate output message
++            - VMI remains in Running state
++            - Boot count has increased by 1 (indicating guest rebooted)
++        """
++        LOGGER.info(f"Getting initial boot count for VM {running_fedora_vm.name}")
++        boot_count_before = get_vm_boot_count(vm=running_fedora_vm)
++        LOGGER.info(f"Boot count before reset: {boot_count_before}")
++
++        LOGGER.info(f"Executing virtctl reset on VMI {running_fedora_vm.vmi.name}")
++        run_virtctl_command(
++            command=["reset", running_fedora_vm.vmi.name],
++            namespace=running_fedora_vm.namespace,
++        )
++
++        LOGGER.info("Waiting for VM to be running after reset")
++        wait_for_running_vm(vm=running_fedora_vm)
++
++        LOGGER.info("Getting boot count after reset")
++        boot_count_after = get_vm_boot_count(vm=running_fedora_vm)
++        LOGGER.info(f"Boot count after reset: {boot_count_after}")
++
++        assert boot_count_after - boot_count_before == 1, (
++            f"Expected boot count to increase by 1, but got {boot_count_after - boot_count_before}"
++        )
++
++    @pytest.mark.polarion("CNV-12375")
++    def test_vmi_uid_unchanged_after_reset(self, running_fedora_vm):
++        """
++        Test that the VMI UID remains unchanged after reset operation.
++
++        Steps:
++            1. Record VMI UID before reset
++            2. Execute reset operation via API
++            3. Wait for VMI to become accessible after reset
++            4. Get VMI UID after reset
++
++        Expected:
++            - VMI UID before reset equals VMI UID after reset
++        """
++        LOGGER.info(f"Getting VMI UID before reset for {running_fedora_vm.vmi.name}")
++        vmi_uid_before = running_fedora_vm.vmi.instance.metadata.uid
++        LOGGER.info(f"VMI UID before reset: {vmi_uid_before}")
++
++        LOGGER.info(f"Executing reset on VMI {running_fedora_vm.vmi.name}")
++        running_fedora_vm.vmi.reset()
++
++        LOGGER.info("Waiting for VM to be running after reset")
++        wait_for_running_vm(vm=running_fedora_vm)
++
++        LOGGER.info("Getting VMI UID after reset")
++        vmi_uid_after = running_fedora_vm.vmi.instance.metadata.uid
++        LOGGER.info(f"VMI UID after reset: {vmi_uid_after}")
++
++        assert vmi_uid_before == vmi_uid_after, (
++            f"VMI UID changed after reset: before={vmi_uid_before}, after={vmi_uid_after}"
++        )
++
++    @pytest.mark.polarion("CNV-12376")
++    def test_vmi_pod_unchanged_after_reset(self, running_fedora_vm):
++        """
++        Test that the VMI pod is not rescheduled after reset operation.
++
++        Steps:
++            1. Record VMI pod name and UID before reset
++            2. Execute reset operation via API
++            3. Wait for VMI to become accessible after reset
++            4. Get VMI pod name and UID after reset
++
++        Expected:
++            - Pod name remains unchanged
++            - Pod UID remains unchanged
++        """
++        LOGGER.info(f"Getting pod information before reset for VMI {running_fedora_vm.vmi.name}")
++        pod_before = running_fedora_vm.vmi.virt_launcher_pod
++        pod_name_before = pod_before.name
++        pod_uid_before = pod_before.instance.metadata.uid
++        LOGGER.info(f"Pod before reset: name={pod_name_before}, uid={pod_uid_before}")
++
++        LOGGER.info(f"Executing reset on VMI {running_fedora_vm.vmi.name}")
++        running_fedora_vm.vmi.reset()
++
++        LOGGER.info("Waiting for VM to be running after reset")
++        wait_for_running_vm(vm=running_fedora_vm)
++
++        LOGGER.info("Getting pod information after reset")
++        pod_after = running_fedora_vm.vmi.virt_launcher_pod
++        pod_name_after = pod_after.name
++        pod_uid_after = pod_after.instance.metadata.uid
++        LOGGER.info(f"Pod after reset: name={pod_name_after}, uid={pod_uid_after}")
++
++        assert pod_name_before == pod_name_after, (
++            f"Pod name changed after reset: before={pod_name_before}, after={pod_name_after}"
++        )
++        assert pod_uid_before == pod_uid_after, (
++            f"Pod UID changed after reset: before={pod_uid_before}, after={pod_uid_after}"
++        )
++
++    @pytest.mark.polarion("CNV-12377")
++    def test_boot_time_changes_after_reset(self, running_fedora_vm):
++        """
++        Test that the guest boot count changes after reset, confirming actual reboot.
++
++        Steps:
++            1. Get boot count from running VMI via journalctl
++            2. Execute reset operation via API
++            3. Wait for VMI to become accessible after reset
++            4. Get boot count from VMI again
++
++        Expected:
++            - Boot count after reset is greater than boot count before reset
++        """
++        LOGGER.info(f"Getting boot count before reset for VM {running_fedora_vm.name}")
++        boot_count_before = get_vm_boot_count(vm=running_fedora_vm)
++        LOGGER.info(f"Boot count before reset: {boot_count_before}")
++
++        LOGGER.info(f"Executing reset on VMI {running_fedora_vm.vmi.name}")
++        running_fedora_vm.vmi.reset()
++
++        LOGGER.info("Waiting for VM to be running after reset")
++        wait_for_running_vm(vm=running_fedora_vm)
++
++        LOGGER.info("Getting boot count after reset")
++        boot_count_after = get_vm_boot_count(vm=running_fedora_vm)
++        LOGGER.info(f"Boot count after reset: {boot_count_after}")
++
++        assert boot_count_after > boot_count_before, (
++            f"Boot count did not increase after reset: before={boot_count_before}, after={boot_count_after}"
++        )
++
++
++@pytest.mark.usefixtures("running_fedora_vm", "service_account_with_edit_role", "service_account_without_reset_permission")
++class TestVMIResetRBAC:
++    """
++    Tests for RBAC permission enforcement for VMI reset operations.
++
++    Preconditions:
++        - Running VirtualMachine
++        - Service account with 'edit' role
++        - Service account without reset permissions
++    """
++
++    @pytest.mark.polarion("CNV-12378")
++    def test_user_with_edit_role_can_reset_vmi(
++        self,
++        running_fedora_vm,
++        service_account_with_edit_role,
++        namespace,
++    ):
++        """
++        Test that a user with 'edit' role can successfully reset a VMI.
++
++        Steps:
++            1. Create client impersonating service account with 'edit' role
++            2. Execute reset operation on VMI via API using impersonated client
++
++        Expected:
++            - Reset operation succeeds without authorization error
++        """
++        LOGGER.info(f"Creating client impersonating service account {service_account_with_edit_role.name}")
++        sa_client = get_client(
++            config_file=None,
++            token=service_account_with_edit_role.get_sa_token(),
++        )
++
++        LOGGER.info(f"Attempting to reset VMI {running_fedora_vm.vmi.name} as service account with edit role")
++        vmi_as_sa = VirtualMachineInstance(
++            client=sa_client,
++            name=running_fedora_vm.vmi.name,
++            namespace=namespace.name,
++        )
++
++        # This should succeed without raising ApiException
++        vmi_as_sa.reset()
++        LOGGER.info("Reset operation succeeded with edit role")
++
++        # Wait for reset to complete
++        wait_for_running_vm(vm=running_fedora_vm)
++
++    @pytest.mark.polarion("CNV-12379")
++    def test_user_without_reset_permission_cannot_reset_vmi(
++        self,
++        running_fedora_vm,
++        service_account_without_reset_permission,
++        namespace,
++    ):
++        """
++        [NEGATIVE] Test that a user without reset permission cannot reset a VMI.
++
++        Steps:
++            1. Create client impersonating service account without reset permission
++            2. Attempt to execute reset operation on VMI via API
++
++        Expected:
++            - Reset operation fails with HTTP 403 Forbidden error
++        """
++        LOGGER.info(
++            f"Creating client impersonating service account {service_account_without_reset_permission.name}"
++        )
++        sa_client = get_client(
++            config_file=None,
++            token=service_account_without_reset_permission.get_sa_token(),
++        )
++
++        LOGGER.info(
++            f"Attempting to reset VMI {running_fedora_vm.vmi.name} as service account without reset permission"
++        )
++        vmi_as_sa = VirtualMachineInstance(
++            client=sa_client,
++            name=running_fedora_vm.vmi.name,
++            namespace=namespace.name,
++        )
++
++        with pytest.raises(ApiException) as exc_info:
++            vmi_as_sa.reset()
++
++        LOGGER.info(f"Reset operation failed as expected: {exc_info.value}")
++        assert exc_info.value.status == 403, f"Expected 403 Forbidden, got {exc_info.value.status}"
++
++
++@pytest.mark.usefixtures("stopped_fedora_vm")
++class TestVMIResetErrorHandling:
++    """
++    Tests for error handling in VMI reset operations.
++
++    Preconditions:
++        - VirtualMachine in various states (Stopped, Paused)
++    """
++
++    @pytest.mark.polarion("CNV-12380")
++    def test_reset_stopped_vmi_fails(self, stopped_fedora_vm):
++        """
++        [NEGATIVE] Test that reset operation fails on a stopped VMI.
++
++        Preconditions:
++            - VirtualMachine in Stopped state
++
++        Steps:
++            1. Attempt to execute reset operation on stopped VMI via API
++
++        Expected:
++            - Reset operation fails with appropriate error message
++            - Error message indicates VMI must be running to perform reset
++        """
++        LOGGER.info(f"Attempting to reset stopped VM {stopped_fedora_vm.name}")
++
++        with pytest.raises(Exception) as exc_info:
++            # VMI doesn't exist for stopped VM, so we expect an error
++            stopped_fedora_vm.vmi.reset()
++
++        LOGGER.info(f"Reset operation failed as expected: {exc_info.value}")
++
++    @pytest.mark.polarion("CNV-12381")
++    def test_reset_paused_vmi_behavior(self, paused_fedora_vm):
++        """
++        [NEGATIVE] Test that reset operation on paused VMI returns appropriate error.
++
++        Preconditions:
++            - VirtualMachine in Paused state
++
++        Steps:
++            1. Execute reset operation on paused VMI via API
++
++        Expected:
++            - Reset operation fails with appropriate error message
++            - Error message indicates VMI must be running (not paused) to perform reset
++        """
++        LOGGER.info(f"Attempting to reset paused VM {paused_fedora_vm.name}")
++
++        with pytest.raises(Exception) as exc_info:
++            paused_fedora_vm.vmi.reset()
++
++        LOGGER.info(f"Reset operation failed as expected: {exc_info.value}")
++
++    @pytest.mark.polarion("CNV-12382")
++    def test_reset_nonexistent_vmi_fails(self, unprivileged_client, namespace):
++        """
++        [NEGATIVE] Test that reset operation fails on a non-existent VMI.
++
++        Steps:
++            1. Attempt to execute reset operation on a non-existent VMI name via API
++
++        Expected:
++            - Reset operation fails with HTTP 404 Not Found error
++        """
++        nonexistent_vmi_name = "nonexistent-vmi-for-reset-test"
++        LOGGER.info(f"Attempting to reset non-existent VMI {nonexistent_vmi_name}")
++
++        vmi = VirtualMachineInstance(
++            client=unprivileged_client,
++            name=nonexistent_vmi_name,
++            namespace=namespace.name,
++        )
++
++        with pytest.raises(Exception) as exc_info:
++            vmi.reset()
++
++        LOGGER.info(f"Reset operation failed as expected: {exc_info.value}")
++
++
++@pytest.mark.usefixtures("running_fedora_vm")
++class TestVMIResetClientGo:
++    """
++    Tests for client-go integration with VMI reset functionality.
++
++    Preconditions:
++        - Running VirtualMachine
++        - VirtualMachineInstance with Reset() method support
++    """
++
++    @pytest.mark.polarion("CNV-12383")
++    def test_clientgo_reset_method_succeeds(self, running_fedora_vm):
++        """
++        Test that the VirtualMachineInstance.reset() method successfully resets a running VMI.
++
++        Steps:
++            1. Get initial boot count from running VMI
++            2. Call reset() method on VirtualMachineInstance object
++            3. Wait for VMI to become accessible after reset
++            4. Get new boot count from VMI
++
++        Expected:
++            - reset() method returns without error
++            - Boot count has increased by 1 (indicating guest rebooted)
++        """
++        LOGGER.info(f"Getting initial boot count for VM {running_fedora_vm.name}")
++        boot_count_before = get_vm_boot_count(vm=running_fedora_vm)
++        LOGGER.info(f"Boot count before reset: {boot_count_before}")
++
++        LOGGER.info(f"Calling reset() method on VMI {running_fedora_vm.vmi.name}")
++        running_fedora_vm.vmi.reset()
++
++        LOGGER.info("Waiting for VM to be running after reset")
++        wait_for_running_vm(vm=running_fedora_vm)
++
++        LOGGER.info("Getting boot count after reset")
++        boot_count_after = get_vm_boot_count(vm=running_fedora_vm)
++        LOGGER.info(f"Boot count after reset: {boot_count_after}")
++
++        assert boot_count_after - boot_count_before == 1, (
++            f"Expected boot count to increase by 1, but got {boot_count_after - boot_count_before}"
++        )

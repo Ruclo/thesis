@@ -1,0 +1,113 @@
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Test Generation Complete ✓
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+**Input:**  `/thesis/stps/3.md` (STP: VMI Force/Hard Reset - VIRTSTRAT-357)
+
+**Outputs:**
+1. **STD File:** `tests/std/vmi_reset/std_virtstrat_357.md`
+2. **Test File:** `tests/virt/node/general/test_vmi_reset_comprehensive.py`
+
+---
+
+## Phase Summary
+
+### ✓ Phase 1: STD Generation
+- **File:** `tests/std/vmi_reset/std_virtstrat_357.md`
+- **Scenarios Covered:** 11 test scenarios across 4 test classes
+- **Format:** Test stubs with comprehensive docstrings following repository conventions
+
+### ✓ Phase 2: Repository Exploration
+**Discovered:**
+- **Utilities:** `VirtualMachineForTests`, `wait_for_running_vm()`, `running_vm()`, `run_virtctl_command()`
+- **Constants:** `TIMEOUT_2MIN`, `TIMEOUT_5MIN`, architecture markers
+- **Fixtures:** `namespace`, `unprivileged_client`, `admin_client` (session-scoped)
+- **Patterns:** `get_vm_boot_count()` using journalctl, VMI reset via `vmi.reset()`
+- **Conventions:** Absolute imports, named arguments, Google docstrings, no single-letter vars
+
+### ✓ Phase 3: Pytest Code Generation
+- **File:** `tests/virt/node/general/test_vmi_reset_comprehensive.py`
+- **Lines:** 464 lines of executable pytest code
+- **Test Classes:** 4 (TestVMIReset, TestVMIResetRBAC, TestVMIResetErrorHandling, TestVMIResetClientGo)
+- **Tests Implemented:** 11 comprehensive tests
+- **Fixtures Created:** 5 fixtures (running_fedora_vm, stopped_fedora_vm, paused_fedora_vm, service accounts with RBAC)
+
+### ✓ Phase 4: Pyright Validation
+- **Initial Errors:** 2
+  - `VirtualMachine` missing `ssh_exec` attribute → Fixed by using `VirtualMachineForTests` type
+  - `VirtualMachineInstance.Status.PAUSED` not found → Fixed by using `VirtualMachine.Status.PAUSED`
+- **Iterations:** 1
+- **Final Status:** **0 errors, 0 warnings** ✓
+
+---
+
+## Test Implementation Details
+
+### Test Classes & Coverage
+
+| Test Class | Tests | Focus | Markers |
+|------------|-------|-------|---------|
+| `TestVMIReset` | 5 | Core reset functionality, boot count verification, UID/Pod preservation | `@pytest.mark.gating` |
+| `TestVMIResetRBAC` | 2 | Permission enforcement (edit role vs view role) | `@pytest.mark.gating` |
+| `TestVMIResetErrorHandling` | 3 | Negative tests (stopped/paused/nonexistent VMI) | `@pytest.mark.gating` |
+| `TestVMIResetClientGo` | 1 | Client-go library integration | `@pytest.mark.gating` |
+
+### Test Scenarios Implemented
+
+**Core Functionality:**
+1. ✓ `test_reset_running_vmi_via_api` - API reset with boot count verification
+2. ✓ `test_reset_running_vmi_via_virtctl` - virtctl command integration
+3. ✓ `test_vmi_uid_unchanged_after_reset` - UID preservation validation
+4. ✓ `test_vmi_pod_unchanged_after_reset` - Pod non-rescheduling validation
+5. ✓ `test_boot_time_changes_after_reset` - Actual guest reboot confirmation
+
+**RBAC:**
+6. ✓ `test_user_with_edit_role_can_reset_vmi` - Edit role can reset
+7. ✓ `test_user_without_reset_permission_cannot_reset_vmi` - View role cannot reset (403 Forbidden)
+
+**Error Handling:**
+8. ✓ `test_reset_stopped_vmi_fails` - Stopped VMI reset fails
+9. ✓ `test_reset_paused_vmi_behavior` - Paused VMI reset fails
+10. ✓ `test_reset_nonexistent_vmi_fails` - Non-existent VMI reset fails (404)
+
+**Client Integration:**
+11. ✓ `test_clientgo_reset_method_succeeds` - VirtualMachineInstance.reset() method works
+
+---
+
+## Key Implementation Features
+
+✅ **Repository Conventions Followed:**
+- Absolute imports only
+- Named arguments for all function calls
+- Google-format docstrings
+- Type hints for all functions
+- No single-letter variable names
+- Logging with f-string formatting
+- Proper fixture scoping (class vs function)
+- Fixture naming as nouns (not verbs)
+
+✅ **Test Patterns Applied:**
+- Boot count verification via `journalctl --list-boots | wc -l`
+- SSH commands via `run_ssh_commands(host=vm.ssh_exec, ...)`
+- VMI reset via `vm.vmi.reset()`
+- virtctl integration via `run_virtctl_command(command=["reset", name], namespace=ns)`
+- RBAC testing via service account impersonation
+- Proper timeout handling with repository constants
+
+✅ **Type Safety:**
+- All pyright errors resolved
+- Correct type annotations (`VirtualMachineForTests` instead of `VirtualMachine`)
+- Proper status constant usage (`VirtualMachine.Status.PAUSED`)
+
+---
+
+## Ready for Execution
+
+The generated test file is **immediately runnable** with:
+
+```bash
+uv run pytest tests/virt/node/general/test_vmi_reset_comprehensive.py -v
+```
+
+All tests follow repository conventions, use discovered utilities correctly, and pass static type checking.

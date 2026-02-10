@@ -1,0 +1,961 @@
+diff --git a/tests/virt/guest_agent/__init__.py b/tests/virt/guest_agent/__init__.py
+new file mode 100644
+index 0000000..993b77c
+--- /dev/null
++++ b/tests/virt/guest_agent/__init__.py
+@@ -0,0 +1,10 @@
++# -*- coding: utf-8 -*-
++
++"""
++Guest agent tests for OpenShift Virtualization.
++
++This package contains tests for guest agent functionality, including:
++- Windows guest agent OS and hostname information display
++- Guest agent connectivity and reporting
++- Guest agent service lifecycle
++"""
+diff --git a/tests/virt/guest_agent/conftest.py b/tests/virt/guest_agent/conftest.py
+new file mode 100644
+index 0000000..dd2e79a
+--- /dev/null
++++ b/tests/virt/guest_agent/conftest.py
+@@ -0,0 +1,291 @@
++# -*- coding: utf-8 -*-
++
++"""
++Shared fixtures for Windows guest agent tests.
++
++This module provides fixtures for Windows VMs with guest agent configurations.
++"""
++
++import logging
++import shlex
++
++import pytest
++from ocp_resources.data_source import DataSource
++from ocp_resources.template import Template
++from pyhelper_utils.shell import run_ssh_commands
++
++from tests.virt.utils import get_data_volume_template_dict_with_default_storage_class
++from utilities.constants import TCP_TIMEOUT_30SEC, TIMEOUT_6MIN
++from utilities.virt import VirtualMachineForTestsFromTemplate, running_vm
++
++LOGGER = logging.getLogger(__name__)
++
++
++@pytest.fixture(scope="class")
++def windows_vm_with_guest_agent(unprivileged_client, namespace, windows_data_source, windows_template_labels):
++    """
++    Provide a Windows VM with qemu-guest-agent installed and running.
++
++    Yields:
++        VirtualMachineForTestsFromTemplate: Windows VM with guest agent service running
++
++    Teardown:
++        - Stops and deletes the Windows VM
++    """
++    vm_name = "windows-vm-with-guest-agent"
++    LOGGER.info(f"Creating Windows VM {vm_name} with guest agent")
++
++    data_volume_template = get_data_volume_template_dict_with_default_storage_class(
++        data_source=windows_data_source
++    )
++
++    with VirtualMachineForTestsFromTemplate(
++        name=vm_name,
++        namespace=namespace.name,
++        client=unprivileged_client,
++        labels=windows_template_labels,
++        data_source=windows_data_source,
++        data_volume_template=data_volume_template,
++    ) as vm:
++        LOGGER.info(f"Starting Windows VM {vm.name}")
++        running_vm(vm=vm)
++
++        # Wait for guest agent to be ready
++        LOGGER.info(f"Waiting for guest agent to connect for VM {vm.name}")
++        vm.vmi.wait_for_condition(
++            condition=vm.vmi.Condition.Type.AGENT_CONNECTED,
++            status=vm.vmi.Condition.Status.TRUE,
++            timeout=TIMEOUT_6MIN,
++        )
++
++        LOGGER.info(f"Windows VM {vm.name} ready with guest agent running")
++        yield vm
++
++
++@pytest.fixture(scope="class")
++def windows_vm_guest_agent_stopped(unprivileged_client, namespace, windows_data_source, windows_template_labels):
++    """
++    Provide a Windows VM with qemu-guest-agent installed but service stopped.
++
++    Yields:
++        VirtualMachineForTestsFromTemplate: Windows VM with guest agent service stopped
++
++    Teardown:
++        - Stops and deletes the Windows VM
++    """
++    vm_name = "windows-vm-agent-stopped"
++    LOGGER.info(f"Creating Windows VM {vm_name} with guest agent stopped")
++
++    data_volume_template = get_data_volume_template_dict_with_default_storage_class(
++        data_source=windows_data_source
++    )
++
++    with VirtualMachineForTestsFromTemplate(
++        name=vm_name,
++        namespace=namespace.name,
++        client=unprivileged_client,
++        labels=windows_template_labels,
++        data_source=windows_data_source,
++        data_volume_template=data_volume_template,
++    ) as vm:
++        LOGGER.info(f"Starting Windows VM {vm.name}")
++        running_vm(vm=vm)
++
++        # Wait for guest agent to connect initially
++        vm.vmi.wait_for_condition(
++            condition=vm.vmi.Condition.Type.AGENT_CONNECTED,
++            status=vm.vmi.Condition.Status.TRUE,
++            timeout=TIMEOUT_6MIN,
++        )
++
++        # Stop guest agent service
++        LOGGER.info(f"Stopping guest agent service in VM {vm.name}")
++        run_ssh_commands(
++            host=vm.ssh_exec,
++            commands=shlex.split('powershell -Command "Stop-Service -Name qemu-ga -Force"'),
++            tcp_timeout=TCP_TIMEOUT_30SEC,
++        )
++
++        LOGGER.info(f"Windows VM {vm.name} ready with guest agent stopped")
++        yield vm
++
++
++@pytest.fixture(scope="class")
++def windows_vm_for_first_boot(unprivileged_client, namespace, windows_data_source, windows_template_labels):
++    """
++    Provide a newly created Windows VM for first boot testing.
++
++    This fixture creates a fresh Windows VM to test OSInfo population on first boot,
++    which is a regression test for CNV-56888.
++
++    Yields:
++        VirtualMachineForTestsFromTemplate: Windows VM on first boot
++
++    Teardown:
++        - Stops and deletes the Windows VM
++    """
++    vm_name = "windows-vm-first-boot"
++    LOGGER.info(f"Creating new Windows VM {vm_name} for first boot test")
++
++    data_volume_template = get_data_volume_template_dict_with_default_storage_class(
++        data_source=windows_data_source
++    )
++
++    with VirtualMachineForTestsFromTemplate(
++        name=vm_name,
++        namespace=namespace.name,
++        client=unprivileged_client,
++        labels=windows_template_labels,
++        data_source=windows_data_source,
++        data_volume_template=data_volume_template,
++    ) as vm:
++        LOGGER.info(f"Starting Windows VM {vm.name} for first boot")
++        running_vm(vm=vm)
++
++        LOGGER.info(f"Windows VM {vm.name} running on first boot")
++        yield vm
++
++
++@pytest.fixture(scope="module")
++def windows_data_source(admin_client, golden_images_namespace):
++    """
++    Get Windows golden image DataSource.
++
++    Returns:
++        DataSource: Windows golden image data source
++    """
++    LOGGER.info("Getting Windows golden image DataSource")
++
++    # Try to find Windows data sources in golden images namespace
++    data_sources = list(
++        DataSource.get(
++            dyn_client=admin_client,
++            namespace=golden_images_namespace.name,
++        )
++    )
++
++    # Filter for Windows data sources
++    windows_data_sources = [
++        ds for ds in data_sources
++        if "win" in ds.name.lower()
++    ]
++
++    assert windows_data_sources, (
++        f"No Windows DataSource found in namespace {golden_images_namespace.name}"
++    )
++
++    data_source = windows_data_sources[0]
++    LOGGER.info(f"Using Windows DataSource: {data_source.name}")
++    return data_source
++
++
++@pytest.fixture(scope="module")
++def windows_template_labels():
++    """
++    Get Windows template labels for VM creation.
++
++    Returns:
++        dict: Template labels for Windows VM
++    """
++    LOGGER.info("Generating Windows template labels")
++
++    # Windows 10 template labels
++    labels = Template.generate_template_labels(
++        os="win10",
++        workload="desktop",
++        flavor="medium",
++    )
++
++    LOGGER.info(f"Using template labels: {labels}")
++    return labels
++
++
++@pytest.fixture(
++    scope="class",
++    params=["windows_10", "windows_server_2019", "windows_server_2022"],
++)
++def windows_version_vm(request, unprivileged_client, namespace, admin_client, golden_images_namespace):
++    """
++    Parametrized fixture providing Windows VMs of different versions.
++
++    Params:
++        windows_10: Windows 10 VM
++        windows_server_2019: Windows Server 2019 VM
++        windows_server_2022: Windows Server 2022 VM
++
++    Yields:
++        VirtualMachineForTestsFromTemplate: Windows VM of specified version
++
++    Teardown:
++        - Stops and deletes the Windows VM
++    """
++    windows_version = request.param
++    vm_name = f"windows-{windows_version}-vm"
++
++    LOGGER.info(f"Creating Windows VM for version: {windows_version}")
++
++    # Map version to template parameters
++    version_template_map = {
++        "windows_10": {"os": "win10", "workload": "desktop", "flavor": "medium"},
++        "windows_server_2019": {"os": "win2k19", "workload": "server", "flavor": "medium"},
++        "windows_server_2022": {"os": "win2k22", "workload": "server", "flavor": "medium"},
++    }
++
++    template_params = version_template_map.get(windows_version)
++    assert template_params, f"Unknown Windows version: {windows_version}"
++
++    # Generate template labels
++    template_labels = Template.generate_template_labels(**template_params)
++    LOGGER.info(f"Using template labels for {windows_version}: {template_labels}")
++
++    # Get DataSource for this Windows version
++    data_sources = list(
++        DataSource.get(
++            dyn_client=admin_client,
++            namespace=golden_images_namespace.name,
++        )
++    )
++
++    # Filter for matching Windows version
++    os_prefix = template_params["os"]
++    version_data_sources = [
++        ds for ds in data_sources
++        if os_prefix in ds.name.lower()
++    ]
++
++    if not version_data_sources:
++        # Fallback to any Windows data source
++        version_data_sources = [
++            ds for ds in data_sources
++            if "win" in ds.name.lower()
++        ]
++
++    assert version_data_sources, f"No DataSource found for {windows_version}"
++
++    data_source = version_data_sources[0]
++    LOGGER.info(f"Using DataSource {data_source.name} for {windows_version}")
++
++    data_volume_template = get_data_volume_template_dict_with_default_storage_class(
++        data_source=data_source
++    )
++
++    with VirtualMachineForTestsFromTemplate(
++        name=vm_name,
++        namespace=namespace.name,
++        client=unprivileged_client,
++        labels=template_labels,
++        data_source=data_source,
++        data_volume_template=data_volume_template,
++    ) as vm:
++        LOGGER.info(f"Starting Windows VM {vm.name}")
++        running_vm(vm=vm)
++
++        # Wait for guest agent to connect
++        vm.vmi.wait_for_condition(
++            condition=vm.vmi.Condition.Type.AGENT_CONNECTED,
++            status=vm.vmi.Condition.Status.TRUE,
++            timeout=TIMEOUT_6MIN,
++        )
++
++        LOGGER.info(f"Windows {windows_version} VM {vm.name} ready")
++        yield vm
+diff --git a/tests/virt/guest_agent/test_windows_osinfo_display.py b/tests/virt/guest_agent/test_windows_osinfo_display.py
+new file mode 100644
+index 0000000..78b3208
+--- /dev/null
++++ b/tests/virt/guest_agent/test_windows_osinfo_display.py
+@@ -0,0 +1,642 @@
++# -*- coding: utf-8 -*-
++
++"""
++Windows Guest Agent OS and Hostname Info Display Tests
++
++STP Reference: /thesis/stps/7.md
++Jira: CNV-61262
++Bug Fix: CNV-56888
++
++This module contains tests for verifying that Windows VM operating system
++information and hostname are displayed correctly when qemu-guest-agent is running.
++
++Tests validate the fix for CNV-56888 which ensures domain.Status.OSInfo is
++properly populated and prevents false "Guest Agent Required" messages.
++"""
++
++import logging
++import shlex
++
++import pytest
++from ocp_resources.virtual_machine_instance import VirtualMachineInstance
++from pyhelper_utils.shell import run_ssh_commands
++from timeout_sampler import TimeoutExpiredError, TimeoutSampler
++
++from utilities.constants import TCP_TIMEOUT_30SEC, TIMEOUT_2MIN, TIMEOUT_5MIN, TIMEOUT_6MIN
++from utilities.virt import get_guest_os_info
++
++LOGGER = logging.getLogger(__name__)
++
++pytestmark = [pytest.mark.virt, pytest.mark.high_resource_vm, pytest.mark.special_infra]
++
++
++def get_osinfo_from_vmi_status(vmi: VirtualMachineInstance) -> dict[str, str]:
++    """
++    Extract OSInfo from VMI status.guestOSInfo field.
++
++    Args:
++        vmi: VirtualMachineInstance resource
++
++    Returns:
++        dict: OSInfo data containing OS version, hostname, etc.
++              Empty dict if OSInfo is not populated.
++    """
++    vmi_instance = vmi.instance
++    guest_os_info = vmi_instance.status.get("guestOSInfo", {})
++    return dict(guest_os_info) if guest_os_info else {}
++
++
++def wait_for_osinfo_populated(vmi: VirtualMachineInstance, timeout: int = TIMEOUT_6MIN) -> dict[str, str]:
++    """
++    Wait for OSInfo to be populated in VMI status.
++
++    Args:
++        vmi: VirtualMachineInstance resource
++        timeout: Maximum time to wait in seconds
++
++    Returns:
++        dict: OSInfo data
++
++    Raises:
++        TimeoutExpiredError: If OSInfo is not populated within timeout
++    """
++    LOGGER.info(f"Waiting for OSInfo to be populated for VMI {vmi.name}")
++    sampler = TimeoutSampler(
++        wait_timeout=timeout,
++        sleep=5,
++        func=get_osinfo_from_vmi_status,
++        vmi=vmi,
++    )
++    for sample in sampler:
++        if sample and sample.get("id"):
++            LOGGER.info(f"OSInfo populated for VMI {vmi.name}: {sample}")
++            return sample
++
++    raise TimeoutExpiredError(f"OSInfo not populated for VMI {vmi.name} within {timeout} seconds")
++
++
++def get_windows_hostname_from_guest(vm) -> str:
++    """
++    Get the configured hostname from inside Windows guest.
++
++    Args:
++        vm: VirtualMachine resource with SSH/WinRM access
++
++    Returns:
++        str: Hostname configured in Windows
++    """
++    LOGGER.info(f"Getting hostname from Windows guest {vm.name}")
++    hostname_output = run_ssh_commands(
++        host=vm.ssh_exec,
++        commands=shlex.split("hostname"),
++        tcp_timeout=TCP_TIMEOUT_30SEC,
++    )[0]
++    hostname = hostname_output.strip()
++    LOGGER.info(f"Windows guest {vm.name} hostname: {hostname}")
++    return hostname
++
++
++def stop_guest_agent_service(vm) -> None:
++    """
++    Stop qemu-guest-agent service inside Windows guest.
++
++    Args:
++        vm: VirtualMachine resource with SSH access
++    """
++    LOGGER.info(f"Stopping qemu-guest-agent service in Windows guest {vm.name}")
++    run_ssh_commands(
++        host=vm.ssh_exec,
++        commands=shlex.split('powershell -Command "Stop-Service -Name qemu-ga -Force"'),
++        tcp_timeout=TCP_TIMEOUT_30SEC,
++    )
++    LOGGER.info(f"qemu-guest-agent service stopped in {vm.name}")
++
++
++def start_guest_agent_service(vm) -> None:
++    """
++    Start qemu-guest-agent service inside Windows guest.
++
++    Args:
++        vm: VirtualMachine resource with SSH access
++    """
++    LOGGER.info(f"Starting qemu-guest-agent service in Windows guest {vm.name}")
++    run_ssh_commands(
++        host=vm.ssh_exec,
++        commands=shlex.split('powershell -Command "Start-Service -Name qemu-ga"'),
++        tcp_timeout=TCP_TIMEOUT_30SEC,
++    )
++    LOGGER.info(f"qemu-guest-agent service started in {vm.name}")
++
++
++def reboot_windows_guest(vm) -> None:
++    """
++    Initiate reboot from within Windows guest OS.
++
++    Args:
++        vm: VirtualMachine resource with SSH/WinRM access
++    """
++    LOGGER.info(f"Initiating guest reboot for Windows VM {vm.name}")
++    run_ssh_commands(
++        host=vm.ssh_exec,
++        commands=shlex.split("shutdown /r /t 5"),
++        tcp_timeout=TCP_TIMEOUT_30SEC,
++    )
++    LOGGER.info(f"Reboot initiated for Windows guest {vm.name}")
++
++
++def kill_guest_agent_process(vm) -> None:
++    """
++    Kill qemu-guest-agent process inside Windows guest (simulate crash).
++
++    Args:
++        vm: VirtualMachine resource with SSH/WinRM access
++    """
++    LOGGER.info(f"Killing qemu-guest-agent process in Windows guest {vm.name}")
++    run_ssh_commands(
++        host=vm.ssh_exec,
++        commands=shlex.split('powershell -Command "Stop-Process -Name qemu-ga -Force"'),
++        tcp_timeout=TCP_TIMEOUT_30SEC,
++    )
++    LOGGER.info(f"qemu-guest-agent process killed in {vm.name}")
++
++
++class TestWindowsGuestAgentInfo:
++    """
++    Tests for Windows VM guest agent OS and hostname information display.
++
++    Preconditions:
++        - Windows VM with qemu-guest-agent installed
++        - virtio-serial driver installed in Windows guest
++        - qemu-guest-agent service running in Windows guest
++        - VMI is in Running status
++    """
++
++    @pytest.mark.polarion("CNV-61262")
++    @pytest.mark.gating
++    def test_windows_os_version_displayed_correctly(self, windows_vm_with_guest_agent):
++        """
++        Test that Windows OS version is displayed correctly when guest agent is running.
++
++        Steps:
++            1. Start Windows VM with qemu-guest-agent running
++            2. Wait for guest agent to report to virt-handler
++            3. Get VMI status and check domain.Status.OSInfo field
++            4. Extract OS version from OSInfo
++
++        Expected:
++            - domain.Status.OSInfo is not empty
++            - OS version matches actual Windows version running in guest
++            - No "Guest Agent Required" message is shown
++        """
++        vm = windows_vm_with_guest_agent
++        vmi = vm.vmi
++
++        LOGGER.info(f"Test: Verifying Windows OS version display for VM {vm.name}")
++
++        # Wait for guest agent to connect
++        LOGGER.info(f"Waiting for guest agent to connect for VMI {vmi.name}")
++        vmi.wait_for_condition(
++            condition=VirtualMachineInstance.Condition.Type.AGENT_CONNECTED,
++            status=VirtualMachineInstance.Condition.Status.TRUE,
++            timeout=TIMEOUT_6MIN,
++        )
++
++        # Wait for OSInfo to be populated
++        os_info = wait_for_osinfo_populated(vmi=vmi, timeout=TIMEOUT_6MIN)
++
++        # Verify OSInfo is not empty
++        assert os_info, f"OSInfo is empty for VMI {vmi.name}, expected populated OS information"
++
++        # Verify OSInfo contains id field (OS identifier)
++        assert os_info.get("id"), f"OSInfo missing 'id' field for VMI {vmi.name}, OSInfo: {os_info}"
++
++        # Verify OS name is present
++        os_name = os_info.get("name", "")
++        assert os_name, f"OSInfo missing 'name' field for VMI {vmi.name}, OSInfo: {os_info}"
++
++        # Verify Windows is identified
++        assert "windows" in os_name.lower(), (
++            f"OSInfo does not identify Windows OS for VMI {vmi.name}. "
++            f"Expected 'windows' in OS name, got: {os_name}"
++        )
++
++        LOGGER.info(f"Windows OS version displayed correctly: {os_name}")
++
++    @pytest.mark.polarion("CNV-61262")
++    @pytest.mark.gating
++    def test_windows_hostname_displayed_correctly(self, windows_vm_with_guest_agent):
++        """
++        Test that Windows hostname is displayed correctly when guest agent is running.
++
++        Steps:
++            1. Start Windows VM with specific hostname configured in guest
++            2. Wait for guest agent to report to virt-handler
++            3. Get VMI status and check domain.Status.OSInfo field
++            4. Extract hostname from OSInfo
++
++        Expected:
++            - domain.Status.OSInfo contains hostname field
++            - Hostname matches the configured hostname in Windows guest
++        """
++        vm = windows_vm_with_guest_agent
++        vmi = vm.vmi
++
++        LOGGER.info(f"Test: Verifying Windows hostname display for VM {vm.name}")
++
++        # Wait for guest agent to connect
++        vmi.wait_for_condition(
++            condition=VirtualMachineInstance.Condition.Type.AGENT_CONNECTED,
++            status=VirtualMachineInstance.Condition.Status.TRUE,
++            timeout=TIMEOUT_6MIN,
++        )
++
++        # Wait for OSInfo to be populated
++        os_info = wait_for_osinfo_populated(vmi=vmi, timeout=TIMEOUT_6MIN)
++
++        # Get actual hostname from Windows guest
++        actual_hostname = get_windows_hostname_from_guest(vm=vm)
++
++        # Extract hostname from OSInfo
++        osinfo_hostname = os_info.get("hostname", "")
++        assert osinfo_hostname, f"OSInfo missing 'hostname' field for VMI {vmi.name}, OSInfo: {os_info}"
++
++        # Verify hostname matches (case-insensitive)
++        assert osinfo_hostname.lower() == actual_hostname.lower(), (
++            f"OSInfo hostname does not match actual hostname for VMI {vmi.name}. "
++            f"Expected: {actual_hostname}, Got: {osinfo_hostname}"
++        )
++
++        LOGGER.info(f"Windows hostname displayed correctly: {osinfo_hostname}")
++
++    @pytest.mark.polarion("CNV-61262")
++    def test_osinfo_persists_after_vm_reboot(self, windows_vm_with_guest_agent):
++        """
++        Test that OS and hostname info persists after VM reboot.
++
++        Steps:
++            1. Verify domain.Status.OSInfo is populated with OS version and hostname
++            2. Initiate guest reboot from within Windows VM
++            3. Wait for VM to shutdown and restart
++            4. Wait for guest agent to reconnect after reboot
++            5. Check domain.Status.OSInfo again
++
++        Expected:
++            - domain.Status.OSInfo is populated before reboot
++            - domain.Status.OSInfo is populated after reboot
++            - OS version and hostname remain correct after reboot
++        """
++        vm = windows_vm_with_guest_agent
++        vmi = vm.vmi
++
++        LOGGER.info(f"Test: Verifying OSInfo persistence after reboot for VM {vm.name}")
++
++        # Wait for guest agent to connect initially
++        vmi.wait_for_condition(
++            condition=VirtualMachineInstance.Condition.Type.AGENT_CONNECTED,
++            status=VirtualMachineInstance.Condition.Status.TRUE,
++            timeout=TIMEOUT_6MIN,
++        )
++
++        # Get OSInfo before reboot
++        os_info_before = wait_for_osinfo_populated(vmi=vmi, timeout=TIMEOUT_6MIN)
++        LOGGER.info(f"OSInfo before reboot: {os_info_before}")
++
++        os_name_before = os_info_before.get("name")
++        hostname_before = os_info_before.get("hostname")
++
++        # Initiate guest reboot
++        reboot_windows_guest(vm=vm)
++
++        # Wait for VM to restart
++        LOGGER.info(f"Waiting for VMI {vmi.name} to restart after guest reboot")
++        vmi.wait_until_running(timeout=TIMEOUT_5MIN)
++
++        # Wait for guest agent to reconnect
++        LOGGER.info(f"Waiting for guest agent to reconnect after reboot for VMI {vmi.name}")
++        vmi.wait_for_condition(
++            condition=VirtualMachineInstance.Condition.Type.AGENT_CONNECTED,
++            status=VirtualMachineInstance.Condition.Status.TRUE,
++            timeout=TIMEOUT_6MIN,
++        )
++
++        # Get OSInfo after reboot
++        os_info_after = wait_for_osinfo_populated(vmi=vmi, timeout=TIMEOUT_6MIN)
++        LOGGER.info(f"OSInfo after reboot: {os_info_after}")
++
++        # Verify OSInfo is populated after reboot
++        assert os_info_after, f"OSInfo is empty after reboot for VMI {vmi.name}"
++
++        # Verify OS name persists
++        os_name_after = os_info_after.get("name")
++        assert os_name_after == os_name_before, (
++            f"OS name changed after reboot for VMI {vmi.name}. "
++            f"Before: {os_name_before}, After: {os_name_after}"
++        )
++
++        # Verify hostname persists
++        hostname_after = os_info_after.get("hostname")
++        assert hostname_after == hostname_before, (
++            f"Hostname changed after reboot for VMI {vmi.name}. "
++            f"Before: {hostname_before}, After: {hostname_after}"
++        )
++
++        LOGGER.info(f"OSInfo persisted correctly after reboot")
++
++    @pytest.mark.polarion("CNV-61262")
++    def test_osinfo_appears_when_guest_agent_starts(self, windows_vm_guest_agent_stopped):
++        """
++        Test that OS info appears when guest agent service starts.
++
++        Steps:
++            1. Start Windows VM
++            2. Stop qemu-guest-agent service inside Windows guest
++            3. Verify domain.Status.OSInfo is empty or shows "Guest Agent Required"
++            4. Start qemu-guest-agent service inside Windows guest
++            5. Wait for guest agent to report to virt-handler
++            6. Check domain.Status.OSInfo
++
++        Expected:
++            - domain.Status.OSInfo is empty when agent is stopped
++            - domain.Status.OSInfo is populated after agent starts
++            - OS version and hostname are displayed correctly after agent starts
++        """
++        vm = windows_vm_guest_agent_stopped
++        vmi = vm.vmi
++
++        LOGGER.info(f"Test: Verifying OSInfo appears when guest agent starts for VM {vm.name}")
++
++        # Verify guest agent is not connected
++        LOGGER.info(f"Verifying guest agent is not connected for VMI {vmi.name}")
++        vmi_instance = vmi.instance
++        agent_conditions = [
++            cond for cond in vmi_instance.status.get("conditions", [])
++            if cond.get("type") == VirtualMachineInstance.Condition.Type.AGENT_CONNECTED
++        ]
++
++        if agent_conditions:
++            agent_status = agent_conditions[0].get("status")
++            assert agent_status != VirtualMachineInstance.Condition.Status.TRUE, (
++                f"Guest agent should not be connected when service is stopped for VMI {vmi.name}"
++            )
++
++        # Verify OSInfo is empty when agent is stopped
++        os_info_before_start = get_osinfo_from_vmi_status(vmi=vmi)
++        LOGGER.info(f"OSInfo before starting agent: {os_info_before_start}")
++
++        # Start guest agent service
++        start_guest_agent_service(vm=vm)
++
++        # Wait for guest agent to connect
++        LOGGER.info(f"Waiting for guest agent to connect after service start for VMI {vmi.name}")
++        vmi.wait_for_condition(
++            condition=VirtualMachineInstance.Condition.Type.AGENT_CONNECTED,
++            status=VirtualMachineInstance.Condition.Status.TRUE,
++            timeout=TIMEOUT_2MIN,
++        )
++
++        # Wait for OSInfo to be populated
++        os_info_after_start = wait_for_osinfo_populated(vmi=vmi, timeout=TIMEOUT_6MIN)
++        LOGGER.info(f"OSInfo after starting agent: {os_info_after_start}")
++
++        # Verify OSInfo is populated after agent starts
++        assert os_info_after_start, f"OSInfo is empty after starting guest agent for VMI {vmi.name}"
++        assert os_info_after_start.get("id"), f"OSInfo missing 'id' field after starting agent for VMI {vmi.name}"
++        assert os_info_after_start.get("name"), f"OSInfo missing 'name' field after starting agent for VMI {vmi.name}"
++        assert os_info_after_start.get("hostname"), (
++            f"OSInfo missing 'hostname' field after starting agent for VMI {vmi.name}"
++        )
++
++        LOGGER.info(f"OSInfo appeared correctly after guest agent started")
++
++
++class TestWindowsGuestAgentInfoMultipleVersions:
++    """
++    Tests for Windows guest agent info display across different Windows versions.
++
++    Preconditions:
++        - Windows VM of specified version with qemu-guest-agent installed
++        - virtio-serial driver installed in Windows guest
++        - qemu-guest-agent service running
++    """
++
++    @pytest.mark.tier2
++    @pytest.mark.polarion("CNV-61262")
++    @pytest.mark.parametrize(
++        "windows_version_vm",
++        ["windows_10", "windows_server_2019", "windows_server_2022"],
++        indirect=True,
++    )
++    def test_osinfo_display_for_windows_version(self, windows_version_vm):
++        """
++        Test that OS info displays correctly for different Windows versions.
++
++        Steps:
++            1. Start Windows VM of specified version
++            2. Wait for guest agent to report
++            3. Get VMI status and check domain.Status.OSInfo
++            4. Verify OS version string matches expected format for Windows version
++
++        Expected:
++            - domain.Status.OSInfo is populated for all Windows versions
++            - OS version string correctly identifies Windows 10, Server 2019, or Server 2022
++        """
++        vm = windows_version_vm
++        vmi = vm.vmi
++
++        LOGGER.info(f"Test: Verifying OSInfo display for Windows VM {vm.name}")
++
++        # Wait for guest agent to connect
++        vmi.wait_for_condition(
++            condition=VirtualMachineInstance.Condition.Type.AGENT_CONNECTED,
++            status=VirtualMachineInstance.Condition.Status.TRUE,
++            timeout=TIMEOUT_6MIN,
++        )
++
++        # Wait for OSInfo to be populated
++        os_info = wait_for_osinfo_populated(vmi=vmi, timeout=TIMEOUT_6MIN)
++
++        # Verify OSInfo is populated
++        assert os_info, f"OSInfo is empty for Windows VM {vm.name}"
++        assert os_info.get("id"), f"OSInfo missing 'id' field for VM {vm.name}"
++
++        # Verify OS name contains Windows identifier
++        os_name = os_info.get("name", "")
++        assert os_name, f"OSInfo missing 'name' field for VM {vm.name}"
++        assert "windows" in os_name.lower(), (
++            f"OSInfo does not identify Windows OS for VM {vm.name}. Got: {os_name}"
++        )
++
++        LOGGER.info(f"OSInfo displayed correctly for Windows version: {os_name}")
++
++
++class TestWindowsGuestAgentInfoEdgeCases:
++    """
++    Tests for edge cases and race conditions in guest agent info reporting.
++
++    Preconditions:
++        - Windows VM with qemu-guest-agent installed
++    """
++
++    @pytest.mark.tier2
++    @pytest.mark.polarion("CNV-61262")
++    def test_osinfo_after_rapid_vm_restarts(self, windows_vm_with_guest_agent):
++        """
++        Test that OS info remains consistent after rapid VM restarts.
++
++        Steps:
++            1. Start Windows VM and verify domain.Status.OSInfo is populated
++            2. Stop VM
++            3. Immediately start VM again
++            4. Repeat steps 2-3 for 3 cycles
++            5. Verify domain.Status.OSInfo after final start
++
++        Expected:
++            - domain.Status.OSInfo is consistently populated after each restart
++            - No race condition causes OSInfo to remain empty
++        """
++        vm = windows_vm_with_guest_agent
++        vmi = vm.vmi
++
++        LOGGER.info(f"Test: Verifying OSInfo after rapid VM restarts for VM {vm.name}")
++
++        # Initial verification
++        vmi.wait_for_condition(
++            condition=VirtualMachineInstance.Condition.Type.AGENT_CONNECTED,
++            status=VirtualMachineInstance.Condition.Status.TRUE,
++            timeout=TIMEOUT_6MIN,
++        )
++        initial_os_info = wait_for_osinfo_populated(vmi=vmi, timeout=TIMEOUT_6MIN)
++        LOGGER.info(f"Initial OSInfo: {initial_os_info}")
++
++        # Perform 3 rapid restart cycles
++        for cycle in range(3):
++            LOGGER.info(f"Restart cycle {cycle + 1}/3 for VM {vm.name}")
++
++            # Stop VM
++            LOGGER.info(f"Stopping VM {vm.name}")
++            vm.stop(wait=True)
++
++            # Start VM immediately
++            LOGGER.info(f"Starting VM {vm.name}")
++            vm.start(wait=True)
++            vmi.wait_until_running(timeout=TIMEOUT_5MIN)
++
++            # Wait for guest agent to connect
++            vmi.wait_for_condition(
++                condition=VirtualMachineInstance.Condition.Type.AGENT_CONNECTED,
++                status=VirtualMachineInstance.Condition.Status.TRUE,
++                timeout=TIMEOUT_6MIN,
++            )
++
++            # Verify OSInfo is populated after each restart
++            os_info = wait_for_osinfo_populated(vmi=vmi, timeout=TIMEOUT_6MIN)
++            assert os_info, f"OSInfo is empty after restart cycle {cycle + 1} for VMI {vmi.name}"
++            assert os_info.get("id"), f"OSInfo missing 'id' after restart cycle {cycle + 1} for VMI {vmi.name}"
++
++            LOGGER.info(f"Restart cycle {cycle + 1} complete, OSInfo: {os_info}")
++
++        LOGGER.info(f"OSInfo remained consistent after all rapid restarts")
++
++    @pytest.mark.tier2
++    @pytest.mark.polarion("CNV-61262")
++    def test_osinfo_after_guest_agent_crash_and_recovery(self, windows_vm_with_guest_agent):
++        """
++        Test that OS info recovers after guest agent process crashes and restarts.
++
++        Steps:
++            1. Start Windows VM with guest agent running
++            2. Verify domain.Status.OSInfo is populated
++            3. Kill qemu-guest-agent process inside guest (simulating crash)
++            4. Wait for Windows service manager to restart qemu-ga
++            5. Check domain.Status.OSInfo
++
++        Expected:
++            - domain.Status.OSInfo is populated initially
++            - domain.Status.OSInfo may become empty after crash
++            - domain.Status.OSInfo is repopulated after service recovery
++        """
++        vm = windows_vm_with_guest_agent
++        vmi = vm.vmi
++
++        LOGGER.info(f"Test: Verifying OSInfo recovery after guest agent crash for VM {vm.name}")
++
++        # Verify guest agent connected and OSInfo populated initially
++        vmi.wait_for_condition(
++            condition=VirtualMachineInstance.Condition.Type.AGENT_CONNECTED,
++            status=VirtualMachineInstance.Condition.Status.TRUE,
++            timeout=TIMEOUT_6MIN,
++        )
++        os_info_before_crash = wait_for_osinfo_populated(vmi=vmi, timeout=TIMEOUT_6MIN)
++        LOGGER.info(f"OSInfo before crash: {os_info_before_crash}")
++
++        # Kill guest agent process
++        kill_guest_agent_process(vm=vm)
++
++        # Wait for Windows service manager to restart the service
++        LOGGER.info(f"Waiting for Windows service manager to restart qemu-ga for VM {vm.name}")
++
++        # Wait for guest agent to reconnect (Windows service recovery)
++        vmi.wait_for_condition(
++            condition=VirtualMachineInstance.Condition.Type.AGENT_CONNECTED,
++            status=VirtualMachineInstance.Condition.Status.TRUE,
++            timeout=TIMEOUT_2MIN,
++        )
++
++        # Verify OSInfo is repopulated after recovery
++        os_info_after_recovery = wait_for_osinfo_populated(vmi=vmi, timeout=TIMEOUT_6MIN)
++        LOGGER.info(f"OSInfo after recovery: {os_info_after_recovery}")
++
++        assert os_info_after_recovery, f"OSInfo not repopulated after guest agent recovery for VMI {vmi.name}"
++        assert os_info_after_recovery.get("id"), f"OSInfo missing 'id' after recovery for VMI {vmi.name}"
++        assert os_info_after_recovery.get("name"), f"OSInfo missing 'name' after recovery for VMI {vmi.name}"
++
++        LOGGER.info(f"OSInfo recovered correctly after guest agent crash and restart")
++
++    @pytest.mark.tier2
++    @pytest.mark.polarion("CNV-56888")
++    def test_osinfo_not_empty_on_first_boot(self, windows_vm_for_first_boot):
++        """
++        Test that domain.Status.OSInfo is populated on first VM boot (regression test for CNV-56888).
++
++        Steps:
++            1. Create new Windows VM with guest agent pre-installed
++            2. Start VM for the first time
++            3. Wait for guest agent to report
++            4. Check domain.Status.OSInfo immediately after agent reports
++
++        Expected:
++            - domain.Status.OSInfo is not empty on first boot
++            - No race condition prevents OSInfo from being populated initially
++        """
++        vm = windows_vm_for_first_boot
++        vmi = vm.vmi
++
++        LOGGER.info(f"Test: Verifying OSInfo is populated on first boot for VM {vm.name} (CNV-56888 regression)")
++
++        # Wait for guest agent to connect on first boot
++        LOGGER.info(f"Waiting for guest agent to connect on first boot for VMI {vmi.name}")
++        vmi.wait_for_condition(
++            condition=VirtualMachineInstance.Condition.Type.AGENT_CONNECTED,
++            status=VirtualMachineInstance.Condition.Status.TRUE,
++            timeout=TIMEOUT_6MIN,
++        )
++
++        # Immediately check OSInfo after agent reports
++        os_info = wait_for_osinfo_populated(vmi=vmi, timeout=TIMEOUT_6MIN)
++
++        # Verify OSInfo is populated on first boot (regression check for CNV-56888)
++        assert os_info, (
++            f"OSInfo is empty on first boot for VMI {vmi.name}. "
++            f"This indicates CNV-56888 race condition may still exist."
++        )
++        assert os_info.get("id"), (
++            f"OSInfo missing 'id' field on first boot for VMI {vmi.name}. "
++            f"OSInfo: {os_info}"
++        )
++        assert os_info.get("name"), (
++            f"OSInfo missing 'name' field on first boot for VMI {vmi.name}. "
++            f"OSInfo: {os_info}"
++        )
++
++        LOGGER.info(f"OSInfo populated correctly on first boot: {os_info}")
++        LOGGER.info(f"CNV-56888 regression test passed - no race condition on first boot")
