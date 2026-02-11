@@ -1,5 +1,0 @@
-test_run.log: Version mismatch in virtctl caused the tests to fail due to incorrect virtctl port-forward syntax.
-test_run2.log: AttributeError multiple times, trying to access .child of vnc_connection, referencing an unknown win preference, tests/virt/node/vnc_console/test_vnc_screenshot_stability.py:30
-  /home/mvavrine/cnv/openshift-virtualization-tests/tests/virt/node/vnc_console/test_vnc_screenshot_stability.py:30: PytestUnknownMarkWarning: Unknown pytest.mark.tier1 - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
-    @pytest.mark.tier1
-

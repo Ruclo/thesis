@@ -1,1 +1,0 @@
-AttributeError, referencing invalid RunStrategy in some RunStrategy enum while creating vm.
