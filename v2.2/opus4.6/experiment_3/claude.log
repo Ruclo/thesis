@@ -1,0 +1,13 @@
+Pyright is clean with 0 errors after 3 iterations. The file is type-safe.
+
+**Pyright Healing Summary:**
+- **Iteration 1**: 23 errors found
+- **Iteration 2**: 2 errors remaining (after fixing `object` types → `DynamicClient`/`Namespace`, generator return types)
+- **Iteration 3**: 0 errors - clean
+
+**Fixes applied:**
+1. Added `from collections.abc import Generator` import
+2. Added `from kubernetes.dynamic import DynamicClient` and `from ocp_resources.namespace import Namespace` imports
+3. Changed all `object` type annotations to proper types (`DynamicClient`, `Namespace`)
+4. Changed all yield-fixture return types from `-> Type` to `-> Generator[Type]`
+5. Fixed `virt_launcher_pod` optional member access by asserting pod existence before accessing `.name`

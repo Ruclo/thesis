@@ -1,0 +1,30 @@
+The test file has been generated at `tests/virt/node/hotplug/test_cpu_hotplug_max_sockets.py`. Here's a summary of what was generated:
+
+**Test Classes (4) with 7 test methods:**
+
+1. **TestMaxSocketsCalculation** (2 tests)
+   - `test_max_sockets_does_not_exceed_max_vcpus` - Verifies maxSockets <= max vCPUs
+   - `test_vm_reports_correct_max_sockets_in_status` - Verifies VMI status matches spec
+
+2. **TestCPUHotplugAtLimit** (2 tests)
+   - `test_hotplug_cpu_up_to_max_sockets` - Hotplugs to EIGHT_CPU_SOCKETS and verifies guest OS
+   - `test_hotplug_cpu_beyond_max_sockets_is_rejected` - Expects `UnprocessibleEntityError`
+
+3. **TestCPUHotplugErrorHandling** (1 test)
+   - `test_error_message_when_exceeding_max_sockets` - Validates error message content via `match=`
+
+4. **TestCPUHotplugFullCycle** (2 tests)
+   - `test_hotplug_to_max_and_guest_sees_all_cpus` - Full cycle from TWO_CPU_SOCKETS to max
+   - `test_no_further_hotplug_allowed_at_max` - Confirms rejection at max
+
+**Fixtures created:**
+- `max_sockets_vm` (class scope) - VM starting at 4 sockets, max 8
+- `full_cycle_vm` (class scope) - VM starting at 2 sockets, max 8
+
+**Patterns matched from existing codebase:**
+- Uses `VirtualMachineForTestsFromTemplate` with exact parameter conventions
+- Uses `hotplug_spec_vm`, `hotplug_spec_vm_and_verify_hotplug`, `wait_for_guest_os_cpu_count`
+- Uses `UnprocessibleEntityError` for negative tests
+- `@pytest.mark.dependency` with required comments
+- `pytestmark = pytest.mark.rwx_default_storage`
+- Reuses `vmx_disabled_flag` and `modern_cpu_for_migration` session fixtures from conftest

@@ -1,0 +1,3 @@
+Pyright reports **0 errors, 0 warnings, 0 informations** on the first run. No fixes needed.
+
+The generated test file at `tests/storage/snapshots/test_storage_profile_snapshot_class.py` is already type-safe and passes pyright validation cleanly with zero iterations of healing required.

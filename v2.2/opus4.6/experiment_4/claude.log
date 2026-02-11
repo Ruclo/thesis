@@ -1,0 +1,36 @@
+All 4 phases completed successfully. Here's the final summary:
+
+---
+
+**Test Generation Complete**
+
+**Input:** `/home/jzo/thesis/stps/4.md` (STP: VM Snapshot Restore Stuck with runStrategy RerunOnFailure - CNV-63819)
+
+**Artifacts Generated:**
+
+| Phase | Output | Status |
+|-------|--------|--------|
+| STD Generation | `tests/std/vm_snapshot_restore_rerun_on_failure/std_cnv_63819.md` | Complete |
+| Repository Exploration | Verbal summary (utilities, fixtures, conventions) | Complete |
+| Pytest Code Generation | `tests/storage/snapshots/test_snapshot_restore_run_strategy.py` | Complete |
+| Pyright Validation | 0 errors, 0 iterations needed | Complete |
+
+**Test Scenarios Implemented:**
+
+| Class | Test | Priority |
+|-------|------|----------|
+| `TestSnapshotRestoreRerunOnFailure` | `test_restore_completes_for_rerun_on_failure_vm` | P1 |
+| `TestSnapshotRestoreRerunOnFailure` | `test_vm_starts_after_restore` | P1 |
+| `TestSnapshotRestoreRerunOnFailure` | `test_restored_vm_preserves_pre_snapshot_data` | P1 |
+| `TestSnapshotRestoreRunStrategyRegression` | `test_restore_completes_for_run_strategy` (x4 strategies) | P1 |
+| `TestSnapshotRestoreRunStrategyRegression` | `test_vm_starts_after_restore_for_run_strategy` (x4 strategies) | P1 |
+| `TestSnapshotRestoreRunStrategyRegression` | `test_restored_data_intact_for_run_strategy` (x4 strategies) | P1 |
+| `TestSnapshotRestoreRerunOnFailureEndToEnd` | `test_pre_snapshot_file_preserved_after_restore` | P1 |
+| `TestSnapshotRestoreRerunOnFailureEndToEnd` | `test_post_snapshot_file_removed_after_restore` | P1 |
+
+**Total: 8 test methods (20 parametrized executions across 4 run strategies)**
+
+**Ready for execution:**
+```
+uv run pytest tests/storage/snapshots/test_snapshot_restore_run_strategy.py
+```
