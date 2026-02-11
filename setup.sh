@@ -5,6 +5,7 @@ set -e
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Function to print colored messages
@@ -20,11 +21,18 @@ print_info() {
     echo -e "${YELLOW}→ $1${NC}"
 }
 
+print_header() {
+    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${BLUE}$1${NC}"
+    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+}
+
 REPO_URL="https://github.com/Ruclo/openshift-virtualization-tests.git"
 TARGET_DIR="openshift-virtualization-tests"
 THESIS_DIR="$(cd "$(dirname "$0")" && pwd)"
+STPS_DIR="$THESIS_DIR/stps"
 
-print_info "Setting up OpenShift Virtualization Tests repository..."
+print_header "Setting up OpenShift Virtualization Tests repository"
 
 # Navigate to thesis directory
 cd "$THESIS_DIR"
@@ -73,6 +81,58 @@ if ! uv run pyright --version &> /dev/null; then
     uv pip install pyright
 fi
 print_success "pyright is working"
+
+# Set up parallel worktrees if STPs exist
+if [ -d "$STPS_DIR" ]; then
+    STP_COUNT=$(find "$STPS_DIR" -name "*.md" -type f | wc -l)
+
+    if [ $STP_COUNT -gt 0 ]; then
+        print_header "Setting up parallel test generation worktrees"
+        print_info "Found $STP_COUNT STP files"
+
+        PARALLEL_DIR="$THESIS_DIR/parallel"
+        mkdir -p "$PARALLEL_DIR"
+
+        # Set up worktree for each STP
+        for i in $(seq 1 $STP_COUNT); do
+            WORKTREE_DIR="$PARALLEL_DIR/${i}-openshift-virtualization-tests"
+
+            if [ -d "$WORKTREE_DIR" ]; then
+                print_info "[$i/$STP_COUNT] Worktree already exists: ${i}-openshift-virtualization-tests"
+            else
+                print_info "[$i/$STP_COUNT] Creating worktree: ${i}-openshift-virtualization-tests"
+                git worktree add "$WORKTREE_DIR" HEAD
+            fi
+
+            print_success "[$i/$STP_COUNT] Worktree ready: ${i}-openshift-virtualization-tests"
+        done
+
+        print_header "Setting up Python environment in worktrees"
+
+        # Set up Python environment in each worktree
+        for i in $(seq 1 $STP_COUNT); do
+            WORKTREE_DIR="$PARALLEL_DIR/${i}-openshift-virtualization-tests"
+            cd "$WORKTREE_DIR"
+
+            print_info "[$i/$STP_COUNT] Setting up Python environment..."
+
+            # Create venv if it doesn't exist
+            if [ ! -d ".venv" ]; then
+                uv venv --quiet
+            fi
+
+            # Install pyright if not installed
+            if ! uv run pyright --version &> /dev/null; then
+                print_info "[$i/$STP_COUNT] Installing pyright..."
+                uv pip install --quiet pyright
+            fi
+
+            print_success "[$i/$STP_COUNT] Python environment ready"
+        done
+
+        cd "$THESIS_DIR/$TARGET_DIR"
+    fi
+fi
 
 # Create Claude directories
 print_info "Setting up Claude configuration..."
@@ -195,9 +255,61 @@ fi
 
 cd "$THESIS_DIR"
 
-print_success "Setup complete!"
+# Copy Claude configurations to worktrees
+if [ -d "$STPS_DIR" ]; then
+    STP_COUNT=$(find "$STPS_DIR" -name "*.md" -type f | wc -l)
+
+    if [ $STP_COUNT -gt 0 ]; then
+        print_header "Copying configurations to worktrees"
+
+        PARALLEL_DIR="$THESIS_DIR/parallel"
+
+        for i in $(seq 1 $STP_COUNT); do
+            WORKTREE_DIR="$PARALLEL_DIR/${i}-openshift-virtualization-tests"
+
+            print_info "[$i/$STP_COUNT] Copying Claude configuration to worktree ${i}..."
+
+            # Create Claude directories
+            mkdir -p "$WORKTREE_DIR/.claude/commands"
+            mkdir -p "$WORKTREE_DIR/.claude/skills"
+
+            # Copy v1
+            if [ -f "$THESIS_DIR/v1/prompt.md" ]; then
+                cp "$THESIS_DIR/v1/prompt.md" "$WORKTREE_DIR/.claude/commands/v1-unified-prompt.md"
+            fi
+
+            # Copy v2.1
+            if [ -f "$THESIS_DIR/v2.1/orchestrator.md" ]; then
+                cp "$THESIS_DIR/v2.1/orchestrator.md" "$WORKTREE_DIR/.claude/commands/v2.1-orchestrator.md"
+            fi
+            if [ -d "$THESIS_DIR/v2.1/skills" ]; then
+                cp -r "$THESIS_DIR/v2.1/skills/"* "$WORKTREE_DIR/.claude/skills/" 2>/dev/null || true
+            fi
+
+            # Copy v2.2
+            if [ -f "$THESIS_DIR/v2.2/orchestrator.md" ]; then
+                cp "$THESIS_DIR/v2.2/orchestrator.md" "$WORKTREE_DIR/.claude/commands/v2.2-orchestrator.md"
+            fi
+            if [ -d "$THESIS_DIR/v2.2/skills" ]; then
+                cp -r "$THESIS_DIR/v2.2/skills/"* "$WORKTREE_DIR/.claude/skills/" 2>/dev/null || true
+            fi
+
+            # Copy v2
+            if [ -f "$THESIS_DIR/v2/orchestrator.md" ]; then
+                cp "$THESIS_DIR/v2/orchestrator.md" "$WORKTREE_DIR/.claude/commands/v2-orchestrator.md"
+            fi
+            if [ -d "$THESIS_DIR/v2/skills" ]; then
+                cp -r "$THESIS_DIR/v2/skills/"* "$WORKTREE_DIR/.claude/skills/" 2>/dev/null || true
+            fi
+
+            print_success "[$i/$STP_COUNT] Configuration copied"
+        done
+    fi
+fi
+
+print_header "Setup Complete!"
 echo ""
-echo "Repository location: $TARGET_DIR"
+echo "Main repository location: $TARGET_DIR"
 echo ""
 echo "Available commands:"
 echo "  v0-experiment-* : Individual experiment prompts from v0"
@@ -214,6 +326,36 @@ echo "  v2.1-* : Skills from v2.1 (exploration outputs verbal summary, no contex
 echo "  v2.2-* : Skills from v2.2 (adds STD generation)"
 echo "  v2-* : Skills from v2 (full version with context.json caching)"
 echo ""
+
+# Print parallel setup info if STPs exist
+if [ -d "$STPS_DIR" ]; then
+    STP_COUNT=$(find "$STPS_DIR" -name "*.md" -type f | wc -l)
+    if [ $STP_COUNT -gt 0 ]; then
+        echo "Parallel worktrees created: $STP_COUNT"
+        echo "Worktree locations:"
+        for i in $(seq 1 $STP_COUNT); do
+            echo "  parallel/${i}-openshift-virtualization-tests → stps/${i}.md"
+        done
+        echo ""
+        echo "Each worktree shares the same git repository and has:"
+        echo "  - v1 (command: /v1-unified-prompt)"
+        echo "  - v2.1 (command: /v2.1-orchestrator, skills: /v2.1-*)"
+        echo "  - v2.2 (command: /v2.2-orchestrator, skills: /v2.2-*)"
+        echo "  - v2 (command: /v2-orchestrator, skills: /v2-*)"
+        echo ""
+    fi
+fi
+
 echo "Next steps:"
 echo "  cd $TARGET_DIR"
 echo "  # Use Claude Code with the configured commands and skills"
+if [ -d "$STPS_DIR" ]; then
+    STP_COUNT=$(find "$STPS_DIR" -name "*.md" -type f | wc -l)
+    if [ $STP_COUNT -gt 0 ]; then
+        echo ""
+        echo "For parallel execution:"
+        echo "  cd parallel/<N>-openshift-virtualization-tests"
+        echo "  # Run your preferred version on that STP"
+    fi
+fi
+echo ""

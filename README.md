@@ -37,7 +37,85 @@ cd openshift-virtualization-tests
 
 All version-specific commands and skills will be available through Claude Code.
 
-## 4. Repository Structure
+## 4. Parallel Execution
+
+The `parallel/` directory contains scripts to run experiments across all 7 STPs simultaneously using git worktrees.
+
+### Setup
+
+The main `./setup.sh` script automatically creates git worktrees in `parallel/` (one per STP) and configures all versions for each worktree.
+
+**Git worktrees** share the same `.git` directory, saving significant disk space (~100MB per worktree vs ~500MB per clone).
+
+After setup, you'll have:
+```
+parallel/
+├── run_parallel.sh              # Execute experiments in parallel
+├── collect_results.sh           # Collect and analyze results
+├── 1-openshift-virtualization-tests/   # Worktree for STP 1
+├── 2-openshift-virtualization-tests/   # Worktree for STP 2
+├── ...
+└── 7-openshift-virtualization-tests/   # Worktree for STP 7
+```
+
+### Running Parallel Experiments
+
+Execute a version across all 7 STPs:
+
+```bash
+cd parallel
+
+# Run v1 on all STPs in parallel
+./run_parallel.sh v1
+
+# Run v2.1 on all STPs in parallel
+./run_parallel.sh v2.1
+
+# Run v2.2 on all STPs in parallel
+./run_parallel.sh v2.2
+
+# Run v2 (full) on all STPs in parallel
+./run_parallel.sh v2
+```
+
+**Note the timestamp** from the output - you'll need it for collecting results.
+
+### Collecting Results
+
+After experiments complete:
+
+```bash
+./collect_results.sh <version> <timestamp>
+
+# Example:
+./collect_results.sh v2.1 20260209_143022
+```
+
+This creates `results_<version>_<timestamp>/` with:
+- `summary.md` - Overview of all results
+- Copies of all experiment outputs per STP
+- Status and error analysis
+
+### Monitoring Progress
+
+```bash
+# Watch experiment logs
+tail -f 1-openshift-virtualization-tests/v2.1_experiment_*/claude.log
+
+# Check running processes
+ps aux | grep claude
+
+# Monitor system resources
+htop
+```
+
+### Performance
+
+- **Parallel speedup:** ~7x faster than sequential execution
+- **Disk space:** ~1.2GB total (main repo + 7 worktrees) vs ~3.5GB for full clones
+- **Runtime:** Varies by version (v1: 5-10min, v2: 10-15min per STP)
+
+## 5. Repository Structure
 
 ### `/v0` - Baseline Experiments (Control Group)
 This folder contains the "Naive" generation attempts. In these experiments, the LLM was given the Test Plan and basic instructions but **no access** to the repository's helper functions, constants, or fixture definitions.
