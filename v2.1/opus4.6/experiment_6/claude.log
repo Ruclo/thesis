@@ -1,0 +1,8 @@
+Pyright reports **0 errors, 0 warnings, 0 informations** on the first run. No healing iterations needed.
+
+**Pyright Validation Result:**
+- File: `tests/virt/node/hotplug/test_cpu_hotplug_max_sockets_limit.py`
+- Errors: 0
+- Warnings: 0
+- Iterations: 0 (clean on first pass)
+- Status: SUCCESS

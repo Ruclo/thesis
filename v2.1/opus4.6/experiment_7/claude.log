@@ -1,0 +1,8 @@
+The test file has been generated at `tests/virt/cluster/common_templates/windows/test_windows_guest_agent_os_info.py`. The file implements all 4 tier-1 test scenarios from the STP plus VM lifecycle management tests (create, start, delete).
+
+**Key design decisions:**
+- Placed in the existing Windows test directory alongside `test_windows_os_support.py`
+- Reuses existing fixtures (`matrix_windows_os_vm_from_template`) and validation functions
+- Uses `pytest.mark.dependency` chains since VM creation/start are expensive shared prerequisites
+- Scenario 5 (Multiple Windows Versions) is already covered by the `windows_os_matrix` parametrization in the fixture
+- Used `tier3` marker since these are complex, time-consuming Windows VM tests requiring special infrastructure

@@ -1,0 +1,24 @@
+The test file has been generated at `/home/jzo/thesis/parallel/3-openshift-virtualization-tests/tests/virt/node/general/test_vmi_reset_comprehensive.py`.
+
+**Summary of generated test file:**
+
+| Test ID | Class | Test Method | Polarion ID | Scenario |
+|---------|-------|-------------|-------------|----------|
+| TS-02 | `TestVMIResetViaVirtctl` | `test_virtctl_reset_success` | CNV-12374 | virtctl reset succeeds |
+| TS-02 | `TestVMIResetViaVirtctl` | `test_boot_count_after_virtctl_reset` | CNV-12375 | Boot count increases after virtctl reset |
+| TS-03 | `TestVMIResetPreservesUID` | `test_vmi_uid_unchanged_after_reset` | CNV-12376 | VMI UID preserved |
+| TS-03 | `TestVMIResetPreservesUID` | `test_pod_preserved_after_reset` | CNV-12377 | Pod preserved |
+| TS-05 | `TestVMIResetNonRunning` | `test_reset_stopped_vmi_fails` | CNV-12378 | Reset on stopped VMI fails |
+| TS-06 | `TestVMIResetNonExistent` | `test_reset_nonexistent_vmi_fails` | CNV-12379 | Reset on non-existent VMI fails |
+| TS-04 | `TestVMIResetRBAC` | `test_unprivileged_user_can_reset_vmi` | CNV-12380 | Unprivileged user can reset |
+| TS-04 | `TestVMIResetRBAC` | `test_virtctl_reset_as_unprivileged_user` | CNV-12381 | Virtctl reset as unprivileged user |
+| TS-12 | `TestVMIResetOnPausedVM` | `test_reset_paused_vmi` | CNV-12382 | Reset on paused VMI fails |
+
+**Key patterns used:**
+- `vm_for_test` indirect parametrized fixture from `tests/conftest.py`
+- `VirtualMachineForTests` + `fedora_vm_body` + `running_vm` for VM lifecycle
+- `run_virtctl_command` from `utilities.infra` for virtctl tests
+- `run_ssh_commands` + `journalctl --list-boots` for boot count verification
+- `privileged_vmi.virt_launcher_pod` for pod preservation checks
+- `ApiException` for negative test assertions
+- `privileged_vmi.pause()`/`unpause()` for paused VMI scenario
