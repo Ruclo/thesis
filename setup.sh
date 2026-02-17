@@ -253,6 +253,33 @@ else
     print_error "v2/skills directory not found"
 fi
 
+# v3: Copy orchestrator as command with v3- prefix and skills
+print_info "Setting up v3 command and skills..."
+if [ -f "$THESIS_DIR/v3/orchestrator.md" ]; then
+    cp "$THESIS_DIR/v3/orchestrator.md" ".claude/commands/v3-orchestrator.md"
+    print_success "v3 orchestrator command set up"
+else
+    print_error "v3/orchestrator.md not found"
+fi
+
+# Copy v3 skills (directories already have v3- prefix)
+if [ -d "$THESIS_DIR/v3/skills" ]; then
+    print_info "Copying v3 skills to .claude/skills/"
+    for skill_dir in "$THESIS_DIR"/v3/skills/*/; do
+        if [ -d "$skill_dir" ]; then
+            skill_name=$(basename "$skill_dir")
+            mkdir -p ".claude/skills/$skill_name"
+            if [ -f "$skill_dir/SKILL.md" ]; then
+                cp "$skill_dir/SKILL.md" ".claude/skills/$skill_name/"
+                print_info "  Copied skill: $skill_name"
+            fi
+        fi
+    done
+    print_success "v3 skills set up"
+else
+    print_error "v3/skills directory not found"
+fi
+
 cd "$THESIS_DIR"
 
 # Copy Claude configurations to worktrees
@@ -302,6 +329,14 @@ if [ -d "$STPS_DIR" ]; then
                 cp -r "$THESIS_DIR/v2/skills/"* "$WORKTREE_DIR/.claude/skills/" 2>/dev/null || true
             fi
 
+            # Copy v3
+            if [ -f "$THESIS_DIR/v3/orchestrator.md" ]; then
+                cp "$THESIS_DIR/v3/orchestrator.md" "$WORKTREE_DIR/.claude/commands/v3-orchestrator.md"
+            fi
+            if [ -d "$THESIS_DIR/v3/skills" ]; then
+                cp -r "$THESIS_DIR/v3/skills/"* "$WORKTREE_DIR/.claude/skills/" 2>/dev/null || true
+            fi
+
             print_success "[$i/$STP_COUNT] Configuration copied"
         done
     fi
@@ -317,6 +352,7 @@ echo "  v1-unified-prompt : Single unified prompt from v1"
 echo "  v2.1-orchestrator : Orchestrator command from v2.1 (modular, no context.json)"
 echo "  v2.2-orchestrator : Orchestrator command from v2.2 (+ STD generation)"
 echo "  v2-orchestrator : Orchestrator command from v2 (full, with context.json)"
+echo "  v3-orchestrator : Orchestrator command from v3 (6-phase: GRAVEYARD verify + runtime self-healing)"
 echo ""
 echo "Available skills:"
 ls -1 "$TARGET_DIR/.claude/skills/" 2>/dev/null | sed 's/^/  /'
@@ -325,6 +361,7 @@ echo "Skill versions:"
 echo "  v2.1-* : Skills from v2.1 (exploration outputs verbal summary, no context.json)"
 echo "  v2.2-* : Skills from v2.2 (adds STD generation)"
 echo "  v2-* : Skills from v2 (full version with context.json caching)"
+echo "  v3-* : Skills from v3 (6 skills: STD, explore, generate, graveyard-verify, pyright-heal, test-heal)"
 echo ""
 
 # Print parallel setup info if STPs exist
@@ -342,6 +379,7 @@ if [ -d "$STPS_DIR" ]; then
         echo "  - v2.1 (command: /v2.1-orchestrator, skills: /v2.1-*)"
         echo "  - v2.2 (command: /v2.2-orchestrator, skills: /v2.2-*)"
         echo "  - v2 (command: /v2-orchestrator, skills: /v2-*)"
+        echo "  - v3 (command: /v3-orchestrator, skills: /v3-*)"
         echo ""
     fi
 fi

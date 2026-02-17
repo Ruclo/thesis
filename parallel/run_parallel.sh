@@ -38,12 +38,14 @@ Versions:
   v2.1    - Modular skills (exploration verbal, no STD, no caching)
   v2.2    - Modular skills (+ STD generation, exploration verbal, no caching)
   v2      - Full modular (+ STD generation, context.json caching)
+  v3      - Self-healing (+ runtime test execution, GRAVEYARD.md feedback loop)
 
 Example:
   $0 v1       # Run v1 on all 7 STPs in parallel
   $0 v2.1     # Run v2.1 on all 7 STPs in parallel
   $0 v2.2     # Run v2.2 on all 7 STPs in parallel
   $0 v2       # Run v2 on all 7 STPs in parallel
+  $0 v3       # Run v3 on all 7 STPs in parallel
 
 Output:
   Each run creates a directory: <clone>/<version>_experiment_<timestamp>/
@@ -63,7 +65,7 @@ STPS_DIR="$THESIS_DIR/stps"
 
 # Validate version
 case $VERSION in
-    v1|v2.1|v2.2|v2)
+    v1|v2.1|v2.2|v2|v3)
         ;;
     *)
         print_error "Invalid version: $VERSION"
@@ -121,6 +123,10 @@ run_experiment() {
         v2)
             # For v2, invoke the orchestrator
             prompt="/v2-orchestrator STP file path: $stp_file"
+            ;;
+        v3)
+            # For v3, invoke the orchestrator (5 phases with runtime self-healing)
+            prompt="/v3-orchestrator STP file path: $stp_file"
             ;;
     esac
 
