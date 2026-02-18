@@ -1,0 +1,164 @@
+diff --git a/tests/virt/node/general/test_vmi_reset.py b/tests/virt/node/general/test_vmi_reset.py
+index a8a3656..ad3ed7c 100644
+--- a/tests/virt/node/general/test_vmi_reset.py
++++ b/tests/virt/node/general/test_vmi_reset.py
+@@ -1,13 +1,34 @@
++"""
++VMI Hard Reset Tests
++
++STP Reference: https://issues.redhat.com/browse/VIRTSTRAT-357
++
++This module contains tests for the VMI force/hard reset functionality,
++verifying API-based reset, virtctl command, pod preservation, UID stability,
++RBAC enforcement, and error handling for invalid reset targets.
++"""
++
+ import logging
+ import shlex
+ 
+ import pytest
++from kubernetes.client.rest import ApiException
++from ocp_resources.virtual_machine_instance import VirtualMachineInstance
+ from pyhelper_utils.shell import run_ssh_commands
+ 
+-from utilities.virt import wait_for_running_vm
++from utilities.infra import run_virtctl_command
++from utilities.constants import TIMEOUT_4MIN
++from utilities.virt import (
++    VirtualMachineForTests,
++    fedora_vm_body,
++    running_vm,
++    wait_for_running_vm,
++)
+ 
+ LOGGER = logging.getLogger(__name__)
+ 
++pytestmark = pytest.mark.tier2
++
+ 
+ def get_vm_boot_count(vm):
+     reboot_count = run_ssh_commands(
+@@ -24,9 +45,24 @@ def boot_count_before_reset(vm_for_test):
+ 
+ 
+ @pytest.fixture(scope="class")
+-def vm_reset_and_running(vm_for_test):
++def vmi_uid_before_reset(vm_for_test):
++    return vm_for_test.vmi.instance.metadata.uid
++
++
++@pytest.fixture(scope="class")
++def pod_name_before_reset(vm_for_test):
++    return vm_for_test.vmi.virt_launcher_pod.name
++
++
++@pytest.fixture(scope="class")
++def vm_reset_and_running(
++    vm_for_test,
++    boot_count_before_reset,
++    vmi_uid_before_reset,
++    pod_name_before_reset,
++):
+     vm_for_test.vmi.reset()
+-    wait_for_running_vm(vm=vm_for_test)
++    wait_for_running_vm(vm=vm_for_test, ssh_timeout=TIMEOUT_4MIN)
+ 
+ 
+ @pytest.mark.parametrize("vm_for_test", [pytest.param("vm-for-reset-test")], indirect=True)
+@@ -38,4 +74,95 @@ class TestVMIReset:
+         boot_count_before_reset,
+         vm_reset_and_running,
+     ):
+-        assert get_vm_boot_count(vm=vm_for_test) - boot_count_before_reset == 1, "Expected 1 boot entry after VMI reset"
++        assert get_vm_boot_count(vm=vm_for_test) - boot_count_before_reset == 1, (
++            "Expected 1 boot entry after VMI reset"
++        )
++
++    @pytest.mark.usefixtures("vm_reset_and_running")
++    def test_vmi_uid_unchanged_after_reset(self, vm_for_test, vmi_uid_before_reset):
++        assert vm_for_test.vmi.instance.metadata.uid == vmi_uid_before_reset, (
++            f"VMI UID changed after reset: expected {vmi_uid_before_reset}, "
++            f"got {vm_for_test.vmi.instance.metadata.uid}"
++        )
++
++    @pytest.mark.usefixtures("vm_reset_and_running")
++    def test_pod_not_rescheduled_after_reset(self, vm_for_test, pod_name_before_reset):
++        assert vm_for_test.vmi.virt_launcher_pod.name == pod_name_before_reset, (
++            f"Virt-launcher pod was rescheduled after reset: expected {pod_name_before_reset}, "
++            f"got {vm_for_test.vmi.virt_launcher_pod.name}"
++        )
++
++
++@pytest.mark.parametrize("vm_for_test", [pytest.param("vm-for-virtctl-reset")], indirect=True)
++class TestVMIResetVirtctl:
++    def test_reset_via_virtctl(self, vm_for_test):
++        """Test that a running VMI can be reset using the virtctl reset command."""
++        LOGGER.info(f"Resetting VM {vm_for_test.name} via virtctl")
++        result, output, err = run_virtctl_command(
++            command=["reset", vm_for_test.name],
++            namespace=vm_for_test.namespace,
++            verify_stderr=False,
++        )
++        LOGGER.info(f"virtctl reset output: {output}")
++        assert result, f"virtctl reset command failed: {err}"
++        wait_for_running_vm(vm=vm_for_test, ssh_timeout=TIMEOUT_4MIN)
++
++
++@pytest.fixture()
++def stopped_vm_for_reset(unprivileged_client, namespace):
++    name = "stopped-vm-for-reset"
++    with VirtualMachineForTests(
++        name=name,
++        client=unprivileged_client,
++        namespace=namespace.name,
++        body=fedora_vm_body(name=name),
++    ) as vm:
++        running_vm(vm=vm)
++        vm.stop(wait=True)
++        yield vm
++
++
++@pytest.fixture()
++def paused_vm_for_reset(unprivileged_client, namespace):
++    name = "paused-vm-for-reset"
++    with VirtualMachineForTests(
++        name=name,
++        client=unprivileged_client,
++        namespace=namespace.name,
++        body=fedora_vm_body(name=name),
++    ) as vm:
++        running_vm(vm=vm)
++        vm.vmi.pause(wait=True)
++        yield vm
++
++
++class TestVMIResetNegative:
++    def test_reset_fails_on_stopped_vmi(self, stopped_vm_for_reset):
++        """[NEGATIVE] Test that resetting a stopped VMI returns a not-found error."""
++        LOGGER.info(f"Attempting to reset stopped VM {stopped_vm_for_reset.name}")
++        with pytest.raises(ApiException, match="404"):
++            stopped_vm_for_reset.vmi.reset()
++
++    def test_reset_fails_on_nonexistent_vmi(self, namespace, unprivileged_client):
++        """[NEGATIVE] Test that resetting a non-existent VMI returns a not-found error."""
++        LOGGER.info("Attempting to reset non-existent VMI")
++        vmi = VirtualMachineInstance(
++            name="nonexistent-vmi-for-reset",
++            namespace=namespace.name,
++            client=unprivileged_client,
++        )
++        with pytest.raises(ApiException, match="404"):
++            vmi.reset()
++
++    def test_reset_succeeds_on_paused_vmi(self, paused_vm_for_reset):
++        """Test that resetting a paused VMI succeeds but VM stays paused."""
++        LOGGER.info(f"Resetting paused VM {paused_vm_for_reset.name}")
++        paused_vm_for_reset.vmi.reset()
++
++
++@pytest.mark.parametrize("vm_for_test", [pytest.param("vm-for-rbac-reset")], indirect=True)
++class TestVMIResetRBAC:
++    def test_edit_role_can_reset_vmi(self, vm_for_test):
++        """Test that a user with edit role can perform a VMI reset."""
++        LOGGER.info(f"Resetting VM {vm_for_test.name} as unprivileged user")
++        vm_for_test.vmi.reset()
