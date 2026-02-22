@@ -1,0 +1,841 @@
+/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/kubernetes/client/exceptions.py:91: DeprecationWarning: HTTPResponse.getheaders() is deprecated and will be removed in urllib3 v2.1.0. Instead access HTTPResponse.headers directly.
+  self.headers = http_resp.getheaders()
+/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/kubernetes/client/exceptions.py:91: DeprecationWarning: HTTPResponse.getheaders() is deprecated and will be removed in urllib3 v2.1.0. Instead access HTTPResponse.headers directly.
+  self.headers = http_resp.getheaders()
+2026-02-22T01:10:27.243590 ocp_resources Namespace [32mINFO[0m Create Namespace cnv-tests-run-in-progress-ns[0m
+2026-02-22T01:10:27.244012 ocp_resources Namespace [32mINFO[0m Posting {'apiVersion': 'v1', 'kind': 'Namespace', 'metadata': {'name': 'cnv-tests-run-in-progress-ns'}, 'spec': {}}[0m
+2026-02-22T01:10:27.561642 ocp_resources Namespace [32mINFO[0m Wait until Namespace cnv-tests-run-in-progress-ns is created[0m
+2026-02-22T01:10:27.717766 ocp_resources Namespace [32mINFO[0m Wait for Namespace cnv-tests-run-in-progress-ns status to be Active[0m
+2026-02-22T01:10:27.873763 ocp_resources Namespace [32mINFO[0m Status of Namespace cnv-tests-run-in-progress-ns is Active[0m
+2026-02-22T01:10:27.874787 ocp_resources Namespace [32mINFO[0m Update Namespace cnv-tests-run-in-progress-ns:
+{'metadata': {'labels': {'pod-security.kubernetes.io/enforce': 'privileged', 'security.openshift.io/scc.podSecurityLabelSync': 'false'}, 'name': 'cnv-tests-run-in-progress-ns'}}[0m
+2026-02-22T01:10:28.039015 ocp_resources ConfigMap [32mINFO[0m Create ConfigMap cnv-tests-run-in-progress[0m
+2026-02-22T01:10:28.039422 ocp_resources ConfigMap [32mINFO[0m Posting {'apiVersion': 'v1', 'kind': 'ConfigMap', 'metadata': {'name': 'cnv-tests-run-in-progress', 'namespace': 'cnv-tests-run-in-progress-ns'}, 'data': '*******'}[0m
+2026-02-22T01:10:28.362187 ocp_resources ConfigMap [32mINFO[0m Wait until ConfigMap cnv-tests-run-in-progress is created[0m
+============================= test session starts ==============================
+platform linux -- Python 3.14.0, pytest-9.0.2, pluggy-1.6.0
+benchmark: 5.2.3 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /home/fedora/thesis/openshift-virtualization-tests
+configfile: pytest.ini (WARNING: ignoring pytest config in pyproject.toml!)
+plugins: anyio-4.12.1, benchmark-5.2.3, html-4.1.1, order-1.3.0, testconfig-0.2.0, metadata-3.1.1, mock-3.15.1, repeat-0.9.4, progress-1.4.0, dependency-0.6.0, jira-0.3.22
+collected 21 items
+
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py 2026-02-22T01:12:47.533009 ocp_resources ConfigMap [32mINFO[0m Delete ConfigMap cnv-tests-run-in-progress[0m
+2026-02-22T01:12:47.850024 ocp_resources ConfigMap [32mINFO[0m Deleting {'kind': 'ConfigMap', 'apiVersion': 'v1', 'metadata': {'name': 'cnv-tests-run-in-progress', 'namespace': 'cnv-tests-run-in-progress-ns', 'uid': '4fa26ade-dc71-404d-986d-683c18ffd244', 'resourceVersion': '21342182', 'creationTimestamp': '2026-02-22T01:10:28Z', 'managedFields': [{'manager': 'OpenAPI-Generator', 'operation': 'Update', 'apiVersion': 'v1', 'time': '2026-02-22T01:10:28Z', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:data': {'.': {}, 'f:host': {}, 'f:pytest_cmd': {}, 'f:run-in-container': {}, 'f:running_from_dir': {}, 'f:session-id': {}, 'f:user': {}}}}]}, 'data': '*******'}[0m
+2026-02-22T01:12:48.015898 ocp_resources ConfigMap [32mINFO[0m Wait until ConfigMap cnv-tests-run-in-progress is deleted[0m
+--- Logging error ---
+Traceback (most recent call last):
+  File "/usr/lib64/python3.14/logging/__init__.py", line 1154, in emit
+    stream.write(msg + self.terminator)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: I/O operation on closed file.
+Call stack:
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/bin/pytest", line 10, in <module>
+    sys.exit(console_main())
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/config/__init__.py", line 223, in console_main
+    code = main()
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/config/__init__.py", line 199, in main
+    ret: ExitCode | int = config.hook.pytest_cmdline_main(config=config)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/main.py", line 365, in pytest_cmdline_main
+    return wrap_session(config, _main)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/main.py", line 353, in wrap_session
+    config.hook.pytest_sessionfinish(
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "/home/fedora/thesis/openshift-virtualization-tests/conftest.py", line 838, in pytest_sessionfinish
+    run_in_progress_config_map(client=admin_client).clean_up()
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 848, in clean_up
+    return self.delete(wait=wait, timeout=timeout or self.delete_timeout)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 1074, in delete
+    return self.wait_deleted(timeout=timeout)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 942, in wait_deleted
+    for sample in TimeoutSampler(wait_timeout=timeout, sleep=1, func=lambda: self.exists):
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/timeout_sampler/__init__.py", line 155, in __iter__
+    LOGGER.info(log)
+Message: 'Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_deleted.lambda: self.exists)'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/timeout_sampler/__init__.py", line 162, in __iter__
+    yield self.func(*self.func_args, **self.func_kwargs)
+GeneratorExit
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/lib64/python3.14/logging/__init__.py", line 1154, in emit
+    stream.write(msg + self.terminator)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: I/O operation on closed file.
+Call stack:
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/bin/pytest", line 10, in <module>
+    sys.exit(console_main())
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/config/__init__.py", line 223, in console_main
+    code = main()
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/config/__init__.py", line 199, in main
+    ret: ExitCode | int = config.hook.pytest_cmdline_main(config=config)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/main.py", line 365, in pytest_cmdline_main
+    return wrap_session(config, _main)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/main.py", line 353, in wrap_session
+    config.hook.pytest_sessionfinish(
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "/home/fedora/thesis/openshift-virtualization-tests/conftest.py", line 838, in pytest_sessionfinish
+    run_in_progress_config_map(client=admin_client).clean_up()
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 848, in clean_up
+    return self.delete(wait=wait, timeout=timeout or self.delete_timeout)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 1074, in delete
+    return self.wait_deleted(timeout=timeout)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 944, in wait_deleted
+    return True
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/timeout_sampler/__init__.py", line 180, in __iter__
+    LOGGER.info(_elapsed_time_log(elapsed_time=elapsed_time))
+Message: 'Elapsed time: 0.004332065582275391 [0:00:00.004332]'
+Arguments: ()
+2026-02-22T01:12:48.337092 ocp_resources Namespace [32mINFO[0m Delete Namespace cnv-tests-run-in-progress-ns[0m
+2026-02-22T01:12:48.648966 ocp_resources Namespace [32mINFO[0m Deleting {'kind': 'Namespace', 'apiVersion': 'v1', 'metadata': {'name': 'cnv-tests-run-in-progress-ns', 'uid': '02090444-ef68-4bcc-9159-8e4b20e82a9f', 'resourceVersion': '21342177', 'creationTimestamp': '2026-02-22T01:10:27Z', 'labels': {'kubernetes.io/metadata.name': 'cnv-tests-run-in-progress-ns', 'pod-security.kubernetes.io/audit': 'restricted', 'pod-security.kubernetes.io/audit-version': 'latest', 'pod-security.kubernetes.io/enforce': 'privileged', 'pod-security.kubernetes.io/warn': 'restricted', 'pod-security.kubernetes.io/warn-version': 'latest', 'security.openshift.io/scc.podSecurityLabelSync': 'false'}, 'annotations': {'openshift.io/sa.scc.mcs': 's0:c39,c34', 'openshift.io/sa.scc.supplemental-groups': '1001550000/10000', 'openshift.io/sa.scc.uid-range': '1001550000/10000', 'security.openshift.io/MinimallySufficientPodSecurityStandard': 'restricted'}, 'managedFields': [{'manager': 'cluster-policy-controller', 'operation': 'Apply', 'apiVersion': 'v1', 'time': '2026-02-22T01:10:27Z', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:annotations': {'f:openshift.io/sa.scc.mcs': {}, 'f:openshift.io/sa.scc.supplemental-groups': {}, 'f:openshift.io/sa.scc.uid-range': {}}}}}, {'manager': 'pod-security-admission-label-synchronization-controller', 'operation': 'Apply', 'apiVersion': 'v1', 'time': '2026-02-22T01:10:27Z', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:annotations': {'f:security.openshift.io/MinimallySufficientPodSecurityStandard': {}}, 'f:labels': {'f:pod-security.kubernetes.io/audit': {}, 'f:pod-security.kubernetes.io/audit-version': {}, 'f:pod-security.kubernetes.io/warn': {}, 'f:pod-security.kubernetes.io/warn-version': {}}}}}, {'manager': 'OpenAPI-Generator', 'operation': 'Update', 'apiVersion': 'v1', 'time': '2026-02-22T01:10:27Z', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:labels': {'.': {}, 'f:kubernetes.io/metadata.name': {}, 'f:pod-security.kubernetes.io/enforce': {}, 'f:security.openshift.io/scc.podSecurityLabelSync': {}}}}}]}, 'spec': {'finalizers': ['kubernetes']}, 'status': {'phase': 'Active'}}[0m
+2026-02-22T01:12:48.817375 ocp_resources Namespace [32mINFO[0m Wait until Namespace cnv-tests-run-in-progress-ns is deleted[0m
+--- Logging error ---
+Traceback (most recent call last):
+  File "/usr/lib64/python3.14/logging/__init__.py", line 1154, in emit
+    stream.write(msg + self.terminator)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: I/O operation on closed file.
+Call stack:
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/bin/pytest", line 10, in <module>
+    sys.exit(console_main())
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/config/__init__.py", line 223, in console_main
+    code = main()
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/config/__init__.py", line 199, in main
+    ret: ExitCode | int = config.hook.pytest_cmdline_main(config=config)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/main.py", line 365, in pytest_cmdline_main
+    return wrap_session(config, _main)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/main.py", line 353, in wrap_session
+    config.hook.pytest_sessionfinish(
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "/home/fedora/thesis/openshift-virtualization-tests/conftest.py", line 839, in pytest_sessionfinish
+    deploy_run_in_progress_namespace(client=admin_client).clean_up()
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 848, in clean_up
+    return self.delete(wait=wait, timeout=timeout or self.delete_timeout)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 1074, in delete
+    return self.wait_deleted(timeout=timeout)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 942, in wait_deleted
+    for sample in TimeoutSampler(wait_timeout=timeout, sleep=1, func=lambda: self.exists):
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/timeout_sampler/__init__.py", line 155, in __iter__
+    LOGGER.info(log)
+Message: 'Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_deleted.lambda: self.exists)'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/timeout_sampler/__init__.py", line 162, in __iter__
+    yield self.func(*self.func_args, **self.func_kwargs)
+GeneratorExit
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/lib64/python3.14/logging/__init__.py", line 1154, in emit
+    stream.write(msg + self.terminator)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: I/O operation on closed file.
+Call stack:
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/bin/pytest", line 10, in <module>
+    sys.exit(console_main())
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/config/__init__.py", line 223, in console_main
+    code = main()
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/config/__init__.py", line 199, in main
+    ret: ExitCode | int = config.hook.pytest_cmdline_main(config=config)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/main.py", line 365, in pytest_cmdline_main
+    return wrap_session(config, _main)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/main.py", line 353, in wrap_session
+    config.hook.pytest_sessionfinish(
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "/home/fedora/thesis/openshift-virtualization-tests/conftest.py", line 839, in pytest_sessionfinish
+    deploy_run_in_progress_namespace(client=admin_client).clean_up()
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 848, in clean_up
+    return self.delete(wait=wait, timeout=timeout or self.delete_timeout)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 1074, in delete
+    return self.wait_deleted(timeout=timeout)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 944, in wait_deleted
+    return True
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/timeout_sampler/__init__.py", line 180, in __iter__
+    LOGGER.info(_elapsed_time_log(elapsed_time=elapsed_time))
+Message: 'Elapsed time: 8.105859279632568 [0:00:08.105859]'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "/usr/lib64/python3.14/logging/__init__.py", line 1154, in emit
+    stream.write(msg + self.terminator)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: I/O operation on closed file.
+Call stack:
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/bin/pytest", line 10, in <module>
+    sys.exit(console_main())
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/config/__init__.py", line 223, in console_main
+    code = main()
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/config/__init__.py", line 199, in main
+    ret: ExitCode | int = config.hook.pytest_cmdline_main(config=config)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/main.py", line 365, in pytest_cmdline_main
+    return wrap_session(config, _main)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/main.py", line 353, in wrap_session
+    config.hook.pytest_sessionfinish(
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/runner.py", line 112, in pytest_sessionfinish
+    session._setupstate.teardown_exact(None)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/runner.py", line 555, in teardown_exact
+    fin()
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/fixtures.py", line 1042, in finish
+    fin()
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/fixtures.py", line 924, in _teardown_yield_fixture
+    next(it)
+  File "/home/fedora/thesis/openshift-virtualization-tests/tests/conftest.py", line 531, in utility_daemonset
+    with DaemonSet(yaml_file=modified_ds_yaml_file) as ds:
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 769, in __exit__
+    if not self.clean_up():
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 848, in clean_up
+    return self.delete(wait=wait, timeout=timeout or self.delete_timeout)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/daemonset.py", line 54, in delete
+    return super().delete(
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 1059, in delete
+    self.logger.info(f"Delete {self.kind} {self.name}")
+Message: 'Delete DaemonSet utility'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "/usr/lib64/python3.14/logging/__init__.py", line 1154, in emit
+    stream.write(msg + self.terminator)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: I/O operation on closed file.
+Call stack:
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/bin/pytest", line 10, in <module>
+    sys.exit(console_main())
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/config/__init__.py", line 223, in console_main
+    code = main()
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/config/__init__.py", line 199, in main
+    ret: ExitCode | int = config.hook.pytest_cmdline_main(config=config)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/main.py", line 365, in pytest_cmdline_main
+    return wrap_session(config, _main)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/main.py", line 353, in wrap_session
+    config.hook.pytest_sessionfinish(
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/runner.py", line 112, in pytest_sessionfinish
+    session._setupstate.teardown_exact(None)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/runner.py", line 555, in teardown_exact
+    fin()
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/fixtures.py", line 1042, in finish
+    fin()
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/fixtures.py", line 924, in _teardown_yield_fixture
+    next(it)
+  File "/home/fedora/thesis/openshift-virtualization-tests/tests/conftest.py", line 531, in utility_daemonset
+    with DaemonSet(yaml_file=modified_ds_yaml_file) as ds:
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 769, in __exit__
+    if not self.clean_up():
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 848, in clean_up
+    return self.delete(wait=wait, timeout=timeout or self.delete_timeout)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/daemonset.py", line 54, in delete
+    return super().delete(
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 1065, in delete
+    self.logger.info(f"Deleting {hashed_data}")
+Message: 'Deleting {\'kind\': \'DaemonSet\', \'apiVersion\': \'apps/v1\', \'metadata\': {\'name\': \'utility\', \'namespace\': \'cnv-tests-utilities\', \'uid\': \'2546b645-1d2f-4485-90cd-922f07e24bbc\', \'resourceVersion\': \'21342905\', \'generation\': 1, \'creationTimestamp\': \'2026-02-22T01:11:00Z\', \'labels\': {\'cnv-test\': \'utility\', \'tier\': \'node\'}, \'annotations\': {\'deprecated.daemonset.template.generation\': \'1\'}, \'managedFields\': [{\'manager\': \'OpenAPI-Generator\', \'operation\': \'Update\', \'apiVersion\': \'apps/v1\', \'time\': \'2026-02-22T01:11:00Z\', \'fieldsType\': \'FieldsV1\', \'fieldsV1\': {\'f:metadata\': {\'f:annotations\': {\'.\': {}, \'f:deprecated.daemonset.template.generation\': {}}, \'f:labels\': {\'.\': {}, \'f:cnv-test\': {}, \'f:tier\': {}}}, \'f:spec\': {\'f:revisionHistoryLimit\': {}, \'f:selector\': {}, \'f:template\': {\'f:metadata\': {\'f:labels\': {\'.\': {}, \'f:cnv-test\': {}, \'f:tier\': {}}}, \'f:spec\': {\'f:containers\': {\'k:{"name":"utility"}\': {\'.\': {}, \'f:command\': {}, \'f:image\': {}, \'f:imagePullPolicy\': {}, \'f:name\': {}, \'f:readinessProbe\': {\'.\': {}, \'f:exec\': {\'.\': {}, \'f:command\': {}}, \'f:failureThreshold\': {}, \'f:initialDelaySeconds\': {}, \'f:periodSeconds\': {}, \'f:successThreshold\': {}, \'f:timeoutSeconds\': {}}, \'f:resources\': {\'.\': {}, \'f:limits\': {\'.\': {}, \'f:cpu\': {}, \'f:memory\': {}}, \'f:requests\': {\'.\': {}, \'f:cpu\': {}, \'f:memory\': {}}}, \'f:securityContext\': {\'.\': {}, \'f:privileged\': {}, \'f:runAsUser\': {}}, \'f:stdin\': {}, \'f:stdinOnce\': {}, \'f:terminationMessagePath\': {}, \'f:terminationMessagePolicy\': {}, \'f:tty\': {}, \'f:volumeMounts\': {\'.\': {}, \'k:{"mountPath":"/host"}\': {\'.\': {}, \'f:mountPath\': {}, \'f:name\': {}}, \'k:{"mountPath":"/host/dev"}\': {\'.\': {}, \'f:mountPath\': {}, \'f:name\': {}}, \'k:{"mountPath":"/host/etc"}\': {\'.\': {}, \'f:mountPath\': {}, \'f:name\': {}}, \'k:{"mountPath":"/host/run/openvswitch"}\': {\'.\': {}, \'f:mountPath\': {}, \'f:name\': {}}, \'k:{"mountPath":"/host/var"}\': {\'.\': {}, \'f:mountPath\': {}, \'f:name\': {}}, \'k:{"mountPath":"/run/dbus/system_bus_socket"}\': {\'.\': {}, \'f:mountPath\': {}, \'f:name\': {}}, \'k:{"mountPath":"/var/run/secrets/kubernetes.io/serviceaccount"}\': {\'.\': {}, \'f:mountPath\': {}, \'f:name\': {}, \'f:readOnly\': {}}}}}, \'f:dnsPolicy\': {}, \'f:enableServiceLinks\': {}, \'f:hostNetwork\': {}, \'f:hostPID\': {}, \'f:imagePullSecrets\': {\'.\': {}, \'k:{"name":"default-dockercfg-xrlbh"}\': {}}, \'f:preemptionPolicy\': {}, \'f:priority\': {}, \'f:restartPolicy\': {}, \'f:schedulerName\': {}, \'f:securityContext\': {}, \'f:serviceAccount\': {}, \'f:serviceAccountName\': {}, \'f:terminationGracePeriodSeconds\': {}, \'f:tolerations\': {}, \'f:volumes\': {\'.\': {}, \'k:{"name":"dbus-socket"}\': {\'.\': {}, \'f:hostPath\': {\'.\': {}, \'f:path\': {}, \'f:type\': {}}, \'f:name\': {}}, \'k:{"name":"dev"}\': {\'.\': {}, \'f:hostPath\': {\'.\': {}, \'f:path\': {}, \'f:type\': {}}, \'f:name\': {}}, \'k:{"name":"etc"}\': {\'.\': {}, \'f:hostPath\': {\'.\': {}, \'f:path\': {}, \'f:type\': {}}, \'f:name\': {}}, \'k:{"name":"host"}\': {\'.\': {}, \'f:hostPath\': {\'.\': {}, \'f:path\': {}, \'f:type\': {}}, \'f:name\': {}}, \'k:{"name":"kube-api-access-m5ch7"}\': {\'.\': {}, \'f:name\': {}, \'f:projected\': {\'.\': {}, \'f:defaultMode\': {}, \'f:sources\': {}}}, \'k:{"name":"ovs-run"}\': {\'.\': {}, \'f:hostPath\': {\'.\': {}, \'f:path\': {}, \'f:type\': {}}, \'f:name\': {}}, \'k:{"name":"var"}\': {\'.\': {}, \'f:hostPath\': {\'.\': {}, \'f:path\': {}, \'f:type\': {}}, \'f:name\': {}}}}}, \'f:updateStrategy\': {\'f:type\': {}}}}}, {\'manager\': \'kube-controller-manager\', \'operation\': \'Update\', \'apiVersion\': \'apps/v1\', \'time\': \'2026-02-22T01:11:09Z\', \'fieldsType\': \'FieldsV1\', \'fieldsV1\': {\'f:status\': {\'f:currentNumberScheduled\': {}, \'f:desiredNumberScheduled\': {}, \'f:numberAvailable\': {}, \'f:numberReady\': {}, \'f:observedGeneration\': {}, \'f:updatedNumberScheduled\': {}}}, \'subresource\': \'status\'}]}, \'spec\': {\'selector\': {\'matchLabels\': {\'cnv-test\': \'utility\', \'tier\': \'node\'}}, \'template\': {\'metadata\': {\'labels\': {\'cnv-test\': \'utility\', \'tier\': \'node\'}}, \'spec\': {\'volumes\': [{\'name\': \'host\', \'hostPath\': {\'path\': \'/\', \'type\': \'Directory\'}}, {\'name\': \'ovs-run\', \'hostPath\': {\'path\': \'/run/openvswitch\', \'type\': \'\'}}, {\'name\': \'dbus-socket\', \'hostPath\': {\'path\': \'/run/dbus/system_bus_socket\', \'type\': \'Socket\'}}, {\'name\': \'dev\', \'hostPath\': {\'path\': \'/dev\', \'type\': \'Directory\'}}, {\'name\': \'etc\', \'hostPath\': {\'path\': \'/etc\', \'type\': \'Directory\'}}, {\'name\': \'var\', \'hostPath\': {\'path\': \'/var\', \'type\': \'Directory\'}}, {\'name\': \'kube-api-access-m5ch7\', \'projected\': {\'sources\': [{\'serviceAccountToken\': {\'expirationSeconds\': 3600, \'path\': \'token\'}}, {\'configMap\': {\'name\': \'kube-root-ca.crt\', \'items\': [{\'key\': \'ca.crt\', \'path\': \'ca.crt\'}]}}, {\'downwardAPI\': {\'items\': [{\'path\': \'namespace\', \'fieldRef\': {\'apiVersion\': \'v1\', \'fieldPath\': \'metadata.namespace\'}}]}}, {\'configMap\': {\'name\': \'openshift-service-ca.crt\', \'items\': [{\'key\': \'service-ca.crt\', \'path\': \'service-ca.crt\'}]}}], \'defaultMode\': 420}}], \'containers\': [{\'name\': \'utility\', \'image\': \'quay.io/openshift-cnv/qe-net-utils:latest@sha256:2c8e11ac0f0b36553bed603c1c67dccb703d7059ccbcf8c91e3a35c99719ce20\', \'command\': [\'/bin/bash\', \'-c\', \'echo ok > /tmp/healthy && sleep INF\'], \'resources\': {\'limits\': {\'cpu\': \'100m\', \'memory\': \'50Mi\'}, \'requests\': {\'cpu\': \'100m\', \'memory\': \'50Mi\'}}, \'volumeMounts\': [{\'name\': \'host\', \'mountPath\': \'/host\'}, {\'name\': \'kube-api-access-m5ch7\', \'readOnly\': True, \'mountPath\': \'/var/run/secrets/kubernetes.io/serviceaccount\'}, {\'name\': \'ovs-run\', \'mountPath\': \'/host/run/openvswitch\'}, {\'name\': \'dbus-socket\', \'mountPath\': \'/run/dbus/system_bus_socket\'}, {\'name\': \'dev\', \'mountPath\': \'/host/dev\'}, {\'name\': \'etc\', \'mountPath\': \'/host/etc\'}, {\'name\': \'var\', \'mountPath\': \'/host/var\'}], \'readinessProbe\': {\'exec\': {\'command\': [\'cat\', \'/tmp/healthy\']}, \'initialDelaySeconds\': 5, \'timeoutSeconds\': 1, \'periodSeconds\': 5, \'successThreshold\': 1, \'failureThreshold\': 3}, \'terminationMessagePath\': \'/dev/termination-log\', \'terminationMessagePolicy\': \'File\', \'imagePullPolicy\': \'IfNotPresent\', \'securityContext\': {\'privileged\': True, \'runAsUser\': 0}, \'stdin\': True, \'stdinOnce\': True, \'tty\': True}], \'restartPolicy\': \'Always\', \'terminationGracePeriodSeconds\': 30, \'dnsPolicy\': \'ClusterFirst\', \'serviceAccountName\': \'cnv-tests-sa\', \'serviceAccount\': \'cnv-tests-sa\', \'hostNetwork\': True, \'hostPID\': True, \'securityContext\': {}, \'imagePullSecrets\': [{\'name\': \'default-dockercfg-xrlbh\'}], \'schedulerName\': \'default-scheduler\', \'tolerations\': [{\'key\': \'node-role.kubernetes.io/master\', \'operator\': \'Exists\', \'effect\': \'NoSchedule\'}], \'priority\': 0, \'enableServiceLinks\': True, \'preemptionPolicy\': \'PreemptLowerPriority\'}}, \'updateStrategy\': {\'type\': \'OnDelete\'}, \'revisionHistoryLimit\': 10}, \'status\': {\'currentNumberScheduled\': 6, \'numberMisscheduled\': 0, \'desiredNumberScheduled\': 6, \'numberReady\': 6, \'observedGeneration\': 1, \'updatedNumberScheduled\': 6, \'numberAvailable\': 6}}'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "/usr/lib64/python3.14/logging/__init__.py", line 1154, in emit
+    stream.write(msg + self.terminator)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: I/O operation on closed file.
+Call stack:
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/bin/pytest", line 10, in <module>
+    sys.exit(console_main())
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/config/__init__.py", line 223, in console_main
+    code = main()
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/config/__init__.py", line 199, in main
+    ret: ExitCode | int = config.hook.pytest_cmdline_main(config=config)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/main.py", line 365, in pytest_cmdline_main
+    return wrap_session(config, _main)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/main.py", line 353, in wrap_session
+    config.hook.pytest_sessionfinish(
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/runner.py", line 112, in pytest_sessionfinish
+    session._setupstate.teardown_exact(None)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/runner.py", line 555, in teardown_exact
+    fin()
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/fixtures.py", line 1042, in finish
+    fin()
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/fixtures.py", line 924, in _teardown_yield_fixture
+    next(it)
+  File "/home/fedora/thesis/openshift-virtualization-tests/tests/conftest.py", line 531, in utility_daemonset
+    with DaemonSet(yaml_file=modified_ds_yaml_file) as ds:
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 769, in __exit__
+    if not self.clean_up():
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 848, in clean_up
+    return self.delete(wait=wait, timeout=timeout or self.delete_timeout)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/daemonset.py", line 54, in delete
+    return super().delete(
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 1074, in delete
+    return self.wait_deleted(timeout=timeout)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 940, in wait_deleted
+    self.logger.info(f"Wait until {self.kind} {self.name} is deleted")
+Message: 'Wait until DaemonSet utility is deleted'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "/usr/lib64/python3.14/logging/__init__.py", line 1154, in emit
+    stream.write(msg + self.terminator)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: I/O operation on closed file.
+Call stack:
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/bin/pytest", line 10, in <module>
+    sys.exit(console_main())
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/config/__init__.py", line 223, in console_main
+    code = main()
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/config/__init__.py", line 199, in main
+    ret: ExitCode | int = config.hook.pytest_cmdline_main(config=config)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/main.py", line 365, in pytest_cmdline_main
+    return wrap_session(config, _main)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/main.py", line 353, in wrap_session
+    config.hook.pytest_sessionfinish(
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/runner.py", line 112, in pytest_sessionfinish
+    session._setupstate.teardown_exact(None)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/runner.py", line 555, in teardown_exact
+    fin()
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/fixtures.py", line 1042, in finish
+    fin()
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/fixtures.py", line 924, in _teardown_yield_fixture
+    next(it)
+  File "/home/fedora/thesis/openshift-virtualization-tests/tests/conftest.py", line 531, in utility_daemonset
+    with DaemonSet(yaml_file=modified_ds_yaml_file) as ds:
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 769, in __exit__
+    if not self.clean_up():
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 848, in clean_up
+    return self.delete(wait=wait, timeout=timeout or self.delete_timeout)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/daemonset.py", line 54, in delete
+    return super().delete(
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 1074, in delete
+    return self.wait_deleted(timeout=timeout)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 942, in wait_deleted
+    for sample in TimeoutSampler(wait_timeout=timeout, sleep=1, func=lambda: self.exists):
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/timeout_sampler/__init__.py", line 155, in __iter__
+    LOGGER.info(log)
+Message: 'Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_deleted.lambda: self.exists)'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/timeout_sampler/__init__.py", line 162, in __iter__
+    yield self.func(*self.func_args, **self.func_kwargs)
+GeneratorExit
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/lib64/python3.14/logging/__init__.py", line 1154, in emit
+    stream.write(msg + self.terminator)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: I/O operation on closed file.
+Call stack:
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/bin/pytest", line 10, in <module>
+    sys.exit(console_main())
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/config/__init__.py", line 223, in console_main
+    code = main()
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/config/__init__.py", line 199, in main
+    ret: ExitCode | int = config.hook.pytest_cmdline_main(config=config)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/main.py", line 365, in pytest_cmdline_main
+    return wrap_session(config, _main)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/main.py", line 353, in wrap_session
+    config.hook.pytest_sessionfinish(
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/runner.py", line 112, in pytest_sessionfinish
+    session._setupstate.teardown_exact(None)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/runner.py", line 555, in teardown_exact
+    fin()
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/fixtures.py", line 1042, in finish
+    fin()
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/fixtures.py", line 924, in _teardown_yield_fixture
+    next(it)
+  File "/home/fedora/thesis/openshift-virtualization-tests/tests/conftest.py", line 531, in utility_daemonset
+    with DaemonSet(yaml_file=modified_ds_yaml_file) as ds:
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 769, in __exit__
+    if not self.clean_up():
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 848, in clean_up
+    return self.delete(wait=wait, timeout=timeout or self.delete_timeout)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/daemonset.py", line 54, in delete
+    return super().delete(
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 1074, in delete
+    return self.wait_deleted(timeout=timeout)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 944, in wait_deleted
+    return True
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/timeout_sampler/__init__.py", line 180, in __iter__
+    LOGGER.info(_elapsed_time_log(elapsed_time=elapsed_time))
+Message: 'Elapsed time: 2.320286512374878 [0:00:02.320287]'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "/usr/lib64/python3.14/logging/__init__.py", line 1154, in emit
+    stream.write(msg + self.terminator)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: I/O operation on closed file.
+Call stack:
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/bin/pytest", line 10, in <module>
+    sys.exit(console_main())
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/config/__init__.py", line 223, in console_main
+    code = main()
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/config/__init__.py", line 199, in main
+    ret: ExitCode | int = config.hook.pytest_cmdline_main(config=config)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/main.py", line 365, in pytest_cmdline_main
+    return wrap_session(config, _main)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/main.py", line 353, in wrap_session
+    config.hook.pytest_sessionfinish(
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/runner.py", line 112, in pytest_sessionfinish
+    session._setupstate.teardown_exact(None)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/runner.py", line 555, in teardown_exact
+    fin()
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/fixtures.py", line 1042, in finish
+    fin()
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/fixtures.py", line 924, in _teardown_yield_fixture
+    next(it)
+  File "/home/fedora/thesis/openshift-virtualization-tests/tests/conftest.py", line 498, in cnv_tests_utilities_service_account
+    with ServiceAccount(
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 769, in __exit__
+    if not self.clean_up():
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 848, in clean_up
+    return self.delete(wait=wait, timeout=timeout or self.delete_timeout)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 1059, in delete
+    self.logger.info(f"Delete {self.kind} {self.name}")
+Message: 'Delete ServiceAccount cnv-tests-sa'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "/usr/lib64/python3.14/logging/__init__.py", line 1154, in emit
+    stream.write(msg + self.terminator)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: I/O operation on closed file.
+Call stack:
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/bin/pytest", line 10, in <module>
+    sys.exit(console_main())
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/config/__init__.py", line 223, in console_main
+    code = main()
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/config/__init__.py", line 199, in main
+    ret: ExitCode | int = config.hook.pytest_cmdline_main(config=config)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/main.py", line 365, in pytest_cmdline_main
+    return wrap_session(config, _main)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/main.py", line 353, in wrap_session
+    config.hook.pytest_sessionfinish(
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/runner.py", line 112, in pytest_sessionfinish
+    session._setupstate.teardown_exact(None)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/runner.py", line 555, in teardown_exact
+    fin()
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/fixtures.py", line 1042, in finish
+    fin()
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/fixtures.py", line 924, in _teardown_yield_fixture
+    next(it)
+  File "/home/fedora/thesis/openshift-virtualization-tests/tests/conftest.py", line 498, in cnv_tests_utilities_service_account
+    with ServiceAccount(
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 769, in __exit__
+    if not self.clean_up():
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 848, in clean_up
+    return self.delete(wait=wait, timeout=timeout or self.delete_timeout)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 1065, in delete
+    self.logger.info(f"Deleting {hashed_data}")
+Message: 'Deleting {\'kind\': \'ServiceAccount\', \'apiVersion\': \'v1\', \'metadata\': {\'name\': \'cnv-tests-sa\', \'namespace\': \'cnv-tests-utilities\', \'uid\': \'04feba7c-cdf9-410f-a1cc-8759f3f46fb2\', \'resourceVersion\': \'21342589\', \'creationTimestamp\': \'2026-02-22T01:10:56Z\', \'annotations\': {\'openshift.io/internal-registry-pull-secret-ref\': \'cnv-tests-sa-dockercfg-q6dwh\'}, \'managedFields\': [{\'manager\': \'openshift.io/image-registry-pull-secrets_service-account-controller\', \'operation\': \'Apply\', \'apiVersion\': \'v1\', \'time\': \'2026-02-22T01:10:56Z\', \'fieldsType\': \'FieldsV1\', \'fieldsV1\': {\'f:imagePullSecrets\': {}, \'f:metadata\': {\'f:annotations\': {\'f:openshift.io/internal-registry-pull-secret-ref\': {}}}, \'f:secrets\': {\'k:{"name":"cnv-tests-sa-dockercfg-q6dwh"}\': {}}}}]}, \'secrets\': [{\'name\': \'cnv-tests-sa-dockercfg-q6dwh\'}], \'imagePullSecrets\': [{\'name\': \'cnv-tests-sa-dockercfg-q6dwh\'}]}'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "/usr/lib64/python3.14/logging/__init__.py", line 1154, in emit
+    stream.write(msg + self.terminator)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: I/O operation on closed file.
+Call stack:
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/bin/pytest", line 10, in <module>
+    sys.exit(console_main())
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/config/__init__.py", line 223, in console_main
+    code = main()
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/config/__init__.py", line 199, in main
+    ret: ExitCode | int = config.hook.pytest_cmdline_main(config=config)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/main.py", line 365, in pytest_cmdline_main
+    return wrap_session(config, _main)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/main.py", line 353, in wrap_session
+    config.hook.pytest_sessionfinish(
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/runner.py", line 112, in pytest_sessionfinish
+    session._setupstate.teardown_exact(None)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/runner.py", line 555, in teardown_exact
+    fin()
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/fixtures.py", line 1042, in finish
+    fin()
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/fixtures.py", line 924, in _teardown_yield_fixture
+    next(it)
+  File "/home/fedora/thesis/openshift-virtualization-tests/tests/conftest.py", line 498, in cnv_tests_utilities_service_account
+    with ServiceAccount(
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 769, in __exit__
+    if not self.clean_up():
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 848, in clean_up
+    return self.delete(wait=wait, timeout=timeout or self.delete_timeout)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 1074, in delete
+    return self.wait_deleted(timeout=timeout)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 940, in wait_deleted
+    self.logger.info(f"Wait until {self.kind} {self.name} is deleted")
+Message: 'Wait until ServiceAccount cnv-tests-sa is deleted'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "/usr/lib64/python3.14/logging/__init__.py", line 1154, in emit
+    stream.write(msg + self.terminator)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: I/O operation on closed file.
+Call stack:
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/bin/pytest", line 10, in <module>
+    sys.exit(console_main())
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/config/__init__.py", line 223, in console_main
+    code = main()
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/config/__init__.py", line 199, in main
+    ret: ExitCode | int = config.hook.pytest_cmdline_main(config=config)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/main.py", line 365, in pytest_cmdline_main
+    return wrap_session(config, _main)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/main.py", line 353, in wrap_session
+    config.hook.pytest_sessionfinish(
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/runner.py", line 112, in pytest_sessionfinish
+    session._setupstate.teardown_exact(None)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/runner.py", line 555, in teardown_exact
+    fin()
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/fixtures.py", line 1042, in finish
+    fin()
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/fixtures.py", line 924, in _teardown_yield_fixture
+    next(it)
+  File "/home/fedora/thesis/openshift-virtualization-tests/tests/conftest.py", line 498, in cnv_tests_utilities_service_account
+    with ServiceAccount(
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 769, in __exit__
+    if not self.clean_up():
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 848, in clean_up
+    return self.delete(wait=wait, timeout=timeout or self.delete_timeout)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 1074, in delete
+    return self.wait_deleted(timeout=timeout)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 942, in wait_deleted
+    for sample in TimeoutSampler(wait_timeout=timeout, sleep=1, func=lambda: self.exists):
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/timeout_sampler/__init__.py", line 155, in __iter__
+    LOGGER.info(log)
+Message: 'Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_deleted.lambda: self.exists)'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/timeout_sampler/__init__.py", line 162, in __iter__
+    yield self.func(*self.func_args, **self.func_kwargs)
+GeneratorExit
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/lib64/python3.14/logging/__init__.py", line 1154, in emit
+    stream.write(msg + self.terminator)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: I/O operation on closed file.
+Call stack:
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/bin/pytest", line 10, in <module>
+    sys.exit(console_main())
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/config/__init__.py", line 223, in console_main
+    code = main()
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/config/__init__.py", line 199, in main
+    ret: ExitCode | int = config.hook.pytest_cmdline_main(config=config)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/main.py", line 365, in pytest_cmdline_main
+    return wrap_session(config, _main)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/main.py", line 353, in wrap_session
+    config.hook.pytest_sessionfinish(
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/runner.py", line 112, in pytest_sessionfinish
+    session._setupstate.teardown_exact(None)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/runner.py", line 555, in teardown_exact
+    fin()
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/fixtures.py", line 1042, in finish
+    fin()
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/fixtures.py", line 924, in _teardown_yield_fixture
+    next(it)
+  File "/home/fedora/thesis/openshift-virtualization-tests/tests/conftest.py", line 498, in cnv_tests_utilities_service_account
+    with ServiceAccount(
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 769, in __exit__
+    if not self.clean_up():
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 848, in clean_up
+    return self.delete(wait=wait, timeout=timeout or self.delete_timeout)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 1074, in delete
+    return self.wait_deleted(timeout=timeout)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 944, in wait_deleted
+    return True
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/timeout_sampler/__init__.py", line 180, in __iter__
+    LOGGER.info(_elapsed_time_log(elapsed_time=elapsed_time))
+Message: 'Elapsed time: 0.002474546432495117 [0:00:00.002475]'
+Arguments: ()
+2026-02-22T01:13:01.797540 ocp_resources Namespace [32mINFO[0m Delete Namespace cnv-tests-utilities[0m
+2026-02-22T01:13:02.108127 ocp_resources Namespace [32mINFO[0m Deleting {'kind': 'Namespace', 'apiVersion': 'v1', 'metadata': {'name': 'cnv-tests-utilities', 'uid': 'd17fbfd0-b10d-4f36-a331-a82982fbe6c6', 'resourceVersion': '21342201', 'creationTimestamp': '2026-02-22T01:10:28Z', 'labels': {'kubernetes.io/metadata.name': 'cnv-tests-utilities', 'pod-security.kubernetes.io/enforce': 'privileged', 'security.openshift.io/scc.podSecurityLabelSync': 'false'}, 'annotations': {'openshift.io/sa.scc.mcs': 's0:c40,c0', 'openshift.io/sa.scc.supplemental-groups': '1001560000/10000', 'openshift.io/sa.scc.uid-range': '1001560000/10000'}, 'managedFields': [{'manager': 'cluster-policy-controller', 'operation': 'Apply', 'apiVersion': 'v1', 'time': '2026-02-22T01:10:28Z', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:annotations': {'f:openshift.io/sa.scc.mcs': {}, 'f:openshift.io/sa.scc.supplemental-groups': {}, 'f:openshift.io/sa.scc.uid-range': {}}}}}, {'manager': 'OpenAPI-Generator', 'operation': 'Update', 'apiVersion': 'v1', 'time': '2026-02-22T01:10:28Z', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:labels': {'.': {}, 'f:kubernetes.io/metadata.name': {}, 'f:pod-security.kubernetes.io/enforce': {}, 'f:security.openshift.io/scc.podSecurityLabelSync': {}}}}}]}, 'spec': {'finalizers': ['kubernetes']}, 'status': {'phase': 'Active'}}[0m
+2026-02-22T01:13:02.276470 ocp_resources Namespace [32mINFO[0m Wait until Namespace cnv-tests-utilities is deleted[0m
+--- Logging error ---
+Traceback (most recent call last):
+  File "/usr/lib64/python3.14/logging/__init__.py", line 1154, in emit
+    stream.write(msg + self.terminator)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: I/O operation on closed file.
+Call stack:
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/bin/pytest", line 10, in <module>
+    sys.exit(console_main())
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/config/__init__.py", line 223, in console_main
+    code = main()
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/config/__init__.py", line 199, in main
+    ret: ExitCode | int = config.hook.pytest_cmdline_main(config=config)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/main.py", line 365, in pytest_cmdline_main
+    return wrap_session(config, _main)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/main.py", line 353, in wrap_session
+    config.hook.pytest_sessionfinish(
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/runner.py", line 112, in pytest_sessionfinish
+    session._setupstate.teardown_exact(None)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/runner.py", line 555, in teardown_exact
+    fin()
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/fixtures.py", line 1042, in finish
+    fin()
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/fixtures.py", line 924, in _teardown_yield_fixture
+    next(it)
+  File "/home/fedora/thesis/openshift-virtualization-tests/tests/conftest.py", line 486, in cnv_tests_utilities_namespace
+    yield from create_ns(
+  File "/home/fedora/thesis/openshift-virtualization-tests/utilities/infra.py", line 104, in create_ns
+    with Namespace(
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 769, in __exit__
+    if not self.clean_up():
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 848, in clean_up
+    return self.delete(wait=wait, timeout=timeout or self.delete_timeout)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 1074, in delete
+    return self.wait_deleted(timeout=timeout)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 942, in wait_deleted
+    for sample in TimeoutSampler(wait_timeout=timeout, sleep=1, func=lambda: self.exists):
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/timeout_sampler/__init__.py", line 155, in __iter__
+    LOGGER.info(log)
+Message: 'Waiting for 360 seconds [0:06:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_deleted.lambda: self.exists)'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/timeout_sampler/__init__.py", line 162, in __iter__
+    yield self.func(*self.func_args, **self.func_kwargs)
+GeneratorExit
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/lib64/python3.14/logging/__init__.py", line 1154, in emit
+    stream.write(msg + self.terminator)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: I/O operation on closed file.
+Call stack:
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/bin/pytest", line 10, in <module>
+    sys.exit(console_main())
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/config/__init__.py", line 223, in console_main
+    code = main()
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/config/__init__.py", line 199, in main
+    ret: ExitCode | int = config.hook.pytest_cmdline_main(config=config)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/main.py", line 365, in pytest_cmdline_main
+    return wrap_session(config, _main)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/main.py", line 353, in wrap_session
+    config.hook.pytest_sessionfinish(
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/pluggy/_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/runner.py", line 112, in pytest_sessionfinish
+    session._setupstate.teardown_exact(None)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/runner.py", line 555, in teardown_exact
+    fin()
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/fixtures.py", line 1042, in finish
+    fin()
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/_pytest/fixtures.py", line 924, in _teardown_yield_fixture
+    next(it)
+  File "/home/fedora/thesis/openshift-virtualization-tests/tests/conftest.py", line 486, in cnv_tests_utilities_namespace
+    yield from create_ns(
+  File "/home/fedora/thesis/openshift-virtualization-tests/utilities/infra.py", line 104, in create_ns
+    with Namespace(
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 769, in __exit__
+    if not self.clean_up():
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 848, in clean_up
+    return self.delete(wait=wait, timeout=timeout or self.delete_timeout)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 1074, in delete
+    return self.wait_deleted(timeout=timeout)
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py", line 944, in wait_deleted
+    return True
+  File "/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/timeout_sampler/__init__.py", line 180, in __iter__
+    LOGGER.info(_elapsed_time_log(elapsed_time=elapsed_time))
+Message: 'Elapsed time: 9.36483645439148 [0:00:09.364836]'
+Arguments: ()
+
+======================= 8 warnings in 148.55s (0:02:28) ========================
+
+======================= 13 warnings in 163.27s (0:02:43) =======================
+!!!!!!!!!!! _pytest.outcomes.Exit: Cluster should be BM and not PSI !!!!!!!!!!!!

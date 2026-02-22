@@ -108,12 +108,32 @@ for i in {1..7}; do
     INITIAL_COMMIT=$(git rev-parse HEAD)
     echo "Initial commit: $INITIAL_COMMIT"
 
-    # Run claude with /v3-orchestrator command from within the test repo
-    echo "Starting Claude session with /v3-orchestrator..."
-    echo "/v3-orchestrator $STP_FILE" | claude chat --dangerously-skip-permissions > "$OUTPUT_DIR/claude.log" 2>&1
+    # Run claude phases individually, using --continue to maintain conversation context
+    echo "Starting Claude session - Phase 1/6: Generate STD..."
+    echo "Run ONLY Phase 1: /v3-generate-std $STP_FILE -- Do NOT proceed to any other phase. Stop after this phase is complete and report what STD file was generated." | claude -p --dangerously-skip-permissions --max-budget-usd 15 > "$OUTPUT_DIR/claude.log" 2>&1
+    echo "Phase 1 complete (exit code: $?)"
 
+    echo "Continuing Claude session - Phase 2/6: Explore test context..."
+    echo "Continue to Phase 2 ONLY: /v3-explore-test-context -- Do NOT proceed to any other phase. Stop after this phase is complete." | claude -p --continue --dangerously-skip-permissions --max-budget-usd 15 >> "$OUTPUT_DIR/claude.log" 2>&1
+    echo "Phase 2 complete (exit code: $?)"
+
+    echo "Continuing Claude session - Phase 3/6: Generate pytest..."
+    echo "Continue to Phase 3 ONLY: /v3-generate-pytest using the STD file generated in Phase 1. Do NOT proceed to any other phase. Stop after this phase is complete and report what test file was generated." | claude -p --continue --dangerously-skip-permissions --max-budget-usd 20 >> "$OUTPUT_DIR/claude.log" 2>&1
+    echo "Phase 3 complete (exit code: $?)"
+
+    echo "Continuing Claude session - Phase 4/6: Graveyard verify..."
+    echo "Continue to Phase 4 ONLY: /v3-graveyard-verify on the test file generated in Phase 3. Do NOT proceed to any other phase. Stop after this phase is complete." | claude -p --continue --dangerously-skip-permissions --max-budget-usd 10 >> "$OUTPUT_DIR/claude.log" 2>&1
+    echo "Phase 4 complete (exit code: $?)"
+
+    echo "Continuing Claude session - Phase 5/6: Pyright heal..."
+    echo "Continue to Phase 5 ONLY: /v3-pyright-heal on the test file with --max-iterations 10. Do NOT proceed to any other phase. Stop after this phase is complete." | claude -p --continue --dangerously-skip-permissions --max-budget-usd 15 >> "$OUTPUT_DIR/claude.log" 2>&1
+    echo "Phase 5 complete (exit code: $?)"
+
+    echo "Continuing Claude session - Phase 6/6: Test heal..."
+    echo "Continue to Phase 6 (FINAL): /v3-test-heal on the test file with --max-iterations 3. This is the final phase. Complete it fully, then stop." | claude -p --continue --dangerously-skip-permissions --max-budget-usd 30 >> "$OUTPUT_DIR/claude.log" 2>&1
     CLAUDE_EXIT_CODE=$?
-    echo "Claude session completed (exit code: $CLAUDE_EXIT_CODE)"
+    echo "Phase 6 complete (exit code: $CLAUDE_EXIT_CODE)"
+    echo "All 6 phases completed (final exit code: $CLAUDE_EXIT_CODE)"
 
     # Save artifacts
     echo "Saving artifacts..."
@@ -124,8 +144,10 @@ for i in {1..7}; do
         echo "  ✓ test_run.log saved"
     fi
 
+    git add .
+    git commit -m 'done'
     # Generate changes.patch from initial commit (captures all changes, committed or not)
-    git diff "$INITIAL_COMMIT" > "$OUTPUT_DIR/changes.patch"
+    git diff HEAD^ HEAD > "$OUTPUT_DIR/changes.patch"
     echo "  ✓ changes.patch saved (from commit $INITIAL_COMMIT)"
 
     # Save GRAVEYARD.md for next iteration (do this BEFORE cleanup)

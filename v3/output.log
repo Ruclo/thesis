@@ -1,0 +1,312 @@
+nohup: ignoring input
+========================================
+Sequential STP Processing with Cumulative GRAVEYARD.md
+========================================
+Working Directory: /home/fedora/thesis/v3
+Script Directory: /home/fedora/thesis/v3
+Model: opus4.6
+Test Repository: /home/fedora/thesis/v3/../openshift-virtualization-tests
+Output Base: /home/fedora/thesis/v3/opus4.6
+
+
+========================================
+EXPERIMENT 1: Processing stps/1.md
+========================================
+Output: /home/fedora/thesis/v3/opus4.6/experiment_1
+Changed to test repo: /home/fedora/thesis/openshift-virtualization-tests
+Starting fresh (no GRAVEYARD.md yet)
+Initial commit: 61dfaedc911765c39b44dd85696df7f51811a998
+Starting Claude session - Phase 1/6: Generate STD...
+Phase 1 complete (exit code: 0)
+Continuing Claude session - Phase 2/6: Explore test context...
+Phase 2 complete (exit code: 0)
+Continuing Claude session - Phase 3/6: Generate pytest...
+Phase 3 complete (exit code: 0)
+Continuing Claude session - Phase 4/6: Graveyard verify...
+Phase 4 complete (exit code: 0)
+Continuing Claude session - Phase 5/6: Pyright heal...
+Phase 5 complete (exit code: 0)
+Continuing Claude session - Phase 6/6: Test heal...
+Phase 6 complete (exit code: 0)
+All 6 phases completed (final exit code: 0)
+Saving artifacts...
+  ✓ test_run.log saved
+[main 675a31d] done
+ 5 files changed, 693 insertions(+)
+ create mode 100644 GRAVEYARD.md
+ create mode 100644 tests/install_upgrade_operators/common_instancetypes_deployment/__init__.py
+ create mode 100644 tests/install_upgrade_operators/common_instancetypes_deployment/conftest.py
+ create mode 100644 tests/install_upgrade_operators/common_instancetypes_deployment/test_common_instancetypes_deployment.py
+ create mode 100644 tests/std/common_instancetypes_deployment/std_cnv_61256.md
+  ✓ changes.patch saved (from commit 61dfaedc911765c39b44dd85696df7f51811a998)
+  ✓ GRAVEYARD.md saved (88 lines)
+Resetting to initial state...
+HEAD is now at 61dfaed [VIRT] Remove Dedicated Live Migration Network Test (#3744)
+Removing .benchmarks/
+Experiment 1 complete!
+  Output: /home/fedora/thesis/v3/opus4.6/experiment_1/
+  - claude.log: Conversation transcript
+  - changes.patch: Generated code changes
+  - test_run.log: Test execution output (if generated)
+  - GRAVEYARD.md: Lessons learned (if generated)
+
+========================================
+EXPERIMENT 2: Processing stps/2.md
+========================================
+Output: /home/fedora/thesis/v3/opus4.6/experiment_2
+Changed to test repo: /home/fedora/thesis/openshift-virtualization-tests
+Restoring GRAVEYARD.md from previous iteration...
+  88 lines restored
+Initial commit: 61dfaedc911765c39b44dd85696df7f51811a998
+Starting Claude session - Phase 1/6: Generate STD...
+Phase 1 complete (exit code: 0)
+Continuing Claude session - Phase 2/6: Explore test context...
+Phase 2 complete (exit code: 0)
+Continuing Claude session - Phase 3/6: Generate pytest...
+Phase 3 complete (exit code: 0)
+Continuing Claude session - Phase 4/6: Graveyard verify...
+Phase 4 complete (exit code: 0)
+Continuing Claude session - Phase 5/6: Pyright heal...
+Phase 5 complete (exit code: 0)
+Continuing Claude session - Phase 6/6: Test heal...
+Phase 6 complete (exit code: 0)
+All 6 phases completed (final exit code: 0)
+Saving artifacts...
+  ✓ test_run.log saved
+[main 2b47138] done
+ 5 files changed, 671 insertions(+)
+ create mode 100644 GRAVEYARD.md
+ create mode 100644 tests/std/vnc_screenshot_stability/std_cnv_61271.md
+ create mode 100644 tests/virt/screenshot/__init__.py
+ create mode 100644 tests/virt/screenshot/conftest.py
+ create mode 100644 tests/virt/screenshot/test_vm_screenshot.py
+  ✓ changes.patch saved (from commit 61dfaedc911765c39b44dd85696df7f51811a998)
+  ✓ GRAVEYARD.md saved (130 lines)
+Resetting to initial state...
+HEAD is now at 61dfaed [VIRT] Remove Dedicated Live Migration Network Test (#3744)
+Removing .benchmarks/
+Experiment 2 complete!
+  Output: /home/fedora/thesis/v3/opus4.6/experiment_2/
+  - claude.log: Conversation transcript
+  - changes.patch: Generated code changes
+  - test_run.log: Test execution output (if generated)
+  - GRAVEYARD.md: Lessons learned (if generated)
+
+========================================
+EXPERIMENT 3: Processing stps/3.md
+========================================
+Output: /home/fedora/thesis/v3/opus4.6/experiment_3
+Changed to test repo: /home/fedora/thesis/openshift-virtualization-tests
+Restoring GRAVEYARD.md from previous iteration...
+  130 lines restored
+Initial commit: 61dfaedc911765c39b44dd85696df7f51811a998
+Starting Claude session - Phase 1/6: Generate STD...
+Phase 1 complete (exit code: 0)
+Continuing Claude session - Phase 2/6: Explore test context...
+Phase 2 complete (exit code: 0)
+Continuing Claude session - Phase 3/6: Generate pytest...
+Phase 3 complete (exit code: 0)
+Continuing Claude session - Phase 4/6: Graveyard verify...
+Phase 4 complete (exit code: 0)
+Continuing Claude session - Phase 5/6: Pyright heal...
+Phase 5 complete (exit code: 0)
+Continuing Claude session - Phase 6/6: Test heal...
+Phase 6 complete (exit code: 0)
+All 6 phases completed (final exit code: 0)
+Saving artifacts...
+  ✓ test_run.log saved
+[main 497bf02] done
+ 7 files changed, 1032 insertions(+)
+ create mode 100644 GRAVEYARD.md
+ create mode 100644 tests/std/vmi_hard_reset/std_virtstrat_357.md
+ create mode 100644 tests/virt/node/hard_reset/__init__.py
+ create mode 100644 tests/virt/node/hard_reset/conftest.py
+ create mode 100644 tests/virt/node/hard_reset/test_virtctl_reset.py
+ create mode 100644 tests/virt/node/hard_reset/test_vmi_hard_reset.py
+ create mode 100644 tests/virt/node/hard_reset/test_vmi_reset_negative.py
+  ✓ changes.patch saved (from commit 61dfaedc911765c39b44dd85696df7f51811a998)
+  ✓ GRAVEYARD.md saved (289 lines)
+Resetting to initial state...
+HEAD is now at 61dfaed [VIRT] Remove Dedicated Live Migration Network Test (#3744)
+Removing .benchmarks/
+Experiment 3 complete!
+  Output: /home/fedora/thesis/v3/opus4.6/experiment_3/
+  - claude.log: Conversation transcript
+  - changes.patch: Generated code changes
+  - test_run.log: Test execution output (if generated)
+  - GRAVEYARD.md: Lessons learned (if generated)
+
+========================================
+EXPERIMENT 4: Processing stps/4.md
+========================================
+Output: /home/fedora/thesis/v3/opus4.6/experiment_4
+Changed to test repo: /home/fedora/thesis/openshift-virtualization-tests
+Restoring GRAVEYARD.md from previous iteration...
+  289 lines restored
+Initial commit: 61dfaedc911765c39b44dd85696df7f51811a998
+Starting Claude session - Phase 1/6: Generate STD...
+Phase 1 complete (exit code: 0)
+Continuing Claude session - Phase 2/6: Explore test context...
+Phase 2 complete (exit code: 0)
+Continuing Claude session - Phase 3/6: Generate pytest...
+Phase 3 complete (exit code: 0)
+Continuing Claude session - Phase 4/6: Graveyard verify...
+Phase 4 complete (exit code: 0)
+Continuing Claude session - Phase 5/6: Pyright heal...
+Phase 5 complete (exit code: 0)
+Continuing Claude session - Phase 6/6: Test heal...
+Phase 6 complete (exit code: 0)
+All 6 phases completed (final exit code: 0)
+Saving artifacts...
+  ✓ test_run.log saved
+[main fbbc24d] done
+ 6 files changed, 1216 insertions(+)
+ create mode 100644 GRAVEYARD.md
+ create mode 100644 tests/std/vm_snapshot_restore_run_strategy/std_cnv_63819.md
+ create mode 100644 tests/storage/snapshot_restore/__init__.py
+ create mode 100644 tests/storage/snapshot_restore/conftest.py
+ create mode 100644 tests/storage/snapshot_restore/test_snapshot_restore_data_integrity.py
+ create mode 100644 tests/storage/snapshot_restore/test_snapshot_restore_run_strategy.py
+  ✓ changes.patch saved (from commit 61dfaedc911765c39b44dd85696df7f51811a998)
+  ✓ GRAVEYARD.md saved (289 lines)
+Resetting to initial state...
+HEAD is now at 61dfaed [VIRT] Remove Dedicated Live Migration Network Test (#3744)
+Removing .benchmarks/
+Experiment 4 complete!
+  Output: /home/fedora/thesis/v3/opus4.6/experiment_4/
+  - claude.log: Conversation transcript
+  - changes.patch: Generated code changes
+  - test_run.log: Test execution output (if generated)
+  - GRAVEYARD.md: Lessons learned (if generated)
+
+========================================
+EXPERIMENT 5: Processing stps/5.md
+========================================
+Output: /home/fedora/thesis/v3/opus4.6/experiment_5
+Changed to test repo: /home/fedora/thesis/openshift-virtualization-tests
+Restoring GRAVEYARD.md from previous iteration...
+  289 lines restored
+Initial commit: 61dfaedc911765c39b44dd85696df7f51811a998
+Starting Claude session - Phase 1/6: Generate STD...
+Phase 1 complete (exit code: 0)
+Continuing Claude session - Phase 2/6: Explore test context...
+Phase 2 complete (exit code: 0)
+Continuing Claude session - Phase 3/6: Generate pytest...
+Phase 3 complete (exit code: 0)
+Continuing Claude session - Phase 4/6: Graveyard verify...
+Phase 4 complete (exit code: 0)
+Continuing Claude session - Phase 5/6: Pyright heal...
+Phase 5 complete (exit code: 0)
+Continuing Claude session - Phase 6/6: Test heal...
+Phase 6 complete (exit code: 0)
+All 6 phases completed (final exit code: 0)
+Saving artifacts...
+  ✓ test_run.log saved
+[main d2f9d13] done
+ 4 files changed, 764 insertions(+)
+ create mode 100644 GRAVEYARD.md
+ create mode 100644 tests/std/storageprofile_snapshot_class/std_cnv_61266.md
+ create mode 100644 tests/storage/snapshots/test_storageprofile_snapshot_class.py
+  ✓ changes.patch saved (from commit 61dfaedc911765c39b44dd85696df7f51811a998)
+  ✓ GRAVEYARD.md saved (289 lines)
+Resetting to initial state...
+HEAD is now at 61dfaed [VIRT] Remove Dedicated Live Migration Network Test (#3744)
+Removing .benchmarks/
+Experiment 5 complete!
+  Output: /home/fedora/thesis/v3/opus4.6/experiment_5/
+  - claude.log: Conversation transcript
+  - changes.patch: Generated code changes
+  - test_run.log: Test execution output (if generated)
+  - GRAVEYARD.md: Lessons learned (if generated)
+
+========================================
+EXPERIMENT 6: Processing stps/6.md
+========================================
+Output: /home/fedora/thesis/v3/opus4.6/experiment_6
+Changed to test repo: /home/fedora/thesis/openshift-virtualization-tests
+Restoring GRAVEYARD.md from previous iteration...
+  289 lines restored
+Initial commit: 61dfaedc911765c39b44dd85696df7f51811a998
+Starting Claude session - Phase 1/6: Generate STD...
+Phase 1 complete (exit code: 0)
+Continuing Claude session - Phase 2/6: Explore test context...
+Phase 2 complete (exit code: 0)
+Continuing Claude session - Phase 3/6: Generate pytest...
+Phase 3 complete (exit code: 0)
+Continuing Claude session - Phase 4/6: Graveyard verify...
+Phase 4 complete (exit code: 0)
+Continuing Claude session - Phase 5/6: Pyright heal...
+Phase 5 complete (exit code: 0)
+Continuing Claude session - Phase 6/6: Test heal...
+Phase 6 complete (exit code: 0)
+All 6 phases completed (final exit code: 0)
+Saving artifacts...
+  ✓ test_run.log saved
+[main 054bf12] done
+ 3 files changed, 796 insertions(+)
+ create mode 100644 GRAVEYARD.md
+ create mode 100644 tests/std/cpu_hotplug_max_limit/std_cnv_61263.md
+ create mode 100644 tests/virt/node/hotplug/test_cpu_hotplug_max_limit.py
+  ✓ changes.patch saved (from commit 61dfaedc911765c39b44dd85696df7f51811a998)
+  ✓ GRAVEYARD.md saved (361 lines)
+Resetting to initial state...
+HEAD is now at 61dfaed [VIRT] Remove Dedicated Live Migration Network Test (#3744)
+Removing .benchmarks/
+Experiment 6 complete!
+  Output: /home/fedora/thesis/v3/opus4.6/experiment_6/
+  - claude.log: Conversation transcript
+  - changes.patch: Generated code changes
+  - test_run.log: Test execution output (if generated)
+  - GRAVEYARD.md: Lessons learned (if generated)
+
+========================================
+EXPERIMENT 7: Processing stps/7.md
+========================================
+Output: /home/fedora/thesis/v3/opus4.6/experiment_7
+Changed to test repo: /home/fedora/thesis/openshift-virtualization-tests
+Restoring GRAVEYARD.md from previous iteration...
+  361 lines restored
+Initial commit: 61dfaedc911765c39b44dd85696df7f51811a998
+Starting Claude session - Phase 1/6: Generate STD...
+Phase 1 complete (exit code: 0)
+Continuing Claude session - Phase 2/6: Explore test context...
+Phase 2 complete (exit code: 0)
+Continuing Claude session - Phase 3/6: Generate pytest...
+Phase 3 complete (exit code: 0)
+Continuing Claude session - Phase 4/6: Graveyard verify...
+Phase 4 complete (exit code: 0)
+Continuing Claude session - Phase 5/6: Pyright heal...
+Phase 5 complete (exit code: 0)
+Continuing Claude session - Phase 6/6: Test heal...
+Phase 6 complete (exit code: 0)
+All 6 phases completed (final exit code: 0)
+Saving artifacts...
+  ✓ test_run.log saved
+[main b79637b] done
+ 5 files changed, 704 insertions(+)
+ create mode 100644 GRAVEYARD.md
+ create mode 100644 tests/std/windows_guest_agent_os_info/std_cnv_61262.md
+ create mode 100644 tests/virt/guest_agent/__init__.py
+ create mode 100644 tests/virt/guest_agent/conftest.py
+ create mode 100644 tests/virt/guest_agent/test_windows_guest_agent_os_info.py
+  ✓ changes.patch saved (from commit 61dfaedc911765c39b44dd85696df7f51811a998)
+  ✓ GRAVEYARD.md saved (361 lines)
+Resetting to initial state...
+HEAD is now at 61dfaed [VIRT] Remove Dedicated Live Migration Network Test (#3744)
+Removing .benchmarks/
+Experiment 7 complete!
+  Output: /home/fedora/thesis/v3/opus4.6/experiment_7/
+  - claude.log: Conversation transcript
+  - changes.patch: Generated code changes
+  - test_run.log: Test execution output (if generated)
+  - GRAVEYARD.md: Lessons learned (if generated)
+
+========================================
+All Experiments Complete!
+========================================
+Results in: /home/fedora/thesis/v3/opus4.6/experiment_1 through /home/fedora/thesis/v3/opus4.6/experiment_7
+
+Final GRAVEYARD.md: 361 lines
+Location: /home/fedora/thesis/v3/opus4.6/GRAVEYARD_accumulator.md
+
+Progress tracked in: /home/fedora/thesis/v3/opus4.6/PROGRESS.txt

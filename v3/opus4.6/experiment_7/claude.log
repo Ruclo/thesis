@@ -1,0 +1,167 @@
+**Phase 1 complete.** Stopping as requested -- no further phases will be executed.
+
+## Generated STD File
+
+**Path:** `tests/std/windows_guest_agent_os_info/std_cnv_61262.md`
+
+### Summary
+
+The STD was generated from STP `stps/7.md` (Windows Guest Agent OS/Hostname Info Display Issue, CNV-61262 / CNV-56888). It contains **4 test methods** in one test class:
+
+| Test Method | STP Scenario | Priority |
+|---|---|---|
+| `test_vmi_guest_os_info_displayed` | Scenario 1: Windows OS Info Display | P0 |
+| `test_virtctl_hostname_displayed` | Scenario 2: Windows Hostname Display | P0 |
+| `test_guest_agent_info_available_after_reboot` | Scenario 3: Info After Reboot | P1 |
+| `test_os_info_appears_after_guest_agent_service_start` | Scenario 4: Agent Start Detection | P1 |
+
+Scenario 5 (Multiple Windows Versions, P2) is covered through parametrization of the VM fixture across Windows versions rather than separate test methods.
+
+**Proposed test file:** `tests/virt/guest_agent/test_windows_guest_agent_os_info.py`
+**Phase 2 complete.** Stopping as requested -- no further phases will be executed.
+
+---
+
+## Repository Exploration Summary
+
+### Documentation Findings
+- Tests use `@pytest.mark.polarion()` for test case IDs, `@pytest.mark.jira()` for bug tracking
+- Architecture markers: `@pytest.mark.arm64`, `@pytest.mark.s390x`, `@pytest.mark.x86_64`
+- Tiering: `tier2` (standard), `tier3` (complex/hardware/platform-specific)
+- Windows tests use: `@pytest.mark.high_resource_vm`, `@pytest.mark.special_infra`, `@pytest.mark.post_upgrade`
+- Python 3.14, strict mypy, absolute imports only, `uv run` for all commands
+
+### Available Utilities for Windows Guest Agent Testing
+
+**Core validation functions** (can be reused directly):
+| Function | Location | Purpose |
+|---|---|---|
+| `validate_os_info_vmi_vs_windows_os(vm)` | `utilities/ssp.py:240` | Compare VMI guestOSInfo vs Windows guest |
+| `validate_os_info_virtctl_vs_windows_os(vm)` | `tests/virt/cluster/common_templates/utils.py:123` | Compare virtctl OS info vs Windows guest |
+| `validate_virtctl_guest_agent_data_over_time(vm)` | `utilities/virt.py:2587` | Verify agent data consistency (3 min) |
+| `validate_virtctl_guest_agent_after_guest_reboot(vm, os_type)` | `utilities/virt.py:2639` | Reboot + verify agent data |
+| `get_guest_os_info(vmi)` | `utilities/virt.py:1611` | Query VMI status guestOSInfo |
+| `get_virtctl_os_info(vm)` | `utilities/virt.py:2557` | Query virtctl guestosinfo |
+| `wait_for_windows_vm(vm, version, timeout)` | `utilities/virt.py:1592` | Wait for Windows boot |
+| `wait_for_running_vm(vm, ...)` | `utilities/virt.py:1673` | Wait for VM running + SSH |
+| `guest_reboot(vm, os_type)` | `utilities/virt.py:2645` | Reboot from inside guest |
+
+**Key constants**: `OS_FLAVOR_WINDOWS`, `WIN_10`, `WIN_11`, `WIN_2K19`, `WIN_2K22`, `WIN_2K25`, `TIMEOUT_25MIN`, `TIMEOUT_30MIN`, `TCP_TIMEOUT_30SEC`
+
+### Existing Windows Test Patterns
+- `TestCommonTemplatesWindows` in `tests/virt/cluster/common_templates/windows/test_windows_os_support.py` is the reference implementation
+- Uses `matrix_windows_os_vm_from_template` (class-scoped fixture) for parametrized Windows VM creation
+- Uses dependency chains: `create_vm` -> `start_vm` -> `guest_agent_info` -> `migrate` -> etc.
+- Module-level `pytestmark` for shared markers
+
+### GRAVEYARD Lessons (8 entries -- DO NOT rules)
+
+1. **DO NOT** assume HCO CRD field names follow camelCase -- verify actual schema
+2. **DO NOT** use wrong types for `admin_client` -- always use `DynamicClient`
+3. **DO NOT** put tests using different class-scoped VM fixtures in the same class -- each distinct VM fixture needs its own class to avoid `ErrorUnschedulable`
+4. **DO NOT** assume `run_virtctl_command` succeeds when stderr has output -- use `verify_stderr=False` for commands that log to stderr
+5. **DO NOT** assume reset on paused VMI fails -- it succeeds (hardware-level operation)
+6. **DO NOT** assume `unprivileged_client` lacks VMI reset permission -- it's a namespace admin
+7. **DO NOT** use default SSH timeout after hard reset -- use `TIMEOUT_10MIN` for cold boot
+8. **DO NOT** use large `cpu_max_sockets`/`memory_guest` values -- resource-constrained clusters will fail to schedule
+**Phase 3 complete.** Stopping as requested -- no further phases will be executed.
+
+## Generated Test Files
+
+### 1. `tests/virt/guest_agent/conftest.py`
+Fixtures:
+- `windows_guest_agent_golden_image_data_source` (class-scoped) -- provides DataSource for Windows golden images
+- `windows_guest_agent_vm` (class-scoped) -- creates, starts, and cleans up a Windows VM from template with SSH connectivity
+- `stopped_guest_agent_service` (function-scoped) -- stops QEMU-GA service, yields for test, restarts in cleanup
+
+### 2. `tests/virt/guest_agent/test_windows_guest_agent_os_info.py`
+Test class `TestWindowsGuestAgentOSInfo` with 4 test methods:
+
+| Test Method | Utility Used | Purpose |
+|---|---|---|
+| `test_vmi_guest_os_info_displayed` | `validate_os_info_vmi_vs_windows_os` | VMI status guestOSInfo correctness |
+| `test_virtctl_hostname_displayed` | `validate_os_info_virtctl_vs_windows_os` | virtctl guestosinfo hostname/OS correctness |
+| `test_guest_agent_info_available_after_reboot` | `validate_virtctl_guest_agent_after_guest_reboot` | Agent data persists after guest reboot |
+| `test_os_info_appears_after_guest_agent_service_start` | `run_os_command` + `validate_os_info_vmi_vs_windows_os` | OSInfo populates after starting agent |
+
+**Pytest collect-only**: 21 tests collected (4 tests x 5 Windows versions: win-10, win-2019, win-11, win-2022, win-2025).
+**Phase 4 complete.** Stopping as requested -- no further phases will be executed.
+
+## GRAVEYARD Verification Summary
+
+```
+GRAVEYARD Verification Report
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+File: tests/virt/guest_agent/test_windows_guest_agent_os_info.py
+Also checked: tests/virt/guest_agent/conftest.py
+
+Entries checked: 8
+Violations found: 0
+Fixes applied: 0
+
+Entry-by-entry results:
+  1. HCO CR field name casing ............. N/A (no HCO interaction)
+  2. Wrong type hints on DynamicClient .... N/A (no custom helper functions)
+  3. Different VM fixtures in same class .. PASS (single VM fixture used)
+  4. run_virtctl_command stderr ........... N/A (not called directly)
+  5. Reset on paused VMI ................. N/A (no reset operations)
+  6. Unprivileged user permissions ........ N/A (no RBAC tests)
+  7. SSH timeout after hard reset ......... PASS (uses existing utility with built-in 30min timeout)
+  8. Large maxSockets/memory_guest ........ N/A (uses template defaults)
+
+Result: Clean -- no GRAVEYARD violations detected.
+```
+**Phase 5 complete.** Stopping as requested -- no further phases will be executed.
+
+## Pyright Validation Summary
+
+```
+Pyright Validation Report
+━━━━━━━━━━━━━━━━━━━━━━━━━
+
+File: tests/virt/guest_agent/test_windows_guest_agent_os_info.py
+  Result: 0 errors, 0 warnings, 0 informations
+  Iterations: 0 (clean on first run)
+
+File: tests/virt/guest_agent/conftest.py
+  Result: 0 errors, 0 warnings, 0 informations
+  Iterations: 0 (clean on first run)
+
+Status: PASS -- both files are type-safe with no fixes needed.
+```
+The background task notification confirms what we already processed — the test run completed and all 20 errors were infrastructure-related (no Windows golden images, no Artifactory connectivity).
+
+## All 6 Phases Complete — Final Summary
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Test Generation Complete
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Input:  stps/7.md (STP: Windows Guest Agent OS/Hostname Info)
+Output: tests/virt/guest_agent/test_windows_guest_agent_os_info.py
+
+Phases:
+  Phase 1: STD Generation .............. DONE (tests/std/windows_guest_agent_os_info/std_cnv_61262.md)
+  Phase 2: Repository Exploration ...... DONE (utilities, fixtures, conventions, 8 GRAVEYARD entries)
+  Phase 3: Pytest Code Generation ...... DONE (2 files: conftest.py + test file, 21 tests collected)
+  Phase 4: GRAVEYARD Verification ...... DONE (0 violations across 8 entries)
+  Phase 5: Pyright Validation .......... DONE (0 errors, 0 iterations needed)
+  Phase 6: Test Execution .............. BLOCKED (infrastructure: no Windows golden images on PSI cluster)
+
+Generated Files:
+  tests/virt/guest_agent/__init__.py
+  tests/virt/guest_agent/conftest.py
+  tests/virt/guest_agent/test_windows_guest_agent_os_info.py
+  tests/std/windows_guest_agent_os_info/std_cnv_61262.md
+
+Test Matrix: 4 tests x 5 Windows versions = 20 test cases
+  - win-10, win-2019, win-11, win-2022, win-2025
+
+GRAVEYARD Updates: None (no code-level mistakes)
+
+To run on a properly configured BM cluster:
+  ../runtstqe tests/virt/guest_agent/test_windows_guest_agent_os_info.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
