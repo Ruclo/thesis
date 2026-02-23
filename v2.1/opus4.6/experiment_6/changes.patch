@@ -1,17 +1,19 @@
-diff --git a/tests/virt/node/hotplug/test_cpu_hotplug_max_sockets_limit.py b/tests/virt/node/hotplug/test_cpu_hotplug_max_sockets_limit.py
+diff --git a/tests/virt/node/hotplug/test_cpu_hotplug_max_sockets.py b/tests/virt/node/hotplug/test_cpu_hotplug_max_sockets.py
 new file mode 100644
-index 0000000..600781f
+index 0000000..5456741
 --- /dev/null
-+++ b/tests/virt/node/hotplug/test_cpu_hotplug_max_sockets_limit.py
-@@ -0,0 +1,240 @@
++++ b/tests/virt/node/hotplug/test_cpu_hotplug_max_sockets.py
+@@ -0,0 +1,281 @@
 +"""
-+Test CPU hotplug MaxSockets limit enforcement.
++CPU Hotplug MaxSockets Limit Tests
 +
-+Validates that MaxSockets is properly limited based on maximum vCPUs,
-+preventing CPU hotplug from exceeding safe limits.
++STP Reference: https://issues.redhat.com/browse/CNV-61263
 +
-+Jira: CNV-61263 / CNV-57352
-+PR: kubevirt/kubevirt#14511
++This module contains tests verifying that MaxSockets is properly limited
++based on the maximum allowed vCPUs, preventing CPU hotplug from exceeding
++safe limits.
++
++Related PR: https://github.com/kubevirt/kubevirt/pull/14511
 +"""
 +
 +import logging
@@ -29,10 +31,11 @@ index 0000000..600781f
 +from utilities.constants import (
 +    EIGHT_CPU_SOCKETS,
 +    FOUR_CPU_SOCKETS,
++    FOUR_GI_MEMORY,
 +    ONE_CPU_CORE,
 +    ONE_CPU_THREAD,
-+    FOUR_GI_MEMORY,
 +    TEN_CPU_SOCKETS,
++    TEN_GI_MEMORY,
 +    TWO_CPU_SOCKETS,
 +)
 +from utilities.virt import (
@@ -40,33 +43,32 @@ index 0000000..600781f
 +    running_vm,
 +)
 +
-+pytestmark = [pytest.mark.rwx_default_storage, pytest.mark.jira("CNV-57352")]
-+
++pytestmark = pytest.mark.rwx_default_storage
 +
 +LOGGER = logging.getLogger(__name__)
-+TESTS_CLASS_NAME = "TestCPUHotplugMaxSocketsLimit"
++TESTS_CLASS_NAME_CALCULATION = "TestMaxSocketsCalculation"
++TESTS_CLASS_NAME_AT_LIMIT = "TestCPUHotplugAtLimit"
++TESTS_CLASS_NAME_FULL_CYCLE = "TestCPUHotplugFullCycle"
 +
 +
 +@pytest.fixture(scope="class")
-+def vm_with_max_sockets_limit(
-+    request,
++def max_sockets_vm(
 +    namespace,
 +    unprivileged_client,
 +    golden_image_data_volume_template_for_test_scope_class,
 +    modern_cpu_for_migration,
 +    vmx_disabled_flag,
++    is_s390x_cluster,
 +):
-+    """VM with CPU hotplug enabled and explicit MaxSockets limit."""
-+    cpu_max_sockets = request.param.get("cpu_max_sockets", FOUR_CPU_SOCKETS)
-+    cpu_sockets = request.param.get("cpu_sockets", TWO_CPU_SOCKETS)
 +    with VirtualMachineForTestsFromTemplate(
-+        name=request.param["vm_name"],
-+        labels=Template.generate_template_labels(**request.param["template_labels"]),
++        name="rhel-max-sockets-vm",
++        labels=Template.generate_template_labels(**RHEL_LATEST_LABELS),
 +        namespace=namespace.name,
 +        client=unprivileged_client,
 +        data_volume_template=golden_image_data_volume_template_for_test_scope_class,
-+        cpu_max_sockets=cpu_max_sockets,
-+        cpu_sockets=cpu_sockets,
++        cpu_max_sockets=EIGHT_CPU_SOCKETS,
++        memory_max_guest=None if is_s390x_cluster else TEN_GI_MEMORY,
++        cpu_sockets=FOUR_CPU_SOCKETS,
 +        cpu_threads=ONE_CPU_THREAD,
 +        cpu_cores=ONE_CPU_CORE,
 +        memory_guest=FOUR_GI_MEMORY,
@@ -77,108 +79,23 @@ index 0000000..600781f
 +        yield vm
 +
 +
-+@pytest.mark.parametrize(
-+    "golden_image_data_source_for_test_scope_class, vm_with_max_sockets_limit",
-+    [
-+        pytest.param(
-+            {"os_dict": RHEL_LATEST},
-+            {
-+                "template_labels": RHEL_LATEST_LABELS,
-+                "vm_name": "rhel-max-sockets-limit-vm",
-+                "cpu_max_sockets": FOUR_CPU_SOCKETS,
-+                "cpu_sockets": TWO_CPU_SOCKETS,
-+            },
-+            id="RHEL-VM",
-+            marks=pytest.mark.s390x,
-+        ),
-+    ],
-+    indirect=True,
-+)
-+class TestCPUHotplugMaxSocketsLimit:
-+    """Tests for CPU hotplug MaxSockets limit enforcement (CNV-61263)."""
-+
-+    @pytest.mark.polarion("CNV-61263")
-+    def test_max_sockets_limited_by_max_vcpus(self, vm_with_max_sockets_limit):
-+        """Scenario 1: Verify MaxSockets is properly limited based on max vCPUs.
-+
-+        Steps:
-+            1. Create VM with CPU hotplug enabled and specific MaxSockets
-+            2. Verify the VMI domain CPU maxSockets does not exceed the configured value
-+            3. Verify maxSockets <= configured max vCPUs
-+        """
-+        vmi_cpu = vm_with_max_sockets_limit.vmi.instance.spec.domain.cpu
-+        vm_cpu = vm_with_max_sockets_limit.instance.spec.template.spec.domain.cpu
-+
-+        LOGGER.info(
-+            f"VM CPU config - sockets: {vmi_cpu.sockets}, maxSockets: {vm_cpu.maxSockets}, "
-+            f"cores: {vmi_cpu.cores}, threads: {vmi_cpu.threads}"
-+        )
-+
-+        max_vcpus = vm_cpu.maxSockets * vmi_cpu.cores * vmi_cpu.threads
-+        actual_vcpus = vmi_cpu.sockets * vmi_cpu.cores * vmi_cpu.threads
-+
-+        assert vm_cpu.maxSockets <= FOUR_CPU_SOCKETS, (
-+            f"MaxSockets {vm_cpu.maxSockets} exceeds configured limit {FOUR_CPU_SOCKETS}"
-+        )
-+        assert actual_vcpus <= max_vcpus, (
-+            f"Current vCPUs {actual_vcpus} exceeds maximum allowed {max_vcpus}"
-+        )
-+
-+    @pytest.mark.dependency(name=f"{TESTS_CLASS_NAME}::hotplug_to_max")
-+    @pytest.mark.polarion("CNV-61263")
-+    def test_hotplug_cpu_to_max_sockets(
-+        self, unprivileged_client, admin_client, vm_with_max_sockets_limit
-+    ):
-+        """Scenario 2: Verify CPU hotplug works up to MaxSockets limit.
-+
-+        Steps:
-+            1. VM starts with 2 CPU sockets, max is 4
-+            2. Hotplug to exactly MaxSockets (4)
-+            3. Verify guest OS sees all CPUs
-+        """
-+        hotplug_spec_vm_and_verify_hotplug(
-+            vm=vm_with_max_sockets_limit,
-+            client=unprivileged_client,
-+            sockets=FOUR_CPU_SOCKETS,
-+        )
-+        wait_for_guest_os_cpu_count(
-+            vm=vm_with_max_sockets_limit, spec_cpu_amount=FOUR_CPU_SOCKETS
-+        )
-+
-+    # Hotplug beyond limit depends on the VM being at max sockets from the previous test
-+    @pytest.mark.dependency(depends=[f"{TESTS_CLASS_NAME}::hotplug_to_max"])
-+    @pytest.mark.polarion("CNV-61263")
-+    def test_hotplug_cpu_beyond_max_sockets_rejected(self, vm_with_max_sockets_limit):
-+        """Scenario 3: Verify hotplug beyond MaxSockets is rejected with error.
-+
-+        Steps:
-+            1. VM is at MaxSockets (4)
-+            2. Attempt to hotplug beyond limit (8 sockets)
-+            3. Verify UnprocessibleEntityError is raised
-+        """
-+        with pytest.raises(UnprocessibleEntityError):
-+            hotplug_spec_vm(
-+                vm=vm_with_max_sockets_limit, sockets=EIGHT_CPU_SOCKETS
-+            )
-+
-+
 +@pytest.fixture(scope="class")
-+def vm_for_full_hotplug_cycle(
-+    request,
++def full_cycle_vm(
 +    namespace,
 +    unprivileged_client,
 +    golden_image_data_volume_template_for_test_scope_class,
 +    modern_cpu_for_migration,
 +    vmx_disabled_flag,
++    is_s390x_cluster,
 +):
-+    """VM for full hotplug cycle test starting with 2 sockets and max of 4."""
 +    with VirtualMachineForTestsFromTemplate(
-+        name=request.param["vm_name"],
-+        labels=Template.generate_template_labels(**request.param["template_labels"]),
++        name="rhel-full-cycle-hotplug-vm",
++        labels=Template.generate_template_labels(**RHEL_LATEST_LABELS),
 +        namespace=namespace.name,
 +        client=unprivileged_client,
 +        data_volume_template=golden_image_data_volume_template_for_test_scope_class,
-+        cpu_max_sockets=FOUR_CPU_SOCKETS,
++        cpu_max_sockets=EIGHT_CPU_SOCKETS,
++        memory_max_guest=None if is_s390x_cluster else TEN_GI_MEMORY,
 +        cpu_sockets=TWO_CPU_SOCKETS,
 +        cpu_threads=ONE_CPU_THREAD,
 +        cpu_cores=ONE_CPU_CORE,
@@ -191,14 +108,137 @@ index 0000000..600781f
 +
 +
 +@pytest.mark.parametrize(
-+    "golden_image_data_source_for_test_scope_class, vm_for_full_hotplug_cycle",
++    "golden_image_data_source_for_test_scope_class",
 +    [
 +        pytest.param(
 +            {"os_dict": RHEL_LATEST},
-+            {
-+                "template_labels": RHEL_LATEST_LABELS,
-+                "vm_name": "rhel-full-hotplug-cycle-vm",
-+            },
++            id="RHEL-VM",
++            marks=pytest.mark.s390x,
++        ),
++    ],
++    indirect=True,
++)
++class TestMaxSocketsCalculation:
++    @pytest.mark.polarion("CNV-61263")
++    def test_max_sockets_does_not_exceed_max_vcpus(self, max_sockets_vm):
++        """
++        Test that MaxSockets is limited to not exceed the maximum allowed vCPUs.
++
++        Steps:
++            1. Read the VM spec to get the configured maxSockets value
++
++        Expected:
++            - maxSockets is less than or equal to the maximum allowed vCPUs
++        """
++        vm_spec_cpu = max_sockets_vm.instance.spec.template.spec.domain.cpu
++        max_sockets = vm_spec_cpu.maxSockets
++        LOGGER.info(f"VM spec maxSockets: {max_sockets}")
++        assert max_sockets <= EIGHT_CPU_SOCKETS, (
++            f"maxSockets {max_sockets} exceeds maximum allowed vCPUs {EIGHT_CPU_SOCKETS}"
++        )
++
++    @pytest.mark.polarion("CNV-61263")
++    def test_vm_reports_correct_max_sockets_in_status(self, max_sockets_vm):
++        """
++        Test that the VM status reflects the correctly calculated MaxSockets value.
++
++        Steps:
++            1. Read the VM status CPU topology
++
++        Expected:
++            - VM status maxSockets equals the configured maxSockets from the VM spec
++        """
++        spec_max_sockets = max_sockets_vm.instance.spec.template.spec.domain.cpu.maxSockets
++        status_max_sockets = max_sockets_vm.vmi.instance.spec.domain.cpu.maxSockets
++        LOGGER.info(f"Spec maxSockets: {spec_max_sockets}, VMI status maxSockets: {status_max_sockets}")
++        assert status_max_sockets == spec_max_sockets, (
++            f"VMI maxSockets {status_max_sockets} does not match VM spec maxSockets {spec_max_sockets}"
++        )
++
++
++@pytest.mark.parametrize(
++    "golden_image_data_source_for_test_scope_class",
++    [
++        pytest.param(
++            {"os_dict": RHEL_LATEST},
++            id="RHEL-VM",
++            marks=pytest.mark.s390x,
++        ),
++    ],
++    indirect=True,
++)
++class TestCPUHotplugAtLimit:
++    @pytest.mark.dependency(name=f"{TESTS_CLASS_NAME_AT_LIMIT}::hotplug_cpu_up_to_max_sockets")
++    @pytest.mark.polarion("CNV-61263")
++    def test_hotplug_cpu_up_to_max_sockets(self, max_sockets_vm, unprivileged_client):
++        """
++        Test that CPU hotplug succeeds when increasing sockets up to maxSockets.
++
++        Steps:
++            1. Hotplug VM CPU sockets to the maxSockets value
++
++        Expected:
++            - Guest OS CPU count equals maxSockets value
++        """
++        hotplug_spec_vm_and_verify_hotplug(
++            vm=max_sockets_vm,
++            client=unprivileged_client,
++            sockets=EIGHT_CPU_SOCKETS,
++        )
++        wait_for_guest_os_cpu_count(vm=max_sockets_vm, spec_cpu_amount=EIGHT_CPU_SOCKETS)
++
++    # Depends on test_hotplug_cpu_up_to_max_sockets because the VM must be at maxSockets
++    # to verify that exceeding it is rejected.
++    @pytest.mark.dependency(depends=[f"{TESTS_CLASS_NAME_AT_LIMIT}::hotplug_cpu_up_to_max_sockets"])
++    @pytest.mark.polarion("CNV-61263")
++    def test_hotplug_cpu_beyond_max_sockets_is_rejected(self, max_sockets_vm):
++        """
++        [NEGATIVE] Test that CPU hotplug is rejected when attempting to exceed maxSockets.
++
++        Steps:
++            1. Attempt to hotplug VM CPU sockets to a value greater than maxSockets
++
++        Expected:
++            - API returns an error indicating the socket count exceeds the maximum allowed
++        """
++        with pytest.raises(UnprocessibleEntityError):
++            hotplug_spec_vm(vm=max_sockets_vm, sockets=TEN_CPU_SOCKETS)
++            pytest.fail("Socket value set higher than max value!")
++
++
++@pytest.mark.parametrize(
++    "golden_image_data_source_for_test_scope_class",
++    [
++        pytest.param(
++            {"os_dict": RHEL_LATEST},
++            id="RHEL-VM",
++            marks=pytest.mark.s390x,
++        ),
++    ],
++    indirect=True,
++)
++class TestCPUHotplugErrorHandling:
++    @pytest.mark.polarion("CNV-61263")
++    def test_error_message_when_exceeding_max_sockets(self, max_sockets_vm):
++        """
++        [NEGATIVE] Test that a clear error message is returned when exceeding maxSockets.
++
++        Steps:
++            1. Attempt to set CPU sockets to a value exceeding maxSockets via VM spec patch
++
++        Expected:
++            - Error message contains indication that requested sockets exceed the maximum allowed
++        """
++        with pytest.raises(UnprocessibleEntityError, match=r"sockets|maxSockets|maximum"):
++            hotplug_spec_vm(vm=max_sockets_vm, sockets=TEN_CPU_SOCKETS)
++            pytest.fail("Socket value set higher than max value!")
++
++
++@pytest.mark.parametrize(
++    "golden_image_data_source_for_test_scope_class",
++    [
++        pytest.param(
++            {"os_dict": RHEL_LATEST},
 +            id="RHEL-VM",
 +            marks=pytest.mark.s390x,
 +        ),
@@ -206,41 +246,42 @@ index 0000000..600781f
 +    indirect=True,
 +)
 +class TestCPUHotplugFullCycle:
-+    """Scenario 4: Full hotplug cycle within MaxSockets limits (CNV-61263)."""
-+
-+    @pytest.mark.dependency(name="TestCPUHotplugFullCycle::hotplug_to_max")
++    @pytest.mark.dependency(name=f"{TESTS_CLASS_NAME_FULL_CYCLE}::hotplug_to_max_and_guest_sees_all_cpus")
 +    @pytest.mark.polarion("CNV-61263")
-+    def test_hotplug_to_max_and_verify_guest(
-+        self, unprivileged_client, vm_for_full_hotplug_cycle
-+    ):
-+        """Hotplug from 2 sockets to max (4) and verify guest sees all CPUs.
++    def test_hotplug_to_max_and_guest_sees_all_cpus(self, full_cycle_vm, unprivileged_client):
++        """
++        Test that hotplugging to the maximum allowed sockets results in the guest OS seeing all CPUs.
 +
 +        Steps:
-+            1. Start VM with 2 CPU sockets (max: 4)
-+            2. Hotplug to max allowed (4 sockets)
-+            3. Verify guest OS sees 4 CPUs
++            1. Hotplug VM CPU sockets incrementally to maxSockets value
++
++        Expected:
++            - Guest OS CPU count equals maxSockets value
 +        """
 +        hotplug_spec_vm_and_verify_hotplug(
-+            vm=vm_for_full_hotplug_cycle,
++            vm=full_cycle_vm,
 +            client=unprivileged_client,
-+            sockets=FOUR_CPU_SOCKETS,
++            sockets=EIGHT_CPU_SOCKETS,
 +        )
-+        wait_for_guest_os_cpu_count(
-+            vm=vm_for_full_hotplug_cycle, spec_cpu_amount=FOUR_CPU_SOCKETS
-+        )
++        wait_for_guest_os_cpu_count(vm=full_cycle_vm, spec_cpu_amount=EIGHT_CPU_SOCKETS)
 +
-+    # Further hotplug depends on the VM being at max sockets from the previous test
-+    @pytest.mark.dependency(depends=["TestCPUHotplugFullCycle::hotplug_to_max"])
++    # Depends on test_hotplug_to_max_and_guest_sees_all_cpus because the VM must already
++    # be at maxSockets to verify that further hotplug is rejected.
++    @pytest.mark.dependency(depends=[f"{TESTS_CLASS_NAME_FULL_CYCLE}::hotplug_to_max_and_guest_sees_all_cpus"])
 +    @pytest.mark.polarion("CNV-61263")
-+    def test_no_further_hotplug_beyond_max(self, vm_for_full_hotplug_cycle):
-+        """Verify no further hotplug is possible once at max.
++    def test_no_further_hotplug_allowed_at_max(self, full_cycle_vm):
++        """
++        [NEGATIVE] Test that no further CPU hotplug is allowed once maxSockets is reached.
++
++        Preconditions:
++            - VM CPU sockets already at maxSockets value
 +
 +        Steps:
-+            1. VM is at max sockets (4)
-+            2. Attempt to hotplug to 10 sockets
-+            3. Verify operation is rejected
++            1. Attempt to hotplug one additional CPU socket beyond maxSockets
++
++        Expected:
++            - API returns an error rejecting the request
 +        """
 +        with pytest.raises(UnprocessibleEntityError):
-+            hotplug_spec_vm(
-+                vm=vm_for_full_hotplug_cycle, sockets=TEN_CPU_SOCKETS
-+            )
++            hotplug_spec_vm(vm=full_cycle_vm, sockets=TEN_CPU_SOCKETS)
++            pytest.fail("Socket value set higher than max value!")

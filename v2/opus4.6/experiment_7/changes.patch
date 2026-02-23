@@ -1,0 +1,187 @@
+diff --git a/tests/virt/cluster/common_templates/windows/test_windows_guest_agent_os_info.py b/tests/virt/cluster/common_templates/windows/test_windows_guest_agent_os_info.py
+new file mode 100644
+index 0000000..0c870f4
+--- /dev/null
++++ b/tests/virt/cluster/common_templates/windows/test_windows_guest_agent_os_info.py
+@@ -0,0 +1,181 @@
++"""
++Tests for Windows Guest Agent OS/Hostname Info Display (CNV-61262)
++
++Validates that Windows VMs correctly display OS info and hostname
++via VMI status and virtctl when the QEMU guest agent is running.
++Verifies the fix for domain.Status.OSInfo sometimes being empty
++despite guest agent reporting.
++"""
++
++import logging
++
++import pytest
++
++from tests.virt.cluster.common_templates.utils import (
++    get_cnv_os_info,
++    validate_os_info_virtctl_vs_windows_os,
++)
++from utilities.constants import (
++    OS_FLAVOR_WINDOWS,
++    TIMEOUT_2MIN,
++    TIMEOUT_5MIN,
++    TIMEOUT_6MIN,
++    TIMEOUT_30MIN,
++)
++from utilities.ssp import (
++    get_windows_os_info,
++    validate_os_info_vmi_vs_windows_os,
++)
++from utilities.virt import (
++    get_guest_os_info,
++    get_virtctl_os_info,
++    run_os_command,
++    running_vm,
++    validate_virtctl_guest_agent_after_guest_reboot,
++    validate_virtctl_guest_agent_data_over_time,
++    wait_for_running_vm,
++    wait_for_user_agent_down,
++)
++
++pytestmark = [
++    pytest.mark.special_infra,
++    pytest.mark.high_resource_vm,
++    pytest.mark.tier3,
++]
++
++LOGGER = logging.getLogger(__name__)
++TESTS_CLASS_NAME = "TestWindowsGuestAgentOsInfo"
++STOP_QEMU_GA_CMD = "powershell -command \"Stop-Service -Name 'QEMU-GA'\""
++START_QEMU_GA_CMD = "powershell -command \"Start-Service -Name 'QEMU-GA'\""
++
++
++class TestWindowsGuestAgentOsInfo:
++    """Tests for CNV-61262: Windows Guest Agent OS/Hostname Info Display.
++
++    Validates that Windows VMs correctly report OS info and hostname
++    when qemu-guest-agent is running, and that info persists across reboots.
++    """
++
++    # VM create/start depend on each other; subsequent tests require a running VM.
++    @pytest.mark.dependency(name=f"{TESTS_CLASS_NAME}::create_vm")
++    @pytest.mark.polarion("CNV-61262")
++    def test_create_vm(self, matrix_windows_os_vm_from_template):
++        """Create Windows VM from template."""
++        LOGGER.info("Creating Windows VM from template for guest agent OS info tests.")
++        matrix_windows_os_vm_from_template.create(wait=True)
++
++    @pytest.mark.dependency(
++        name=f"{TESTS_CLASS_NAME}::start_vm",
++        depends=[f"{TESTS_CLASS_NAME}::create_vm"],
++    )
++    @pytest.mark.polarion("CNV-61262")
++    def test_start_vm(self, matrix_windows_os_vm_from_template):
++        """Start Windows VM and wait for guest agent connectivity."""
++        running_vm(vm=matrix_windows_os_vm_from_template)
++
++    # Scenario 1: Windows OS Info Display (P0)
++    @pytest.mark.dependency(depends=[f"{TESTS_CLASS_NAME}::start_vm"])
++    @pytest.mark.polarion("CNV-61262")
++    def test_vmi_os_info_not_empty(self, matrix_windows_os_vm_from_template):
++        """Verify VMI status guestOSInfo is populated and correct for Windows VM.
++
++        Validates that domain.Status.OSInfo is not empty when qemu-ga is running,
++        ensuring the fix for the race condition where OSInfo was sometimes empty.
++        """
++        LOGGER.info("Verifying VMI guest OS info matches actual Windows OS info.")
++        validate_os_info_vmi_vs_windows_os(vm=matrix_windows_os_vm_from_template)
++
++    @pytest.mark.dependency(depends=[f"{TESTS_CLASS_NAME}::start_vm"])
++    @pytest.mark.polarion("CNV-61262")
++    def test_virtctl_os_info(self, matrix_windows_os_vm_from_template):
++        """Verify virtctl guestosinfo returns correct OS info for Windows VM."""
++        LOGGER.info("Verifying virtctl guest OS info matches actual Windows OS info.")
++        validate_os_info_virtctl_vs_windows_os(vm=matrix_windows_os_vm_from_template)
++
++    # Scenario 2: Windows Hostname Display (P0)
++    @pytest.mark.dependency(depends=[f"{TESTS_CLASS_NAME}::start_vm"])
++    @pytest.mark.polarion("CNV-61262")
++    def test_hostname_displayed(self, matrix_windows_os_vm_from_template):
++        """Verify Windows VM hostname is correctly reported via virtctl and VMI status."""
++        LOGGER.info("Verifying hostname is correctly reported for Windows VM.")
++        virtctl_info = get_virtctl_os_info(vm=matrix_windows_os_vm_from_template)
++        assert virtctl_info, "Virtctl did not return guest OS info"
++
++        windows_info = get_windows_os_info(ssh_exec=matrix_windows_os_vm_from_template.ssh_exec)
++        assert virtctl_info["hostname"] == windows_info["hostname"], (
++            f"Hostname mismatch: virtctl reports '{virtctl_info['hostname']}', "
++            f"Windows reports '{windows_info['hostname']}'"
++        )
++
++        cnv_info = get_cnv_os_info(vm=matrix_windows_os_vm_from_template)
++        assert cnv_info["hostname"] == windows_info["hostname"], (
++            f"Hostname mismatch: CNV reports '{cnv_info['hostname']}', "
++            f"Windows reports '{windows_info['hostname']}'"
++        )
++
++    # Scenario 3: Info After Reboot (P1)
++    @pytest.mark.dependency(depends=[f"{TESTS_CLASS_NAME}::start_vm"])
++    @pytest.mark.polarion("CNV-61262")
++    def test_os_info_after_guest_reboot(self, matrix_windows_os_vm_from_template):
++        """Verify OS info is correctly restored after Windows VM guest reboot.
++
++        Reboots the Windows VM from within the guest and verifies that
++        guest agent data is available and correct after the reboot completes.
++        """
++        LOGGER.info("Verifying guest agent OS info persists after guest reboot.")
++        validate_virtctl_guest_agent_after_guest_reboot(
++            vm=matrix_windows_os_vm_from_template,
++            os_type=OS_FLAVOR_WINDOWS,
++        )
++
++    # Scenario 4: Agent Start Detection (P1)
++    @pytest.mark.dependency(depends=[f"{TESTS_CLASS_NAME}::start_vm"])
++    @pytest.mark.polarion("CNV-61262")
++    def test_os_info_after_agent_restart(self, matrix_windows_os_vm_from_template):
++        """Verify OS info appears when guest agent is restarted.
++
++        Stops the qemu-ga service, verifies agent is reported as disconnected,
++        then starts it again and verifies OS info becomes available.
++        """
++        LOGGER.info("Stopping QEMU guest agent service on Windows VM.")
++        run_os_command(
++            vm=matrix_windows_os_vm_from_template,
++            command=STOP_QEMU_GA_CMD,
++        )
++        wait_for_user_agent_down(
++            vm=matrix_windows_os_vm_from_template,
++            timeout=TIMEOUT_2MIN,
++        )
++
++        LOGGER.info("Guest agent stopped. Verifying agent is disconnected.")
++        virtctl_info_while_stopped = get_virtctl_os_info(vm=matrix_windows_os_vm_from_template)
++        assert not virtctl_info_while_stopped, (
++            "Virtctl should not return guest OS info when agent is stopped"
++        )
++
++        LOGGER.info("Starting QEMU guest agent service on Windows VM.")
++        run_os_command(
++            vm=matrix_windows_os_vm_from_template,
++            command=START_QEMU_GA_CMD,
++        )
++
++        LOGGER.info("Waiting for guest agent to reconnect and report OS info.")
++        matrix_windows_os_vm_from_template.wait_for_agent_connected(timeout=TIMEOUT_5MIN)
++
++        LOGGER.info("Verifying OS info is now available after agent restart.")
++        guest_os_info = get_guest_os_info(vmi=matrix_windows_os_vm_from_template.vmi)
++        assert guest_os_info, "VMI guest OS info is empty after agent restart"
++        assert guest_os_info.get("id"), (
++            f"OS info 'id' field is missing after agent restart: {guest_os_info}"
++        )
++
++        assert validate_virtctl_guest_agent_data_over_time(vm=matrix_windows_os_vm_from_template), (
++            "Guest agent stopped responding after agent restart"
++        )
++
++    @pytest.mark.dependency(depends=[f"{TESTS_CLASS_NAME}::create_vm"])
++    @pytest.mark.polarion("CNV-61262")
++    def test_vm_deletion(self, matrix_windows_os_vm_from_template):
++        """Delete Windows VM used for guest agent OS info tests."""
++        LOGGER.info("Deleting Windows VM.")
++        matrix_windows_os_vm_from_template.delete(wait=True)

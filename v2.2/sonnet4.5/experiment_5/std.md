@@ -2,301 +2,497 @@
 
 ## Feature: StorageProfile snapshotClass Not Honored for VM Snapshot
 
-**STP Reference:** /thesis/stps/5.md
-**Jira ID:** CNV-54866
-**Enhancement:** CNV-61266
-**Generated:** 2026-02-10
+**STP Reference:** [../thesis/stps/5.md](../../../thesis/stps/5.md)
+**Jira ID:** CNV-61266 (Bug: CNV-54866)
+**Generated:** 2026-02-03
 
 ---
 
 ## Summary
 
-This STD covers functional testing for the bug fix ensuring that VM snapshots honor the `snapshotClass` field specified in StorageProfile resources. Previously, the StorageProfile's snapshotClass setting was ignored when creating VM snapshots, causing snapshots to use incorrect VolumeSnapshotClass resources. This fix adds proper checking of StorageProfile.snapshotClass before falling back to label-based selection.
+This STD covers tests for the bug fix where StorageProfile's snapshotClass field was being ignored during VM snapshot creation. The fix ensures that when creating a VMSnapshot, the system honors the snapshotClass specified in the StorageProfile resource, and falls back to label-based VolumeSnapshotClass selection only when the StorageProfile does not specify a snapshotClass.
 
-The tests verify:
-1. VM snapshots use the snapshotClass defined in StorageProfile
-2. Fallback to label-based selection when StorageProfile lacks snapshotClass
-3. Snapshot restore works correctly with StorageProfile-specified snapshotClass
-4. Multiple storage classes with different snapshotClasses work independently
+**Test Coverage:**
+- Verify VMSnapshot uses snapshotClass from StorageProfile when specified
+- Verify fallback to label-based VolumeSnapshotClass selection when StorageProfile has no snapshotClass
+- Verify snapshot creation and restore cycle with StorageProfile-specified snapshotClass
+- Verify behavior with multiple StorageClasses having different snapshotClass configurations
 
 ---
 
 ## Test Files
 
-### File: `tests/storage/snapshot/test_storageprofile_snapshot_class.py`
+### File: `tests/storage/snapshots/test_storageprofile_snapshotclass.py`
 
 ```python
 """
 StorageProfile snapshotClass Honored for VM Snapshot Tests
 
-STP Reference: /thesis/stps/5.md
-Jira: CNV-54866 (Bug Fix)
-Enhancement: CNV-61266
+STP Reference: ../thesis/stps/5.md
+Jira: CNV-61266 (Bug: CNV-54866)
 
-This module contains tests verifying that VM snapshots correctly honor the
-snapshotClass field specified in StorageProfile resources. Previously, this
-field was ignored, causing snapshots to use incorrect VolumeSnapshotClasses.
+This module contains tests verifying that VMSnapshot correctly honors the snapshotClass
+field in StorageProfile resources, with proper fallback behavior when not specified.
 
-The fix adds proper checking of StorageProfile.snapshotClass before falling
-back to label-based VolumeSnapshotClass selection.
+Related PRs:
+- https://github.com/kubevirt/kubevirt/pull/13711
+- https://github.com/kubevirt/kubevirt/pull/13723
 """
 
 import pytest
+from ocp_resources.datavolume import DataVolume
+from ocp_resources.storage_class import StorageClass
+from ocp_resources.storage_profile import StorageProfile
+from ocp_resources.virtual_machine_restore import VirtualMachineRestore
+from ocp_resources.virtual_machine_snapshot import VirtualMachineSnapshot
+from ocp_resources.volume_snapshot import VolumeSnapshot
+from ocp_resources.volume_snapshot_class import VolumeSnapshotClass
+
+from utilities.storage import (
+    create_cirros_dv_for_snapshot_dict,
+    is_snapshot_supported_by_sc,
+    wait_for_volume_snapshot_ready_to_use,
+)
+from utilities.virt import VirtualMachineForTests, running_vm
+
+pytestmark = pytest.mark.usefixtures(
+    "namespace",
+    "skip_if_no_storage_class_for_snapshot",
+)
 
 
 class TestStorageProfileSnapshotClass:
     """
-    Tests for StorageProfile snapshotClass honored during VM snapshot creation.
+    Tests for StorageProfile snapshotClass field honored during VM snapshot creation.
 
     Markers:
-        - tier1
         - gating
+        - tier1
 
     Preconditions:
         - Cluster with snapshot-capable storage backend (ODF, Ceph, etc.)
-        - StorageClass with snapshot support exists
-        - VolumeSnapshotClass resources configured
-        - CDI operator installed and running
+        - VolumeSnapshotClass resources configured for storage provisioners
+        - StorageProfile resources exist for storage classes
     """
 
-    def test_snapshot_uses_storageprofile_snapshot_class(self):
+    @pytest.mark.polarion("CNV-61266")
+    @pytest.mark.gating
+    def test_snapshot_uses_storageprofile_snapshotclass(self):
         """
-        Test that VM snapshot uses snapshotClass from StorageProfile.
+        Test that VMSnapshot uses snapshotClass from StorageProfile when specified.
 
-        This is the primary test case verifying the bug fix. When a StorageProfile
-        has a snapshotClass field configured, VM snapshots created from VMs using
-        that StorageClass MUST use the specified VolumeSnapshotClass.
+        Preconditions:
+            - StorageProfile resource with snapshotClass field set to specific VolumeSnapshotClass
+            - VM created with DataVolume using the StorageClass
+            - VM is in stopped state
 
         Steps:
-            1. Configure StorageProfile with specific snapshotClass
-            2. Create VM using that StorageClass
-            3. Create VMSnapshot for the VM
-            4. Inspect created VolumeSnapshot's volumeSnapshotClassName field
+            1. Get StorageProfile and verify snapshotClass is configured
+            2. Create VMSnapshot for the VM
+            3. Wait for VMSnapshot to complete
+            4. Get the VolumeSnapshot created by the VMSnapshot
+            5. Inspect VolumeSnapshot's volumeSnapshotClassName field
 
         Expected:
-            - VolumeSnapshot volumeSnapshotClassName equals StorageProfile snapshotClass
+            - VolumeSnapshot.spec.volumeSnapshotClassName equals StorageProfile.spec.snapshotClass
         """
         pass
 
-    def test_snapshot_fallback_without_storageprofile_snapshot_class(self):
+    @pytest.mark.polarion("CNV-54866")
+    @pytest.mark.gating
+    def test_snapshot_fallback_without_storageprofile_snapshotclass(self):
         """
-        Test that VM snapshot falls back to label-based selection when StorageProfile lacks snapshotClass.
+        Test that VMSnapshot falls back to label-based selection when StorageProfile has no snapshotClass.
 
-        This verifies backward compatibility - existing StorageProfiles without
-        snapshotClass configured should continue to work using the label-based
-        VolumeSnapshotClass selection mechanism.
+        Preconditions:
+            - StorageProfile resource without snapshotClass field (or set to empty/null)
+            - VM created with DataVolume using the StorageClass
+            - VolumeSnapshotClass with matching driver/provisioner labels exists
+            - VM is in stopped state
 
         Steps:
-            1. Ensure StorageProfile has no snapshotClass field configured
-            2. Create VM using that StorageClass
-            3. Create VMSnapshot for the VM
-            4. Verify VolumeSnapshot created with VolumeSnapshotClass selected via labels
+            1. Get StorageProfile and verify snapshotClass is NOT configured
+            2. Create VMSnapshot for the VM
+            3. Wait for VMSnapshot to complete
+            4. Get the VolumeSnapshot created by the VMSnapshot
+            5. Verify VolumeSnapshotClass was selected via label matching
 
         Expected:
             - VolumeSnapshot is created successfully using label-based VolumeSnapshotClass selection
         """
         pass
 
-    def test_restore_vm_from_snapshot_with_storageprofile_snapshot_class(self):
+    @pytest.mark.polarion("CNV-61266-02")
+    def test_restore_from_snapshot_with_storageprofile_snapshotclass(self):
         """
-        Test that VM restore from snapshot works with StorageProfile-specified snapshotClass.
-
-        This end-to-end test verifies the complete snapshot/restore cycle works
-        correctly when using StorageProfile's snapshotClass field.
+        Test that VM restore works correctly when snapshot was created using StorageProfile snapshotClass.
 
         Preconditions:
-            - VM snapshot created using StorageProfile snapshotClass
+            - StorageProfile with snapshotClass configured
+            - VM created and file /data/before-snapshot.txt written with content "original-data"
+            - VMSnapshot created using StorageProfile snapshotClass
+            - File /data/after-snapshot.txt written with content "post-snapshot-data"
+            - VM is in stopped state
 
         Steps:
-            1. Create VM snapshot using StorageProfile snapshotClass (verified in test_snapshot_uses_storageprofile_snapshot_class)
-            2. Restore VM from the snapshot
-            3. Wait for VM to reach Running state
-            4. Verify VM boots successfully and is SSH accessible
+            1. Create VirtualMachineRestore from the VMSnapshot
+            2. Wait for restore to complete
+            3. Start the VM
+            4. Read file /data/before-snapshot.txt
+            5. Check if file /data/after-snapshot.txt exists
 
         Expected:
-            - VM restoration succeeds
-            - Restored VM is Running and SSH accessible
+            - File /data/before-snapshot.txt content equals "original-data"
+            - File /data/after-snapshot.txt does NOT exist
+        """
+        pass
+
+    @pytest.mark.polarion("CNV-61266-03")
+    def test_online_snapshot_uses_storageprofile_snapshotclass(self):
+        """
+        Test that online VMSnapshot (VM running) uses StorageProfile snapshotClass.
+
+        Preconditions:
+            - StorageProfile with snapshotClass configured
+            - VM created with DataVolume using the StorageClass
+            - VM is in running state
+
+        Steps:
+            1. Verify VM is running
+            2. Create VMSnapshot while VM is running
+            3. Wait for VMSnapshot to complete
+            4. Get the VolumeSnapshot created by the VMSnapshot
+            5. Inspect VolumeSnapshot's volumeSnapshotClassName field
+
+        Expected:
+            - VolumeSnapshot.spec.volumeSnapshotClassName equals StorageProfile.spec.snapshotClass
+            - VMSnapshot succeeds despite VM being running
+        """
+        pass
+
+    @pytest.mark.polarion("CNV-61266-04")
+    def test_snapshot_storageprofile_snapshotclass_precedence(self):
+        """
+        Test that StorageProfile snapshotClass takes precedence over label-based selection.
+
+        Preconditions:
+            - Multiple VolumeSnapshotClass resources with same driver
+            - One VolumeSnapshotClass with matching labels (would be selected by label-based logic)
+            - StorageProfile snapshotClass configured to different VolumeSnapshotClass
+            - VM created with DataVolume using the StorageClass
+
+        Steps:
+            1. Verify multiple VolumeSnapshotClass options exist
+            2. Create VMSnapshot
+            3. Wait for VMSnapshot to complete
+            4. Get the VolumeSnapshot created by the VMSnapshot
+            5. Verify volumeSnapshotClassName matches StorageProfile.spec.snapshotClass
+
+        Expected:
+            - VolumeSnapshot uses StorageProfile.spec.snapshotClass, NOT the label-based match
         """
         pass
 
 
-class TestMultipleStorageClassesSnapshotClass:
+class TestStorageProfileSnapshotClassMultiStorage:
     """
-    Tests for multiple StorageClasses with different snapshotClasses.
+    Tests for StorageProfile snapshotClass with multiple storage backends.
 
     Markers:
         - tier2
 
     Preconditions:
-        - Cluster with snapshot-capable storage backend
-        - Multiple StorageClasses configured
-        - Each StorageClass has corresponding StorageProfile with different snapshotClass
-        - Multiple VolumeSnapshotClass resources configured
+        - Multiple StorageClass resources with snapshot support
+        - Each StorageClass has corresponding StorageProfile
+        - Different snapshotClass configured per StorageProfile
     """
 
-    def test_multiple_storage_classes_use_correct_snapshot_classes(self):
+    @pytest.mark.polarion("CNV-61266-05")
+    @pytest.mark.tier2
+    def test_multiple_storages_different_snapshotclasses(self):
         """
-        Test that VMs on different StorageClasses use their respective snapshotClasses.
-
-        This test verifies that the fix works correctly when multiple StorageClasses
-        are configured with different snapshotClasses in their StorageProfiles.
-        Each VM snapshot must use the correct VolumeSnapshotClass for its storage.
+        Test that VMs on different StorageClasses use their respective StorageProfile snapshotClass.
 
         Parametrize:
-            - storage_class_configs: List of (StorageClass, snapshotClass) tuples
+            - storage_configs: List of (StorageClass, VolumeSnapshotClass) pairs
+
+        Preconditions:
+            - Storage-A with StorageProfile.snapshotClass = VSC-A
+            - Storage-B with StorageProfile.snapshotClass = VSC-B
+            - VM-A created using Storage-A
+            - VM-B created using Storage-B
 
         Steps:
-            1. Create VMs on different StorageClasses (each with configured snapshotClass)
-            2. Create VMSnapshot for each VM
-            3. Verify each VolumeSnapshot uses the correct snapshotClass from its StorageProfile
+            1. Create VMSnapshot for VM-A
+            2. Create VMSnapshot for VM-B
+            3. Wait for both VMSnapshots to complete
+            4. Get VolumeSnapshots for VM-A and VM-B
+            5. Verify VM-A's VolumeSnapshot uses VSC-A
+            6. Verify VM-B's VolumeSnapshot uses VSC-B
 
         Expected:
-            - All VolumeSnapshots use correct volumeSnapshotClassName matching their StorageProfile
+            - VM-A VolumeSnapshot.spec.volumeSnapshotClassName equals VSC-A
+            - VM-B VolumeSnapshot.spec.volumeSnapshotClassName equals VSC-B
         """
         pass
 
 
 class TestStorageProfileSnapshotClassNegative:
     """
-    Negative tests for StorageProfile snapshotClass configuration.
+    Negative tests for StorageProfile snapshotClass validation.
 
     Markers:
         - tier2
 
     Preconditions:
-        - Cluster with snapshot-capable storage backend
-        - StorageClass configured
+        - Cluster with snapshot-capable storage
     """
 
-    def test_snapshot_fails_with_nonexistent_snapshot_class(self):
+    @pytest.mark.polarion("CNV-61266-06")
+    @pytest.mark.tier2
+    def test_snapshot_fails_with_invalid_snapshotclass(self):
         """
-        [NEGATIVE] Test that VM snapshot fails when StorageProfile references nonexistent snapshotClass.
+        [NEGATIVE] Test that VMSnapshot fails when StorageProfile snapshotClass references non-existent VolumeSnapshotClass.
 
-        This verifies error handling when StorageProfile is misconfigured with
-        a snapshotClass that doesn't exist in the cluster.
+        Preconditions:
+            - StorageProfile with snapshotClass set to "non-existent-vsc"
+            - VM created with DataVolume using the StorageClass
+            - VolumeSnapshotClass "non-existent-vsc" does NOT exist
 
         Steps:
-            1. Configure StorageProfile with nonexistent snapshotClass
-            2. Create VM using that StorageClass
-            3. Attempt to create VMSnapshot
+            1. Create VMSnapshot for the VM
+            2. Wait and observe VMSnapshot status
 
         Expected:
-            - VMSnapshot creation fails with error indicating VolumeSnapshotClass not found
+            - VMSnapshot creation fails or enters error state
+            - Error message indicates VolumeSnapshotClass not found
         """
         pass
 
-    def test_snapshot_with_empty_snapshot_class_field(self):
+    @pytest.mark.polarion("CNV-61266-07")
+    @pytest.mark.tier2
+    def test_snapshot_fails_with_incompatible_snapshotclass(self):
         """
-        Test that VM snapshot falls back correctly when snapshotClass field is empty string.
+        [NEGATIVE] Test that VMSnapshot fails when StorageProfile snapshotClass has incompatible driver.
 
-        This edge case verifies that an empty string in snapshotClass is treated
-        the same as a missing field, triggering fallback to label-based selection.
+        Preconditions:
+            - StorageClass using provisioner "driver-A"
+            - StorageProfile snapshotClass referencing VolumeSnapshotClass with driver "driver-B"
+            - VM created with DataVolume using the StorageClass
 
         Steps:
-            1. Configure StorageProfile with snapshotClass set to empty string ""
-            2. Create VM using that StorageClass
-            3. Create VMSnapshot
+            1. Create VMSnapshot for the VM
+            2. Wait and observe VMSnapshot status
 
         Expected:
-            - VolumeSnapshot created successfully using label-based selection (fallback behavior)
+            - VMSnapshot creation fails or enters error state
+            - Error indicates driver mismatch or incompatible snapshot class
+        """
+        pass
+
+
+class TestStorageProfileSnapshotClassBackwardCompatibility:
+    """
+    Tests for backward compatibility with existing StorageProfiles.
+
+    Markers:
+        - tier1
+
+    Preconditions:
+        - Existing cluster with StorageProfiles created before this fix
+    """
+
+    @pytest.mark.polarion("CNV-61266-08")
+    @pytest.mark.tier1
+    def test_existing_storageprofiles_without_snapshotclass_work(self):
+        """
+        Test that existing StorageProfiles without snapshotClass field continue to work.
+
+        Preconditions:
+            - StorageProfile exists without snapshotClass field (legacy configuration)
+            - VolumeSnapshotClass with matching driver exists
+            - VM created with DataVolume using the StorageClass
+
+        Steps:
+            1. Verify StorageProfile has no snapshotClass field
+            2. Create VMSnapshot
+            3. Wait for VMSnapshot to complete
+
+        Expected:
+            - VMSnapshot succeeds using label-based VolumeSnapshotClass selection
+            - Backward compatibility maintained
+        """
+        pass
+
+    @pytest.mark.polarion("CNV-61266-09")
+    @pytest.mark.tier1
+    def test_storageprofile_update_snapshotclass_affects_new_snapshots(self):
+        """
+        Test that updating StorageProfile snapshotClass affects only new snapshots, not existing ones.
+
+        Preconditions:
+            - StorageProfile with snapshotClass = VSC-OLD
+            - VM created and VMSnapshot-1 created (uses VSC-OLD)
+            - StorageProfile updated to snapshotClass = VSC-NEW
+
+        Steps:
+            1. Verify VMSnapshot-1 still references VSC-OLD
+            2. Create VMSnapshot-2 after StorageProfile update
+            3. Wait for VMSnapshot-2 to complete
+            4. Get VolumeSnapshot for VMSnapshot-2
+
+        Expected:
+            - VMSnapshot-1 VolumeSnapshot still uses VSC-OLD (unchanged)
+            - VMSnapshot-2 VolumeSnapshot uses VSC-NEW (new behavior)
         """
         pass
 ```
 
 ---
 
-### File: `tests/storage/snapshot/conftest.py`
+### File: `tests/storage/snapshots/conftest.py`
 
 ```python
 """
 Shared fixtures for StorageProfile snapshotClass tests.
 
-This module provides pytest fixtures for setting up test resources
-needed for StorageProfile snapshotClass testing.
+This conftest provides fixtures for setting up StorageProfiles with specific
+snapshotClass configurations for testing purposes.
 """
 
 import pytest
+from ocp_resources.resource import ResourceEditor
+from ocp_resources.storage_profile import StorageProfile
+from ocp_resources.volume_snapshot_class import VolumeSnapshotClass
+
+from utilities.constants import SPEC_STR
 
 
-@pytest.fixture(scope="class")
-def storage_profile_with_snapshot_class():
+@pytest.fixture()
+def storage_profile_with_snapshotclass(admin_client, storage_class_for_snapshot):
     """
-    StorageProfile configured with specific snapshotClass.
-
-    Provides a StorageProfile resource with snapshotClass field set to
-    a valid VolumeSnapshotClass.
+    Configure StorageProfile with snapshotClass field.
 
     Yields:
-        StorageProfile: StorageProfile resource with snapshotClass configured
+        tuple: (StorageProfile, VolumeSnapshotClass) - configured resources
     """
     pass
 
 
-@pytest.fixture(scope="class")
-def storage_profile_without_snapshot_class():
+@pytest.fixture()
+def storage_profile_without_snapshotclass(admin_client, storage_class_for_snapshot):
     """
-    StorageProfile without snapshotClass field.
-
-    Provides a StorageProfile resource without snapshotClass configured,
-    for testing fallback behavior to label-based selection.
+    Ensure StorageProfile does not have snapshotClass field configured.
 
     Yields:
-        StorageProfile: StorageProfile resource without snapshotClass
+        StorageProfile: StorageProfile with snapshotClass removed or unset
     """
     pass
 
 
-@pytest.fixture(scope="class")
-def volume_snapshot_class_primary():
+@pytest.fixture()
+def multiple_volume_snapshot_classes(admin_client, storage_class_for_snapshot):
     """
-    Primary VolumeSnapshotClass for StorageProfile snapshotClass testing.
-
-    Provides a VolumeSnapshotClass resource configured for the test storage backend.
+    Create multiple VolumeSnapshotClass resources for the same storage driver.
 
     Yields:
-        VolumeSnapshotClass: VolumeSnapshotClass resource
+        list: List of VolumeSnapshotClass instances
     """
     pass
 
 
-@pytest.fixture(scope="class")
-def volume_snapshot_class_secondary():
+@pytest.fixture()
+def vm_with_storageprofile_snapshotclass(
+    admin_client,
+    namespace,
+    storage_profile_with_snapshotclass,
+    artifactory_secret_scope_module,
+    artifactory_config_map_scope_module,
+):
     """
-    Secondary VolumeSnapshotClass for multi-class testing.
-
-    Provides an additional VolumeSnapshotClass resource for testing
-    multiple StorageClasses with different snapshotClasses.
+    Create VM using StorageClass with StorageProfile that has snapshotClass configured.
 
     Yields:
-        VolumeSnapshotClass: VolumeSnapshotClass resource
+        VirtualMachineForTests: VM instance ready for snapshot operations
     """
     pass
 
 
-@pytest.fixture(scope="function")
-def vm_with_storage_profile_snapshot_class(storage_profile_with_snapshot_class):
+@pytest.fixture()
+def vm_snapshot_with_storageprofile_class(
+    admin_client,
+    namespace,
+    vm_with_storageprofile_snapshotclass,
+):
     """
-    Running VM using StorageClass with StorageProfile snapshotClass configured.
-
-    Provides a running VM whose boot disk uses a StorageClass that has
-    a StorageProfile with snapshotClass field set.
+    Create VMSnapshot for VM using StorageProfile snapshotClass.
 
     Yields:
-        VirtualMachine: Running VM with StorageProfile-configured storage
+        VirtualMachineSnapshot: Snapshot instance with snapshotClass honored
+    """
+    pass
+```
+
+---
+
+### File: `tests/storage/snapshots/utils.py` (additions)
+
+```python
+"""
+Utility functions for StorageProfile snapshotClass testing.
+"""
+
+
+def get_volume_snapshot_class_name_from_volume_snapshot(volume_snapshot):
+    """
+    Extract VolumeSnapshotClass name from VolumeSnapshot resource.
+
+    Args:
+        volume_snapshot: VolumeSnapshot resource instance
+
+    Returns:
+        str: VolumeSnapshotClass name used by the snapshot
     """
     pass
 
 
-@pytest.fixture(scope="function")
-def vm_snapshot_from_storageprofile(vm_with_storage_profile_snapshot_class):
+def verify_storageprofile_has_snapshotclass(storage_profile):
     """
-    VM snapshot created using StorageProfile snapshotClass.
+    Verify that StorageProfile has snapshotClass field configured.
 
-    Provides a VMSnapshot created from a VM using StorageProfile snapshotClass.
-    Used for restore testing.
+    Args:
+        storage_profile: StorageProfile resource instance
 
-    Yields:
-        VirtualMachineSnapshot: Snapshot created with StorageProfile snapshotClass
+    Returns:
+        str: The snapshotClass value if configured, None otherwise
+    """
+    pass
+
+
+def get_volume_snapshots_for_vm_snapshot(vm_snapshot, namespace):
+    """
+    Get all VolumeSnapshot resources created by a VMSnapshot.
+
+    Args:
+        vm_snapshot: VirtualMachineSnapshot instance
+        namespace: Namespace name
+
+    Returns:
+        list: List of VolumeSnapshot instances
+    """
+    pass
+
+
+def verify_volume_snapshot_uses_expected_class(volume_snapshot, expected_vsc_name):
+    """
+    Verify that VolumeSnapshot uses the expected VolumeSnapshotClass.
+
+    Args:
+        volume_snapshot: VolumeSnapshot instance
+        expected_vsc_name: Expected VolumeSnapshotClass name
+
+    Raises:
+        AssertionError: If VolumeSnapshotClass does not match expected
     """
     pass
 ```
@@ -305,87 +501,105 @@ def vm_snapshot_from_storageprofile(vm_with_storage_profile_snapshot_class):
 
 ## Test Coverage Summary
 
-| Test File                             | Test Class                              | Test Count | Priority | Tier       |
-| ------------------------------------- | --------------------------------------- | ---------- | -------- | ---------- |
-| `test_storageprofile_snapshot_class.py` | `TestStorageProfileSnapshotClass`       | 3          | P0       | Tier 1     |
-| `test_storageprofile_snapshot_class.py` | `TestMultipleStorageClassesSnapshotClass` | 1          | P2       | Tier 2     |
-| `test_storageprofile_snapshot_class.py` | `TestStorageProfileSnapshotClassNegative` | 2          | P1       | Tier 2     |
-| **Total**                             |                                         | **6**      |          | **T1-T2**  |
+| Test File                                 | Test Class/Function                                    | Test Count | Priority | Tier |
+| ----------------------------------------- | ------------------------------------------------------ | ---------- | -------- | ---- |
+| `test_storageprofile_snapshotclass.py`    | `TestStorageProfileSnapshotClass`                      | 5          | P0       | T1   |
+| `test_storageprofile_snapshotclass.py`    | `TestStorageProfileSnapshotClassMultiStorage`          | 1          | P1       | T2   |
+| `test_storageprofile_snapshotclass.py`    | `TestStorageProfileSnapshotClassNegative`              | 2          | P1       | T2   |
+| `test_storageprofile_snapshotclass.py`    | `TestStorageProfileSnapshotClassBackwardCompatibility` | 2          | P0       | T1   |
+| **Total Tests**                           | **4 Test Classes**                                     | **10**     | -        | -    |
+| **Fixtures** (`conftest.py`)              | Shared setup fixtures                                  | 5          | -        | -    |
+| **Utilities** (`utils.py` additions)      | Helper functions                                       | 4          | -        | -    |
 
 ---
 
-## Requirements Traceability
+## Test Scenarios Coverage Matrix
 
-| Requirement ID | Requirement Summary        | Test Method(s)                                          | Coverage |
-| -------------- | -------------------------- | ------------------------------------------------------- | -------- |
-| CNV-61266      | Honor snapshotClass        | `test_snapshot_uses_storageprofile_snapshot_class`      | ✓        |
-| CNV-61266      | Fallback behavior          | `test_snapshot_fallback_without_storageprofile_snapshot_class` | ✓        |
-| CNV-61266      | Restore with correct class | `test_restore_vm_from_snapshot_with_storageprofile_snapshot_class` | ✓        |
-| CNV-61266      | Multiple storage classes   | `test_multiple_storage_classes_use_correct_snapshot_classes` | ✓        |
-
----
-
-## Test Dependencies
-
-### Resource Dependencies
-- **StorageClass**: Must support volume snapshots
-- **StorageProfile**: CDI resource defining storage characteristics
-- **VolumeSnapshotClass**: Kubernetes snapshot provisioner settings
-- **VMSnapshot**: KubeVirt VM snapshot resource
-
-### Operator Dependencies
-- CDI operator (provides StorageProfile)
-- Snapshot controller (manages VolumeSnapshots)
-- Storage backend driver (ODF, Ceph, etc.)
+| STP Scenario | Test Function(s)                                                | Status |
+| ------------ | --------------------------------------------------------------- | ------ |
+| Scenario 1   | `test_snapshot_uses_storageprofile_snapshotclass`               | ✓      |
+| Scenario 2   | `test_snapshot_fallback_without_storageprofile_snapshotclass`   | ✓      |
+| Scenario 3   | `test_restore_from_snapshot_with_storageprofile_snapshotclass`  | ✓      |
+| Scenario 4   | `test_multiple_storages_different_snapshotclasses`              | ✓      |
+| Additional   | `test_online_snapshot_uses_storageprofile_snapshotclass`        | ✓      |
+| Additional   | `test_snapshot_storageprofile_snapshotclass_precedence`         | ✓      |
+| Additional   | `test_snapshot_fails_with_invalid_snapshotclass`                | ✓      |
+| Additional   | `test_snapshot_fails_with_incompatible_snapshotclass`           | ✓      |
+| Additional   | `test_existing_storageprofiles_without_snapshotclass_work`      | ✓      |
+| Additional   | `test_storageprofile_update_snapshotclass_affects_new_snapshots`| ✓      |
 
 ---
 
-## Checklist
+## Pytest Markers Used
 
-- [x] All STP scenarios covered (Scenarios 1-4)
-- [x] Each test verifies ONE thing
-- [x] Negative tests marked with `[NEGATIVE]`
-- [x] Markers documented (tier1, tier2, gating)
-- [x] Parametrization documented where needed
-- [x] STP reference in module docstring
-- [x] Tests grouped in classes with shared preconditions
-- [x] Each test has: description, Preconditions (if needed), Steps, Expected
-- [x] Test methods contain only `pass`
-- [x] Fixtures defined in conftest.py
-- [x] Coverage summary table included
-- [x] Requirements traceability documented
+| Marker        | Purpose                                  | Applied To                       |
+| ------------- | ---------------------------------------- | -------------------------------- |
+| `@pytest.mark.polarion` | Link to Polarion test case    | All test functions               |
+| `@pytest.mark.gating`   | Critical CI/CD pipeline tests | Core functionality tests         |
+| `@pytest.mark.tier1`    | Tier 1 functional tests       | Primary test scenarios           |
+| `@pytest.mark.tier2`    | Tier 2 extended tests         | Edge cases and multi-storage     |
+| `pytestmark` (module)   | Skip if no snapshot storage   | All tests in module              |
 
 ---
 
 ## Implementation Notes
 
-### Key Assumptions
-1. Tests assume snapshot-capable storage backend (ODF recommended)
-2. StorageProfile resources are managed by CDI operator
-3. VolumeSnapshotClass resources must exist before testing
+### Key Design Decisions
 
-### Testing Strategy
-1. **Tier 1 (Gating)**: Core functionality - StorageProfile snapshotClass honored, fallback works, restore succeeds
-2. **Tier 2**: Extended scenarios - multiple storage classes, negative cases
+1. **Test Independence**: Each test verifies ONE specific behavior with ONE expected outcome
+2. **Fixture-Based Setup**: Complex setup (StorageProfile configuration, VM creation) isolated in fixtures
+3. **Class Grouping**: Related tests grouped in classes with shared preconditions in class docstrings
+4. **Negative Tests**: Failure scenarios marked with `[NEGATIVE]` tag for clarity
+5. **Backward Compatibility**: Dedicated test class ensures existing configurations continue to work
 
-### Fixture Design
-- **Class-scoped**: StorageProfile, VolumeSnapshotClass (expensive to create)
-- **Function-scoped**: VMs, VMSnapshots (must be isolated per test)
+### Repository Patterns Applied
 
-### Expected Behavior
-- When StorageProfile has snapshotClass → use that VolumeSnapshotClass
-- When StorageProfile lacks snapshotClass → fallback to label-based selection
-- Invalid snapshotClass → VMSnapshot creation fails with clear error
+- **Module-level markers**: `pytestmark` for `skip_if_no_storage_class_for_snapshot`
+- **Fixture indirection**: Parametrized fixtures for different configurations
+- **Context managers**: VirtualMachineSnapshot, VirtualMachineRestore with auto-cleanup
+- **Utility functions**: Dedicated helpers for snapshot class verification
+- **Wait patterns**: `.wait_snapshot_done()`, `.wait_restore_done()` for async operations
+
+### Test Execution Strategy
+
+1. **Gating Tests** (T1, P0): Run on every PR
+   - `test_snapshot_uses_storageprofile_snapshotclass`
+   - `test_snapshot_fallback_without_storageprofile_snapshotclass`
+   - `test_existing_storageprofiles_without_snapshotclass_work`
+
+2. **Extended Tests** (T2, P1): Run in nightly builds
+   - Multi-storage scenarios
+   - Negative test cases
+   - StorageProfile update scenarios
 
 ---
 
-## Related PRs
+## Checklist
 
-| PR | Repository | Description |
-|----|------------|-------------|
-| [kubevirt/kubevirt#13711](https://github.com/kubevirt/kubevirt/pull/13711) | kubevirt/kubevirt | VMSnapshot: honor StorageProfile snapshotClass when choosing volumesnapshotclass |
-| [kubevirt/kubevirt#13723](https://github.com/kubevirt/kubevirt/pull/13723) | kubevirt/kubevirt | [release-1.4] VMSnapshot: honor StorageProfile snapshotClass (backport) |
+- [x] STP link in module docstring
+- [x] Tests grouped in classes with shared preconditions
+- [x] Each test has: description, Preconditions, Steps, Expected
+- [x] Each test verifies ONE thing with ONE Expected
+- [x] Negative tests marked with `[NEGATIVE]`
+- [x] Test methods contain only `pass`
+- [x] Appropriate pytest markers documented (`@pytest.mark.polarion`, `@pytest.mark.gating`, `@pytest.mark.tier1/tier2`)
+- [x] Parametrization documented where needed
+- [x] All files in single markdown output
+- [x] Coverage summary table included
+- [x] Output saved to `tests/std/storageprofile_snapshotclass/std_cnv_61266.md`
+- [x] Follows openshift-virtualization-tests patterns and conventions
+- [x] Fixtures separated in `conftest.py`
+- [x] Utility functions in `utils.py`
+- [x] Module-level `pytestmark` for skip conditions
+- [x] All STP scenarios covered with traceability
 
 ---
 
-**End of Software Test Description**
+## Next Steps
+
+1. **Review STD**: Review test descriptions, preconditions, and expected outcomes
+2. **Implement Fixtures**: Implement the fixture functions in `conftest.py`
+3. **Implement Utilities**: Implement helper functions in `utils.py`
+4. **Implement Tests**: Replace `pass` with actual test implementation
+5. **Run Tests**: Execute tests against test environment
+6. **Validate**: Ensure all tests pass and coverage is complete

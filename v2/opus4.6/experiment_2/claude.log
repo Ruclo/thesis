@@ -1,0 +1,4 @@
+Both files are clean. Pyright passed with **0 errors after 1 iteration** of fixes (added `assert vnc_child` guard to 3 locations where `VNCConnection.__enter__` could theoretically return `None`).
+
+**Fix Summary:**
+- **3 errors fixed**: `reportOptionalMemberAccess` on `vnc_child.isalive()` — resolved by adding `assert vnc_child, "Failed to establish VNC connection"` immediately after entering the `VNCConnection` context manager in all 3 test methods. This is a correct runtime assertion (not defensive programming) because `VNCConnection.__enter__` can legitimately return `None` if the timeout sampler yields no results.

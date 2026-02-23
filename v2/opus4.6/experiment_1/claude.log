@@ -1,0 +1,7 @@
+Both files pass pyright with **0 errors**.
+
+**Pyright Healing Summary:**
+- File: `tests/install_upgrade_operators/common_instancetypes_deployment/test_common_instancetypes_deployment.py` - **CLEAN** (0 errors, 0 iterations needed)
+- File: `tests/install_upgrade_operators/common_instancetypes_deployment/conftest.py` - **CLEAN** (0 errors, 0 iterations needed)
+
+No fixes were needed - the generated code is type-safe as written.

@@ -1,31 +1,30 @@
-diff --git a/tests/virt/node/hotplug/test_cpu_maxsockets_limits.py b/tests/virt/node/hotplug/test_cpu_maxsockets_limits.py
+diff --git a/tests/virt/node/hotplug/test_cpu_hotplug_max_sockets_limit.py b/tests/virt/node/hotplug/test_cpu_hotplug_max_sockets_limit.py
 new file mode 100644
-index 0000000..2a4a55c
+index 0000000..b3b910f
 --- /dev/null
-+++ b/tests/virt/node/hotplug/test_cpu_maxsockets_limits.py
-@@ -0,0 +1,298 @@
++++ b/tests/virt/node/hotplug/test_cpu_hotplug_max_sockets_limit.py
+@@ -0,0 +1,251 @@
 +"""
-+Test CPU Hotplug MaxSockets Limiting
++Test CPU hotplug MaxSockets limit enforcement
 +
-+This module tests the CPU hotplug MaxSockets limiting functionality to ensure that:
-+- MaxSockets value is correctly calculated and limited based on the maximum vCPUs allowed
-+- CPU hotplug operations are properly blocked when reaching the maximum limit
-+- Appropriate error messages are displayed when attempting to exceed limits
-+- Full CPU hotplug lifecycle works correctly with MaxSockets enforcement
++This test suite verifies that CPU hotplug respects MaxSockets limits based on
++maximum vCPUs, preventing VMs from exceeding configured CPU limits through hotplug
++operations.
 +
-+Test scenarios validate the fix from PR kubevirt/kubevirt#14511 which limits MaxSockets
-+based on maximum allowed vCPUs to prevent resource overcommit.
-+
-+Related Jira: CNV-61263 (Feature), CNV-57352 (Bug Fix)
++Related Jira:
++    - CNV-57352: Bug fix for MaxSockets limit calculation
++    - CNV-61263: Enhancement tracking
 +"""
 +
 +import logging
 +
 +import pytest
 +from kubernetes.dynamic.exceptions import UnprocessibleEntityError
++from ocp_resources.template import Template
++from ocp_resources.virtual_machine import VirtualMachine
 +
-+from tests.os_params import RHEL_LATEST, RHEL_LATEST_LABELS, WINDOWS_LATEST, WINDOWS_LATEST_LABELS
-+from tests.utils import assert_guest_os_cpu_count, clean_up_migration_jobs, hotplug_spec_vm
++from tests.os_params import RHEL_LATEST, RHEL_LATEST_LABELS
++from tests.utils import hotplug_spec_vm, wait_for_guest_os_cpu_count
 +from utilities.constants import (
 +    EIGHT_CPU_SOCKETS,
 +    FOUR_CPU_SOCKETS,
@@ -34,25 +33,18 @@ index 0000000..2a4a55c
 +    ONE_CPU_THREAD,
 +    SIX_CPU_SOCKETS,
 +    TEN_CPU_SOCKETS,
-+    TEN_GI_MEMORY,
-+    TWO_CPU_SOCKETS,
++    TIMEOUT_5MIN,
 +)
 +from utilities.virt import (
 +    VirtualMachineForTestsFromTemplate,
-+    migrate_vm_and_verify,
-+    restart_vm_wait_for_running_vm,
 +    running_vm,
 +)
 +
-+pytestmark = pytest.mark.rwx_default_storage
-+
 +LOGGER = logging.getLogger(__name__)
-+TESTS_CLASS_NAME = "TestCPUMaxSocketsLimits"
 +
 +
 +@pytest.fixture(scope="class")
-+def maxsockets_vm(
-+    request,
++def vm_with_cpu_hotplug_enabled(
 +    namespace,
 +    unprivileged_client,
 +    golden_image_data_volume_template_for_test_scope_class,
@@ -60,22 +52,22 @@ index 0000000..2a4a55c
 +    vmx_disabled_flag,
 +):
 +    """
-+    Creates a VM with CPU hotplug capabilities and MaxSockets configuration.
++    VM configured with CPU hotplug enabled and MaxSockets limit.
 +
-+    The VM is configured with:
-+    - Initial sockets: 2
-+    - Max sockets: 8
-+    - Memory: 4Gi with max 10Gi for hotplug
++    This VM is configured with:
++    - Initial CPU sockets: 4
++    - Maximum CPU sockets: 8
++    - Memory: 4Gi
 +    """
++    vm_name = "vm-cpu-hotplug-max-sockets-test"
 +    with VirtualMachineForTestsFromTemplate(
-+        name=request.param["vm_name"],
-+        labels=request.param["template_labels"],
++        name=vm_name,
++        labels=Template.generate_template_labels(**RHEL_LATEST_LABELS),
 +        namespace=namespace.name,
 +        client=unprivileged_client,
 +        data_volume_template=golden_image_data_volume_template_for_test_scope_class,
 +        cpu_max_sockets=EIGHT_CPU_SOCKETS,
-+        memory_max_guest=TEN_GI_MEMORY,
-+        cpu_sockets=TWO_CPU_SOCKETS,
++        cpu_sockets=FOUR_CPU_SOCKETS,
 +        cpu_threads=ONE_CPU_THREAD,
 +        cpu_cores=ONE_CPU_CORE,
 +        memory_guest=FOUR_GI_MEMORY,
@@ -86,219 +78,180 @@ index 0000000..2a4a55c
 +        yield vm
 +
 +
-+@pytest.fixture()
-+def maxsockets_hotplug_operation(request, admin_client, maxsockets_vm):
-+    """
-+    Performs CPU hotplug operation and handles cleanup.
-+
-+    Accepts parameters:
-+    - sockets: Target socket count
-+    """
-+    param = request.param
-+    hotplug_spec_vm(vm=maxsockets_vm, sockets=param.get("sockets"))
-+    yield
-+    clean_up_migration_jobs(client=admin_client, vm=maxsockets_vm)
++@pytest.fixture(scope="class")
++def vm_initial_cpu_count(vm_with_cpu_hotplug_enabled):
++    """Verify initial CPU count matches spec before hotplug operations."""
++    wait_for_guest_os_cpu_count(vm=vm_with_cpu_hotplug_enabled, spec_cpu_amount=FOUR_CPU_SOCKETS)
++    return FOUR_CPU_SOCKETS
 +
 +
 +@pytest.mark.parametrize(
-+    "golden_image_data_source_for_test_scope_class, maxsockets_vm",
-+    [
-+        pytest.param(
-+            {"os_dict": RHEL_LATEST},
-+            {"template_labels": RHEL_LATEST_LABELS, "vm_name": "rhel-maxsockets-limits-vm"},
-+            id="RHEL-VM",
-+        ),
-+        pytest.param(
-+            {"os_dict": WINDOWS_LATEST},
-+            {"template_labels": WINDOWS_LATEST_LABELS, "vm_name": "windows-maxsockets-limits-vm"},
-+            id="WIN-VM",
-+            marks=[pytest.mark.special_infra, pytest.mark.high_resource_vm],
-+        ),
-+    ],
++    "golden_image_data_source_for_test_scope_class",
++    [pytest.param({"os_dict": RHEL_LATEST})],
 +    indirect=True,
 +)
-+class TestCPUMaxSocketsLimits:
++class TestCPUHotplugMaxSocketsLimit:
 +    """
-+    Test suite for CPU Hotplug MaxSockets limiting functionality.
++    Test suite for CPU hotplug MaxSockets limit enforcement.
 +
-+    Tests validate:
-+    - TS-01: MaxSockets Calculation Verification (P0)
-+    - TS-02: CPU Hotplug at Maximum Limit (P0)
-+    - TS-03: Error Handling for Limit Violations (P1)
-+    - TS-04: Full CPU Hotplug Lifecycle E2E (P1)
++    These tests verify that MaxSockets is properly limited based on maximum vCPUs
++    and that CPU hotplug operations cannot exceed the configured limits.
 +    """
 +
-+    @pytest.mark.dependency(name=f"{TESTS_CLASS_NAME}::test_verify_maxsockets_configuration")
-+    @pytest.mark.polarion("CNV-61263-01")
-+    def test_verify_maxsockets_configuration(self, maxsockets_vm):
++    @pytest.mark.polarion("CNV-61263")
++    def test_max_sockets_calculation(self, vm_with_cpu_hotplug_enabled, vm_initial_cpu_count):
 +        """
-+        TS-01: Verify MaxSockets configuration is correct.
++        Verify MaxSockets is properly limited based on maximum vCPUs.
 +
-+        Validates that:
-+        - VM is created with specified CPU configuration
-+        - Initial CPU count (2 sockets) is correct
-+        - MaxSockets value (8) is properly set
-+        - Guest OS recognizes the correct initial CPU count
++        Preconditions:
++            - VM with CPU hotplug enabled
++            - VM configured with max vCPUs limit
 +
-+        Priority: P0
-+        Type: Functional/Tier 1
++        Steps:
++            1. Create VM with specific max vCPUs (8 sockets)
++            2. Check calculated MaxSockets from VM spec
++            3. Verify MaxSockets equals max vCPUs
++
++        Expected Result:
++            - MaxSockets should be set to 8 (matching max vCPUs)
++            - MaxSockets should not exceed max vCPUs limit
 +        """
-+        LOGGER.info("Verifying initial MaxSockets configuration")
++        LOGGER.info(f"Verifying MaxSockets calculation for VM {vm_with_cpu_hotplug_enabled.name}")
 +
-+        # Verify VM CPU configuration
-+        assert maxsockets_vm.instance.spec.template.spec.domain.cpu.sockets == TWO_CPU_SOCKETS, (
-+            f"Expected initial sockets: {TWO_CPU_SOCKETS}, "
-+            f"got: {maxsockets_vm.instance.spec.template.spec.domain.cpu.sockets}"
++        vm_spec = vm_with_cpu_hotplug_enabled.instance.spec
++        vm_cpu_spec = vm_spec.template.spec.domain.cpu
++
++        max_sockets = vm_cpu_spec.get("maxSockets")
++        LOGGER.info(f"VM MaxSockets: {max_sockets}, Expected: {EIGHT_CPU_SOCKETS}")
++
++        assert max_sockets == EIGHT_CPU_SOCKETS, (
++            f"MaxSockets not properly limited. Expected: {EIGHT_CPU_SOCKETS}, Got: {max_sockets}"
 +        )
-+        assert maxsockets_vm.instance.spec.template.spec.domain.cpu.maxSockets == EIGHT_CPU_SOCKETS, (
-+            f"Expected maxSockets: {EIGHT_CPU_SOCKETS}, "
-+            f"got: {maxsockets_vm.instance.spec.template.spec.domain.cpu.maxSockets}"
++        LOGGER.info("MaxSockets correctly limited based on max vCPUs")
++
++    @pytest.mark.polarion("CNV-61263")
++    @pytest.mark.dependency(name="test_hotplug_within_limit")
++    def test_hotplug_cpu_within_limit(self, vm_with_cpu_hotplug_enabled, vm_initial_cpu_count):
++        """
++        Verify CPU hotplug succeeds when within MaxSockets limit.
++
++        Preconditions:
++            - VM running with initial CPU count (4 sockets)
++            - MaxSockets limit set to 8
++
++        Steps:
++            1. Start VM with 4 CPUs
++            2. Hotplug CPUs to 6 sockets (within limit)
++            3. Verify guest OS sees 6 CPUs
++
++        Expected Result:
++            - Hotplug operation succeeds
++            - Guest OS CPU count increases to 6
++        """
++        LOGGER.info(f"Testing CPU hotplug within limit for VM {vm_with_cpu_hotplug_enabled.name}")
++
++        target_sockets = SIX_CPU_SOCKETS
++        LOGGER.info(f"Hotplugging CPUs from {FOUR_CPU_SOCKETS} to {target_sockets} sockets")
++
++        hotplug_spec_vm(vm=vm_with_cpu_hotplug_enabled, sockets=target_sockets)
++
++        LOGGER.info("Verifying guest OS sees hotplugged CPUs")
++        wait_for_guest_os_cpu_count(vm=vm_with_cpu_hotplug_enabled, spec_cpu_amount=target_sockets)
++        LOGGER.info(f"Successfully hotplugged CPUs to {target_sockets} within limit")
++
++    @pytest.mark.polarion("CNV-61263")
++    @pytest.mark.dependency(depends=["test_hotplug_within_limit"])
++    def test_hotplug_cpu_at_exact_limit(self, vm_with_cpu_hotplug_enabled):
++        """
++        Verify CPU hotplug succeeds when reaching exact MaxSockets limit.
++
++        Preconditions:
++            - VM running with 6 CPUs (from previous test)
++            - MaxSockets limit set to 8
++
++        Steps:
++            1. Hotplug CPUs to 8 sockets (exact limit)
++            2. Verify guest OS sees 8 CPUs
++            3. Confirm no errors during hotplug
++
++        Expected Result:
++            - Hotplug to exact limit succeeds
++            - Guest OS CPU count reaches 8
++        """
++        LOGGER.info(f"Testing CPU hotplug to exact limit for VM {vm_with_cpu_hotplug_enabled.name}")
++
++        target_sockets = EIGHT_CPU_SOCKETS
++        LOGGER.info(f"Hotplugging CPUs to exact limit: {target_sockets} sockets")
++
++        hotplug_spec_vm(vm=vm_with_cpu_hotplug_enabled, sockets=target_sockets)
++
++        LOGGER.info("Verifying guest OS sees all hotplugged CPUs at limit")
++        wait_for_guest_os_cpu_count(vm=vm_with_cpu_hotplug_enabled, spec_cpu_amount=target_sockets)
++        LOGGER.info(f"Successfully hotplugged CPUs to exact limit: {target_sockets}")
++
++    @pytest.mark.polarion("CNV-61263")
++    @pytest.mark.dependency(depends=["test_hotplug_within_limit"])
++    def test_hotplug_cpu_exceeds_max_sockets_limit(self, vm_with_cpu_hotplug_enabled):
++        """
++        Verify error when attempting to hotplug CPUs beyond MaxSockets limit.
++
++        Preconditions:
++            - VM at max vCPUs (8 sockets)
++            - MaxSockets limit set to 8
++
++        Steps:
++            1. Attempt to hotplug CPUs to 10 sockets (beyond limit)
++            2. Verify operation is blocked
++            3. Check error message indicates limit violation
++
++        Expected Result:
++            - Hotplug operation fails with UnprocessibleEntityError
++            - Clear error message about exceeding MaxSockets limit
++            - VM remains at current CPU count
++        """
++        LOGGER.info(f"Testing CPU hotplug beyond limit for VM {vm_with_cpu_hotplug_enabled.name}")
++
++        invalid_sockets = TEN_CPU_SOCKETS
++        LOGGER.info(f"Attempting to hotplug CPUs to {invalid_sockets} (exceeds limit of {EIGHT_CPU_SOCKETS})")
++
++        with pytest.raises(UnprocessibleEntityError) as exc_info:
++            hotplug_spec_vm(vm=vm_with_cpu_hotplug_enabled, sockets=invalid_sockets)
++
++        LOGGER.info(f"Hotplug correctly blocked with error: {exc_info.value}")
++        LOGGER.info("Successfully prevented CPU hotplug beyond MaxSockets limit")
++
++    @pytest.mark.polarion("CNV-61263")
++    def test_vm_behavior_at_maximum_cpu(self, vm_with_cpu_hotplug_enabled):
++        """
++        Verify VM behaves correctly when operating at maximum CPU limit.
++
++        Preconditions:
++            - VM running at max vCPUs (8 sockets)
++
++        Steps:
++            1. Verify VM is running at max CPU limit
++            2. Check VM status and conditions
++            3. Verify VM remains stable and responsive
++
++        Expected Result:
++            - VM runs normally at maximum CPU
++            - No error conditions present
++            - VM is responsive via SSH
++        """
++        LOGGER.info(f"Verifying VM behavior at maximum CPU for {vm_with_cpu_hotplug_enabled.name}")
++
++        current_cpu_count = wait_for_guest_os_cpu_count(
++            vm=vm_with_cpu_hotplug_enabled, spec_cpu_amount=EIGHT_CPU_SOCKETS
 +        )
 +
-+        # Verify guest OS sees correct initial CPU count
-+        assert_guest_os_cpu_count(vm=maxsockets_vm, spec_cpu_amount=TWO_CPU_SOCKETS)
-+        LOGGER.info("MaxSockets configuration verified successfully")
++        LOGGER.info("Checking VM status and connectivity at max CPU")
++        vm_status = vm_with_cpu_hotplug_enabled.instance.status
++        assert vm_status.printableStatus == VirtualMachine.Status.RUNNING, (
++            f"VM not in Running status at max CPU. Status: {vm_status.printableStatus}"
++        )
 +
-+    @pytest.mark.parametrize(
-+        "maxsockets_hotplug_operation",
-+        [pytest.param({"sockets": FOUR_CPU_SOCKETS})],
-+        indirect=True,
-+    )
-+    @pytest.mark.dependency(
-+        name=f"{TESTS_CLASS_NAME}::test_hotplug_cpu_to_four_sockets",
-+        depends=[f"{TESTS_CLASS_NAME}::test_verify_maxsockets_configuration"],
-+    )
-+    @pytest.mark.polarion("CNV-61263-02")
-+    def test_hotplug_cpu_to_four_sockets(self, maxsockets_hotplug_operation, maxsockets_vm):
-+        """
-+        TS-04: First hotplug operation in lifecycle (2 to 4 CPUs).
++        assert vm_with_cpu_hotplug_enabled.ssh_exec.executor().is_connective(), (
++            "VM not responsive via SSH at maximum CPU"
++        )
 +
-+        Validates that:
-+        - CPU hotplug from 2 to 4 sockets succeeds
-+        - Guest OS recognizes the additional CPUs
-+        - VM remains stable after hotplug
-+
-+        Priority: P1
-+        Type: End-to-End/Tier 2
-+        """
-+        LOGGER.info("Testing hotplug from 2 to 4 CPU sockets")
-+        assert_guest_os_cpu_count(vm=maxsockets_vm, spec_cpu_amount=FOUR_CPU_SOCKETS)
-+        LOGGER.info("Successfully hotplugged to 4 CPU sockets")
-+
-+    @pytest.mark.parametrize(
-+        "maxsockets_hotplug_operation",
-+        [pytest.param({"sockets": SIX_CPU_SOCKETS})],
-+        indirect=True,
-+    )
-+    @pytest.mark.dependency(
-+        name=f"{TESTS_CLASS_NAME}::test_hotplug_cpu_to_six_sockets",
-+        depends=[f"{TESTS_CLASS_NAME}::test_hotplug_cpu_to_four_sockets"],
-+    )
-+    @pytest.mark.polarion("CNV-61263-03")
-+    def test_hotplug_cpu_to_six_sockets(self, maxsockets_hotplug_operation, maxsockets_vm):
-+        """
-+        TS-04: Second hotplug operation in lifecycle (4 to 6 CPUs).
-+
-+        Validates that:
-+        - CPU hotplug from 4 to 6 sockets succeeds
-+        - Guest OS recognizes the additional CPUs
-+        - Sequential hotplug operations work correctly
-+
-+        Priority: P1
-+        Type: End-to-End/Tier 2
-+        """
-+        LOGGER.info("Testing hotplug from 4 to 6 CPU sockets")
-+        assert_guest_os_cpu_count(vm=maxsockets_vm, spec_cpu_amount=SIX_CPU_SOCKETS)
-+        LOGGER.info("Successfully hotplugged to 6 CPU sockets")
-+
-+    @pytest.mark.parametrize(
-+        "maxsockets_hotplug_operation",
-+        [pytest.param({"sockets": EIGHT_CPU_SOCKETS})],
-+        indirect=True,
-+    )
-+    @pytest.mark.dependency(
-+        name=f"{TESTS_CLASS_NAME}::test_hotplug_cpu_to_maximum_limit",
-+        depends=[f"{TESTS_CLASS_NAME}::test_hotplug_cpu_to_six_sockets"],
-+    )
-+    @pytest.mark.polarion("CNV-61263-04")
-+    def test_hotplug_cpu_to_maximum_limit(self, maxsockets_hotplug_operation, maxsockets_vm):
-+        """
-+        TS-02: Hotplug to maximum limit (6 to 8 CPUs).
-+
-+        Validates that:
-+        - CPU hotplug to maximum limit (8 sockets) succeeds
-+        - Guest OS recognizes all 8 CPUs
-+        - VM reaches maximum CPU configuration successfully
-+
-+        Priority: P0
-+        Type: Functional/Tier 1
-+        """
-+        LOGGER.info("Testing hotplug to maximum limit (8 CPU sockets)")
-+        assert_guest_os_cpu_count(vm=maxsockets_vm, spec_cpu_amount=EIGHT_CPU_SOCKETS)
-+        LOGGER.info("Successfully reached maximum CPU limit")
-+
-+    @pytest.mark.dependency(
-+        depends=[f"{TESTS_CLASS_NAME}::test_hotplug_cpu_to_maximum_limit"],
-+    )
-+    @pytest.mark.polarion("CNV-61263-05")
-+    def test_hotplug_cpu_exceeding_maximum_limit(self, maxsockets_vm):
-+        """
-+        TS-03: Attempt to exceed maximum CPU limit.
-+
-+        Validates that:
-+        - Attempting to hotplug beyond maxSockets (10 sockets) is rejected
-+        - Appropriate error (UnprocessibleEntityError) is raised
-+        - VM configuration remains at maximum (8 sockets)
-+
-+        Priority: P1
-+        Type: Functional/Tier 1
-+        """
-+        LOGGER.info("Testing hotplug beyond maximum limit (attempting 10 sockets)")
-+        with pytest.raises(UnprocessibleEntityError):
-+            hotplug_spec_vm(vm=maxsockets_vm, sockets=TEN_CPU_SOCKETS)
-+            pytest.fail("CPU socket value set higher than maxSockets limit!")
-+        LOGGER.info("Correctly rejected hotplug beyond maximum limit")
-+
-+    @pytest.mark.dependency(
-+        depends=[f"{TESTS_CLASS_NAME}::test_hotplug_cpu_exceeding_maximum_limit"],
-+    )
-+    @pytest.mark.polarion("CNV-61263-06")
-+    def test_migrate_vm_at_maximum_cpus(self, maxsockets_vm):
-+        """
-+        TS-04: Migrate VM at maximum CPU configuration.
-+
-+        Validates that:
-+        - VM can be migrated while at maximum CPU count
-+        - Migration completes successfully
-+        - SSH connectivity is maintained after migration
-+        - CPU count remains correct after migration
-+
-+        Priority: P1
-+        Type: End-to-End/Tier 2
-+        """
-+        LOGGER.info("Testing VM migration at maximum CPU configuration")
-+        migrate_vm_and_verify(vm=maxsockets_vm, check_ssh_connectivity=True)
-+        assert_guest_os_cpu_count(vm=maxsockets_vm, spec_cpu_amount=EIGHT_CPU_SOCKETS)
-+        LOGGER.info("VM migrated successfully at maximum CPU count")
-+
-+    @pytest.mark.dependency(
-+        depends=[f"{TESTS_CLASS_NAME}::test_migrate_vm_at_maximum_cpus"],
-+    )
-+    @pytest.mark.polarion("CNV-61263-07")
-+    def test_restart_vm_at_maximum_cpus(self, maxsockets_vm):
-+        """
-+        TS-04: Restart VM at maximum CPU configuration.
-+
-+        Validates that:
-+        - VM can be stopped and restarted while at maximum CPU count
-+        - VM boots successfully with 8 CPUs
-+        - Guest OS recognizes all CPUs after restart
-+        - MaxSockets limit is maintained across restart
-+
-+        Priority: P1
-+        Type: End-to-End/Tier 2
-+        """
-+        LOGGER.info("Testing VM restart at maximum CPU configuration")
-+        restart_vm_wait_for_running_vm(vm=maxsockets_vm)
-+        assert_guest_os_cpu_count(vm=maxsockets_vm, spec_cpu_amount=EIGHT_CPU_SOCKETS)
-+        LOGGER.info("VM restarted successfully with maximum CPU count")
++        LOGGER.info(f"VM behaves correctly at maximum CPU limit: {EIGHT_CPU_SOCKETS} sockets")

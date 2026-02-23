@@ -1,0 +1,318 @@
+diff --git a/tests/storage/snapshots/test_storage_profile_snapshot_class.py b/tests/storage/snapshots/test_storage_profile_snapshot_class.py
+new file mode 100644
+index 0000000..187f19b
+--- /dev/null
++++ b/tests/storage/snapshots/test_storage_profile_snapshot_class.py
+@@ -0,0 +1,312 @@
++# -*- coding: utf-8 -*-
++
++"""
++StorageProfile snapshotClass honored for VM Snapshot
++
++Tests verify that VM snapshots honor the snapshotClass field
++configured in StorageProfile, and that fallback to label-based
++selection works when snapshotClass is not set.
++
++Jira: CNV-61266 / CNV-54866
++"""
++
++import logging
++
++import pytest
++from kubernetes.dynamic import DynamicClient
++from ocp_resources.resource import ResourceEditor
++from ocp_resources.storage_class import StorageClass
++from ocp_resources.storage_profile import StorageProfile
++from ocp_resources.virtual_machine_restore import VirtualMachineRestore
++from ocp_resources.virtual_machine_snapshot import VirtualMachineSnapshot
++from ocp_resources.volume_snapshot import VolumeSnapshot
++from ocp_resources.volume_snapshot_class import VolumeSnapshotClass
++from timeout_sampler import TimeoutExpiredError, TimeoutSampler
++
++from utilities.constants import TIMEOUT_5MIN, TIMEOUT_5SEC, TIMEOUT_10SEC
++
++LOGGER = logging.getLogger(__name__)
++
++SPEC_STR = "spec"
++
++pytestmark = pytest.mark.usefixtures(
++    "namespace",
++    "skip_if_no_storage_class_for_snapshot",
++)
++
++
++def get_volume_snapshot_class_for_sc(
++    storage_class_name: str, admin_client: DynamicClient
++) -> VolumeSnapshotClass | None:
++    """Find VolumeSnapshotClass matching a StorageClass provisioner.
++
++    Args:
++        storage_class_name: Name of the StorageClass.
++        admin_client: Kubernetes dynamic client.
++
++    Returns:
++        The matching VolumeSnapshotClass, or None if not found.
++    """
++    provisioner = StorageClass(client=admin_client, name=storage_class_name).instance.get("provisioner")
++    for volume_snapshot_class in VolumeSnapshotClass.get(client=admin_client):
++        if volume_snapshot_class.instance.get("driver") == provisioner:
++            return volume_snapshot_class
++    return None
++
++
++def get_volume_snapshots_for_namespace(
++    namespace: str, admin_client: DynamicClient
++) -> list[VolumeSnapshot]:
++    """List all VolumeSnapshot resources in a namespace.
++
++    Args:
++        namespace: Namespace to query.
++        admin_client: Kubernetes dynamic client.
++
++    Returns:
++        List of VolumeSnapshot resources.
++    """
++    return list(VolumeSnapshot.get(client=admin_client, namespace=namespace))
++
++
++def wait_for_volume_snapshots_in_namespace(
++    namespace: str, admin_client: DynamicClient, expected_count: int = 1
++) -> list[VolumeSnapshot]:
++    """Wait for VolumeSnapshot resources to appear in a namespace.
++
++    Args:
++        namespace: Namespace to query.
++        admin_client: Kubernetes dynamic client.
++        expected_count: Minimum number of VolumeSnapshots expected.
++
++    Returns:
++        List of VolumeSnapshot resources.
++
++    Raises:
++        TimeoutExpiredError: If expected VolumeSnapshots do not appear.
++    """
++    LOGGER.info(f"Waiting for at least {expected_count} VolumeSnapshot(s) in namespace '{namespace}'")
++    try:
++        for sample in TimeoutSampler(
++            wait_timeout=TIMEOUT_5MIN,
++            sleep=TIMEOUT_5SEC,
++            func=get_volume_snapshots_for_namespace,
++            namespace=namespace,
++            admin_client=admin_client,
++        ):
++            if len(sample) >= expected_count:
++                return sample
++    except TimeoutExpiredError:
++        LOGGER.error(
++            f"Expected at least {expected_count} VolumeSnapshot(s) in namespace '{namespace}', "
++            f"found {len(get_volume_snapshots_for_namespace(namespace=namespace, admin_client=admin_client))}"
++        )
++        raise
++
++
++@pytest.fixture()
++def storage_profile_with_snapshot_class(
++    admin_client,
++    snapshot_storage_class_name_scope_module,
++):
++    """Patch StorageProfile with snapshotClass matching the SC's VolumeSnapshotClass."""
++    volume_snapshot_class = get_volume_snapshot_class_for_sc(
++        storage_class_name=snapshot_storage_class_name_scope_module,
++        admin_client=admin_client,
++    )
++    assert volume_snapshot_class, (
++        f"No VolumeSnapshotClass found for StorageClass '{snapshot_storage_class_name_scope_module}'"
++    )
++    storage_profile = StorageProfile(
++        name=snapshot_storage_class_name_scope_module,
++        client=admin_client,
++    )
++    LOGGER.info(
++        f"Patching StorageProfile '{snapshot_storage_class_name_scope_module}' "
++        f"with snapshotClass='{volume_snapshot_class.name}'"
++    )
++    with ResourceEditor(
++        patches={storage_profile: {SPEC_STR: {"snapshotClass": volume_snapshot_class.name}}}
++    ):
++        yield storage_profile
++
++
++@pytest.fixture()
++def storage_profile_without_snapshot_class(
++    admin_client,
++    snapshot_storage_class_name_scope_module,
++):
++    """Ensure StorageProfile has no snapshotClass set (clear it if present)."""
++    storage_profile = StorageProfile(
++        name=snapshot_storage_class_name_scope_module,
++        client=admin_client,
++    )
++    current_snapshot_class = storage_profile.instance.get(SPEC_STR, {}).get("snapshotClass")
++    if current_snapshot_class:
++        LOGGER.info(
++            f"Clearing snapshotClass from StorageProfile '{snapshot_storage_class_name_scope_module}'"
++        )
++        with ResourceEditor(
++            patches={storage_profile: {SPEC_STR: {"snapshotClass": None}}}
++        ):
++            yield storage_profile
++    else:
++        LOGGER.info(
++            f"StorageProfile '{snapshot_storage_class_name_scope_module}' already has no snapshotClass"
++        )
++        yield storage_profile
++
++
++@pytest.fixture()
++def vm_snapshot_with_profile_snapshot_class(
++    admin_client,
++    rhel_vm_for_snapshot,
++    storage_profile_with_snapshot_class,
++):
++    """Create a VMSnapshot for a VM whose StorageProfile has snapshotClass set."""
++    rhel_vm_for_snapshot.stop(wait=True)
++    with VirtualMachineSnapshot(
++        name=f"snapshot-{rhel_vm_for_snapshot.name}-sp-class",
++        namespace=rhel_vm_for_snapshot.namespace,
++        vm_name=rhel_vm_for_snapshot.name,
++        client=admin_client,
++    ) as vm_snapshot:
++        vm_snapshot.wait_snapshot_done(timeout=TIMEOUT_5MIN)
++        yield vm_snapshot
++
++
++@pytest.fixture()
++def vm_snapshot_without_profile_snapshot_class(
++    admin_client,
++    rhel_vm_for_snapshot,
++    storage_profile_without_snapshot_class,
++):
++    """Create a VMSnapshot for a VM whose StorageProfile has no snapshotClass."""
++    rhel_vm_for_snapshot.stop(wait=True)
++    with VirtualMachineSnapshot(
++        name=f"snapshot-{rhel_vm_for_snapshot.name}-fallback",
++        namespace=rhel_vm_for_snapshot.namespace,
++        vm_name=rhel_vm_for_snapshot.name,
++        client=admin_client,
++    ) as vm_snapshot:
++        vm_snapshot.wait_snapshot_done(timeout=TIMEOUT_5MIN)
++        yield vm_snapshot
++
++
++@pytest.mark.parametrize(
++    "rhel_vm_name",
++    [
++        pytest.param(
++            {"vm_name": "vm-cnv-61266-sp-honored"},
++            marks=pytest.mark.polarion("CNV-61266"),
++        ),
++    ],
++    indirect=True,
++)
++class TestStorageProfileSnapshotClass:
++    """Tests for StorageProfile snapshotClass being honored in VM snapshots."""
++
++    @pytest.mark.jira("CNV-54866")
++    def test_snapshot_uses_storage_profile_snapshot_class(
++        self,
++        admin_client,
++        rhel_vm_for_snapshot,
++        snapshot_storage_class_name_scope_module,
++        vm_snapshot_with_profile_snapshot_class,
++    ):
++        """Verify VMSnapshot uses the snapshotClass defined in StorageProfile.
++
++        When StorageProfile has a snapshotClass configured, the VolumeSnapshot
++        created by the VM snapshot controller must use that VolumeSnapshotClass.
++        """
++        expected_volume_snapshot_class = get_volume_snapshot_class_for_sc(
++            storage_class_name=snapshot_storage_class_name_scope_module,
++            admin_client=admin_client,
++        )
++        volume_snapshots = wait_for_volume_snapshots_in_namespace(
++            namespace=rhel_vm_for_snapshot.namespace,
++            admin_client=admin_client,
++        )
++        for volume_snapshot in volume_snapshots:
++            actual_class_name = volume_snapshot.instance.spec.get("volumeSnapshotClassName")
++            LOGGER.info(
++                f"VolumeSnapshot '{volume_snapshot.name}' uses VolumeSnapshotClass '{actual_class_name}'"
++            )
++            assert actual_class_name == expected_volume_snapshot_class.name, (
++                f"VolumeSnapshot '{volume_snapshot.name}' uses VolumeSnapshotClass '{actual_class_name}', "
++                f"expected '{expected_volume_snapshot_class.name}' from StorageProfile"
++            )
++
++    @pytest.mark.jira("CNV-54866")
++    def test_snapshot_fallback_without_storage_profile_snapshot_class(
++        self,
++        admin_client,
++        rhel_vm_for_snapshot,
++        snapshot_storage_class_name_scope_module,
++        vm_snapshot_without_profile_snapshot_class,
++    ):
++        """Verify fallback to label-based VolumeSnapshotClass selection.
++
++        When StorageProfile does not have a snapshotClass configured,
++        the snapshot controller should fall back to selecting a
++        VolumeSnapshotClass based on the storage provisioner driver match.
++        """
++        expected_volume_snapshot_class = get_volume_snapshot_class_for_sc(
++            storage_class_name=snapshot_storage_class_name_scope_module,
++            admin_client=admin_client,
++        )
++        volume_snapshots = wait_for_volume_snapshots_in_namespace(
++            namespace=rhel_vm_for_snapshot.namespace,
++            admin_client=admin_client,
++        )
++        for volume_snapshot in volume_snapshots:
++            actual_class_name = volume_snapshot.instance.spec.get("volumeSnapshotClassName")
++            LOGGER.info(
++                f"VolumeSnapshot '{volume_snapshot.name}' uses VolumeSnapshotClass '{actual_class_name}' (fallback)"
++            )
++            assert actual_class_name == expected_volume_snapshot_class.name, (
++                f"VolumeSnapshot '{volume_snapshot.name}' uses VolumeSnapshotClass '{actual_class_name}', "
++                f"expected '{expected_volume_snapshot_class.name}' from driver-based fallback"
++            )
++
++
++@pytest.mark.parametrize(
++    "rhel_vm_name",
++    [
++        pytest.param(
++            {"vm_name": "vm-cnv-61266-sp-restore"},
++            marks=pytest.mark.polarion("CNV-61266"),
++        ),
++    ],
++    indirect=True,
++)
++class TestRestoreWithStorageProfileSnapshotClass:
++    """Test that restore works with StorageProfile-specified snapshotClass."""
++
++    @pytest.mark.jira("CNV-54866")
++    def test_restore_vm_from_snapshot_with_storage_profile_snapshot_class(
++        self,
++        admin_client,
++        rhel_vm_for_snapshot,
++        vm_snapshot_with_profile_snapshot_class,
++    ):
++        """Verify VM can be restored from a snapshot created with StorageProfile snapshotClass.
++
++        Creates a snapshot using StorageProfile snapshotClass, then restores the
++        VM and verifies the restoration completes successfully.
++        """
++        with VirtualMachineRestore(
++            client=admin_client,
++            name=f"restore-{rhel_vm_for_snapshot.name}-sp-class",
++            namespace=rhel_vm_for_snapshot.namespace,
++            vm_name=rhel_vm_for_snapshot.name,
++            snapshot_name=vm_snapshot_with_profile_snapshot_class.name,
++        ) as vm_restore:
++            vm_restore.wait_restore_done()
++            LOGGER.info(
++                f"VM '{rhel_vm_for_snapshot.name}' successfully restored from snapshot "
++                f"'{vm_snapshot_with_profile_snapshot_class.name}'"
++            )
++            assert vm_restore.instance.status.get("complete"), (
++                f"VM restore '{vm_restore.name}' did not complete successfully"
++            )

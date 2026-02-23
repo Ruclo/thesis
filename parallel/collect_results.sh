@@ -20,11 +20,11 @@ Usage: $0 <version> <timestamp>
 Collect and analyze results from parallel experiment runs.
 
 Arguments:
-  version    - Version that was run (v1, v2.1, v2.2, v2)
+  version    - Version that was run (v1, v2, v2.1, v2.2, v3)
   timestamp  - Timestamp of the run (format: YYYYMMDD_HHMMSS)
 
 Example:
-  $0 v2.1 20260209_143022
+  $0 v2 20260209_143022
 
 This will create a summary report of all experiments from that run.
 EOF
