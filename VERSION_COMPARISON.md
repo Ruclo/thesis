@@ -1,24 +1,24 @@
-# Version Progression: v1 → v2.1 → v2.2 → v2
+# Version Progression: v1 → v2 → v2.1 → v2.2
 
 ## Overview
 
-This document explains the incremental progression from the monolithic v1 approach to the fully modular v2 architecture.
+This document explains the incremental progression from the monolithic v1 approach to the fully modular v2.2 architecture.
 
 ## Evolution Timeline
 
 ```
 v1 (Monolithic)
     ↓
-v2.1 (Modular Skills, Inline Exploration)
+v2 (Modular Skills, Inline Exploration)
     ↓
-v2.2 (+ STD Generation)
+v2.1 (+ STD Generation)
     ↓
-v2 (+ Context Caching)
+v2.2 (+ Context Caching)
 ```
 
 ## Detailed Comparison
 
-| Feature | v1 | v2.1 | v2.2 | v2 |
+| Feature | v1 | v2 | v2.1 | v2.2 |
 |---------|-----|------|------|-----|
 | **Architecture** | Monolithic | Modular | Modular | Modular |
 | **Skills** | - | 3 | 4 | 4 |
@@ -57,7 +57,7 @@ STP → [Context Exploration → Code Generation → Pyright Loop] → test.py
 
 ---
 
-### V2.1: Modular Skills with Exploration Skill (No Caching)
+### V2: Modular Skills with Exploration Skill (No Caching)
 
 **Structure:**
 - 3 independent skills
@@ -91,7 +91,7 @@ STP → [/explore-test-context] → (verbal) → [/generate-pytest] → draft_te
 
 ---
 
-### V2.2: Adding STD Generation
+### V2.1: Adding STD Generation
 
 **Structure:**
 - 4 independent skills
@@ -114,7 +114,7 @@ STP → [/generate-std] → STD → [/explore-test-context] → (verbal) → [/g
 3. Pytest Code Generation
 4. Pyright Validation
 
-**Improvements over v2.1:**
+**Improvements over v2:**
 - ✅ STD as intermediate artifact
 - ✅ Review test design before coding
 - ✅ Interactive mode (review STD)
@@ -125,7 +125,7 @@ STP → [/generate-std] → STD → [/explore-test-context] → (verbal) → [/g
 
 ---
 
-### V2: Full Modular Architecture with Context Caching
+### V2.3: Full Modular Architecture with Context Caching
 
 **Structure:**
 - 4 independent skills
@@ -154,7 +154,7 @@ STP → [/generate-std] → STD
 3. Pytest Code Generation
 4. Pyright Validation
 
-**Improvements over v2.2:**
+**Improvements over v2.1:**
 - ✅ Context caching (exploration results saved to context.json)
 - ✅ Context exploration skill outputs reusable artifact
 - ✅ Maximum reusability
@@ -169,9 +169,9 @@ STP → [/generate-std] → STD
 
 ## Incremental Benefits
 
-### Why v2.1 before v2.2?
+### Why v2 before v2.1?
 
-**v2.1** introduces:
+**v2** introduces:
 - Modular skills architecture
 - Separate exploration skill (clearer workflow phases)
 - Universal pyright-heal skill
@@ -179,18 +179,18 @@ STP → [/generate-std] → STD
 
 This is a foundational change that enables all future improvements while keeping the workflow simple.
 
-### Why v2.2 before v2?
+### Why v2.1 before v2.2?
 
-**v2.2** adds:
+**v2.1** adds:
 - STD generation as intermediate artifact
 - Ability to review test design before coding
 - Clearer separation between test description and implementation
 
 This validates that STD generation is valuable before adding the complexity of context caching.
 
-### Why v2 as final step?
+### Why v2.2 as final step?
 
-**v2** completes the modularity by:
+**v2.2** completes the modularity by:
 - Enhancing context exploration skill to output context.json
 - Enabling context caching for efficiency (explore once, use many times)
 - Maximizing reusability across all phases
@@ -202,21 +202,21 @@ This validates that STD generation is valuable before adding the complexity of c
 - No need for reusability
 - Legacy compatibility
 
-### Use v2.1 when:
+### Use v2 when:
 - Want modular skills with clear phases
 - Need universal pyright-heal
 - Don't need STD artifact
 - Don't need context caching
 - Single test generation per run
 
-### Use v2.2 when:
+### Use v2.1 when:
 - Want STD for review/documentation
 - Need interactive design review
 - Want modular workflow with all phases separate
 - Don't need context caching (re-exploring is acceptable)
 - Single test generation per run
 
-### Use v2 (full) when:
+### Use v2.2 (full) when:
 - Generating multiple tests
 - Want to cache context for efficiency
 - Need maximum flexibility
@@ -227,15 +227,15 @@ This validates that STD generation is valuable before adding the complexity of c
 ```
 Current: v1 monolithic approach
     ↓
-Step 1: Migrate to v2.1 (modular, inline exploration)
+Step 1: Migrate to v2 (modular, inline exploration)
     - Validate: Skills work independently
     - Validate: Pyright-heal is reusable
     ↓
-Step 2: Migrate to v2.2 (add STD generation)
+Step 2: Migrate to v2.1 (add STD generation)
     - Validate: STD is useful for review
     - Validate: Interactive mode works
     ↓
-Step 3: Migrate to v2 (add context caching)
+Step 3: Migrate to v2.2 (add context caching)
     - Validate: Context caching improves efficiency
     - Validate: Context exploration skill is reusable
 ```
@@ -244,18 +244,18 @@ Step 3: Migrate to v2 (add context caching)
 
 ### Hypothesis Testing
 
-**v1 → v2.1:**
+**v1 → v2:**
 - Does modular architecture improve maintainability?
 - Does separating exploration into its own skill clarify the workflow?
 - Is pyright-heal reusable across different files?
 
-**v2.1 → v2.2:**
+**v2 → v2.1:**
 - Does STD generation improve test quality?
 - Is reviewing STD before coding valuable?
 - Does STD serve as useful documentation?
 - Does the 4-phase workflow provide better control?
 
-**v2.2 → v2:**
+**v2.1 → v2.2:**
 - Does context caching (context.json) improve efficiency?
 - Is context.json artifact reusable for multiple test generations?
 - Can we generate multiple tests from one context without re-exploring?
@@ -263,7 +263,7 @@ Step 3: Migrate to v2 (add context caching)
 
 ### Metrics to Track
 
-| Metric | v1 | v2.1 | v2.2 | v2 |
+| Metric | v1 | v2 | v2.1 | v2.2 |
 |--------|-----|------|------|-----|
 | **Success Rate** | X% | ? | ? | ? |
 | **Code Quality** | X | ? | ? | ? |
@@ -274,7 +274,7 @@ Step 3: Migrate to v2 (add context caching)
 
 ## Conclusion
 
-The incremental progression v1 → v2.1 → v2.2 → v2 allows for:
+The incremental progression v1 → v2 → v2.1 → v2.2 allows for:
 1. **Gradual validation** of each new capability
 2. **Clear comparison** of benefits at each stage
 3. **Risk reduction** by not changing everything at once

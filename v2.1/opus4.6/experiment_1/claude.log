@@ -1,7 +1,10 @@
-Both files pass pyright with **0 errors**.
+The test file and conftest have been generated. The file is located at:
 
-**Pyright Healing Summary:**
-- File: `tests/install_upgrade_operators/common_instancetypes_deployment/test_common_instancetypes_deployment.py` - **CLEAN** (0 errors, 0 iterations needed)
-- File: `tests/install_upgrade_operators/common_instancetypes_deployment/conftest.py` - **CLEAN** (0 errors, 0 iterations needed)
+**Test file:** `tests/install_upgrade_operators/common_instancetypes_deployment/test_common_instancetypes_deployment.py`
+**Conftest:** `tests/install_upgrade_operators/common_instancetypes_deployment/conftest.py`
 
-No fixes were needed - the generated code is type-safe as written.
+Key implementation details:
+- Uses `ResourceEditorValidateHCOReconcile` for HCO CR patching with automatic reconciliation waiting and teardown restore
+- Uses `VirtualMachineClusterInstancetype.get()` and `VirtualMachineClusterPreference.get()` with the RedHat vendor label selector to check for common instance type resources
+- Follows the existing patterns from `tests/install_upgrade_operators/` (same fixture structure as `updated_hco_cr`)
+- All 4 STD scenarios implemented: default behavior, disable, enable, and persistence after reconciliation

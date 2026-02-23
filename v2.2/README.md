@@ -1,23 +1,25 @@
-# V2.2: Modular Skills with STD Generation
+# V2.3: Modular Skills-Based Test Generation Architecture
 
 ## Overview
 
-V2.2 adds STD (Software Test Description) generation as an intermediate step between v2.1 and v2. This version:
-- ✅ Generates STD as a separate artifact from STP
-- ✅ Uses modular skills architecture
-- ❌ Does NOT generate context.json (exploration remains inline)
+V2.3 refactors the monolithic v1 prompt into composable, reusable skills with a general orchestrator. This enables:
+
+- **Reusability**: Skills like `/pyright-heal` work on ANY Python file
+- **Flexibility**: Compose workflows manually or use orchestrator
+- **Maintainability**: Improve skills independently
+- **Testability**: Test individual components
 
 ## Architecture
 
 ```
 v2.2/
-├── skills/
-│   ├── generate-std/          # STP → STD transformation
-│   ├── explore-test-context/  # Repository exploration (no context.json output)
-│   ├── generate-pytest/       # STD → pytest code
-│   └── pyright-heal/          # Universal Python type fixer
-├── orchestrator.md            # 4-phase workflow coordinator
-└── run_experiment.sh          # Experiment runner
+├── skills/                    # Individual atomic skills
+│   ├── generate-std.md       # STP → STD transformation
+│   ├── explore-test-context.md   # Discover repo patterns
+│   ├── generate-pytest.md    # STD + context → pytest code
+│   └── pyright-heal.md       # Universal Python type fixer
+├── orchestrator.md           # Workflow coordinator
+└── run_experiment.sh         # Experiment runner
 ```
 
 ## Skills
@@ -27,90 +29,20 @@ v2.2/
 **Output**: STD (Software Test Description) markdown file with detailed scenarios
 **Reusability**: High - useful for any test planning phase
 
-### 2. `/explore-test-context` - Repository Pattern Discovery
-**Input**: Repository root (current directory)
-**Output**: Verbal summary of utilities, fixtures, conventions (NO context.json file)
-**Process**: Explores docs/, libs/, utilities/, tests/ and reports findings
-**Reusability**: Medium - useful before generating any test
+### 2. `/explore-test-context` - Context Discovery
+**Input**: Repository root (implicit), optional mode flag
+**Output**: JSON context file with utilities, fixtures, patterns
+**Reusability**: High - useful before writing ANY test
 
 ### 3. `/generate-pytest` - Test Code Generator
-**Input**: STD file
+**Input**: STD file + context JSON
 **Output**: Draft pytest `.py` file
-**Process**: Uses findings from exploration to generate test code
-**Reusability**: Medium - specific to pytest generation
+**Reusability**: Medium - specific to pytest but framework-agnostic
 
 ### 4. `/pyright-heal` - Universal Python Validator
 **Input**: Any Python file path
 **Output**: Type-safe Python file (in-place edits)
 **Reusability**: **Very High** - works on tests, utilities, scripts, fixtures, etc.
-
-## Workflow Modes
-
-### Mode 1: Full Automated (Default)
-Execute complete STP → pytest pipeline without user intervention.
-
-### Mode 2: Interactive Review
-Pause for user review at STD generation phase.
-
-## Workflow Diagram
-
-```
-STP (Software Test Plan)
-    ↓
-[/generate-std] ──→ STD (Software Test Description)
-    ↓
-[/explore-test-context] ──→ Repository exploration (verbal summary)
-    ↓
-[/generate-pytest] ──→ Code generation using exploration findings
-    ↓
-draft_test.py
-    ↓
-[/pyright-heal] ──→ Iterate until clean
-    ↓
-final_test.py ✓
-```
-
-## Differences from V2.1
-
-| Aspect | V2.1 | V2.2 |
-|--------|------|------|
-| **STD Generation** | No - direct STP → code | Yes - STP → STD → code |
-| **Skills** | 3 skills | 4 skills |
-| **Workflow Phases** | 3 phases | 4 phases |
-| **STD Review** | Not possible | Can review/edit STD before code gen |
-| **Flexibility** | Medium | Higher |
-
-## Differences from V2 (Full)
-
-| Aspect | V2.2 | V2 (Full) |
-|--------|------|-----------|
-| **STD Generation** | Yes | Yes |
-| **Context Caching** | No context.json | Yes - context.json artifact |
-| **Context Exploration** | Separate skill (verbal output) | Separate skill (context.json output) |
-| **Skills** | 4 skills | 4 skills |
-| **Workflow Phases** | 4 phases | 4 phases |
-| **Context Reuse** | No - explores each time | Yes - cache context.json |
-
-## Key Innovations
-
-### 1. STD as Intermediate Artifact
-- Review test design before implementation
-- Version control test descriptions
-- Share STDs with manual testers
-- Generate STDs for documentation purposes
-
-### 2. Universal Pyright Healer
-```bash
-# Works on ANY Python code in the project
-/pyright-heal utilities/new_helper.py
-/pyright-heal conftest.py
-/pyright-heal tests/fixtures/base.py
-```
-
-### 3. Interactive Review Mode
-- Pause for STD review
-- Edit STD before code generation
-- Ensures test design alignment
 
 ## Usage
 
@@ -128,11 +60,11 @@ final_test.py ✓
 # Step 2: Review STD, edit if needed
 vim std_output.md
 
-# Step 3: Explore repository context
-/explore-test-context
+# Step 3: Explore context
+/explore-test-context --mode thorough
 
 # Step 4: Generate pytest code
-/generate-pytest std_output.md
+/generate-pytest std_output.md context.json
 
 # Step 5: Validate and heal
 /pyright-heal tests/test_new_feature.py
@@ -143,34 +75,83 @@ vim std_output.md
 # Fix type errors in ANY Python file
 /pyright-heal utilities/storage_helper.py
 
-# Generate STD for documentation (no code)
-/generate-std stps/5.md
+# Explore context without generating code
+/explore-test-context --mode quick
 
-# Generate test from existing STD
-/generate-pytest existing_std.md
+# Generate STD for manual testing (no code)
+/generate-std stps/5.md
 ```
+
+## Workflow Diagram
+
+```
+STP (Software Test Plan)
+    ↓
+[/generate-std] ──→ STD (Software Test Description)
+                     ↓
+              ┌──────┴──────┐
+              ↓             ↓
+    [/explore-test-context] STD
+              ↓             ↓
+          context.json ─────┘
+              ↓
+    [/generate-pytest]
+              ↓
+    draft_test.py
+              ↓
+    [/pyright-heal] ──→ Iterate until clean
+              ↓
+    final_test.py ✓
+```
+
+## Differences from V1
+
+| Aspect | V1 (Monolithic) | V2.3 (Modular) |
+|--------|-----------------|--------------|
+| **Structure** | Single 24-line prompt | 4 independent skills + orchestrator |
+| **Reusability** | None - one-shot workflow | High - skills work independently |
+| **Flexibility** | Fixed 3-phase sequence | Composable workflows |
+| **STD Support** | No | Yes - `/generate-std` skill |
+| **Pyright Heal** | Embedded in prompt | Universal skill for ANY .py file |
+| **Context Caching** | No | Yes - `context.json` can be reused |
+| **Manual Control** | Limited | Full - run any skill independently |
+
+## Key Innovations
+
+### 1. Context Caching
+```bash
+# Explore once, generate many tests
+/explore-test-context --mode thorough > context.json
+/generate-pytest std_test1.md context.json
+/generate-pytest std_test2.md context.json  # Reuses context!
+```
+
+### 2. Universal Pyright Healer
+```bash
+# Works on ANY Python code in the project
+/pyright-heal utilities/new_helper.py
+/pyright-heal conftest.py
+/pyright-heal tests/fixtures/base.py
+```
+
+### 3. STD as Intermediate Artifact
+- Review test design before implementation
+- Version control test descriptions
+- Share STDs with manual testers
+- Generate STDs for documentation purposes
 
 ## Experimental Validation
 
 Each experiment will:
 1. Run the orchestrator workflow
-2. Compare success rate vs. v2.1
-3. Measure STD quality and usefulness
+2. Compare success rate vs. v1
+3. Measure skill reusability
 4. Track time/cost per phase
 5. Validate pyright-heal effectiveness
 
-## Benefits of STD Generation
+## Future Extensions
 
-1. **Early Design Review**: Catch design issues before coding
-2. **Clear Contracts**: STD serves as clear specification
-3. **Reduced Rework**: Design validation happens early
-4. **Better Documentation**: Always have test descriptions
-5. **Planning Aid**: Create STDs during sprint planning
-
-## Next Steps (v2 Full)
-
-V2 (full) will add:
-- `/explore-test-context` skill for context discovery
-- context.json as reusable artifact
-- Context caching for efficiency
-- 4-phase workflow
+- `/validate-test` - Run pytest --collect-only
+- `/generate-test-data` - Create mocks/fixtures
+- `/explore-fixtures` - Specialized fixture discovery
+- `/refactor-test` - Improve existing tests

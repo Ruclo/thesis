@@ -10,7 +10,7 @@ The goal is to develop an AI agent capable of reading a "Written Test Plan" (STP
 The research is divided into phases to measure the impact of Context Engineering.
 
 * **Phase 0 (Baseline):** Naive LLM generation using state-of-the-art models (Claude 3.7 Sonnet / Claude Code) with zero repository context.
-* **Phase 1 (Context Retrieval):** Augmented generation using a custom MCP (Model Context Protocol) server to fetch repo-specific utilities and constants.
+* **Phase 1 (Context Retrieval):** Examine documentation available in docs/, existing utility functions and fixtures in utils/, study patterns in available tests, learn from mistakes documented in GRAVEYARD.md.
 * **Phase 2 (Agentic Loop):** Closed-loop generation where the agent iteratively fixes compilation/linting errors.
 * **Phase 3 (Self-Healing + Learning):** 6-phase pipeline with GRAVEYARD verification, runtime self-healing against a live cluster, and persistent mistake tracking via GRAVEYARD.md.
 
@@ -29,7 +29,9 @@ The setup script will:
 4. Configure Claude Code commands and skills:
    - **v0**: Each experiment prompt → `.claude/commands/v0-experiment-*.md`
    - **v1**: Unified prompt → `.claude/commands/v1-unified-prompt.md`
-   - **v2**: Orchestrator → `.claude/commands/v2-orchestrator.md` + skills → `.claude/skills/`
+   - **v2**: Orchestrator → `.claude/commands/v2-orchestrator.md` + skills → `.claude/skills/v2-*`
+   - **v2.1**: Orchestrator → `.claude/commands/v2.1-orchestrator.md` + skills → `.claude/skills/v2.1-*`
+   - **v2.2**: Orchestrator → `.claude/commands/v2.2-orchestrator.md` + skills → `.claude/skills/v2.2-*`
    - **v3**: Orchestrator → `.claude/commands/v3-orchestrator.md` + skills → `.claude/skills/v3-*`
 
 After setup, navigate to the repository:
@@ -70,14 +72,14 @@ cd parallel
 # Run v1 on all STPs in parallel
 ./run_parallel.sh v1
 
+# Run v2 on all STPs in parallel
+./run_parallel.sh v2
+
 # Run v2.1 on all STPs in parallel
 ./run_parallel.sh v2.1
 
 # Run v2.2 on all STPs in parallel
 ./run_parallel.sh v2.2
-
-# Run v2 (full) on all STPs in parallel
-./run_parallel.sh v2
 
 # Run v3 on all STPs in parallel
 ./run_parallel.sh v3
@@ -93,7 +95,7 @@ After experiments complete:
 ./collect_results.sh <version> <timestamp>
 
 # Example:
-./collect_results.sh v2.1 20260209_143022
+./collect_results.sh v2 20260209_143022
 ```
 
 This creates `results_<version>_<timestamp>/` with:
@@ -105,7 +107,7 @@ This creates `results_<version>_<timestamp>/` with:
 
 ```bash
 # Watch experiment logs
-tail -f 1-openshift-virtualization-tests/v2.1_experiment_*/claude.log
+tail -f 1-openshift-virtualization-tests/v2_experiment_*/claude.log
 
 # Check running processes
 ps aux | grep claude
@@ -125,24 +127,91 @@ htop
 ### `/v0` - Baseline Experiments (Control Group)
 This folder contains the "Naive" generation attempts. In these experiments, the LLM was given the Test Plan and basic instructions but **no access** to the repository's helper functions, constants, or fixture definitions.
 
-**Naming Convention:** `experiment_{id}_{topic}`
+**Naming Convention:** `experiment_{id}`
 
 #### Example Structure:
 ```text
 v0/
-├── experiment_01_common_instancetypes/
+├── experiment_1/
 │   ├── prompt.md           # The exact input prompt (STP + Instructions)
-│   ├── claude.log         # Full conversation log with Claude Code
+│   ├── claude.log          # Full conversation log with Claude Code
 │   ├── changes.patch       # Git diff showing file placement in the repo
-│   └── test_run.log     # Pytest traceback/error log (The "Result")
-├── experiment_02_windows_vnc/
+│   └── test_run.log        # Pytest traceback/error log (The "Result")
+├── experiment_2/
 │   └── ...
-└── experiment_03_rhel_vnc/
+└── experiment_3/
     └── ...
+```
+
+### `/v1` - Monolithic Prompt (3-Phase Inline)
+
+Single unified prompt with all instructions embedded. Three phases (context exploration, code generation, pyright validation) run inline within one prompt.
+
+```text
+v1/
+├── prompt.md              # Single unified prompt file
+├── sonnet4.5/             # Results per model
+│   ├── experiment_1/
+│   └── ...
+└── opus4.6/
+```
+
+### `/v2` - Modular Skills (Inline Exploration)
+
+Refactors the monolithic v1 prompt into 3 composable, reusable skills with an orchestrator. Exploration outputs a verbal summary.
+
+```text
+v2/
+├── orchestrator.md            # 3-phase workflow coordinator
+├── skills/
+│   ├── v2-explore-test-context/   # Repository exploration (verbal summary)
+│   ├── v2-generate-pytest/        # STP → pytest code
+│   └── v2-pyright-heal/           # Universal Python type fixer
+├── sonnet4.5/
+│   ├── experiment_1/
+│   └── ...
+└── opus4.6/
+```
+
+### `/v2.1` - Modular Skills + STD Generation
+
+Adds STD (Software Test Description) generation as an intermediate step. 4 skills, 4 phases. Exploration remains verbal.
+
+```text
+v2.1/
+├── orchestrator.md            # 4-phase workflow coordinator
+├── skills/
+│   ├── v2.1-generate-std/         # STP → STD transformation
+│   ├── v2.1-explore-test-context/ # Repository exploration (verbal summary)
+│   ├── v2.1-generate-pytest/      # STD → pytest code
+│   └── v2.1-pyright-heal/         # Universal Python type fixer
+├── sonnet4.5/
+│   ├── experiment_1/
+│   └── ...
+└── opus4.6/
+```
+
+### `/v2.2` - Full Modular with Context Caching
+
+Adds context.json caching on top of STD generation. Exploration outputs a reusable `context.json` artifact. 4 skills, 4 phases.
+
+```text
+v2.2/
+├── orchestrator.md            # 4-phase workflow coordinator
+├── skills/
+│   ├── v2.2-generate-std/         # STP → STD transformation
+│   ├── v2.2-explore-test-context/ # Repository exploration → context.json
+│   ├── v2.2-generate-pytest/      # STD + context.json → pytest code
+│   └── v2.2-pyright-heal/         # Universal Python type fixer
+├── sonnet4.5/
+│   ├── experiment_1/
+│   └── ...
+└── opus4.6/
+```
 
 ### `/v3` - Self-Healing with GRAVEYARD Feedback Loop
 
-6-phase pipeline that adds GRAVEYARD verification and runtime self-healing on top of v2.2:
+6-phase pipeline that adds GRAVEYARD verification and runtime self-healing on top of v2.1:
 
 1. **STP → STD** (`/v3-generate-std`)
 2. **Repository exploration + GRAVEYARD review** (`/v3-explore-test-context`)
@@ -161,6 +230,5 @@ v3/
 │   ├── v3-graveyard-verify/   # Phase 4 (GRAVEYARD verification)
 │   ├── v3-pyright-heal/       # Phase 5
 │   └── v3-test-heal/          # Phase 6 (runtime self-healing)
-├── run_experiment.sh
-└── run_all_experiments.sh
+└── opus4.6/
 ```

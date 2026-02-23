@@ -119,6 +119,109 @@ log(f"✗ Failed to heal after {max_iterations} iterations")
 return FAILURE
 ```
 
+## Fix Decision Tree
+
+```
+pyright error
+    ├─ "has no attribute"
+    │   └─→ Read actual class → Find correct attribute → Edit
+    │
+    ├─ "Cannot find module"
+    │   └─→ Search repo → Find correct import → Edit
+    │
+    ├─ "is not defined"
+    │   └─→ Search for definition → Add import OR define → Edit
+    │
+    ├─ "Type mismatch"
+    │   └─→ Analyze context → Add conversion OR fix annotation → Edit
+    │
+    ├─ "Argument mismatch"
+    │   └─→ Read signature → Adjust call → Edit
+    │
+    └─ "Unknown error"
+        └─→ Log warning → Skip (manual review needed)
+```
+
+## Example Session
+
+**Input File** (`test_example.py`):
+```python
+from ocp_resources.vm import VirtualMachine  # Wrong import path
+
+def test_vm_reset(namespace):
+    vm = VirtualMachine(name="test")
+    vm.reset()  # Method doesn't exist
+```
+
+**Iteration 1**:
+```
+$ uv run pyright test_example.py
+Error: Cannot find module "ocp_resources.vm"
+
+[FIX] Search for correct import...
+[FOUND] ocp_resources.virtual_machine.VirtualMachine
+[EDIT] Change import path
+```
+
+**Iteration 2**:
+```
+$ uv run pyright test_example.py
+Error: "VirtualMachine" has no attribute "reset"
+
+[FIX] Read VirtualMachine class definition...
+[FOUND] Correct method is vm.vmi.reset()
+[EDIT] Update method call
+```
+
+**Iteration 3**:
+```
+$ uv run pyright test_example.py
+0 errors, 0 warnings, 0 informations
+
+[SUCCESS] File is type-safe ✓
+```
+
+**Final File**:
+```python
+from ocp_resources.virtual_machine import VirtualMachine
+
+def test_vm_reset(namespace):
+    vm = VirtualMachine(name="test")
+    vm.vmi.reset()
+```
+
+## Output Format
+
+```
+🔧 Pyright Self-Healing: test_example.py
+
+Iteration 1:
+  ✓ Fixed import path: ocp_resources.vm → ocp_resources.virtual_machine
+
+Iteration 2:
+  ✓ Fixed method call: vm.reset() → vm.vmi.reset()
+
+Result: ✓ Clean (2 iterations, 2 fixes applied)
+```
+
+## Usage
+
+```bash
+# Standard usage
+/v2.2-pyright-heal tests/test_new_feature.py
+
+# With max iterations limit
+/v2.2-pyright-heal utilities/helper.py --max-iterations 5
+
+# Strict mode
+/v2.2-pyright-heal conftest.py --strict
+
+# Works on ANY Python file!
+/v2.2-pyright-heal scripts/automation.py
+/v2.2-pyright-heal fixtures/base_fixtures.py
+/v2.2-pyright-heal utilities/custom_helper.py
+```
+
 ## Constraints
 
 ### 1. No Code Deletion
@@ -141,22 +244,31 @@ return FAILURE
 - Don't change test logic
 - Only fix type/attribute errors
 
-## Usage
+## Edge Cases
 
-```bash
-# Standard usage
-/v2.2-pyright-heal tests/test_new_feature.py
+### Unfixable Errors
+If error cannot be auto-fixed:
+```
+⚠ Could not auto-fix error at line 45:
+  "ComplexType has incompatible generic variance"
 
-# With max iterations limit
-/v2.2-pyright-heal utilities/helper.py --max-iterations 5
+Action: Skipping, manual review required
+```
 
-# Strict mode
-/v2.2-pyright-heal conftest.py --strict
+### Max Iterations Reached
+```
+✗ Failed to heal after 10 iterations
+Remaining errors:
+  - Line 23: Type inference issue
+  - Line 45: Complex generic variance
 
-# Works on ANY Python file!
-/v2.2-pyright-heal scripts/automation.py
-/v2.2-pyright-heal fixtures/base_fixtures.py
-/v2.2-pyright-heal utilities/custom_helper.py
+Suggestion: Review errors manually or increase --max-iterations
+```
+
+### File Not Found
+```
+ERROR: File not found: tests/missing.py
+HINT: Provide valid Python file path
 ```
 
 ## Reusability

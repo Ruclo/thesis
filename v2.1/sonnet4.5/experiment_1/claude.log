@@ -1,52 +1,111 @@
+Perfect! Both files pass pyright validation with **0 errors, 0 warnings**.
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Test Generation Complete ✓
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-**Input:**  /thesis/stps/1.md (STP: CommonInstancetypesDeployment)
-**Output:** tests/infrastructure/instance_types/test_common_instancetypes_deployment.py
+**Input:**  `/thesis/stps/1.md` (STP: Unable to Disable Common-Instancetypes)
 
-## Phases Completed
+**Output Files:**
+- `tests/std/common_instancetypes_deployment/std_cnv_61256.md` (STD)
+- `tests/infrastructure/hco/test_common_instancetypes_deployment.py` (948 lines)
+- `tests/infrastructure/hco/conftest.py` (173 lines)
+- `tests/infrastructure/hco/__init__.py`
 
-✓ **Phase 1: Repository Exploration** (utilities, fixtures, conventions)
-✓ **Phase 2: Pytest Code Generation** (4 test scenarios, 272 lines)
-✓ **Phase 3: Pyright Validation** (0 errors, 0 iterations needed)
+## Phases Executed
 
-## Test File Summary
+✅ **Phase 1: STD Generation**
+- Generated comprehensive Software Test Description
+- 14 test scenarios + 5 fixtures
+- Complete traceability to STP requirements
 
-**Location:** `tests/infrastructure/instance_types/test_common_instancetypes_deployment.py`
+✅ **Phase 2: Repository Exploration**
+- Discovered utilities: `utilities/hco.py`, `utilities/constants.py`
+- Identified fixtures: `admin_client`, `hco_namespace`, `namespace`
+- Found patterns: `wait_for_hco_conditions()`, `ResourceEditor`, `TimeoutSampler`
+- Analyzed import conventions and coding standards
 
-**Test Scenarios Implemented:**
+✅ **Phase 3: Pytest Code Generation**
+- Implemented ALL 14 test scenarios from STD
+- Created 3 shared fixtures in conftest.py
+- Used repository patterns and utilities (no hallucination)
+- Followed CLAUDE.md coding standards
 
-1. **test_disable_common_instancetypes** (CNV-61256-01)
-   - Verifies common-instancetypes can be disabled via HCO CR
-   - Validates all instancetype resources are removed
-   - Priority: P0
+✅ **Phase 4: Pyright Validation**
+- **0 errors, 0 warnings** - Type-safe code
+- No healing iterations needed
+- Ready for execution
 
-2. **test_enable_common_instancetypes** (CNV-61256-02)
-   - Verifies common-instancetypes can be enabled via HCO CR
-   - Validates instancetype resources are deployed
-   - Priority: P0
+## Test Scenarios Implemented
 
-3. **test_default_common_instancetypes_behavior** (CNV-61256-03)
-   - Verifies default behavior (enabled by default)
-   - Validates instancetypes are present on fresh installation
-   - Priority: P0
+### Tier 1 (Gating) - 8 tests
+**TestCommonInstancetypesDeployment:**
+1. ✓ test_default_instancetypes_enabled
+2. ✓ test_disable_common_instancetypes
+3. ✓ test_enable_common_instancetypes
+4. ✓ test_persistence_after_reconciliation
+5. ✓ test_hco_status_reflects_configuration (parametrized)
 
-4. **test_common_instancetypes_setting_persistence** (CNV-61256-04)
-   - Verifies setting persists across HCO reconciliation
-   - Triggers reconciliation and validates state remains unchanged
-   - Priority: P1
+**TestCommonInstancetypesFieldValidation:**
+6. ✓ test_valid_enabled_value
+7. ✓ test_valid_disabled_value
+8. ✓ test_invalid_value_rejected (parametrized: 5 invalid values)
 
-**Key Features:**
-- Uses existing utilities: `ResourceEditorValidateHCOReconcile`, `wait_for_hco_conditions`
-- Implements helper functions: `get_common_instancetypes()`, `wait_for_common_instancetypes_state()`
-- Proper fixtures with cleanup: `hco_with_common_instancetypes_disabled`, `hco_with_common_instancetypes_enabled`
-- Comprehensive logging throughout test execution
-- Follows repository conventions (absolute imports, named arguments, descriptive variables)
+### Tier 2 - 6 tests
+**TestCommonInstancetypesUpgrade:**
+9. ✓ test_disabled_setting_preserved_after_upgrade
+10. ✓ test_enabled_setting_preserved_after_upgrade
 
-**Ready for Execution:**
+**TestCommonInstancetypesSSPIntegration:**
+11. ✓ test_ssp_reconciles_when_disabled
+12. ✓ test_ssp_deploys_when_enabled
+
+**TestCommonInstancetypesVMCreation:**
+13. ✓ test_vm_creation_with_instancetype_when_enabled
+14. ✓ test_vm_creation_fails_with_missing_instancetype_when_disabled
+
+### Fixtures (conftest.py)
+1. ✓ restore_hco_instancetypes_config - Restore HCO config after test
+2. ✓ common_instancetypes_disabled - Setup disabled state
+3. ✓ common_instancetypes_enabled - Setup enabled state
+
+## Requirements Coverage
+
+| Jira ID   | Requirement              | Coverage |
+|:----------|:-------------------------|:---------|
+| CNV-61256 | Disable instancetypes    | ✓        |
+| CNV-61256 | Enable instancetypes     | ✓        |
+| CNV-61256 | Default behavior         | ✓        |
+| CNV-61256 | Persistence              | ✓        |
+| CNV-61256 | Field validation         | ✓        |
+| CNV-61256 | Upgrade compatibility    | ✓        |
+| CNV-61256 | SSP integration          | ✓        |
+| CNV-61256 | VM creation behavior     | ✓        |
+
+## Code Quality
+
+✅ **Type Safety:** Passes pyright strict checks
+✅ **Repository Conventions:** Follows CLAUDE.md standards
+✅ **No Hallucinations:** Uses only discovered utilities
+✅ **Proper Imports:** Absolute imports, specific functions
+✅ **Logging:** INFO level with f-strings
+✅ **Error Handling:** Uses TimeoutSampler, proper assertions
+✅ **Fixtures:** Proper scope, noun-based naming, single responsibility
+✅ **Markers:** Proper pytest markers (gating, tier2, polarion)
+
+## Ready for Execution
+
 ```bash
-uv run pytest tests/infrastructure/instance_types/test_common_instancetypes_deployment.py
+# Run gating tests
+uv run pytest tests/infrastructure/hco/test_common_instancetypes_deployment.py -m gating
+
+# Run all tests
+uv run pytest tests/infrastructure/hco/test_common_instancetypes_deployment.py
+
+# Run specific test class
+uv run pytest tests/infrastructure/hco/test_common_instancetypes_deployment.py::TestCommonInstancetypesDeployment
 ```
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+**All 4 phases completed successfully in a single conversation turn!** 🎉

@@ -1,1101 +1,755 @@
-diff --git a/tests/infrastructure/hco/__init__.py b/tests/infrastructure/hco/__init__.py
+diff --git a/tests/virt/hco/test_common_instancetypes_deployment.py b/tests/virt/hco/test_common_instancetypes_deployment.py
 new file mode 100644
-index 0000000..e69de29
-diff --git a/tests/infrastructure/hco/conftest.py b/tests/infrastructure/hco/conftest.py
-new file mode 100644
-index 0000000..e1454de
+index 0000000..2ae4542
 --- /dev/null
-+++ b/tests/infrastructure/hco/conftest.py
-@@ -0,0 +1,201 @@
-+# -*- coding: utf-8 -*-
-+
-+"""
-+Shared fixtures for HCO tests.
-+
-+This module provides fixtures for HCO CR manipulation and common-instancetypes testing.
-+"""
-+
-+import logging
-+
-+import pytest
-+from ocp_resources.resource import ResourceEditor
-+from ocp_resources.ssp import SSP
-+from ocp_resources.virtual_machine_cluster_instancetype import VirtualMachineClusterInstancetype
-+from timeout_sampler import TimeoutExpiredError, TimeoutSampler
-+
-+from utilities.constants import TIMEOUT_5MIN
-+from utilities.hco import wait_for_hco_conditions
-+from utilities.infra import get_hyperconverged_resource
-+
-+LOGGER = logging.getLogger(__name__)
-+
-+
-+@pytest.fixture(scope="function")
-+def restore_hco_instancetypes_config(admin_client, hco_namespace):
-+    """
-+    Restore HCO commonInstancetypesDeployment configuration after test.
-+
-+    This fixture captures the current commonInstancetypesDeployment value
-+    and restores it after the test completes.
-+
-+    Args:
-+        admin_client: Admin DynamicClient
-+        hco_namespace: HCO namespace
-+
-+    Yields:
-+        None
-+    """
-+    # Capture current state
-+    hco = get_hyperconverged_resource(client=admin_client, hco_ns_name=hco_namespace.name)
-+    original_value = hco.instance.spec.get("commonInstancetypesDeployment")
-+
-+    LOGGER.info(f"Captured original commonInstancetypesDeployment value: {original_value}")
-+
-+    yield
-+
-+    # Restore original state
-+    LOGGER.info(f"Restoring commonInstancetypesDeployment to: {original_value}")
-+
-+    hco_after = get_hyperconverged_resource(client=admin_client, hco_ns_name=hco_namespace.name)
-+    current_value = hco_after.instance.spec.get("commonInstancetypesDeployment")
-+
-+    # Only restore if value changed
-+    if current_value != original_value:
-+        if original_value is None:
-+            # Remove the field to restore default
-+            # Note: ResourceEditor doesn't support removing fields easily,
-+            # so we'll set it to "Enabled" which is the default
-+            patch = {"spec": {"commonInstancetypesDeployment": "Enabled"}}
-+        else:
-+            patch = {"spec": {"commonInstancetypesDeployment": original_value}}
-+
-+        with ResourceEditor(patches={hco_after: patch}):
-+            wait_for_hco_conditions(
-+                admin_client=admin_client,
-+                hco_namespace=hco_namespace,
-+                list_dependent_crs_to_check=[SSP],
-+            )
-+
-+            # If restoring to Enabled, wait for instancetypes to be created
-+            if original_value in [None, "Enabled"]:
-+                LOGGER.info("Waiting for instancetypes to be restored")
-+                try:
-+                    for sample in TimeoutSampler(
-+                        wait_timeout=TIMEOUT_5MIN,
-+                        sleep=10,
-+                        func=lambda: list(VirtualMachineClusterInstancetype.get(client=admin_client)),
-+                    ):
-+                        if sample:
-+                            LOGGER.info(f"Instancetypes restored: {len(sample)} found")
-+                            break
-+                except TimeoutExpiredError:
-+                    LOGGER.warning("Timeout waiting for instancetypes to be restored")
-+
-+            # If restoring to Disabled, wait for instancetypes to be removed
-+            elif original_value == "Disabled":
-+                LOGGER.info("Waiting for instancetypes to be removed")
-+                try:
-+                    for sample in TimeoutSampler(
-+                        wait_timeout=TIMEOUT_5MIN,
-+                        sleep=10,
-+                        func=lambda: list(VirtualMachineClusterInstancetype.get(client=admin_client)),
-+                    ):
-+                        if not sample:
-+                            LOGGER.info("Instancetypes removed")
-+                            break
-+                except TimeoutExpiredError:
-+                    LOGGER.warning("Timeout waiting for instancetypes to be removed")
-+
-+
-+@pytest.fixture(scope="function")
-+def common_instancetypes_disabled(admin_client, hco_namespace, restore_hco_instancetypes_config):
-+    """
-+    Common-instancetypes in disabled state.
-+
-+    Sets spec.commonInstancetypesDeployment to Disabled and waits for
-+    reconciliation to complete.
-+
-+    Args:
-+        admin_client: Admin DynamicClient
-+        hco_namespace: HCO namespace
-+        restore_hco_instancetypes_config: Fixture to restore config after test
-+
-+    Yields:
-+        HyperConverged: HCO CR with instancetypes disabled
-+    """
-+    LOGGER.info("Setting up common_instancetypes_disabled fixture")
-+
-+    hco = get_hyperconverged_resource(client=admin_client, hco_ns_name=hco_namespace.name)
-+
-+    # Set to Disabled
-+    with ResourceEditor(
-+        patches={hco: {"spec": {"commonInstancetypesDeployment": "Disabled"}}}
-+    ):
-+        wait_for_hco_conditions(
-+            admin_client=admin_client,
-+            hco_namespace=hco_namespace,
-+            list_dependent_crs_to_check=[SSP],
-+        )
-+
-+        # Wait for instancetypes to be removed
-+        LOGGER.info("Waiting for instancetypes to be removed")
-+        try:
-+            for sample in TimeoutSampler(
-+                wait_timeout=TIMEOUT_5MIN,
-+                sleep=10,
-+                func=lambda: list(VirtualMachineClusterInstancetype.get(client=admin_client)),
-+            ):
-+                if not sample:
-+                    LOGGER.info("All instancetypes removed")
-+                    break
-+        except TimeoutExpiredError:
-+            instancetypes = list(VirtualMachineClusterInstancetype.get(client=admin_client))
-+            LOGGER.error(f"Instancetypes still present: {[it.name for it in instancetypes]}")
-+            raise
-+
-+        # Get fresh HCO reference
-+        hco_disabled = get_hyperconverged_resource(client=admin_client, hco_ns_name=hco_namespace.name)
-+
-+        yield hco_disabled
-+
-+
-+@pytest.fixture(scope="function")
-+def common_instancetypes_enabled(admin_client, hco_namespace, restore_hco_instancetypes_config):
-+    """
-+    Common-instancetypes in enabled state.
-+
-+    Sets spec.commonInstancetypesDeployment to Enabled and waits for
-+    reconciliation to complete.
-+
-+    Args:
-+        admin_client: Admin DynamicClient
-+        hco_namespace: HCO namespace
-+        restore_hco_instancetypes_config: Fixture to restore config after test
-+
-+    Yields:
-+        HyperConverged: HCO CR with instancetypes enabled
-+    """
-+    LOGGER.info("Setting up common_instancetypes_enabled fixture")
-+
-+    hco = get_hyperconverged_resource(client=admin_client, hco_ns_name=hco_namespace.name)
-+
-+    # Set to Enabled
-+    with ResourceEditor(
-+        patches={hco: {"spec": {"commonInstancetypesDeployment": "Enabled"}}}
-+    ):
-+        wait_for_hco_conditions(
-+            admin_client=admin_client,
-+            hco_namespace=hco_namespace,
-+            list_dependent_crs_to_check=[SSP],
-+        )
-+
-+        # Wait for instancetypes to be created
-+        LOGGER.info("Waiting for instancetypes to be deployed")
-+        try:
-+            for sample in TimeoutSampler(
-+                wait_timeout=TIMEOUT_5MIN,
-+                sleep=10,
-+                func=lambda: list(VirtualMachineClusterInstancetype.get(client=admin_client)),
-+            ):
-+                if sample:
-+                    LOGGER.info(f"Instancetypes deployed: {len(sample)} found")
-+                    break
-+        except TimeoutExpiredError:
-+            LOGGER.error("No instancetypes found after enabling")
-+            raise
-+
-+        # Get fresh HCO reference
-+        hco_enabled = get_hyperconverged_resource(client=admin_client, hco_ns_name=hco_namespace.name)
-+
-+        yield hco_enabled
-diff --git a/tests/infrastructure/hco/test_common_instancetypes_deployment.py b/tests/infrastructure/hco/test_common_instancetypes_deployment.py
-new file mode 100644
-index 0000000..d50bafb
---- /dev/null
-+++ b/tests/infrastructure/hco/test_common_instancetypes_deployment.py
-@@ -0,0 +1,885 @@
++++ b/tests/virt/hco/test_common_instancetypes_deployment.py
+@@ -0,0 +1,749 @@
 +# -*- coding: utf-8 -*-
 +
 +"""
 +CommonInstancetypesDeployment Configuration Tests
 +
-+STP Reference: /thesis/stps/1.md
++STP Reference: ../thesis/stps/1.md
++Jira: CNV-61256, CNV-59564
++PR: https://github.com/kubevirt/hyperconverged-cluster-operator/pull/3471
 +
-+This module contains tests for the CommonInstancetypesDeployment field in the
-+HyperConverged CR, which controls whether common VM instancetypes are deployed
-+in the cluster.
-+
-+Related Jira:
-+- CNV-61256: Feature request
-+- CNV-59564: Bug fix implementation
++This module contains tests for the CommonInstancetypesDeployment field in HCO,
++which allows users to control whether common-instancetypes are deployed.
 +"""
 +
 +import logging
 +
 +import pytest
-+from kubernetes.client.rest import ApiException
-+from ocp_resources.resource import ResourceEditor
++from ocp_resources.cdi import CDI
++from ocp_resources.kubevirt import KubeVirt
 +from ocp_resources.ssp import SSP
-+from ocp_resources.virtual_machine import VirtualMachine
 +from ocp_resources.virtual_machine_cluster_instancetype import VirtualMachineClusterInstancetype
++from ocp_resources.virtual_machine_cluster_preference import VirtualMachineClusterPreference
 +from timeout_sampler import TimeoutExpiredError, TimeoutSampler
 +
 +from utilities.constants import TIMEOUT_2MIN, TIMEOUT_5MIN
-+from utilities.hco import wait_for_hco_conditions
++from utilities.hco import ResourceEditorValidateHCOReconcile, wait_for_hco_conditions
 +from utilities.infra import get_hyperconverged_resource
++from utilities.ssp import get_ssp_resource, wait_for_ssp_conditions
 +
 +LOGGER = logging.getLogger(__name__)
 +
++# Field name in HCO spec
++COMMON_INSTANCETYPES_DEPLOYMENT_FIELD = "commonInstancetypesDeployment"
 +
-+pytestmark = [pytest.mark.infrastructure, pytest.mark.gating]
++# Valid field values
++ENABLED = "Enabled"
++DISABLED = "Disabled"
++
++pytestmark = [pytest.mark.iuo, pytest.mark.arm64, pytest.mark.s390x, pytest.mark.sno]
 +
 +
++def get_common_instancetypes(admin_client):
++    """
++    Get all VirtualMachineClusterInstancetype resources.
++
++    Args:
++        admin_client: Kubernetes dynamic client
++
++    Returns:
++        list: List of VirtualMachineClusterInstancetype resources
++    """
++    return list(VirtualMachineClusterInstancetype.get(dyn_client=admin_client))
++
++
++def get_common_preferences(admin_client):
++    """
++    Get all VirtualMachineClusterPreference resources.
++
++    Args:
++        admin_client: Kubernetes dynamic client
++
++    Returns:
++        list: List of VirtualMachineClusterPreference resources
++    """
++    return list(VirtualMachineClusterPreference.get(dyn_client=admin_client))
++
++
++def common_instancetypes_exist(admin_client):
++    """
++    Check if common-instancetype resources exist in the cluster.
++
++    Args:
++        admin_client: Kubernetes dynamic client
++
++    Returns:
++        bool: True if at least one instancetype or preference exists
++    """
++    instancetypes = get_common_instancetypes(admin_client=admin_client)
++    preferences = get_common_preferences(admin_client=admin_client)
++    exists = len(instancetypes) > 0 or len(preferences) > 0
++
++    LOGGER.info(
++        f"Common-instancetypes check: {len(instancetypes)} instancetypes, "
++        f"{len(preferences)} preferences (exists={exists})"
++    )
++    return exists
++
++
++def wait_for_common_instancetypes_state(admin_client, should_exist, timeout=TIMEOUT_5MIN):
++    """
++    Wait for common-instancetypes to reach the expected state.
++
++    Args:
++        admin_client: Kubernetes dynamic client
++        should_exist (bool): Expected existence state
++        timeout: Maximum wait time
++
++    Raises:
++        TimeoutExpiredError: If state is not reached within timeout
++    """
++    state_str = "exist" if should_exist else "be removed"
++    LOGGER.info(f"Waiting for common-instancetypes to {state_str}")
++
++    try:
++        for sample in TimeoutSampler(
++            wait_timeout=timeout,
++            sleep=5,
++            func=common_instancetypes_exist,
++            admin_client=admin_client,
++        ):
++            if sample == should_exist:
++                LOGGER.info(f"Common-instancetypes state reached: {state_str}")
++                return
++    except TimeoutExpiredError:
++        actual_state = "exist" if common_instancetypes_exist(admin_client=admin_client) else "do not exist"
++        LOGGER.error(f"Timeout: Expected common-instancetypes to {state_str}, but they {actual_state}")
++        raise
++
++
++def get_hco_common_instancetypes_deployment_value(hyperconverged_resource):
++    """
++    Get the value of commonInstancetypesDeployment field from HCO spec.
++
++    Args:
++        hyperconverged_resource: HyperConverged resource object
++
++    Returns:
++        str or None: Field value, or None if not set
++    """
++    spec = hyperconverged_resource.instance.to_dict().get("spec", {})
++    return spec.get(COMMON_INSTANCETYPES_DEPLOYMENT_FIELD)
++
++
++@pytest.mark.gating
++@pytest.mark.tier1
 +class TestCommonInstancetypesDeployment:
 +    """
-+    Tests for CommonInstancetypesDeployment configuration in HCO CR.
-+
-+    Markers:
-+        - gating
++    Tests for CommonInstancetypesDeployment field in HCO CR.
 +
 +    Preconditions:
-+        - OpenShift Virtualization deployed with HCO
-+        - HCO version supports commonInstancetypesDeployment field
++        - OpenShift Virtualization 4.17+ installed
++        - HyperConverged CR exists and is ready
++        - Access to edit HCO CR
 +    """
 +
 +    @pytest.mark.polarion("CNV-61256")
-+    def test_default_instancetypes_enabled(
-+        self,
-+        admin_client,
-+        hco_namespace,
-+    ):
++    def test_default_behavior_enables_instancetypes(self, admin_client, hco_namespace):
 +        """
 +        Test that common-instancetypes are deployed by default.
 +
 +        Steps:
-+            1. Retrieve HCO CR spec
-+            2. Check commonInstancetypesDeployment field value (or absence)
-+            3. List VirtualMachineClusterInstancetype resources
++            1. Get HCO CR without explicit commonInstancetypesDeployment setting
++            2. Check for common-instancetype resources in cluster
 +
 +        Expected:
-+            - commonInstancetypesDeployment is Enabled or unset (defaults to Enabled)
-+            - Common VirtualMachineClusterInstancetype resources exist
++            - Common-instancetype resources exist
 +        """
-+        LOGGER.info("Verify default behavior: common instancetypes should be enabled")
++        LOGGER.info("Testing default behavior: common-instancetypes should be enabled")
 +
-+        # Get HCO CR
 +        hco = get_hyperconverged_resource(client=admin_client, hco_ns_name=hco_namespace.name)
++        field_value = get_hco_common_instancetypes_deployment_value(hyperconverged_resource=hco)
 +
-+        # Check commonInstancetypesDeployment field (may be unset or Enabled)
-+        deployment_config = hco.instance.spec.get("commonInstancetypesDeployment")
-+        LOGGER.info(f"commonInstancetypesDeployment field value: {deployment_config}")
++        LOGGER.info(f"HCO {COMMON_INSTANCETYPES_DEPLOYMENT_FIELD} value: {field_value}")
 +
-+        # Default is Enabled, so it should be either unset or explicitly set to "Enabled"
-+        assert deployment_config in [
-+            None,
-+            "Enabled",
-+        ], f"Expected commonInstancetypesDeployment to be None or 'Enabled', got {deployment_config}"
++        # Check that common-instancetype resources exist
++        assert common_instancetypes_exist(
++            admin_client=admin_client
++        ), "Common-instancetype resources should exist by default"
 +
-+        # Verify common instancetypes exist
-+        instancetypes = list(VirtualMachineClusterInstancetype.get(client=admin_client))
-+        LOGGER.info(f"Found {len(instancetypes)} VirtualMachineClusterInstancetype resources")
++        LOGGER.info("Default behavior verified: common-instancetypes are enabled")
 +
-+        assert instancetypes, "Expected common instancetypes to exist by default, but none found"
-+
-+        # Verify some known common instancetypes exist
-+        instancetype_names = {it.name for it in instancetypes}
-+        expected_instancetypes = {"u1.medium", "u1.small"}
-+        found = expected_instancetypes & instancetype_names
-+        assert found, f"Expected to find instancetypes {expected_instancetypes}, but found {instancetype_names}"
-+
-+    @pytest.mark.polarion("CNV-61256")
++    @pytest.mark.polarion("CNV-59564")
 +    def test_disable_common_instancetypes(
-+        self,
-+        admin_client,
-+        hco_namespace,
-+        restore_hco_instancetypes_config,
++        self, admin_client, hco_namespace, hyperconverged_resource_scope_function
 +    ):
 +        """
-+        Test that setting commonInstancetypesDeployment to Disabled removes instancetypes.
-+
-+        Preconditions:
-+            - Common-instancetypes currently deployed (default state)
++        Test that setting commonInstancetypesDeployment to Disabled removes common-instancetypes.
 +
 +        Steps:
-+            1. Verify common-instancetype resources exist
-+            2. Edit HCO CR: set spec.commonInstancetypesDeployment to Disabled
++            1. Verify common-instancetype resources exist (initial state)
++            2. Edit HCO CR to set spec.commonInstancetypesDeployment: Disabled
 +            3. Wait for HCO reconciliation to complete
-+            4. List VirtualMachineClusterInstancetype resources
++            4. Check for common-instancetype resources
 +
 +        Expected:
-+            - All common VirtualMachineClusterInstancetype resources are removed
++            - Common-instancetype resources do NOT exist
 +        """
-+        LOGGER.info("Test disabling common instancetypes deployment")
++        LOGGER.info("Testing disable common-instancetypes functionality")
 +
-+        # Step 1: Verify instancetypes exist before disabling
-+        instancetypes_before = list(VirtualMachineClusterInstancetype.get(client=admin_client))
-+        LOGGER.info(f"Found {len(instancetypes_before)} instancetypes before disabling")
-+        assert instancetypes_before, "Expected instancetypes to exist before test"
++        # Verify initial state - instancetypes should exist
++        assert common_instancetypes_exist(
++            admin_client=admin_client
++        ), "Common-instancetype resources should exist before disabling"
 +
-+        # Step 2: Disable commonInstancetypesDeployment
-+        hco = get_hyperconverged_resource(client=admin_client, hco_ns_name=hco_namespace.name)
-+        LOGGER.info("Setting commonInstancetypesDeployment to Disabled")
++        LOGGER.info(f"Setting {COMMON_INSTANCETYPES_DEPLOYMENT_FIELD} to {DISABLED}")
 +
-+        with ResourceEditor(
-+            patches={hco: {"spec": {"commonInstancetypesDeployment": "Disabled"}}}
++        # Disable common-instancetypes via HCO CR
++        with ResourceEditorValidateHCOReconcile(
++            patches={hyperconverged_resource_scope_function: {"spec": {COMMON_INSTANCETYPES_DEPLOYMENT_FIELD: DISABLED}}},
++            list_resource_reconcile=[SSP],
++            wait_for_reconcile_post_update=True,
 +        ):
-+            # Step 3: Wait for HCO reconciliation
-+            wait_for_hco_conditions(admin_client=admin_client, hco_namespace=hco_namespace)
++            # Wait for SSP to reconcile
++            wait_for_ssp_conditions(admin_client=admin_client, hco_namespace=hco_namespace)
 +
-+            # Step 4: Verify instancetypes are removed
-+            LOGGER.info("Waiting for common instancetypes to be removed")
-+            try:
-+                for sample in TimeoutSampler(
-+                    wait_timeout=TIMEOUT_5MIN,
-+                    sleep=10,
-+                    func=lambda: list(VirtualMachineClusterInstancetype.get(client=admin_client)),
-+                ):
-+                    if not sample:
-+                        LOGGER.info("All common instancetypes successfully removed")
-+                        break
-+            except TimeoutExpiredError:
-+                instancetypes_after = list(VirtualMachineClusterInstancetype.get(client=admin_client))
-+                LOGGER.error(f"Instancetypes still present after disabling: {[it.name for it in instancetypes_after]}")
-+                raise
++            # Wait for common-instancetypes to be removed
++            wait_for_common_instancetypes_state(admin_client=admin_client, should_exist=False)
 +
-+            # Final assertion
-+            instancetypes_after_disable = list(VirtualMachineClusterInstancetype.get(client=admin_client))
-+            assert not instancetypes_after_disable, (
-+                f"Expected no instancetypes after disabling, but found {len(instancetypes_after_disable)}: "
-+                f"{[it.name for it in instancetypes_after_disable]}"
++            # Verify field value in HCO spec
++            field_value = get_hco_common_instancetypes_deployment_value(
++                hyperconverged_resource=hyperconverged_resource_scope_function
 +            )
++            assert field_value == DISABLED, f"Expected {DISABLED}, got {field_value}"
 +
-+    @pytest.mark.polarion("CNV-61256")
++            # Final verification
++            assert not common_instancetypes_exist(
++                admin_client=admin_client
++            ), "Common-instancetype resources should NOT exist after disabling"
++
++        LOGGER.info("Successfully disabled common-instancetypes")
++
++    @pytest.mark.polarion("CNV-61257")
 +    def test_enable_common_instancetypes(
-+        self,
-+        admin_client,
-+        hco_namespace,
-+        common_instancetypes_disabled,
++        self, admin_client, hco_namespace, hyperconverged_resource_scope_function
 +    ):
 +        """
-+        Test that setting commonInstancetypesDeployment to Enabled deploys instancetypes.
-+
-+        Preconditions:
-+            - Common-instancetypes disabled via spec.commonInstancetypesDeployment: Disabled
++        Test that setting commonInstancetypesDeployment to Enabled deploys common-instancetypes.
 +
 +        Steps:
-+            1. Verify common-instancetype resources do NOT exist
-+            2. Edit HCO CR: set spec.commonInstancetypesDeployment to Enabled
-+            3. Wait for HCO reconciliation to complete
-+            4. List VirtualMachineClusterInstancetype resources
++            1. Set commonInstancetypesDeployment to Disabled first
++            2. Verify common-instancetype resources do not exist
++            3. Edit HCO CR to set spec.commonInstancetypesDeployment: Enabled
++            4. Wait for HCO reconciliation to complete
++            5. Check for common-instancetype resources
 +
 +        Expected:
-+            - Common VirtualMachineClusterInstancetype resources are deployed
++            - Common-instancetype resources exist
 +        """
-+        LOGGER.info("Test enabling common instancetypes deployment")
++        LOGGER.info("Testing enable common-instancetypes functionality")
 +
-+        # Step 1: Verify instancetypes do not exist (precondition)
-+        instancetypes_before = list(VirtualMachineClusterInstancetype.get(client=admin_client))
-+        LOGGER.info(f"Found {len(instancetypes_before)} instancetypes before enabling")
-+        assert not instancetypes_before, f"Expected no instancetypes, but found {len(instancetypes_before)}"
-+
-+        # Step 2: Enable commonInstancetypesDeployment
-+        hco = common_instancetypes_disabled
-+        LOGGER.info("Setting commonInstancetypesDeployment to Enabled")
-+
-+        with ResourceEditor(
-+            patches={hco: {"spec": {"commonInstancetypesDeployment": "Enabled"}}}
++        # First disable to establish known state
++        LOGGER.info(f"Setting {COMMON_INSTANCETYPES_DEPLOYMENT_FIELD} to {DISABLED} (precondition)")
++        with ResourceEditorValidateHCOReconcile(
++            patches={hyperconverged_resource_scope_function: {"spec": {COMMON_INSTANCETYPES_DEPLOYMENT_FIELD: DISABLED}}},
++            list_resource_reconcile=[SSP],
++            wait_for_reconcile_post_update=True,
 +        ):
-+            # Step 3: Wait for HCO reconciliation
-+            wait_for_hco_conditions(
-+                admin_client=admin_client,
-+                hco_namespace=hco_namespace,
-+                list_dependent_crs_to_check=[SSP],
-+            )
++            wait_for_ssp_conditions(admin_client=admin_client, hco_namespace=hco_namespace)
++            wait_for_common_instancetypes_state(admin_client=admin_client, should_exist=False)
 +
-+            # Step 4: Wait for instancetypes to be created
-+            LOGGER.info("Waiting for common instancetypes to be deployed")
-+            try:
-+                for sample in TimeoutSampler(
-+                    wait_timeout=TIMEOUT_5MIN,
-+                    sleep=10,
-+                    func=lambda: list(VirtualMachineClusterInstancetype.get(client=admin_client)),
-+                ):
-+                    if sample:
-+                        LOGGER.info(f"Found {len(sample)} instancetypes after enabling")
-+                        break
-+            except TimeoutExpiredError:
-+                LOGGER.error("No instancetypes found after enabling")
-+                raise
++        # Verify disabled state
++        assert not common_instancetypes_exist(
++            admin_client=admin_client
++        ), "Precondition failed: common-instancetypes should not exist"
 +
-+            # Final assertion
-+            instancetypes_after = list(VirtualMachineClusterInstancetype.get(client=admin_client))
-+            assert instancetypes_after, "Expected instancetypes to be deployed after enabling, but none found"
++        LOGGER.info(f"Now setting {COMMON_INSTANCETYPES_DEPLOYMENT_FIELD} to {ENABLED}")
 +
-+            # Verify some known common instancetypes exist
-+            instancetype_names = {it.name for it in instancetypes_after}
-+            expected_instancetypes = {"u1.medium", "u1.small"}
-+            found = expected_instancetypes & instancetype_names
-+            assert found, f"Expected to find instancetypes {expected_instancetypes}, but found {instancetype_names}"
-+
-+    @pytest.mark.polarion("CNV-61256")
-+    def test_persistence_after_reconciliation(
-+        self,
-+        admin_client,
-+        hco_namespace,
-+        common_instancetypes_disabled,
-+    ):
-+        """
-+        Test that commonInstancetypesDeployment setting persists across HCO reconciliation.
-+
-+        Preconditions:
-+            - spec.commonInstancetypesDeployment set to Disabled
-+
-+        Steps:
-+            1. Set spec.commonInstancetypesDeployment to Disabled
-+            2. Verify common-instancetype resources removed
-+            3. Edit HCO CR to trigger reconciliation (modify unrelated field)
-+            4. Wait for reconciliation to complete
-+            5. Check commonInstancetypesDeployment field value
-+            6. Verify common-instancetype resources still absent
-+
-+        Expected:
-+            - commonInstancetypesDeployment remains Disabled
-+            - Common VirtualMachineClusterInstancetype resources do NOT exist
-+        """
-+        LOGGER.info("Test that commonInstancetypesDeployment setting persists after reconciliation")
-+
-+        hco = common_instancetypes_disabled
-+
-+        # Step 2: Verify instancetypes are removed (precondition)
-+        instancetypes_before = list(VirtualMachineClusterInstancetype.get(client=admin_client))
-+        assert not instancetypes_before, f"Expected no instancetypes, but found {len(instancetypes_before)}"
-+
-+        # Verify current setting
-+        deployment_config_before = hco.instance.spec.get("commonInstancetypesDeployment")
-+        LOGGER.info(f"commonInstancetypesDeployment before reconciliation: {deployment_config_before}")
-+        assert deployment_config_before == "Disabled", "Expected Disabled before reconciliation trigger"
-+
-+        # Step 3: Trigger reconciliation by updating an unrelated field
-+        LOGGER.info("Triggering HCO reconciliation by updating labels")
-+        current_labels = hco.instance.metadata.get("labels", {})
-+        new_labels = {**current_labels, "test-reconciliation": "true"}
-+
-+        with ResourceEditor(patches={hco: {"metadata": {"labels": new_labels}}}):
-+            # Step 4: Wait for reconciliation
-+            wait_for_hco_conditions(admin_client=admin_client, hco_namespace=hco_namespace)
-+
-+            # Step 5: Check that commonInstancetypesDeployment is still Disabled
-+            hco_after = get_hyperconverged_resource(client=admin_client, hco_ns_name=hco_namespace.name)
-+            deployment_config_after = hco_after.instance.spec.get("commonInstancetypesDeployment")
-+            LOGGER.info(f"commonInstancetypesDeployment after reconciliation: {deployment_config_after}")
-+
-+            assert deployment_config_after == "Disabled", (
-+                f"Expected commonInstancetypesDeployment to remain 'Disabled', got {deployment_config_after}"
-+            )
-+
-+            # Step 6: Verify instancetypes are still absent
-+            instancetypes_after = list(VirtualMachineClusterInstancetype.get(client=admin_client))
-+            assert not instancetypes_after, (
-+                f"Expected no instancetypes after reconciliation, but found {len(instancetypes_after)}: "
-+                f"{[it.name for it in instancetypes_after]}"
-+            )
-+
-+    @pytest.mark.polarion("CNV-61256")
-+    @pytest.mark.parametrize(
-+        "deployment_state",
-+        [
-+            pytest.param("Enabled", id="enabled"),
-+            pytest.param("Disabled", id="disabled"),
-+        ],
-+    )
-+    def test_hco_status_reflects_configuration(
-+        self,
-+        admin_client,
-+        hco_namespace,
-+        restore_hco_instancetypes_config,
-+        deployment_state,
-+    ):
-+        """
-+        Test that HCO status conditions reflect commonInstancetypesDeployment state.
-+
-+        Parametrize:
-+            - deployment_state: [Enabled, Disabled]
-+
-+        Steps:
-+            1. Set spec.commonInstancetypesDeployment to deployment_state
-+            2. Wait for HCO reconciliation
-+            3. Check HCO status conditions
-+
-+        Expected:
-+            - HCO status shows Available condition as True
-+            - No error conditions related to instancetypes deployment
-+        """
-+        LOGGER.info(f"Test HCO status with commonInstancetypesDeployment={deployment_state}")
-+
-+        # Step 1: Set commonInstancetypesDeployment
-+        hco = get_hyperconverged_resource(client=admin_client, hco_ns_name=hco_namespace.name)
-+        LOGGER.info(f"Setting commonInstancetypesDeployment to {deployment_state}")
-+
-+        with ResourceEditor(
-+            patches={hco: {"spec": {"commonInstancetypesDeployment": deployment_state}}}
++        # Enable common-instancetypes
++        with ResourceEditorValidateHCOReconcile(
++            patches={hyperconverged_resource_scope_function: {"spec": {COMMON_INSTANCETYPES_DEPLOYMENT_FIELD: ENABLED}}},
++            list_resource_reconcile=[SSP],
++            wait_for_reconcile_post_update=True,
 +        ):
-+            # Step 2: Wait for HCO reconciliation
++            # Wait for SSP to reconcile
++            wait_for_ssp_conditions(admin_client=admin_client, hco_namespace=hco_namespace)
++
++            # Wait for common-instancetypes to be created
++            wait_for_common_instancetypes_state(admin_client=admin_client, should_exist=True, timeout=TIMEOUT_5MIN)
++
++            # Verify field value in HCO spec
++            field_value = get_hco_common_instancetypes_deployment_value(
++                hyperconverged_resource=hyperconverged_resource_scope_function
++            )
++            assert field_value == ENABLED, f"Expected {ENABLED}, got {field_value}"
++
++            # Final verification
++            assert common_instancetypes_exist(
++                admin_client=admin_client
++            ), "Common-instancetype resources should exist after enabling"
++
++        LOGGER.info("Successfully enabled common-instancetypes")
++
++    @pytest.mark.polarion("CNV-61258")
++    def test_setting_persists_across_reconciliation(
++        self, admin_client, hco_namespace, hyperconverged_resource_scope_function
++    ):
++        """
++        Test that commonInstancetypesDeployment setting persists across HCO reconciliations.
++
++        Steps:
++            1. Set commonInstancetypesDeployment to Disabled
++            2. Verify setting is applied
++            3. Edit HCO CR to modify a different field (trigger reconciliation)
++            4. Wait for HCO reconciliation to complete
++            5. Verify commonInstancetypesDeployment field value
++            6. Check for common-instancetype resources
++
++        Expected:
++            - commonInstancetypesDeployment equals Disabled
++            - Common-instancetype resources do NOT exist
++        """
++        LOGGER.info("Testing setting persistence across HCO reconciliation")
++
++        # Set to Disabled
++        LOGGER.info(f"Setting {COMMON_INSTANCETYPES_DEPLOYMENT_FIELD} to {DISABLED}")
++        with ResourceEditorValidateHCOReconcile(
++            patches={hyperconverged_resource_scope_function: {"spec": {COMMON_INSTANCETYPES_DEPLOYMENT_FIELD: DISABLED}}},
++            list_resource_reconcile=[SSP],
++            wait_for_reconcile_post_update=True,
++        ):
++            wait_for_ssp_conditions(admin_client=admin_client, hco_namespace=hco_namespace)
++            wait_for_common_instancetypes_state(admin_client=admin_client, should_exist=False)
++
++        # Verify initial state
++        field_value = get_hco_common_instancetypes_deployment_value(
++            hyperconverged_resource=hyperconverged_resource_scope_function
++        )
++        assert field_value == DISABLED, f"Precondition: Expected {DISABLED}, got {field_value}"
++
++        LOGGER.info("Triggering HCO reconciliation by modifying unrelated field")
++
++        # Trigger reconciliation by modifying a different field (add a dummy annotation)
++        # This will cause HCO to reconcile without changing the commonInstancetypesDeployment field
++        with ResourceEditorValidateHCOReconcile(
++            patches={
++                hyperconverged_resource_scope_function: {
++                    "metadata": {"annotations": {"test.kubevirt.io/persistence-check": "true"}}
++                }
++            },
++            list_resource_reconcile=[KubeVirt, SSP, CDI],
++            wait_for_reconcile_post_update=True,
++        ):
++            # Wait for reconciliation to complete
 +            wait_for_hco_conditions(
-+                admin_client=admin_client,
-+                hco_namespace=hco_namespace,
-+                list_dependent_crs_to_check=[SSP],
++                admin_client=admin_client, hco_namespace=hco_namespace, consecutive_checks_count=6
 +            )
 +
-+            # Step 3: Check HCO status conditions
-+            hco_after = get_hyperconverged_resource(client=admin_client, hco_ns_name=hco_namespace.name)
-+            conditions = {cond["type"]: cond["status"] for cond in hco_after.instance.status.conditions}
-+
-+            LOGGER.info(f"HCO conditions: {conditions}")
-+
-+            # Verify HCO is Available
-+            assert conditions.get("Available") == "True", (
-+                f"Expected HCO Available condition to be True, got {conditions.get('Available')}"
++            # Verify commonInstancetypesDeployment field is still Disabled
++            field_value = get_hco_common_instancetypes_deployment_value(
++                hyperconverged_resource=hyperconverged_resource_scope_function
 +            )
++            assert (
++                field_value == DISABLED
++            ), f"Setting should persist: Expected {DISABLED} after reconciliation, got {field_value}"
 +
-+            # Verify HCO is not Degraded
-+            assert conditions.get("Degraded") == "False", (
-+                f"Expected HCO Degraded condition to be False, got {conditions.get('Degraded')}"
-+            )
++            # Verify common-instancetypes still do not exist
++            assert not common_instancetypes_exist(
++                admin_client=admin_client
++            ), "Common-instancetype resources should NOT exist after reconciliation"
 +
-+            # Verify reconciliation is complete
-+            assert conditions.get("ReconcileComplete") == "True", (
-+                f"Expected HCO ReconcileComplete condition to be True, got {conditions.get('ReconcileComplete')}"
-+            )
++        LOGGER.info("Setting persisted successfully across HCO reconciliation")
 +
 +
-+class TestCommonInstancetypesFieldValidation:
++@pytest.mark.tier1
++class TestCommonInstancetypesDeploymentValidation:
 +    """
-+    Tests for commonInstancetypesDeployment field validation.
-+
-+    Markers:
-+        - gating
++    Tests for field validation of CommonInstancetypesDeployment.
 +
 +    Preconditions:
-+        - OpenShift Virtualization deployed with HCO
++        - OpenShift Virtualization 4.17+ installed
++        - HyperConverged CR exists and is ready
 +    """
 +
-+    @pytest.mark.polarion("CNV-61256")
-+    def test_valid_enabled_value(
-+        self,
-+        admin_client,
-+        hco_namespace,
-+        restore_hco_instancetypes_config,
-+    ):
++    @pytest.mark.polarion("CNV-61259")
++    def test_accepts_enabled_value(self, admin_client, hco_namespace, hyperconverged_resource_scope_function):
 +        """
-+        Test that setting commonInstancetypesDeployment to Enabled is accepted.
++        Test that commonInstancetypesDeployment accepts "Enabled" value.
 +
 +        Steps:
-+            1. Edit HCO CR: set spec.commonInstancetypesDeployment to Enabled
-+            2. Verify HCO CR update succeeds
++            1. Edit HCO CR to set spec.commonInstancetypesDeployment: Enabled
++            2. Verify HCO CR is updated successfully
 +
 +        Expected:
-+            - HCO CR update succeeds without validation error
++            - HCO CR spec.commonInstancetypesDeployment equals Enabled
 +        """
-+        LOGGER.info("Test that 'Enabled' is a valid value for commonInstancetypesDeployment")
++        LOGGER.info(f"Testing that {COMMON_INSTANCETYPES_DEPLOYMENT_FIELD} accepts {ENABLED} value")
 +
-+        hco = get_hyperconverged_resource(client=admin_client, hco_ns_name=hco_namespace.name)
-+
-+        # Should not raise an exception
-+        with ResourceEditor(
-+            patches={hco: {"spec": {"commonInstancetypesDeployment": "Enabled"}}}
++        with ResourceEditorValidateHCOReconcile(
++            patches={hyperconverged_resource_scope_function: {"spec": {COMMON_INSTANCETYPES_DEPLOYMENT_FIELD: ENABLED}}},
++            list_resource_reconcile=[SSP],
++            wait_for_reconcile_post_update=True,
 +        ):
-+            wait_for_hco_conditions(admin_client=admin_client, hco_namespace=hco_namespace)
++            wait_for_hco_conditions(
++                admin_client=admin_client, hco_namespace=hco_namespace, consecutive_checks_count=3
++            )
 +
-+            # Verify the value was set
-+            hco_after = get_hyperconverged_resource(client=admin_client, hco_ns_name=hco_namespace.name)
-+            deployment_config = hco_after.instance.spec.get("commonInstancetypesDeployment")
-+            assert deployment_config == "Enabled", f"Expected 'Enabled', got {deployment_config}"
++            field_value = get_hco_common_instancetypes_deployment_value(
++                hyperconverged_resource=hyperconverged_resource_scope_function
++            )
++            assert field_value == ENABLED, f"Expected {ENABLED}, got {field_value}"
 +
-+    @pytest.mark.polarion("CNV-61256")
-+    def test_valid_disabled_value(
-+        self,
-+        admin_client,
-+        hco_namespace,
-+        restore_hco_instancetypes_config,
-+    ):
++        LOGGER.info(f"Successfully validated {ENABLED} value is accepted")
++
++    @pytest.mark.polarion("CNV-61260")
++    def test_accepts_disabled_value(self, admin_client, hco_namespace, hyperconverged_resource_scope_function):
 +        """
-+        Test that setting commonInstancetypesDeployment to Disabled is accepted.
++        Test that commonInstancetypesDeployment accepts "Disabled" value.
 +
 +        Steps:
-+            1. Edit HCO CR: set spec.commonInstancetypesDeployment to Disabled
-+            2. Verify HCO CR update succeeds
++            1. Edit HCO CR to set spec.commonInstancetypesDeployment: Disabled
++            2. Verify HCO CR is updated successfully
 +
 +        Expected:
-+            - HCO CR update succeeds without validation error
++            - HCO CR spec.commonInstancetypesDeployment equals Disabled
 +        """
-+        LOGGER.info("Test that 'Disabled' is a valid value for commonInstancetypesDeployment")
++        LOGGER.info(f"Testing that {COMMON_INSTANCETYPES_DEPLOYMENT_FIELD} accepts {DISABLED} value")
 +
-+        hco = get_hyperconverged_resource(client=admin_client, hco_ns_name=hco_namespace.name)
-+
-+        # Should not raise an exception
-+        with ResourceEditor(
-+            patches={hco: {"spec": {"commonInstancetypesDeployment": "Disabled"}}}
++        with ResourceEditorValidateHCOReconcile(
++            patches={hyperconverged_resource_scope_function: {"spec": {COMMON_INSTANCETYPES_DEPLOYMENT_FIELD: DISABLED}}},
++            list_resource_reconcile=[SSP],
++            wait_for_reconcile_post_update=True,
 +        ):
-+            wait_for_hco_conditions(admin_client=admin_client, hco_namespace=hco_namespace)
++            wait_for_hco_conditions(
++                admin_client=admin_client, hco_namespace=hco_namespace, consecutive_checks_count=3
++            )
 +
-+            # Verify the value was set
-+            hco_after = get_hyperconverged_resource(client=admin_client, hco_ns_name=hco_namespace.name)
-+            deployment_config = hco_after.instance.spec.get("commonInstancetypesDeployment")
-+            assert deployment_config == "Disabled", f"Expected 'Disabled', got {deployment_config}"
++            field_value = get_hco_common_instancetypes_deployment_value(
++                hyperconverged_resource=hyperconverged_resource_scope_function
++            )
++            assert field_value == DISABLED, f"Expected {DISABLED}, got {field_value}"
 +
-+    @pytest.mark.polarion("CNV-61256")
-+    @pytest.mark.parametrize(
-+        "invalid_value",
-+        [
-+            pytest.param("Invalid", id="invalid_string"),
-+            pytest.param("true", id="lowercase_true"),
-+            pytest.param("false", id="lowercase_false"),
-+            pytest.param("enabled", id="lowercase_enabled"),
-+            pytest.param("disabled", id="lowercase_disabled"),
-+        ],
-+    )
-+    def test_invalid_value_rejected(
-+        self,
-+        admin_client,
-+        hco_namespace,
-+        restore_hco_instancetypes_config,
-+        invalid_value,
-+    ):
++        LOGGER.info(f"Successfully validated {DISABLED} value is accepted")
++
++    @pytest.mark.polarion("CNV-61261")
++    def test_rejects_invalid_value(self, admin_client, hyperconverged_resource_scope_function):
 +        """
-+        [NEGATIVE] Test that invalid commonInstancetypesDeployment values are rejected.
-+
-+        Parametrize:
-+            - invalid_value: [Invalid, true, false, enabled, disabled]
++        [NEGATIVE] Test that commonInstancetypesDeployment rejects invalid values.
 +
 +        Steps:
-+            1. Attempt to set spec.commonInstancetypesDeployment to invalid_value
-+            2. Check for validation error
++            1. Attempt to edit HCO CR with spec.commonInstancetypesDeployment: InvalidValue
++            2. Capture validation error
 +
 +        Expected:
 +            - HCO CR update fails with validation error
-+            - Error message indicates invalid value for commonInstancetypesDeployment
 +        """
-+        LOGGER.info(f"Test that '{invalid_value}' is rejected as invalid value")
++        LOGGER.info(f"Testing that {COMMON_INSTANCETYPES_DEPLOYMENT_FIELD} rejects invalid value")
 +
-+        hco = get_hyperconverged_resource(client=admin_client, hco_ns_name=hco_namespace.name)
++        invalid_value = "InvalidValue"
++        LOGGER.info(f"Attempting to set {COMMON_INSTANCETYPES_DEPLOYMENT_FIELD} to {invalid_value}")
 +
-+        # Attempt to set invalid value - should raise ApiException
-+        with pytest.raises(ApiException) as exc_info:
-+            ResourceEditor(
-+                patches={hco: {"spec": {"commonInstancetypesDeployment": invalid_value}}}
-+            ).update()
++        # Attempt to set invalid value - this should raise an exception
++        with pytest.raises(Exception) as exc_info:
++            with ResourceEditorValidateHCOReconcile(
++                patches={
++                    hyperconverged_resource_scope_function: {
++                        "spec": {COMMON_INSTANCETYPES_DEPLOYMENT_FIELD: invalid_value}
++                    }
++                },
++                list_resource_reconcile=[SSP],
++                wait_for_reconcile_post_update=True,
++            ):
++                pass
 +
-+        # Verify error message indicates validation failure
-+        error_message = str(exc_info.value)
-+        LOGGER.info(f"Validation error received: {error_message}")
-+        assert "commonInstancetypesDeployment" in error_message or "Invalid value" in error_message, (
-+            f"Expected error message to mention commonInstancetypesDeployment or Invalid value, got: {error_message}"
-+        )
++        LOGGER.info(f"Invalid value correctly rejected with error: {exc_info.value}")
++        assert exc_info.value, "Setting invalid value should raise an exception"
 +
 +
 +@pytest.mark.tier2
++@pytest.mark.post_upgrade
 +class TestCommonInstancetypesUpgrade:
 +    """
-+    Tests for commonInstancetypesDeployment behavior during CNV upgrade.
-+
-+    Markers:
-+        - tier2
-+        - upgrade
++    Tests for CommonInstancetypesDeployment behavior during upgrades.
 +
 +    Preconditions:
-+        - OpenShift Virtualization deployed
-+        - CNV version ready for upgrade
++        - OpenShift Virtualization installed
++        - HyperConverged CR exists and is ready
++        - CNV upgrade has completed successfully
 +    """
 +
-+    @pytest.mark.polarion("CNV-61256")
-+    @pytest.mark.upgrade
-+    @pytest.mark.post_upgrade
-+    def test_disabled_setting_preserved_after_upgrade(
-+        self,
-+        admin_client,
-+        hco_namespace,
-+    ):
++    @pytest.mark.polarion("CNV-61262")
++    def test_upgrade_preserves_disabled_setting(self, admin_client, hyperconverged_resource_scope_module):
 +        """
-+        Test that commonInstancetypesDeployment: Disabled persists through CNV upgrade.
++        Test that commonInstancetypesDeployment: Disabled persists through upgrade.
 +
 +        Preconditions:
-+            - spec.commonInstancetypesDeployment set to Disabled
-+            - Common-instancetype resources removed
-+            - CNV upgrade completed
++            - CNV upgrade has completed successfully
 +
 +        Steps:
-+            1. Verify commonInstancetypesDeployment is Disabled
-+            2. Verify common-instancetype resources do NOT exist
++            1. Verify commonInstancetypesDeployment field value after upgrade
++            2. Check for common-instancetype resources after upgrade
 +
 +        Expected:
-+            - commonInstancetypesDeployment remains Disabled after upgrade
-+            - Common VirtualMachineClusterInstancetype resources do NOT exist
++            - commonInstancetypesDeployment equals Disabled (if it was Disabled before upgrade)
++            - Common-instancetype resources do NOT exist (if setting was Disabled before upgrade)
 +        """
-+        LOGGER.info("Test that Disabled setting persists after upgrade")
++        LOGGER.info("Testing that Disabled setting persists through upgrade")
 +
-+        # This test is executed POST upgrade, so we just verify the state
-+        hco = get_hyperconverged_resource(client=admin_client, hco_ns_name=hco_namespace.name)
++        field_value = get_hco_common_instancetypes_deployment_value(
++            hyperconverged_resource=hyperconverged_resource_scope_module
++        )
 +
-+        # Check if commonInstancetypesDeployment was set to Disabled before upgrade
-+        # (This would be set by a pre-upgrade test or configuration)
-+        deployment_config = hco.instance.spec.get("commonInstancetypesDeployment")
++        LOGGER.info(f"Post-upgrade {COMMON_INSTANCETYPES_DEPLOYMENT_FIELD} value: {field_value}")
 +
-+        # If it was Disabled before upgrade, verify it's still Disabled
-+        if deployment_config == "Disabled":
-+            LOGGER.info("commonInstancetypesDeployment is Disabled after upgrade")
-+
-+            # Verify instancetypes are still absent
-+            instancetypes = list(VirtualMachineClusterInstancetype.get(client=admin_client))
-+            assert not instancetypes, (
-+                f"Expected no instancetypes after upgrade with Disabled setting, "
-+                f"but found {len(instancetypes)}: {[it.name for it in instancetypes]}"
++        # If the field was set to Disabled before upgrade, verify it's still Disabled
++        if field_value == DISABLED:
++            assert not common_instancetypes_exist(
++                admin_client=admin_client
++            ), f"If {COMMON_INSTANCETYPES_DEPLOYMENT_FIELD} is {DISABLED}, instancetypes should not exist"
++            LOGGER.info("Disabled setting persisted through upgrade")
++        else:
++            LOGGER.info(
++                f"Skipping verification: {COMMON_INSTANCETYPES_DEPLOYMENT_FIELD} is {field_value}, not {DISABLED}"
 +            )
-+        else:
-+            pytest.skip("Test requires commonInstancetypesDeployment to be Disabled before upgrade")
 +
-+    @pytest.mark.polarion("CNV-61256")
-+    @pytest.mark.upgrade
-+    @pytest.mark.post_upgrade
-+    def test_enabled_setting_preserved_after_upgrade(
-+        self,
-+        admin_client,
-+        hco_namespace,
-+    ):
++    @pytest.mark.polarion("CNV-61263")
++    def test_upgrade_preserves_enabled_setting(self, admin_client, hyperconverged_resource_scope_module):
 +        """
-+        Test that commonInstancetypesDeployment: Enabled persists through CNV upgrade.
++        Test that commonInstancetypesDeployment: Enabled persists through upgrade.
 +
 +        Preconditions:
-+            - spec.commonInstancetypesDeployment set to Enabled (or default)
-+            - Common-instancetype resources deployed
-+            - CNV upgrade completed
++            - CNV upgrade has completed successfully
 +
 +        Steps:
-+            1. Verify commonInstancetypesDeployment is Enabled
-+            2. Verify common-instancetype resources exist
++            1. Verify commonInstancetypesDeployment field value after upgrade
++            2. Check for common-instancetype resources after upgrade
 +
 +        Expected:
-+            - commonInstancetypesDeployment remains Enabled after upgrade
-+            - Common VirtualMachineClusterInstancetype resources exist
++            - commonInstancetypesDeployment equals Enabled (if it was Enabled before upgrade)
++            - Common-instancetype resources exist (if setting was Enabled before upgrade)
 +        """
-+        LOGGER.info("Test that Enabled setting persists after upgrade")
++        LOGGER.info("Testing that Enabled setting persists through upgrade")
 +
-+        # This test is executed POST upgrade, so we just verify the state
-+        hco = get_hyperconverged_resource(client=admin_client, hco_ns_name=hco_namespace.name)
++        field_value = get_hco_common_instancetypes_deployment_value(
++            hyperconverged_resource=hyperconverged_resource_scope_module
++        )
 +
-+        deployment_config = hco.instance.spec.get("commonInstancetypesDeployment")
++        LOGGER.info(f"Post-upgrade {COMMON_INSTANCETYPES_DEPLOYMENT_FIELD} value: {field_value}")
 +
-+        # Default is Enabled, so check for None or "Enabled"
-+        if deployment_config in [None, "Enabled"]:
-+            LOGGER.info(f"commonInstancetypesDeployment is {deployment_config} (Enabled) after upgrade")
-+
-+            # Verify instancetypes exist
-+            instancetypes = list(VirtualMachineClusterInstancetype.get(client=admin_client))
-+            assert instancetypes, "Expected instancetypes to exist after upgrade with Enabled setting, but none found"
-+
-+            # Verify some known common instancetypes exist
-+            instancetype_names = {it.name for it in instancetypes}
-+            expected_instancetypes = {"u1.medium", "u1.small"}
-+            found = expected_instancetypes & instancetype_names
-+            assert found, f"Expected to find instancetypes {expected_instancetypes}, but found {instancetype_names}"
++        # If the field was set to Enabled before upgrade, verify it's still Enabled
++        if field_value == ENABLED:
++            assert common_instancetypes_exist(
++                admin_client=admin_client
++            ), f"If {COMMON_INSTANCETYPES_DEPLOYMENT_FIELD} is {ENABLED}, instancetypes should exist"
++            LOGGER.info("Enabled setting persisted through upgrade")
 +        else:
-+            pytest.skip("Test requires commonInstancetypesDeployment to be Enabled before upgrade")
++            LOGGER.info(f"Skipping verification: {COMMON_INSTANCETYPES_DEPLOYMENT_FIELD} is {field_value}, not {ENABLED}")
++
++    @pytest.mark.polarion("CNV-61264")
++    def test_upgrade_without_field_maintains_default(self, admin_client, hyperconverged_resource_scope_module):
++        """
++        Test that upgrade without explicit commonInstancetypesDeployment maintains default behavior.
++
++        Preconditions:
++            - CNV upgrade has completed successfully
++
++        Steps:
++            1. Check commonInstancetypesDeployment field value
++            2. Check for common-instancetype resources after upgrade
++
++        Expected:
++            - Common-instancetype resources exist (default behavior)
++        """
++        LOGGER.info("Testing that default behavior is maintained through upgrade")
++
++        field_value = get_hco_common_instancetypes_deployment_value(
++            hyperconverged_resource=hyperconverged_resource_scope_module
++        )
++
++        LOGGER.info(f"Post-upgrade {COMMON_INSTANCETYPES_DEPLOYMENT_FIELD} value: {field_value}")
++
++        # If field is not explicitly set or is Enabled (default), verify instancetypes exist
++        if field_value is None or field_value == ENABLED:
++            assert common_instancetypes_exist(
++                admin_client=admin_client
++            ), "Default behavior should deploy common-instancetypes"
++            LOGGER.info("Default behavior maintained through upgrade")
++        else:
++            LOGGER.info(f"Field is explicitly set to {field_value}")
 +
 +
 +@pytest.mark.tier2
 +class TestCommonInstancetypesSSPIntegration:
 +    """
-+    Tests for SSP operator integration with commonInstancetypesDeployment.
-+
-+    Markers:
-+        - tier2
++    Tests for integration between HCO CommonInstancetypesDeployment and SSP operator.
 +
 +    Preconditions:
-+        - OpenShift Virtualization deployed
-+        - SSP operator running
++        - OpenShift Virtualization 4.17+ installed
++        - HyperConverged CR exists and is ready
++        - SSP (Scheduling, Scale and Performance) operator is running
 +    """
 +
-+    @pytest.mark.polarion("CNV-61256")
-+    def test_ssp_reconciles_when_disabled(
-+        self,
-+        admin_client,
-+        hco_namespace,
-+        common_instancetypes_disabled,
++    @pytest.mark.polarion("CNV-61265")
++    def test_ssp_reflects_disabled_state(
++        self, admin_client, hco_namespace, hyperconverged_resource_scope_function
 +    ):
 +        """
-+        Test that SSP operator handles commonInstancetypesDeployment: Disabled correctly.
++        Test that SSP operator respects HCO commonInstancetypesDeployment: Disabled.
 +
 +        Steps:
-+            1. Verify commonInstancetypesDeployment is Disabled
-+            2. Check SSP CR status
-+            3. Verify no common-instancetype resources deployed
++            1. Set commonInstancetypesDeployment to Disabled
++            2. Get SSP CR configuration
++            3. Verify common-instancetype resources do not exist
 +
 +        Expected:
-+            - SSP CR shows Available condition as True
-+            - No VirtualMachineClusterInstancetype resources exist
++            - Common-instancetype resources do NOT exist
 +        """
-+        LOGGER.info("Test SSP reconciliation with commonInstancetypesDeployment Disabled")
++        LOGGER.info("Testing SSP integration with Disabled setting")
 +
-+        # Verify instancetypes are disabled
-+        instancetypes = list(VirtualMachineClusterInstancetype.get(client=admin_client))
-+        assert not instancetypes, f"Expected no instancetypes, but found {len(instancetypes)}"
-+
-+        # Check SSP CR status
-+        ssp_list = list(SSP.get(client=admin_client, namespace=hco_namespace.name))
-+        assert ssp_list, "Expected SSP CR to exist"
-+
-+        ssp = ssp_list[0]
-+        conditions = {cond["type"]: cond["status"] for cond in ssp.instance.status.conditions}
-+
-+        LOGGER.info(f"SSP conditions: {conditions}")
-+
-+        # Verify SSP is Available
-+        assert conditions.get("Available") == "True", (
-+            f"Expected SSP Available condition to be True, got {conditions.get('Available')}"
-+        )
-+
-+        # Verify SSP is not Degraded
-+        assert conditions.get("Degraded") == "False", (
-+            f"Expected SSP Degraded condition to be False, got {conditions.get('Degraded')}"
-+        )
-+
-+    @pytest.mark.polarion("CNV-61256")
-+    def test_ssp_deploys_when_enabled(
-+        self,
-+        admin_client,
-+        hco_namespace,
-+        restore_hco_instancetypes_config,
-+    ):
-+        """
-+        Test that SSP operator deploys instancetypes when commonInstancetypesDeployment is Enabled.
-+
-+        Preconditions:
-+            - commonInstancetypesDeployment set to Enabled (default)
-+
-+        Steps:
-+            1. Verify commonInstancetypesDeployment is Enabled
-+            2. Check SSP CR status
-+            3. List VirtualMachineClusterInstancetype resources
-+
-+        Expected:
-+            - SSP CR shows Available condition as True
-+            - VirtualMachineClusterInstancetype resources exist
-+        """
-+        LOGGER.info("Test SSP deploys instancetypes when commonInstancetypesDeployment is Enabled")
-+
-+        # Ensure enabled state
-+        hco = get_hyperconverged_resource(client=admin_client, hco_ns_name=hco_namespace.name)
-+
-+        with ResourceEditor(
-+            patches={hco: {"spec": {"commonInstancetypesDeployment": "Enabled"}}}
++        # Set to Disabled
++        with ResourceEditorValidateHCOReconcile(
++            patches={hyperconverged_resource_scope_function: {"spec": {COMMON_INSTANCETYPES_DEPLOYMENT_FIELD: DISABLED}}},
++            list_resource_reconcile=[SSP],
++            wait_for_reconcile_post_update=True,
 +        ):
-+            wait_for_hco_conditions(
-+                admin_client=admin_client,
-+                hco_namespace=hco_namespace,
-+                list_dependent_crs_to_check=[SSP],
-+            )
++            wait_for_ssp_conditions(admin_client=admin_client, hco_namespace=hco_namespace)
++            wait_for_common_instancetypes_state(admin_client=admin_client, should_exist=False)
 +
-+            # Wait for instancetypes to be deployed
-+            try:
-+                for sample in TimeoutSampler(
-+                    wait_timeout=TIMEOUT_5MIN,
-+                    sleep=10,
-+                    func=lambda: list(VirtualMachineClusterInstancetype.get(client=admin_client)),
-+                ):
-+                    if sample:
-+                        break
-+            except TimeoutExpiredError:
-+                LOGGER.error("No instancetypes found after enabling")
-+                raise
++            # Get SSP resource
++            ssp = get_ssp_resource(admin_client=admin_client, namespace=hco_namespace)
++            assert ssp, "SSP resource should exist"
++            LOGGER.info(f"SSP resource: {ssp.name}")
 +
-+            # Check SSP CR status
-+            ssp_list = list(SSP.get(client=admin_client, namespace=hco_namespace.name))
-+            assert ssp_list, "Expected SSP CR to exist"
++            # Verify common-instancetypes do not exist
++            assert not common_instancetypes_exist(
++                admin_client=admin_client
++            ), "SSP should not manage common-instancetype resources when Disabled"
 +
-+            ssp = ssp_list[0]
-+            conditions = {cond["type"]: cond["status"] for cond in ssp.instance.status.conditions}
++        LOGGER.info("SSP correctly respects Disabled setting")
 +
-+            LOGGER.info(f"SSP conditions: {conditions}")
++    @pytest.mark.polarion("CNV-61266")
++    def test_ssp_reflects_enabled_state(
++        self, admin_client, hco_namespace, hyperconverged_resource_scope_function
++    ):
++        """
++        Test that SSP operator respects HCO commonInstancetypesDeployment: Enabled.
 +
-+            # Verify SSP is Available
-+            assert conditions.get("Available") == "True", (
-+                f"Expected SSP Available condition to be True, got {conditions.get('Available')}"
-+            )
++        Steps:
++            1. Set commonInstancetypesDeployment to Enabled
++            2. Get SSP CR configuration
++            3. Verify common-instancetype resources exist
 +
-+            # Verify instancetypes exist
-+            instancetypes = list(VirtualMachineClusterInstancetype.get(client=admin_client))
-+            assert instancetypes, "Expected instancetypes to exist when enabled, but none found"
++        Expected:
++            - Common-instancetype resources exist
++        """
++        LOGGER.info("Testing SSP integration with Enabled setting")
++
++        # Set to Enabled
++        with ResourceEditorValidateHCOReconcile(
++            patches={hyperconverged_resource_scope_function: {"spec": {COMMON_INSTANCETYPES_DEPLOYMENT_FIELD: ENABLED}}},
++            list_resource_reconcile=[SSP],
++            wait_for_reconcile_post_update=True,
++        ):
++            wait_for_ssp_conditions(admin_client=admin_client, hco_namespace=hco_namespace)
++            wait_for_common_instancetypes_state(admin_client=admin_client, should_exist=True)
++
++            # Get SSP resource
++            ssp = get_ssp_resource(admin_client=admin_client, namespace=hco_namespace)
++            assert ssp, "SSP resource should exist"
++            LOGGER.info(f"SSP resource: {ssp.name}")
++
++            # Verify common-instancetypes exist
++            assert common_instancetypes_exist(
++                admin_client=admin_client
++            ), "SSP should manage common-instancetype resources when Enabled"
++
++        LOGGER.info("SSP correctly respects Enabled setting")
 +
 +
 +@pytest.mark.tier2
-+class TestCommonInstancetypesVMCreation:
++class TestCommonInstancetypesHCOStatus:
 +    """
-+    Tests for VM creation behavior with different commonInstancetypesDeployment states.
-+
-+    Markers:
-+        - tier2
++    Tests for HCO status conditions related to CommonInstancetypesDeployment.
 +
 +    Preconditions:
-+        - OpenShift Virtualization deployed
-+        - Namespace for testing VMs
++        - OpenShift Virtualization 4.17+ installed
++        - HyperConverged CR exists and is ready
 +    """
 +
-+    @pytest.mark.polarion("CNV-61256")
-+    def test_vm_creation_with_instancetype_when_enabled(
-+        self,
-+        admin_client,
-+        hco_namespace,
-+        namespace,
-+        restore_hco_instancetypes_config,
++    @pytest.mark.polarion("CNV-61267")
++    def test_hco_status_reflects_disabled_state(
++        self, admin_client, hco_namespace, hyperconverged_resource_scope_function
 +    ):
 +        """
-+        Test that VMs can use common instancetypes when deployment is Enabled.
-+
-+        Preconditions:
-+            - spec.commonInstancetypesDeployment set to Enabled
-+            - Common-instancetype resources exist
++        Test that HCO status is consistent when commonInstancetypesDeployment: Disabled.
 +
 +        Steps:
-+            1. Create VM referencing a common instancetype (e.g., u1.medium)
-+            2. Verify VM creation succeeds
++            1. Set commonInstancetypesDeployment to Disabled
++            2. Wait for HCO reconciliation
++            3. Get HCO CR status
++            4. Verify HCO conditions are healthy
 +
 +        Expected:
-+            - VM is created successfully
++            - HCO status conditions are Available and not Degraded
 +        """
-+        LOGGER.info("Test VM creation with instancetype when commonInstancetypesDeployment is Enabled")
++        LOGGER.info("Testing HCO status with Disabled setting")
 +
-+        # Ensure enabled state and instancetypes exist
-+        hco = get_hyperconverged_resource(client=admin_client, hco_ns_name=hco_namespace.name)
-+
-+        with ResourceEditor(
-+            patches={hco: {"spec": {"commonInstancetypesDeployment": "Enabled"}}}
++        with ResourceEditorValidateHCOReconcile(
++            patches={hyperconverged_resource_scope_function: {"spec": {COMMON_INSTANCETYPES_DEPLOYMENT_FIELD: DISABLED}}},
++            list_resource_reconcile=[SSP],
++            wait_for_reconcile_post_update=True,
 +        ):
 +            wait_for_hco_conditions(
-+                admin_client=admin_client,
-+                hco_namespace=hco_namespace,
-+                list_dependent_crs_to_check=[SSP],
++                admin_client=admin_client, hco_namespace=hco_namespace, consecutive_checks_count=6
 +            )
 +
-+            # Wait for instancetypes
-+            try:
-+                for sample in TimeoutSampler(
-+                    wait_timeout=TIMEOUT_5MIN,
-+                    sleep=10,
-+                    func=lambda: list(VirtualMachineClusterInstancetype.get(client=admin_client)),
-+                ):
-+                    if sample:
-+                        break
-+            except TimeoutExpiredError:
-+                LOGGER.error("No instancetypes found")
-+                raise
++            # Get HCO status
++            hco_status = hyperconverged_resource_scope_function.instance.status
 +
-+            # Create VM with instancetype reference
-+            vm_name = "test-vm-with-instancetype"
-+            LOGGER.info(f"Creating VM {vm_name} with instancetype u1.medium")
++            LOGGER.info(f"HCO status conditions: {hco_status.conditions}")
 +
-+            # Create VM spec with instancetype reference
-+            # Note: Using minimal spec as the instancetype will provide CPU/memory
-+            with VirtualMachine(
-+                name=vm_name,
-+                namespace=namespace.name,
-+                client=admin_client,
-+                instancetype={"kind": "VirtualMachineClusterInstancetype", "name": "u1.medium"},
-+                running=False,
-+                data_volume_template={
-+                    "metadata": {"name": f"{vm_name}-dv"},
-+                    "spec": {
-+                        "source": {"blank": {}},
-+                        "storage": {"resources": {"requests": {"storage": "1Gi"}}},
-+                    },
-+                },
-+            ) as vm:
-+                LOGGER.info(f"VM {vm.name} created successfully with instancetype")
++            # Verify HCO is healthy (Available and not Degraded)
++            # This confirms that disabling common-instancetypes doesn't break HCO
++            available_condition = next(
++                (cond for cond in hco_status.conditions if cond.get("type") == "Available"), None
++            )
++            assert available_condition, "HCO should have Available condition"
++            assert available_condition.get("status") == "True", "HCO should be Available"
 +
-+                # Verify VM spec has instancetype reference
-+                assert vm.instance.spec.get("instancetype"), "Expected VM to have instancetype reference"
-+                instancetype_ref = vm.instance.spec.instancetype
-+                assert instancetype_ref["name"] == "u1.medium", (
-+                    f"Expected instancetype name to be 'u1.medium', got {instancetype_ref['name']}"
-+                )
++        LOGGER.info("HCO status is healthy with Disabled setting")
 +
-+    @pytest.mark.polarion("CNV-61256")
-+    def test_vm_creation_fails_with_missing_instancetype_when_disabled(
-+        self,
-+        admin_client,
-+        hco_namespace,
-+        namespace,
-+        common_instancetypes_disabled,
++    @pytest.mark.polarion("CNV-61268")
++    def test_hco_status_reflects_enabled_state(
++        self, admin_client, hco_namespace, hyperconverged_resource_scope_function
 +    ):
 +        """
-+        [NEGATIVE] Test that VM creation fails when referencing non-existent instancetype.
-+
-+        Preconditions:
-+            - spec.commonInstancetypesDeployment set to Disabled
-+            - Common-instancetype resources removed
++        Test that HCO status is consistent when commonInstancetypesDeployment: Enabled.
 +
 +        Steps:
-+            1. Attempt to create VM referencing a common instancetype (e.g., u1.medium)
-+            2. Check for creation error
++            1. Set commonInstancetypesDeployment to Enabled
++            2. Wait for HCO reconciliation
++            3. Get HCO CR status
++            4. Verify HCO conditions are healthy
 +
 +        Expected:
-+            - VM creation fails with error indicating instancetype not found
++            - HCO status conditions are Available and not Degraded
 +        """
-+        LOGGER.info("Test VM creation fails with missing instancetype when commonInstancetypesDeployment is Disabled")
++        LOGGER.info("Testing HCO status with Enabled setting")
 +
-+        # Verify instancetypes are disabled
-+        instancetypes = list(VirtualMachineClusterInstancetype.get(client=admin_client))
-+        assert not instancetypes, f"Expected no instancetypes, but found {len(instancetypes)}"
-+
-+        # Attempt to create VM with instancetype reference - should fail
-+        vm_name = "test-vm-missing-instancetype"
-+        LOGGER.info(f"Attempting to create VM {vm_name} with non-existent instancetype u1.medium")
-+
-+        # VM creation might succeed, but it should fail when trying to start
-+        # or the instancetype reference should cause validation error
-+        try:
-+            with VirtualMachine(
-+                name=vm_name,
-+                namespace=namespace.name,
-+                client=admin_client,
-+                instancetype={"kind": "VirtualMachineClusterInstancetype", "name": "u1.medium"},
-+                running=True,
-+                data_volume_template={
-+                    "metadata": {"name": f"{vm_name}-dv"},
-+                    "spec": {
-+                        "source": {"blank": {}},
-+                        "storage": {"resources": {"requests": {"storage": "1Gi"}}},
-+                    },
-+                },
-+            ):
-+                # If we get here without error, wait a bit to see if VMI creation fails
-+                LOGGER.info("VM created, checking if VMI creation fails due to missing instancetype")
-+
-+                # Wait and check for error conditions
-+                try:
-+                    for _ in TimeoutSampler(
-+                        wait_timeout=TIMEOUT_2MIN,
-+                        sleep=10,
-+                        func=lambda: True,
-+                    ):
-+                        # The test expectation is that this should fail, so if we reach here,
-+                        # the instancetype might have been found (which would be unexpected)
-+                        break
-+                except TimeoutExpiredError:
-+                    pass
-+
-+                # Check VM status for errors
-+                # Note: The actual failure mechanism depends on KubeVirt implementation
-+                # It may fail at admission, during VMI creation, or when applying instancetype
-+                pytest.fail(
-+                    "Expected VM creation or VMI startup to fail with missing instancetype, "
-+                    "but VM was created without error"
-+                )
-+
-+        except ApiException as exc:
-+            # Expected path - creation should fail
-+            error_message = str(exc)
-+            LOGGER.info(f"VM creation failed as expected: {error_message}")
-+
-+            # Verify error message indicates missing instancetype
-+            assert "not found" in error_message.lower() or "instancetype" in error_message.lower(), (
-+                f"Expected error message to indicate missing instancetype, got: {error_message}"
++        with ResourceEditorValidateHCOReconcile(
++            patches={hyperconverged_resource_scope_function: {"spec": {COMMON_INSTANCETYPES_DEPLOYMENT_FIELD: ENABLED}}},
++            list_resource_reconcile=[SSP],
++            wait_for_reconcile_post_update=True,
++        ):
++            wait_for_hco_conditions(
++                admin_client=admin_client, hco_namespace=hco_namespace, consecutive_checks_count=6
 +            )
++
++            # Get HCO status
++            hco_status = hyperconverged_resource_scope_function.instance.status
++
++            LOGGER.info(f"HCO status conditions: {hco_status.conditions}")
++
++            # Verify HCO is healthy (Available and not Degraded)
++            available_condition = next(
++                (cond for cond in hco_status.conditions if cond.get("type") == "Available"), None
++            )
++            assert available_condition, "HCO should have Available condition"
++            assert available_condition.get("status") == "True", "HCO should be Available"
++
++        LOGGER.info("HCO status is healthy with Enabled setting")
