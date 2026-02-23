@@ -1,0 +1,994 @@
+/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/kubernetes/client/exceptions.py:91: DeprecationWarning: HTTPResponse.getheaders() is deprecated and will be removed in urllib3 v2.1.0. Instead access HTTPResponse.headers directly.
+  self.headers = http_resp.getheaders()
+/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/kubernetes/client/exceptions.py:91: DeprecationWarning: HTTPResponse.getheaders() is deprecated and will be removed in urllib3 v2.1.0. Instead access HTTPResponse.headers directly.
+  self.headers = http_resp.getheaders()
+2026-02-22T15:34:36.130957 ocp_resources Namespace [32mINFO[0m Create Namespace cnv-tests-run-in-progress-ns[0m
+2026-02-22T15:34:36.131362 ocp_resources Namespace [32mINFO[0m Posting {'apiVersion': 'v1', 'kind': 'Namespace', 'metadata': {'name': 'cnv-tests-run-in-progress-ns'}, 'spec': {}}[0m
+2026-02-22T15:34:36.448210 ocp_resources Namespace [32mINFO[0m Wait until Namespace cnv-tests-run-in-progress-ns is created[0m
+2026-02-22T15:34:36.605199 ocp_resources Namespace [32mINFO[0m Wait for Namespace cnv-tests-run-in-progress-ns status to be Active[0m
+2026-02-22T15:34:36.760095 ocp_resources Namespace [32mINFO[0m Status of Namespace cnv-tests-run-in-progress-ns is Active[0m
+2026-02-22T15:34:36.761166 ocp_resources Namespace [32mINFO[0m Update Namespace cnv-tests-run-in-progress-ns:
+{'metadata': {'labels': {'pod-security.kubernetes.io/enforce': 'privileged', 'security.openshift.io/scc.podSecurityLabelSync': 'false'}, 'name': 'cnv-tests-run-in-progress-ns'}}[0m
+2026-02-22T15:34:36.924636 ocp_resources ConfigMap [32mINFO[0m Create ConfigMap cnv-tests-run-in-progress[0m
+2026-02-22T15:34:36.925045 ocp_resources ConfigMap [32mINFO[0m Posting {'apiVersion': 'v1', 'kind': 'ConfigMap', 'metadata': {'name': 'cnv-tests-run-in-progress', 'namespace': 'cnv-tests-run-in-progress-ns'}, 'data': '*******'}[0m
+2026-02-22T15:34:37.241026 ocp_resources ConfigMap [32mINFO[0m Wait until ConfigMap cnv-tests-run-in-progress is created[0m
+============================= test session starts ==============================
+platform linux -- Python 3.14.0, pytest-9.0.2, pluggy-1.6.0
+benchmark: 5.2.3 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /home/fedora/thesis/openshift-virtualization-tests
+configfile: pytest.ini (WARNING: ignoring pytest config in pyproject.toml!)
+plugins: anyio-4.12.1, benchmark-5.2.3, html-4.1.1, order-1.3.0, testconfig-0.2.0, metadata-3.1.1, mock-3.15.1, repeat-0.9.4, progress-1.4.0, dependency-0.6.0, jira-0.3.22
+collected 5 items
+
+tests/virt/node/hotplug/test_cpu_hotplug_max_limits.py 
+TEST: TestCPUHotplugMaxSocketsLimit.test_max_sockets_limited_by_vcpu_ceiling[RHEL-VM] [setup] STATUS: [0;31mERROR[0m
+Erequest = <SubRequest 'vm_with_high_max_sockets' for <Function test_max_sockets_limited_by_vcpu_ceiling[RHEL-VM]>>
+namespace = <ocp_resources.namespace.Namespace object at 0x7fa569247bb0>
+unprivileged_client = <kubernetes.dynamic.client.DynamicClient object at 0x7fa569247230>
+golden_image_data_volume_template_for_test_scope_class = {'apiVersion': 'cdi.kubevirt.io/v1beta1', 'kind': 'DataVolume', 'metadata': {'name': 'rhel9-1771774696-9476905'}, 'spe...sources': {'requests': {'storage': '34144990004'}}, 'storageClassName': 'ocs-storagecluster-ceph-rbd-virtualization'}}}
+modern_cpu_for_migration = None
+vmx_disabled_flag = {'cores': 1, 'features': [{'name': 'vmx', 'policy': 'disable'}], 'maxSockets': 1024, 'sockets': 2, ...}
+is_s390x_cluster = False
+
+    @pytest.fixture(scope="class")
+    def vm_with_high_max_sockets(
+        request,
+        namespace,
+        unprivileged_client,
+        golden_image_data_volume_template_for_test_scope_class,
+        modern_cpu_for_migration,
+        vmx_disabled_flag,
+        is_s390x_cluster,
+    ):
+        """VM with intentionally high cpu_max_sockets to trigger MaxSockets capping."""
+        with VirtualMachineForTestsFromTemplate(
+            name=request.param["vm_name"],
+            labels=Template.generate_template_labels(**request.param["template_labels"]),
+            namespace=namespace.name,
+            client=unprivileged_client,
+            data_volume_template=golden_image_data_volume_template_for_test_scope_class,
+            cpu_max_sockets=HIGH_MAX_SOCKETS,
+            memory_max_guest=None if is_s390x_cluster else TEN_GI_MEMORY,
+            cpu_sockets=TWO_CPU_SOCKETS,
+            cpu_threads=ONE_CPU_THREAD,
+            cpu_cores=ONE_CPU_CORE,
+            memory_guest=FOUR_GI_MEMORY,
+            cpu_model=modern_cpu_for_migration,
+            cpu_flags=vmx_disabled_flag,
+        ) as vm:
+>           running_vm(vm=vm)
+
+tests/virt/node/hotplug/test_cpu_hotplug_max_limits.py:76: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+utilities/virt.py:1767: in running_vm
+    wait_for_running_vm(
+utilities/virt.py:1693: in wait_for_running_vm
+    assert_vm_not_error_status(vm=vm)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+vm = <utilities.virt.VirtualMachineForTestsFromTemplate object at 0x7fa56a5eb230>
+timeout = 5
+
+    def assert_vm_not_error_status(vm: VirtualMachineForTests, timeout: int = TIMEOUT_5SEC) -> None:
+        try:
+            for status in TimeoutSampler(
+                wait_timeout=timeout, sleep=TIMEOUT_1SEC, func=lambda: vm.instance.get("status", {})
+            ):
+                if status:
+                    printable_status = status.get("printableStatus")
+                    error_list = VM_ERROR_STATUSES.copy()
+                    if vm.instance.spec.template.spec.domain.devices.gpus:
+                        error_list.remove(VirtualMachine.Status.ERROR_UNSCHEDULABLE)
+>                   assert printable_status not in error_list, (
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        f"VM {vm.name} error printable status: {printable_status}\nVM status:\n{status}"
+                    )
+E                   AssertionError: VM rhel-cpu-max-sockets-limit-vm-1771774696-9790561 error printable status: ErrorUnschedulable
+E                   VM status:
+E                   {'conditions': [{'lastProbeTime': '2026-02-22T15:39:05Z',
+E                    'lastTransitionTime': '2026-02-22T15:39:05Z',
+E                    'message': 'Guest VM is not reported as running',
+E                    'reason': 'GuestNotRunning',
+E                    'status': 'False',
+E                    'type': 'Ready'},
+E                                   {'lastProbeTime': None,
+E                    'lastTransitionTime': None,
+E                    'message': "All of the VMI's DVs are bound and ready",
+E                    'reason': 'AllDVsReady',
+E                    'status': 'True',
+E                    'type': 'DataVolumesReady'},
+E                                   {'lastProbeTime': None,
+E                    'lastTransitionTime': '2026-02-22T15:39:05Z',
+E                    'message': '0/6 nodes are available: 3 Insufficient memory, 3 node(s) had '
+E                               'untolerated taint(s). no new claims to deallocate, preemption: '
+E                               '0/6 nodes are available: 3 No preemption victims found for '
+E                               'incoming pod, 3 Preemption is not helpful for scheduling.',
+E                    'reason': 'Unschedulable',
+E                    'status': 'False',
+E                    'type': 'PodScheduled'}],
+E                    'created': True,
+E                    'desiredGeneration': 2,
+E                    'observedGeneration': 2,
+E                    'printableStatus': 'ErrorUnschedulable',
+E                    'runStrategy': 'Always',
+E                    'volumeSnapshotStatuses': [{'enabled': True, 'name': 'rootdisk'},
+E                                               {'enabled': False,
+E                    'name': 'cloudinitdisk',
+E                    'reason': 'Snapshot is not supported for this volumeSource type '
+E                              '[cloudinitdisk]'}]}
+
+utilities/virt.py:1664: AssertionError
+
+
+_ ERROR at setup of TestCPUHotplugMaxSocketsLimit.test_max_sockets_limited_by_vcpu_ceiling[RHEL-VM] _
+
+request = <SubRequest 'vm_with_high_max_sockets' for <Function test_max_sockets_limited_by_vcpu_ceiling[RHEL-VM]>>
+namespace = <ocp_resources.namespace.Namespace object at 0x7fa569247bb0>
+unprivileged_client = <kubernetes.dynamic.client.DynamicClient object at 0x7fa569247230>
+golden_image_data_volume_template_for_test_scope_class = {'apiVersion': 'cdi.kubevirt.io/v1beta1', 'kind': 'DataVolume', 'metadata': {'name': 'rhel9-1771774696-9476905'}, 'spe...sources': {'requests': {'storage': '34144990004'}}, 'storageClassName': 'ocs-storagecluster-ceph-rbd-virtualization'}}}
+modern_cpu_for_migration = None
+vmx_disabled_flag = {'cores': 1, 'features': [{'name': 'vmx', 'policy': 'disable'}], 'maxSockets': 1024, 'sockets': 2, ...}
+is_s390x_cluster = False
+
+    @pytest.fixture(scope="class")
+    def vm_with_high_max_sockets(
+        request,
+        namespace,
+        unprivileged_client,
+        golden_image_data_volume_template_for_test_scope_class,
+        modern_cpu_for_migration,
+        vmx_disabled_flag,
+        is_s390x_cluster,
+    ):
+        """VM with intentionally high cpu_max_sockets to trigger MaxSockets capping."""
+        with VirtualMachineForTestsFromTemplate(
+            name=request.param["vm_name"],
+            labels=Template.generate_template_labels(**request.param["template_labels"]),
+            namespace=namespace.name,
+            client=unprivileged_client,
+            data_volume_template=golden_image_data_volume_template_for_test_scope_class,
+            cpu_max_sockets=HIGH_MAX_SOCKETS,
+            memory_max_guest=None if is_s390x_cluster else TEN_GI_MEMORY,
+            cpu_sockets=TWO_CPU_SOCKETS,
+            cpu_threads=ONE_CPU_THREAD,
+            cpu_cores=ONE_CPU_CORE,
+            memory_guest=FOUR_GI_MEMORY,
+            cpu_model=modern_cpu_for_migration,
+            cpu_flags=vmx_disabled_flag,
+        ) as vm:
+>           running_vm(vm=vm)
+
+tests/virt/node/hotplug/test_cpu_hotplug_max_limits.py:76: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+utilities/virt.py:1767: in running_vm
+    wait_for_running_vm(
+utilities/virt.py:1693: in wait_for_running_vm
+    assert_vm_not_error_status(vm=vm)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+vm = <utilities.virt.VirtualMachineForTestsFromTemplate object at 0x7fa56a5eb230>
+timeout = 5
+
+    def assert_vm_not_error_status(vm: VirtualMachineForTests, timeout: int = TIMEOUT_5SEC) -> None:
+        try:
+            for status in TimeoutSampler(
+                wait_timeout=timeout, sleep=TIMEOUT_1SEC, func=lambda: vm.instance.get("status", {})
+            ):
+                if status:
+                    printable_status = status.get("printableStatus")
+                    error_list = VM_ERROR_STATUSES.copy()
+                    if vm.instance.spec.template.spec.domain.devices.gpus:
+                        error_list.remove(VirtualMachine.Status.ERROR_UNSCHEDULABLE)
+>                   assert printable_status not in error_list, (
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        f"VM {vm.name} error printable status: {printable_status}\nVM status:\n{status}"
+                    )
+E                   AssertionError: VM rhel-cpu-max-sockets-limit-vm-1771774696-9790561 error printable status: ErrorUnschedulable
+E                   VM status:
+E                   {'conditions': [{'lastProbeTime': '2026-02-22T15:39:05Z',
+E                    'lastTransitionTime': '2026-02-22T15:39:05Z',
+E                    'message': 'Guest VM is not reported as running',
+E                    'reason': 'GuestNotRunning',
+E                    'status': 'False',
+E                    'type': 'Ready'},
+E                                   {'lastProbeTime': None,
+E                    'lastTransitionTime': None,
+E                    'message': "All of the VMI's DVs are bound and ready",
+E                    'reason': 'AllDVsReady',
+E                    'status': 'True',
+E                    'type': 'DataVolumesReady'},
+E                                   {'lastProbeTime': None,
+E                    'lastTransitionTime': '2026-02-22T15:39:05Z',
+E                    'message': '0/6 nodes are available: 3 Insufficient memory, 3 node(s) had '
+E                               'untolerated taint(s). no new claims to deallocate, preemption: '
+E                               '0/6 nodes are available: 3 No preemption victims found for '
+E                               'incoming pod, 3 Preemption is not helpful for scheduling.',
+E                    'reason': 'Unschedulable',
+E                    'status': 'False',
+E                    'type': 'PodScheduled'}],
+E                    'created': True,
+E                    'desiredGeneration': 2,
+E                    'observedGeneration': 2,
+E                    'printableStatus': 'ErrorUnschedulable',
+E                    'runStrategy': 'Always',
+E                    'volumeSnapshotStatuses': [{'enabled': True, 'name': 'rootdisk'},
+E                                               {'enabled': False,
+E                    'name': 'cloudinitdisk',
+E                    'reason': 'Snapshot is not supported for this volumeSource type '
+E                              '[cloudinitdisk]'}]}
+
+utilities/virt.py:1664: AssertionError
+---------------------------- Captured stderr setup -----------------------------
+
+---------------------------------- test_max_sockets_limited_by_vcpu_ceiling[RHEL-VM] ----------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-22T15:34:37.451937 conftest [32mINFO[0m Executing session fixture: admin_client[0m
+2026-02-22T15:34:37.452201 conftest [32mINFO[0m Executing session fixture: pytestconfig[0m
+2026-02-22T15:34:37.452373 conftest [32mINFO[0m Executing session fixture: installing_cnv[0m
+2026-02-22T15:34:37.452494 conftest [32mINFO[0m Executing session fixture: cnv_tests_utilities_namespace[0m
+2026-02-22T15:34:37.611956 ocp_resources Namespace [32mINFO[0m Create Namespace cnv-tests-utilities[0m
+2026-02-22T15:34:37.612275 ocp_resources Namespace [32mINFO[0m Posting {'apiVersion': 'v1', 'kind': 'Namespace', 'metadata': {'name': 'cnv-tests-utilities', 'labels': {'pod-security.kubernetes.io/enforce': 'privileged', 'security.openshift.io/scc.podSecurityLabelSync': 'false'}}, 'spec': {}}[0m
+2026-02-22T15:34:37.928017 ocp_resources Namespace [32mINFO[0m Wait for Namespace cnv-tests-utilities status to be Active[0m
+2026-02-22T15:34:37.928390 timeout_sampler [32mINFO[0m Waiting for 120 seconds [0:02:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_for_status.lambda: self.exists)[0m
+2026-02-22T15:34:38.084374 ocp_resources Namespace [32mINFO[0m Status of Namespace cnv-tests-utilities is Active[0m
+2026-02-22T15:34:38.084713 timeout_sampler [32mINFO[0m Elapsed time: 0.0002429485321044922 [0:00:00.000243][0m
+2026-02-22T15:34:38.085258 conftest [32mINFO[0m Executing session fixture: skip_unprivileged_client[0m
+2026-02-22T15:34:38.086555 ocp_resources.resource [32mINFO[0m kind: OAuth api version: config.openshift.io/v1[0m
+2026-02-22T15:34:38.085716 conftest [32mINFO[0m Executing session fixture: identity_provider_config[0m
+2026-02-22T15:34:38.087516 conftest [32mINFO[0m Executing session fixture: leftovers_cleanup[0m
+2026-02-22T15:34:38.087867 tests.conftest [32mINFO[0m Checking for leftover resources[0m
+2026-02-22T15:34:38.088643 ocp_resources.resource [32mINFO[0m kind: DaemonSet api version: apps/v1[0m
+2026-02-22T15:34:38.563301 ocp_resources.resource [32mINFO[0m ResourceEdits: Updating data for resource OAuth cluster[0m
+2026-02-22T15:34:38.563651 ocp_resources OAuth [32mINFO[0m Update OAuth cluster:
+{'metadata': {'name': 'cluster'}, 'spec': {'tokenConfig': {'accessTokenMaxAgeSeconds': 604800}}}[0m
+2026-02-22T15:34:38.723888 conftest [32mINFO[0m Executing session fixture: artifactory_setup[0m
+2026-02-22T15:34:38.724424 tests.conftest [32mINFO[0m Checking for artifactory credentials:[0m
+2026-02-22T15:34:38.724652 tests.conftest [33mWARNING[0m Explicitly skipping artifactory setup check due to use of --skip-artifactory-check[0m
+2026-02-22T15:34:38.725046 conftest [32mINFO[0m Executing session fixture: os_path_environment[0m
+2026-02-22T15:34:38.725537 conftest [32mINFO[0m Executing session fixture: tmpdir_factory[0m
+2026-02-22T15:34:38.725961 conftest [32mINFO[0m Executing session fixture: bin_directory[0m
+2026-02-22T15:34:38.727529 conftest [32mINFO[0m Executing session fixture: virtctl_binary[0m
+2026-02-22T15:34:38.728428 ocp_resources.resource [32mINFO[0m kind: ConsoleCLIDownload api version: console.openshift.io/v1[0m
+2026-02-22T15:34:39.040049 utilities.infra [32mINFO[0m Downloading archive using: url=https://hyperconverged-cluster-cli-download-openshift-cnv.apps.c01-mv-421.rhos-psi.cnv-qe.rhood.us/amd64/linux/virtctl.tar.gz[0m
+2026-02-22T15:34:43.625830 utilities.infra [32mINFO[0m Extract the downloaded archive.[0m
+2026-02-22T15:34:43.860474 utilities.infra [32mINFO[0m Downloaded file: ['virtctl'][0m
+2026-02-22T15:34:43.864606 conftest [32mINFO[0m Executing session fixture: oc_binary[0m
+2026-02-22T15:34:44.180260 utilities.infra [32mINFO[0m Downloading archive using: url=https://downloads-openshift-console.apps.c01-mv-421.rhos-psi.cnv-qe.rhood.us/amd64/linux/oc.tar[0m
+2026-02-22T15:35:07.919671 utilities.infra [32mINFO[0m Extract the downloaded archive.[0m
+2026-02-22T15:35:08.141239 utilities.infra [32mINFO[0m Downloaded file: ['oc'][0m
+2026-02-22T15:35:08.157288 ocp_resources.resource [32mINFO[0m kind: ClusterVersion api version: config.openshift.io/v1[0m
+2026-02-22T15:35:08.156181 conftest [32mINFO[0m Executing session fixture: bin_directory_to_os_path[0m
+2026-02-22T15:35:08.156643 tests.conftest [32mINFO[0m Adding /tmp/pytest-dPkZTPK7dcwaSuCXqxukxc/bin0 to $PATH[0m
+2026-02-22T15:35:08.156876 conftest [32mINFO[0m Executing session fixture: openshift_current_version[0m
+2026-02-22T15:35:08.481726 conftest [32mINFO[0m Executing session fixture: hco_namespace[0m
+2026-02-22T15:35:08.638259 conftest [32mINFO[0m Executing session fixture: csv_scope_session[0m
+2026-02-22T15:35:08.639346 ocp_resources.resource [32mINFO[0m kind: Subscription api version: operators.coreos.com/v1alpha1[0m
+2026-02-22T15:35:08.952742 ocp_resources.resource [32mINFO[0m kind: ClusterServiceVersion api version: operators.coreos.com/v1alpha1[0m
+2026-02-22T15:35:09.736112 conftest [32mINFO[0m Executing session fixture: cnv_current_version[0m
+2026-02-22T15:35:10.077116 conftest [32mINFO[0m Executing session fixture: cnv_subscription_scope_session[0m
+2026-02-22T15:35:10.077471 ocp_resources.resource [32mINFO[0m kind: Subscription api version: operators.coreos.com/v1alpha1[0m
+2026-02-22T15:35:10.232926 conftest [32mINFO[0m Executing session fixture: hco_image[0m
+2026-02-22T15:35:10.388896 ocp_resources.resource [32mINFO[0m kind: CatalogSource api version: operators.coreos.com/v1alpha1[0m
+2026-02-22T15:35:10.701471 ocp_resources.resource [32mINFO[0m kind: StorageClass api version: storage.k8s.io/v1[0m
+2026-02-22T15:35:10.700751 conftest [32mINFO[0m Executing session fixture: cluster_storage_classes[0m
+2026-02-22T15:35:10.860039 conftest [32mINFO[0m Executing session fixture: ocs_storage_class[0m
+2026-02-22T15:35:10.860653 conftest [32mINFO[0m Executing session fixture: ocs_current_version[0m
+2026-02-22T15:35:10.861346 ocp_resources.resource [32mINFO[0m kind: ClusterServiceVersion api version: operators.coreos.com/v1alpha1[0m
+2026-02-22T15:35:11.185748 ocp_resources.resource [32mINFO[0m kind: KubeVirt api version: kubevirt.io/v1[0m
+2026-02-22T15:35:11.184920 conftest [32mINFO[0m Executing session fixture: kubevirt_resource_scope_session[0m
+2026-02-22T15:35:11.348770 conftest [32mINFO[0m Executing session fixture: cluster_service_network[0m
+2026-02-22T15:35:11.349628 ocp_resources.resource [32mINFO[0m kind: Network api version: config.openshift.io/v1[0m
+2026-02-22T15:35:11.507114 conftest [32mINFO[0m Executing session fixture: ipv6_supported_cluster[0m
+2026-02-22T15:35:11.507951 conftest [32mINFO[0m Executing session fixture: ipv4_supported_cluster[0m
+2026-02-22T15:35:11.508522 conftest [32mINFO[0m Executing session fixture: nodes[0m
+2026-02-22T15:35:11.894670 conftest [32mINFO[0m Executing session fixture: workers[0m
+2026-02-22T15:35:12.861593 conftest [32mINFO[0m Executing session fixture: cnv_source[0m
+2026-02-22T15:35:12.862545 conftest [32mINFO[0m Executing session fixture: is_production_source[0m
+2026-02-22T15:35:12.863009 conftest [32mINFO[0m Executing session fixture: generated_pulled_secret[0m
+2026-02-22T15:35:12.863728 ocp_resources.resource [32mINFO[0m Trying to get client via new_client_from_config[0m
+2026-02-22T15:35:13.818355 conftest [32mINFO[0m Executing session fixture: cnv_tests_utilities_service_account[0m
+2026-02-22T15:35:13.844891 ocp_resources ServiceAccount [32mINFO[0m Create ServiceAccount cnv-tests-sa[0m
+2026-02-22T15:35:13.845015 ocp_resources ServiceAccount [32mINFO[0m Posting {'apiVersion': 'v1', 'kind': 'ServiceAccount', 'metadata': {'name': 'cnv-tests-sa', 'namespace': 'cnv-tests-utilities'}}[0m
+2026-02-22T15:35:15.652784 conftest [32mINFO[0m Executing session fixture: utility_daemonset[0m
+2026-02-22T15:35:15.653746 timeout_sampler [32mINFO[0m Waiting for 10 seconds [0:00:10], retry every 1 seconds. (Function: utilities.virt._get_image_json  Kwargs: {'cmd': 'oc image -o json info quay.io/openshift-cnv/qe-net-utils:latest --filter-by-os linux/amd64 --registry-config=/tmp/tmpctj_7s0w-cnv-tests-pull-secret/pull-secrets.json'})[0m
+2026-02-22T15:35:15.654119 pyhelper_utils.shell [32mINFO[0m Running oc image -o json info quay.io/openshift-cnv/qe-net-utils:latest --filter-by-os linux/amd64 --registry-config=/tmp/tmpctj_7s0w-cnv-tests-pull-secret/pull-secrets.json command[0m
+2026-02-22T15:35:17.932442 timeout_sampler [32mINFO[0m Elapsed time: 0.0002484321594238281 [0:00:00.000248][0m
+2026-02-22T15:35:17.962097 ocp_resources.resource [32mINFO[0m kind: DaemonSet api version: apps/v1 --- [DuplicateFilter: Last log `Trying to get client via new_client_from_config` repeated 2 times][0m
+2026-02-22T15:35:17.970574 ocp_resources DaemonSet [32mINFO[0m Create DaemonSet utility[0m
+2026-02-22T15:35:17.970744 ocp_resources DaemonSet [32mINFO[0m Posting {'apiVersion': 'apps/v1', 'kind': 'DaemonSet', 'metadata': {'annotations': {'deprecated.daemonset.template.generation': '0'}, 'creationTimestamp': None, 'labels': {'cnv-test': 'utility', 'tier': 'node'}, 'name': 'utility', 'namespace': 'cnv-tests-utilities'}, 'spec': {'revisionHistoryLimit': 10, 'selector': {'matchLabels': {'cnv-test': 'utility', 'tier': 'node'}}, 'template': {'metadata': {'creationTimestamp': None, 'labels': {'cnv-test': 'utility', 'tier': 'node'}}, 'spec': {'containers': [{'command': ['/bin/bash', '-c', 'echo ok > /tmp/healthy && sleep INF'], 'image': 'quay.io/openshift-cnv/qe-net-utils:latest@sha256:2c8e11ac0f0b36553bed603c1c67dccb703d7059ccbcf8c91e3a35c99719ce20', 'imagePullPolicy': 'IfNotPresent', 'name': 'utility', 'readinessProbe': {'exec': {'command': ['cat', '/tmp/healthy']}, 'failureThreshold': 3, 'initialDelaySeconds': 5, 'periodSeconds': 5, 'successThreshold': 1, 'timeoutSeconds': 1}, 'resources': {'limits': {'cpu': '100m', 'memory': '50Mi'}, 'requests': {'cpu': '100m', 'memory': '50Mi'}}, 'securityContext': {'privileged': True, 'runAsUser': 0}, 'stdin': True, 'stdinOnce': True, 'terminationMessagePath': '/dev/termination-log', 'terminationMessagePolicy': 'File', 'tty': True, 'volumeMounts': [{'mountPath': '/host', 'name': 'host'}, {'mountPath': '/var/run/secrets/kubernetes.io/serviceaccount', 'name': 'kube-api-access-m5ch7', 'readOnly': True}, {'mountPath': '/host/run/openvswitch', 'name': 'ovs-run'}, {'mountPath': '/run/dbus/system_bus_socket', 'name': 'dbus-socket'}, {'mountPath': '/host/dev', 'name': 'dev'}, {'mountPath': '/host/etc', 'name': 'etc'}, {'mountPath': '/host/var', 'name': 'var'}]}], 'dnsPolicy': 'ClusterFirst', 'enableServiceLinks': True, 'hostNetwork': True, 'hostPID': True, 'imagePullSecrets': [{'name': 'default-dockercfg-xrlbh'}], 'preemptionPolicy': 'PreemptLowerPriority', 'priority': 0, 'restartPolicy': 'Always', 'schedulerName': 'default-scheduler', 'securityContext': {'privileged': True}, 'serviceAccount': 'cnv-tests-sa', 'serviceAccountName': 'cnv-tests-sa', 'terminationGracePeriodSeconds': 30, 'tolerations': [{'effect': 'NoSchedule', 'key': 'node-role.kubernetes.io/master', 'operator': 'Exists'}], 'volumes': [{'hostPath': {'path': '/', 'type': 'Directory'}, 'name': 'host'}, {'hostPath': {'path': '/run/openvswitch', 'type': ''}, 'name': 'ovs-run'}, {'hostPath': {'path': '/run/dbus/system_bus_socket', 'type': 'Socket'}, 'name': 'dbus-socket'}, {'hostPath': {'path': '/dev', 'type': 'Directory'}, 'name': 'dev'}, {'hostPath': {'path': '/etc', 'type': 'Directory'}, 'name': 'etc'}, {'hostPath': {'path': '/var', 'type': 'Directory'}, 'name': 'var'}, {'name': 'kube-api-access-m5ch7', 'projected': {'defaultMode': 420, 'sources': [{'serviceAccountToken': {'path': 'token'}}, {'configMap': {'items': [{'key': 'ca.crt', 'path': 'ca.crt'}], 'name': 'kube-root-ca.crt'}}, {'downwardAPI': {'items': [{'fieldRef': {'apiVersion': 'v1', 'fieldPath': 'metadata.namespace'}, 'path': 'namespace'}]}}, {'configMap': {'items': [{'key': 'service-ca.crt', 'path': 'service-ca.crt'}], 'name': 'openshift-service-ca.crt'}}]}}]}}, 'updateStrategy': {'type': 'OnDelete'}}}[0m
+2026-02-22T15:35:18.767986 ocp_resources DaemonSet [32mINFO[0m Wait for DaemonSet utility to deploy all desired pods[0m
+2026-02-22T15:35:18.768535 timeout_sampler [32mINFO[0m Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: kubernetes.dynamic.client.get  Kwargs: {'field_selector': 'metadata.name==utility', 'namespace': 'cnv-tests-utilities'})[0m
+2026-02-22T15:35:28.190070 timeout_sampler [32mINFO[0m Elapsed time: 9.26491403579712 [0:00:09.264914][0m
+2026-02-22T15:35:28.190947 conftest [32mINFO[0m Executing session fixture: workers_utility_pods[0m
+2026-02-22T15:35:32.432184 conftest [32mINFO[0m Executing session fixture: workers_type[0m
+2026-02-22T15:35:32.906394 ocp_resources Pod [32mINFO[0m Execute ['chroot', '/host', 'bash', '-c', 'systemd-detect-virt'] on utility-h6kbs (c01-mv-421-qgr9v-worker-0-rgbwd)[0m
+2026-02-22T15:35:34.766461 ocp_resources Pod [32mINFO[0m Execute ['chroot', '/host', 'bash', '-c', 'systemd-detect-virt'] on utility-pgct9 (c01-mv-421-qgr9v-worker-0-gwsf6)[0m
+2026-02-22T15:35:36.842549 ocp_resources Pod [32mINFO[0m Execute ['chroot', '/host', 'bash', '-c', 'systemd-detect-virt'] on utility-s6cng (c01-mv-421-qgr9v-worker-0-6brx9)[0m
+2026-02-22T15:35:38.090624 tests.conftest [32mINFO[0m Cluster workers are: virtual[0m
+2026-02-22T15:35:38.091286 conftest [32mINFO[0m Executing session fixture: nodes_cpu_architecture[0m
+2026-02-22T15:35:39.341474 conftest [32mINFO[0m Executing session fixture: cluster_info[0m
+2026-02-22T15:35:39.341970 pyhelper_utils.shell [32mINFO[0m Running virtctl --kubeconfig /home/fedora/.kube/config version command[0m
+2026-02-22T15:35:40.138544 ocp_resources.resource [32mINFO[0m kind: Network api version: config.openshift.io/v1[0m
+2026-02-22T15:35:40.294682 tests.conftest [32mINFO[0m 
+Cluster info:
+	Openshift version: 4.21.0
+	CNV version: 4.21.0
+	HCO image: brew.registry.redhat.io/rh-osbs/iib:1097155
+	OCS version: 4.21.0-104.stable
+	CNI type: OVNKubernetes
+	Workers type: virtual
+	Cluster CPU Architecture: amd64
+	IPv4 cluster: True
+	IPv6 cluster: False
+	Virtctl version: 
+	Client Version: version.Info{GitVersion:"v1.7.0-45-g33ff10241e", GitCommit:"33ff10241e848425ef145a49e450c5d1c0255edd", GitTreeState:"clean", BuildDate:"2026-01-15T09:28:24Z", GoVersion:"go1.24.11 (Red Hat 1.24.11-1.el8_10) X:strictfipsruntime", Compiler:"gc", Platform:"linux/amd64"}
+	Server Version: version.Info{GitVersion:"v1.7.0-45-g33ff10241e", GitCommit:"33ff10241e848425ef145a49e450c5d1c0255edd", GitTreeState:"clean", BuildDate:"2026-01-15T09:20:24Z", GoVersion:"go1.24.11 (Red Hat 1.24.11-1.el9_6) X:strictfipsruntime", Compiler:"gc", Platform:"linux/amd64"}
+[0m
+2026-02-22T15:35:40.295327 conftest [32mINFO[0m Executing function fixture: term_handler_scope_function[0m
+2026-02-22T15:35:40.295768 conftest [32mINFO[0m Executing class fixture: term_handler_scope_class[0m
+2026-02-22T15:35:40.296171 conftest [32mINFO[0m Executing module fixture: term_handler_scope_module[0m
+2026-02-22T15:35:40.296543 conftest [32mINFO[0m Executing session fixture: term_handler_scope_session[0m
+2026-02-22T15:35:40.297057 conftest [32mINFO[0m Executing session fixture: record_testsuite_property[0m
+2026-02-22T15:35:40.297496 conftest [32mINFO[0m Executing session fixture: junitxml_polarion[0m
+2026-02-22T15:35:40.297990 conftest [32mINFO[0m Executing session fixture: cluster_storage_classes_names[0m
+2026-02-22T15:35:40.298445 conftest [32mINFO[0m Executing session fixture: junitxml_plugin[0m
+2026-02-22T15:35:40.298890 conftest [32mINFO[0m Executing session fixture: hyperconverged_resource_scope_session[0m
+2026-02-22T15:35:40.299614 ocp_resources.resource [32mINFO[0m kind: HyperConverged api version: hco.kubevirt.io/v1beta1[0m
+2026-02-22T15:35:40.459055 conftest [32mINFO[0m Executing session fixture: cluster_sanity_scope_session[0m
+2026-02-22T15:35:40.459597 utilities.infra [32mINFO[0m Running cluster sanity. (To skip cluster sanity check pass --cluster-sanity-skip-check to pytest)[0m
+2026-02-22T15:35:40.459862 utilities.infra [32mINFO[0m Check storage classes sanity. (To skip storage class sanity check pass --cluster-sanity-skip-storage-check to pytest)[0m
+2026-02-22T15:35:40.460071 utilities.infra [32mINFO[0m Check nodes sanity. (To skip nodes sanity check pass --cluster-sanity-skip-nodes-check to pytest)[0m
+2026-02-22T15:35:40.460261 ocp_utilities.infra [32mINFO[0m Verify all nodes are in a healthy condition.[0m
+2026-02-22T15:35:41.560071 ocp_utilities.infra [32mINFO[0m Verify all nodes are schedulable.[0m
+2026-02-22T15:35:42.512762 timeout_sampler [32mINFO[0m Waiting for 300 seconds [0:05:00], retry every 5 seconds. (Function: utilities.infra.get_pods  Kwargs: {'client': <kubernetes.dynamic.client.DynamicClient object at 0x7fa56beae660>, 'namespace': <ocp_resources.namespace.Namespace object at 0x7fa56a643bb0>})[0m
+2026-02-22T15:35:57.630308 timeout_sampler [32mINFO[0m Elapsed time: 0.0004112720489501953 [0:00:00.000411][0m
+2026-02-22T15:35:57.631777 ocp_resources.resource [32mINFO[0m kind: MutatingWebhookConfiguration api version: admissionregistration.k8s.io/v1[0m
+2026-02-22T15:35:57.630847 utilities.infra [32mINFO[0m Check webhook endpoints health. (To skip webhook check pass --cluster-sanity-skip-webhook-check to pytest)[0m
+2026-02-22T15:35:57.631169 utilities.infra [32mINFO[0m Checking webhook endpoints health for services in namespace: openshift-cnv[0m
+2026-02-22T15:35:57.631383 utilities.infra [32mINFO[0m Scanning MutatingWebhookConfiguration resources for webhook services[0m
+2026-02-22T15:36:00.136441 utilities.infra [32mINFO[0m Scanning ValidatingWebhookConfiguration resources for webhook services[0m
+2026-02-22T15:36:00.137054 ocp_resources.resource [32mINFO[0m kind: ValidatingWebhookConfiguration api version: admissionregistration.k8s.io/v1[0m
+2026-02-22T15:36:04.847934 utilities.infra [32mINFO[0m Checking endpoints for service: cdi-api[0m
+2026-02-22T15:36:05.161013 utilities.infra [32mINFO[0m Service cdi-api has 1 ready endpoint address(es)[0m
+2026-02-22T15:36:05.161382 utilities.infra [32mINFO[0m Checking endpoints for service: hco-webhook-service[0m
+2026-02-22T15:36:05.473354 utilities.infra [32mINFO[0m Service hco-webhook-service has 1 ready endpoint address(es)[0m
+2026-02-22T15:36:05.473737 utilities.infra [32mINFO[0m Checking endpoints for service: hostpath-provisioner-operator-service[0m
+2026-02-22T15:36:05.787918 utilities.infra [32mINFO[0m Service hostpath-provisioner-operator-service has 1 ready endpoint address(es)[0m
+2026-02-22T15:36:05.788358 utilities.infra [32mINFO[0m Checking endpoints for service: kubemacpool-service[0m
+2026-02-22T15:36:06.103909 utilities.infra [32mINFO[0m Service kubemacpool-service has 1 ready endpoint address(es)[0m
+2026-02-22T15:36:06.104257 utilities.infra [32mINFO[0m Checking endpoints for service: kubevirt-ipam-controller-webhook-service[0m
+2026-02-22T15:36:06.415691 utilities.infra [32mINFO[0m Service kubevirt-ipam-controller-webhook-service has 2 ready endpoint address(es)[0m
+2026-02-22T15:36:06.416068 utilities.infra [32mINFO[0m Checking endpoints for service: kubevirt-operator-webhook[0m
+2026-02-22T15:36:06.731571 utilities.infra [32mINFO[0m Service kubevirt-operator-webhook has 2 ready endpoint address(es)[0m
+2026-02-22T15:36:06.731935 utilities.infra [32mINFO[0m Checking endpoints for service: ssp-operator-service[0m
+2026-02-22T15:36:07.043356 utilities.infra [32mINFO[0m Service ssp-operator-service has 1 ready endpoint address(es)[0m
+2026-02-22T15:36:07.043710 utilities.infra [32mINFO[0m Checking endpoints for service: virt-api[0m
+2026-02-22T15:36:07.355596 utilities.infra [32mINFO[0m Service virt-api has 2 ready endpoint address(es)[0m
+2026-02-22T15:36:07.355983 utilities.infra [32mINFO[0m Checking endpoints for service: virt-template-validator[0m
+2026-02-22T15:36:07.668797 utilities.infra [32mINFO[0m Service virt-template-validator has 2 ready endpoint address(es)[0m
+2026-02-22T15:36:07.669170 utilities.infra [32mINFO[0m All discovered webhook services have available endpoints[0m
+2026-02-22T15:36:07.669373 utilities.infra [32mINFO[0m Checking VM creation capability via dry-run in namespace: default[0m
+2026-02-22T15:36:07.670324 ocp_resources.resource [32mINFO[0m kind: VirtualMachine api version: kubevirt.io/v1[0m
+2026-02-22T15:36:07.672579 ocp_resources VirtualMachine [32mINFO[0m Create VirtualMachine sanity-check-dry-run-vm[0m
+2026-02-22T15:36:07.672870 ocp_resources VirtualMachine [32mINFO[0m Posting {'apiVersion': 'kubevirt.io/v1', 'kind': 'VirtualMachine', 'metadata': {'name': 'sanity-check-dry-run-vm', 'namespace': 'default'}, 'spec': {'running': False, 'template': {'spec': {'domain': {'devices': {}, 'resources': {'requests': {'memory': '64Mi'}}}}}}}[0m
+2026-02-22T15:36:08.041674 utilities.infra [32mINFO[0m Dry-run VM creation succeeded[0m
+2026-02-22T15:36:08.042061 utilities.infra [32mINFO[0m Waiting for resource to stabilize: resource_kind=HyperConverged conditions={'Available': 'True', 'Progressing': 'False', 'ReconcileComplete': 'True', 'Degraded': 'False', 'Upgradeable': 'True'} sleep=600 consecutive_checks_count=3[0m
+2026-02-22T15:36:08.042295 timeout_sampler [32mINFO[0m Waiting for 600 seconds [0:10:00], retry every 5 seconds. (Function: utilities.infra.<locals>.lambda: dynamic_client.namespace.resource_kind.resource_name.list.get)[0m
+2026-02-22T15:36:08.043225 ocp_resources.resource [32mINFO[0m kind: HyperConverged api version: hco.kubevirt.io/v1beta1[0m
+2026-02-22T15:36:19.284191 timeout_sampler [32mINFO[0m Elapsed time: 10.778368949890137 [0:00:10.778369][0m
+2026-02-22T15:36:19.286047 ocp_utilities.infra [32mINFO[0m Verify all nodes are in a healthy condition.[0m
+2026-02-22T15:36:19.284944 conftest [32mINFO[0m Executing module fixture: cluster_sanity_scope_module[0m
+2026-02-22T15:36:19.285445 utilities.infra [32mINFO[0m Running cluster sanity. (To skip cluster sanity check pass --cluster-sanity-skip-check to pytest)[0m
+2026-02-22T15:36:19.285658 utilities.infra [32mINFO[0m Check storage classes sanity. (To skip storage class sanity check pass --cluster-sanity-skip-storage-check to pytest)[0m
+2026-02-22T15:36:19.285876 utilities.infra [32mINFO[0m Check nodes sanity. (To skip nodes sanity check pass --cluster-sanity-skip-nodes-check to pytest)[0m
+2026-02-22T15:36:20.382612 ocp_utilities.infra [32mINFO[0m Verify all nodes are schedulable.[0m
+2026-02-22T15:36:21.340322 timeout_sampler [32mINFO[0m Waiting for 300 seconds [0:05:00], retry every 5 seconds. (Function: utilities.infra.get_pods  Kwargs: {'client': <kubernetes.dynamic.client.DynamicClient object at 0x7fa56beae660>, 'namespace': <ocp_resources.namespace.Namespace object at 0x7fa56a643bb0>})[0m
+2026-02-22T15:36:36.360327 timeout_sampler [32mINFO[0m Elapsed time: 0.00038123130798339844 [0:00:00.000381][0m
+2026-02-22T15:36:36.360747 utilities.infra [32mINFO[0m Check webhook endpoints health. (To skip webhook check pass --cluster-sanity-skip-webhook-check to pytest)[0m
+2026-02-22T15:36:36.361033 utilities.infra [32mINFO[0m Checking webhook endpoints health for services in namespace: openshift-cnv[0m
+2026-02-22T15:36:36.361251 utilities.infra [32mINFO[0m Scanning MutatingWebhookConfiguration resources for webhook services[0m
+2026-02-22T15:36:38.859746 utilities.infra [32mINFO[0m Scanning ValidatingWebhookConfiguration resources for webhook services[0m
+2026-02-22T15:36:43.544932 utilities.infra [32mINFO[0m Checking endpoints for service: cdi-api[0m
+2026-02-22T15:36:43.859661 utilities.infra [32mINFO[0m Service cdi-api has 1 ready endpoint address(es)[0m
+2026-02-22T15:36:43.860030 utilities.infra [32mINFO[0m Checking endpoints for service: hco-webhook-service[0m
+2026-02-22T15:36:44.171448 utilities.infra [32mINFO[0m Service hco-webhook-service has 1 ready endpoint address(es)[0m
+2026-02-22T15:36:44.171799 utilities.infra [32mINFO[0m Checking endpoints for service: hostpath-provisioner-operator-service[0m
+2026-02-22T15:36:44.483521 utilities.infra [32mINFO[0m Service hostpath-provisioner-operator-service has 1 ready endpoint address(es)[0m
+2026-02-22T15:36:44.483768 utilities.infra [32mINFO[0m Checking endpoints for service: kubemacpool-service[0m
+2026-02-22T15:36:44.795721 utilities.infra [32mINFO[0m Service kubemacpool-service has 1 ready endpoint address(es)[0m
+2026-02-22T15:36:44.796258 utilities.infra [32mINFO[0m Checking endpoints for service: kubevirt-ipam-controller-webhook-service[0m
+2026-02-22T15:36:45.106703 utilities.infra [32mINFO[0m Service kubevirt-ipam-controller-webhook-service has 2 ready endpoint address(es)[0m
+2026-02-22T15:36:45.107073 utilities.infra [32mINFO[0m Checking endpoints for service: kubevirt-operator-webhook[0m
+2026-02-22T15:36:45.419354 utilities.infra [32mINFO[0m Service kubevirt-operator-webhook has 2 ready endpoint address(es)[0m
+2026-02-22T15:36:45.419703 utilities.infra [32mINFO[0m Checking endpoints for service: ssp-operator-service[0m
+2026-02-22T15:36:45.729865 utilities.infra [32mINFO[0m Service ssp-operator-service has 1 ready endpoint address(es)[0m
+2026-02-22T15:36:45.730313 utilities.infra [32mINFO[0m Checking endpoints for service: virt-api[0m
+2026-02-22T15:36:46.043588 utilities.infra [32mINFO[0m Service virt-api has 2 ready endpoint address(es)[0m
+2026-02-22T15:36:46.043963 utilities.infra [32mINFO[0m Checking endpoints for service: virt-template-validator[0m
+2026-02-22T15:36:46.355360 utilities.infra [32mINFO[0m Service virt-template-validator has 2 ready endpoint address(es)[0m
+2026-02-22T15:36:46.355717 utilities.infra [32mINFO[0m All discovered webhook services have available endpoints[0m
+2026-02-22T15:36:46.355942 utilities.infra [32mINFO[0m Checking VM creation capability via dry-run in namespace: default[0m
+2026-02-22T15:36:46.356441 ocp_resources.resource [32mINFO[0m kind: VirtualMachine api version: kubevirt.io/v1[0m
+2026-02-22T15:36:46.358659 ocp_resources VirtualMachine [32mINFO[0m Create VirtualMachine sanity-check-dry-run-vm[0m
+2026-02-22T15:36:46.359189 ocp_resources VirtualMachine [32mINFO[0m Posting {'apiVersion': 'kubevirt.io/v1', 'kind': 'VirtualMachine', 'metadata': {'name': 'sanity-check-dry-run-vm', 'namespace': 'default'}, 'spec': {'running': False, 'template': {'spec': {'domain': {'devices': {}, 'resources': {'requests': {'memory': '64Mi'}}}}}}}[0m
+2026-02-22T15:36:46.686506 utilities.infra [32mINFO[0m Dry-run VM creation succeeded[0m
+2026-02-22T15:36:46.686917 utilities.infra [32mINFO[0m Waiting for resource to stabilize: resource_kind=HyperConverged conditions={'Available': 'True', 'Progressing': 'False', 'ReconcileComplete': 'True', 'Degraded': 'False', 'Upgradeable': 'True'} sleep=600 consecutive_checks_count=3[0m
+2026-02-22T15:36:46.687189 timeout_sampler [32mINFO[0m Waiting for 600 seconds [0:10:00], retry every 5 seconds. (Function: utilities.infra.<locals>.lambda: dynamic_client.namespace.resource_kind.resource_name.list.get)[0m
+2026-02-22T15:36:57.945513 timeout_sampler [32mINFO[0m Elapsed time: 10.794285535812378 [0:00:10.794286][0m
+2026-02-22T15:36:57.946112 conftest [32mINFO[0m Executing session fixture: ssh_key_tmpdir_scope_session[0m
+2026-02-22T15:36:57.947666 conftest [32mINFO[0m Executing session fixture: generated_ssh_key_for_vm_access[0m
+2026-02-22T15:36:57.999459 conftest [32mINFO[0m Executing session fixture: session_start_time[0m
+2026-02-22T15:36:57.999677 conftest [32mINFO[0m Executing function fixture: autouse_fixtures[0m
+2026-02-22T15:36:57.999958 conftest [32mINFO[0m Executing session fixture: schedulable_nodes[0m
+2026-02-22T15:37:01.012472 conftest [32mINFO[0m Executing session fixture: gpu_nodes[0m
+2026-02-22T15:37:01.971185 conftest [32mINFO[0m Executing session fixture: nodes_with_supported_gpus[0m
+2026-02-22T15:37:01.971708 conftest [32mINFO[0m Executing session fixture: sriov_workers[0m
+2026-02-22T15:37:02.452630 conftest [32mINFO[0m Executing session fixture: nodes_cpu_vendor[0m
+2026-02-22T15:37:02.612342 conftest [32mINFO[0m Executing session fixture: nodes_cpu_virt_extension[0m
+2026-02-22T15:37:02.612932 conftest [32mINFO[0m Executing session fixture: allocatable_memory_per_node_scope_session[0m
+2026-02-22T15:37:02.942501 tests.virt.utils [32mINFO[0m Node c01-mv-421-qgr9v-worker-0-6brx9 has 12.515708923339844 GiB of allocatable memory[0m
+2026-02-22T15:37:03.264392 tests.virt.utils [32mINFO[0m Node c01-mv-421-qgr9v-worker-0-gwsf6 has 12.515708923339844 GiB of allocatable memory[0m
+2026-02-22T15:37:03.585892 tests.virt.utils [32mINFO[0m Node c01-mv-421-qgr9v-worker-0-rgbwd has 12.515701293945312 GiB of allocatable memory[0m
+2026-02-22T15:37:03.586519 conftest [32mINFO[0m Executing session fixture: hugepages_gib_values[0m
+2026-02-22T15:37:04.062347 conftest [32mINFO[0m Executing session fixture: virt_special_infra_sanity[0m
+2026-02-22T15:37:04.062654 tests.virt.conftest [32mINFO[0m Verifying that cluster has all required capabilities for special_infra marked tests[0m
+2026-02-22T15:37:04.062839 tests.utils [32mINFO[0m Verifying default storage class ocs-storagecluster-ceph-rbd-virtualization supports RWX mode[0m
+2026-02-22T15:37:04.063168 ocp_resources.resource [32mINFO[0m kind: StorageProfile api version: cdi.kubevirt.io/v1beta1[0m
+2026-02-22T15:37:04.376082 conftest [32mINFO[0m Executing session fixture: unprivileged_secret[0m
+2026-02-22T15:37:04.383365 ocp_resources Secret [32mINFO[0m Create Secret htpass-secret-for-cnv-tests[0m
+2026-02-22T15:37:04.383591 ocp_resources Secret [32mINFO[0m Posting {'apiVersion': 'v1', 'kind': 'Secret', 'metadata': {'name': 'htpass-secret-for-cnv-tests', 'namespace': 'openshift-config'}, 'data': '*******'}[0m
+2026-02-22T15:37:04.699482 conftest [32mINFO[0m Executing session fixture: identity_provider_with_htpasswd[0m
+2026-02-22T15:37:04.699972 ocp_resources.resource [32mINFO[0m ResourceEdit: Backing up old data[0m
+2026-02-22T15:37:04.858925 ocp_resources.resource [32mINFO[0m ResourceEdits: Updating data for resource OAuth cluster[0m
+2026-02-22T15:37:04.859304 ocp_resources OAuth [32mINFO[0m Update OAuth cluster:
+{'metadata': {'name': 'cluster'}, 'spec': {'identityProviders': [{'name': 'htpasswd_provider', 'mappingMethod': 'claim', 'type': 'HTPasswd', 'htpasswd': {'fileData': {'name': 'htpass-secret-for-cnv-tests'}}}], 'tokenConfig': {'accessTokenMaxAgeSeconds': 604800, 'accessTokenInactivityTimeout': None}}}[0m
+2026-02-22T15:37:05.021652 ocp_resources.resource [32mINFO[0m kind: Deployment api version: apps/v1[0m
+2026-02-22T15:37:05.179071 timeout_sampler [32mINFO[0m Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: tests.conftest.<locals>.lambda: dp.instance.status.conditions)[0m
+2026-02-22T15:37:05.178635 tests.conftest [32mINFO[0m Wait for oauth-openshift -> Type: Progressing -> Reason: ReplicaSetUpdated[0m
+2026-02-22T15:37:08.956850 timeout_sampler [32mINFO[0m Elapsed time: 3.472933769226074 [0:00:03.472934][0m
+2026-02-22T15:37:08.957266 timeout_sampler [32mINFO[0m Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: tests.conftest.<locals>.lambda: dp.instance.status.conditions)[0m
+2026-02-22T15:37:08.957078 tests.conftest [32mINFO[0m Wait for oauth-openshift -> Type: Progressing -> Reason: NewReplicaSetAvailable[0m
+2026-02-22T15:38:05.300798 timeout_sampler [32mINFO[0m Elapsed time: 56.0393922328949 [0:00:56.039392][0m
+2026-02-22T15:38:05.301195 conftest [32mINFO[0m Executing session fixture: kubeconfig_export_path[0m
+2026-02-22T15:38:05.301424 conftest [32mINFO[0m Executing session fixture: exported_kubeconfig[0m
+2026-02-22T15:38:05.301884 tests.conftest [33mWARNING[0m Both KUBECONFIG /home/fedora/.kube/config and /home/fedora/.kube/config exist. /home/fedora/.kube/config is used as kubeconfig source for this run.[0m
+2026-02-22T15:38:05.302247 tests.conftest [32mINFO[0m Setting KUBECONFIG dir for this run to point to: /tmp/tmpq_q_7msy-cnv-tests-kubeconfig[0m
+2026-02-22T15:38:05.302362 tests.conftest [32mINFO[0m Copy KUBECONFIG to /tmp/tmpq_q_7msy-cnv-tests-kubeconfig/kubeconfig[0m
+2026-02-22T15:38:05.302929 tests.conftest [32mINFO[0m Set: KUBECONFIG=/tmp/tmpq_q_7msy-cnv-tests-kubeconfig/kubeconfig[0m
+2026-02-22T15:38:05.303218 conftest [32mINFO[0m Executing session fixture: unprivileged_client[0m
+2026-02-22T15:38:06.032542 utilities.infra [32mINFO[0m Trying to login to account[0m
+2026-02-22T15:38:06.032984 timeout_sampler [32mINFO[0m Waiting for 60 seconds [0:01:00], retry every 3 seconds. (Function: subprocess.Popen  Kwargs: {'args': 'oc login https://api.c01-mv-421.rhos-psi.cnv-qe.rhood.us:6443 -u unprivileged-user -p unprivileged-password', 'shell': True, 'stdout': -1, 'stderr': -1})[0m
+2026-02-22T15:38:11.025976 timeout_sampler [32mINFO[0m Elapsed time: 0.0006184577941894531 [0:00:00.000618][0m
+2026-02-22T15:38:11.025720 utilities.infra [32mINFO[0m Login - success[0m
+2026-02-22T15:38:11.041293 timeout_sampler [32mINFO[0m Waiting for 60 seconds [0:01:00], retry every 3 seconds. (Function: subprocess.Popen  Kwargs: {'args': 'oc login https://api.c01-mv-421.rhos-psi.cnv-qe.rhood.us:6443 -u system:admin', 'shell': True, 'stdout': -1, 'stderr': -1})[0m
+2026-02-22T15:38:11.041131 utilities.infra [32mINFO[0m Trying to login to account[0m
+2026-02-22T15:38:13.022351 utilities.infra [32mINFO[0m Login - success[0m
+2026-02-22T15:38:13.022584 timeout_sampler [32mINFO[0m Elapsed time: 0.00010085105895996094 [0:00:00.000101][0m
+2026-02-22T15:38:13.023143 ocp_resources.resource [32mINFO[0m Trying to get client via new_client_from_config[0m
+2026-02-22T15:38:13.046847 conftest [32mINFO[0m Executing session fixture: golden_images_namespace[0m
+2026-02-22T15:38:13.202976 conftest [32mINFO[0m Executing session fixture: cluster_node_cpus[0m
+2026-02-22T15:38:13.983103 conftest [32mINFO[0m Executing session fixture: cluster_common_modern_node_cpu[0m
+2026-02-22T15:38:13.983389 utilities.cpu [32mINFO[0m Common CPU used is Dhyana[0m
+2026-02-22T15:38:13.983593 conftest [32mINFO[0m Executing session fixture: host_cpu_model[0m
+2026-02-22T15:38:14.465926 ocp_resources.resource [32mINFO[0m kind: ProjectRequest api version: project.openshift.io/v1[0m
+2026-02-22T15:38:14.466199 ocp_resources ProjectRequest [32mINFO[0m Create ProjectRequest node-hotplug-test-cpu-hotplug-max-limits[0m
+2026-02-22T15:38:14.466355 ocp_resources ProjectRequest [32mINFO[0m Posting {'apiVersion': 'project.openshift.io/v1', 'kind': 'ProjectRequest', 'metadata': {'name': 'node-hotplug-test-cpu-hotplug-max-limits'}}[0m
+2026-02-22T15:38:14.463444 conftest [32mINFO[0m Executing session fixture: modern_cpu_for_migration[0m
+2026-02-22T15:38:14.463893 utilities.cpu [32mINFO[0m Host model cpus for all nodes are same {'c01-mv-421-qgr9v-worker-0-6brx9': 'EPYC-Rome', 'c01-mv-421-qgr9v-worker-0-gwsf6': 'EPYC-Rome', 'c01-mv-421-qgr9v-worker-0-rgbwd': 'EPYC-Rome'}. No common cpus are needed[0m
+2026-02-22T15:38:14.464262 conftest [32mINFO[0m Executing session fixture: vmx_disabled_flag[0m
+2026-02-22T15:38:14.464471 utilities.jira [32mINFO[0m Conformance tests without JIRA credentials: assuming CNV-62851 is open[0m
+2026-02-22T15:38:14.464723 conftest [32mINFO[0m Executing session fixture: is_s390x_cluster[0m
+2026-02-22T15:38:14.465219 conftest [32mINFO[0m Executing module fixture: namespace[0m
+2026-02-22T15:38:15.355114 ocp_resources.resource [32mINFO[0m kind: Project api version: project.openshift.io/v1[0m
+2026-02-22T15:38:15.355428 ocp_resources Project [32mINFO[0m Wait for Project node-hotplug-test-cpu-hotplug-max-limits status to be Active[0m
+2026-02-22T15:38:15.355644 timeout_sampler [32mINFO[0m Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_for_status.lambda: self.exists)[0m
+2026-02-22T15:38:15.516114 ocp_resources Project [32mINFO[0m Status of Project node-hotplug-test-cpu-hotplug-max-limits is Active[0m
+2026-02-22T15:38:15.516530 timeout_sampler [32mINFO[0m Elapsed time: 0.0001811981201171875 [0:00:00.000181][0m
+2026-02-22T15:38:15.673978 ocp_resources Namespace [32mINFO[0m Wait for Namespace node-hotplug-test-cpu-hotplug-max-limits status to be Active[0m
+2026-02-22T15:38:15.674419 timeout_sampler [32mINFO[0m Waiting for 120 seconds [0:02:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_for_status.lambda: self.exists)[0m
+2026-02-22T15:38:15.829588 ocp_resources Namespace [32mINFO[0m Status of Namespace node-hotplug-test-cpu-hotplug-max-limits is Active[0m
+2026-02-22T15:38:15.829962 timeout_sampler [32mINFO[0m Elapsed time: 0.0003662109375 [0:00:00.000366][0m
+2026-02-22T15:38:15.830311 ocp_resources.resource [32mINFO[0m ResourceEdits: Updating data for resource Namespace node-hotplug-test-cpu-hotplug-max-limits[0m
+2026-02-22T15:38:15.830531 ocp_resources Namespace [32mINFO[0m Update Namespace node-hotplug-test-cpu-hotplug-max-limits:
+{'metadata': {'labels': None, 'name': 'node-hotplug-test-cpu-hotplug-max-limits'}}[0m
+2026-02-22T15:38:16.148949 conftest [32mINFO[0m Executing class fixture: golden_image_data_source_for_test_scope_class[0m
+2026-02-22T15:38:16.149964 ocp_resources.resource [32mINFO[0m kind: DataSource api version: cdi.kubevirt.io/v1beta1[0m
+2026-02-22T15:38:16.617951 tests.virt.utils [32mINFO[0m DataSource rhel9 already exists and has a source pvc/snapshot.[0m
+2026-02-22T15:38:16.618612 conftest [32mINFO[0m Executing class fixture: golden_image_data_volume_template_for_test_scope_class[0m
+2026-02-22T15:38:16.948384 ocp_resources.resource [32mINFO[0m Trying to get client via new_client_from_config[0m
+2026-02-22T15:38:16.978406 ocp_resources.resource [32mINFO[0m kind: DataVolume api version: cdi.kubevirt.io/v1beta1[0m
+2026-02-22T15:38:16.978684 conftest [32mINFO[0m Executing class fixture: vm_with_high_max_sockets[0m
+2026-02-22T15:38:16.979188 ocp_resources.resource [32mINFO[0m kind: VirtualMachine api version: kubevirt.io/v1[0m
+2026-02-22T15:38:16.979510 utilities.virt [33mWARNING[0m `os_login_param` not defined for rhel[0m
+2026-02-22T15:38:17.142543 utilities.virt [32mINFO[0m Setting random username and password[0m
+2026-02-22T15:38:17.144429 ocp_resources.resource [32mINFO[0m kind: Template api version: template.openshift.io/v1[0m
+2026-02-22T15:38:17.143698 utilities.virt [33mWARNING[0m `os_login_param` not defined for rhel[0m
+2026-02-22T15:38:17.469732 utilities.virt [32mINFO[0m Get VM credentials from cloud-init[0m
+2026-02-22T15:38:17.470490 ocp_resources.resource [32mINFO[0m Trying to get client via new_client_from_config[0m
+2026-02-22T15:38:18.334123 ocp_resources VirtualMachine [32mINFO[0m Create VirtualMachine rhel-cpu-max-sockets-limit-vm-1771774696-9790561[0m
+2026-02-22T15:38:18.334332 ocp_resources VirtualMachine [32mINFO[0m Posting {'apiVersion': 'kubevirt.io/v1', 'kind': 'VirtualMachine', 'metadata': {'annotations': {'vm.kubevirt.io/validations': '[\n  {\n    "name": "minimal-required-memory",\n    "path": "jsonpath::.spec.domain.memory.guest",\n    "rule": "integer",\n    "message": "This VM requires more memory.",\n    "min": 1610612736\n  }\n]\n'}, 'labels': {'app': 'rhel-cpu-max-sockets-limit-vm-1771774696-9790561', 'kubevirt.io/dynamic-credentials-support': 'true', 'vm.kubevirt.io/template': 'rhel9-server-tiny', 'vm.kubevirt.io/template.namespace': 'openshift', 'vm.kubevirt.io/template.revision': '1', 'vm.kubevirt.io/template.version': 'v0.34.1'}, 'name': 'rhel-cpu-max-sockets-limit-vm-1771774696-9790561'}, 'spec': {'dataVolumeTemplates': [{'apiVersion': 'cdi.kubevirt.io/v1beta1', 'kind': 'DataVolume', 'metadata': {'name': 'rhel9-1771774696-9476905'}, 'spec': {'storage': {'storageClassName': 'ocs-storagecluster-ceph-rbd-virtualization', 'resources': {'requests': {'storage': '34144990004'}}, 'accessModes': ['ReadWriteMany']}, 'sourceRef': {'kind': 'DataSource', 'name': 'rhel9', 'namespace': 'openshift-virtualization-os-images'}}}], 'runStrategy': 'Halted', 'template': {'metadata': {'annotations': {'vm.kubevirt.io/flavor': 'tiny', 'vm.kubevirt.io/os': 'rhel9', 'vm.kubevirt.io/workload': 'server'}, 'labels': {'kubevirt.io/domain': 'rhel-cpu-max-sockets-limit-vm-1771774696-9790561', 'kubevirt.io/size': 'tiny', 'kubevirt.io/vm': 'rhel-cpu-max-sockets-limit-vm-1771774696-9790561', 'debugLogs': 'true'}}, 'spec': {'architecture': 'amd64', 'domain': {'cpu': {'features': [{'name': 'vmx', 'policy': 'disable'}], 'cores': 1, 'threads': 1, 'sockets': 2, 'maxSockets': 1024}, 'devices': {'disks': [{'disk': {'bus': 'virtio'}, 'name': 'rootdisk'}, {'disk': {'bus': 'virtio'}, 'name': 'cloudinitdisk'}], 'interfaces': [{'masquerade': {}, 'model': 'virtio', 'name': 'default'}], 'rng': {}}, 'features': {'smm': {'enabled': True}}, 'firmware': {'bootloader': {'efi': {}}}, 'memory': {'guest': '4Gi', 'maxGuest': '10Gi'}}, 'networks': [{'name': 'default', 'pod': {}}], 'terminationGracePeriodSeconds': 180, 'volumes': [{'dataVolume': {'name': 'rhel9-1771774696-9476905'}, 'name': 'rootdisk'}, {'cloudInitNoCloud': {'userData': '*******'}, 'name': 'cloudinitdisk'}]}}}}[0m
+2026-02-22T15:38:19.116843 timeout_sampler [32mINFO[0m Waiting for 5 seconds [0:00:05], retry every 1 seconds. (Function: utilities.virt.<locals>.lambda: vm.instance.get)[0m
+2026-02-22T15:38:19.432617 timeout_sampler [32mINFO[0m Elapsed time: 0.0003998279571533203 [0:00:00.000400][0m
+2026-02-22T15:38:19.591794 utilities.virt [32mINFO[0m VM rhel-cpu-max-sockets-limit-vm-1771774696-9790561 status before dv check: Provisioning[0m
+2026-02-22T15:38:19.592199 utilities.virt [32mINFO[0m Volume(s) in VM spec: ['rhel9-1771774696-9476905'] [0m
+2026-02-22T15:38:19.592676 ocp_resources.resource [32mINFO[0m kind: DataVolume api version: cdi.kubevirt.io/v1beta1[0m
+2026-02-22T15:38:19.593606 ocp_resources DataVolume [32mINFO[0m Wait DV success for 1800 seconds[0m
+2026-02-22T15:38:19.593948 timeout_sampler [32mINFO[0m Waiting for 120 seconds [0:02:00], retry every 10 seconds. (Function: ocp_resources.datavolume._check_none_pending_status.lambda: self.exists)[0m
+2026-02-22T15:38:19.750515 timeout_sampler [32mINFO[0m Elapsed time: 0.00028133392333984375 [0:00:00.000281][0m
+2026-02-22T15:38:19.750950 timeout_sampler [32mINFO[0m Waiting for 1800 seconds [0:30:00], retry every 1 seconds. (Function: ocp_resources.datavolume.wait_for_dv_success.lambda: self.exists)[0m
+2026-02-22T15:39:06.201344 timeout_sampler [32mINFO[0m Elapsed time: 46.29368734359741 [0:00:46.293687][0m
+2026-02-22T15:39:06.201791 ocp_resources PersistentVolumeClaim [32mINFO[0m Wait for PersistentVolumeClaim rhel9-1771774696-9476905 status to be Bound[0m
+2026-02-22T15:39:06.202063 timeout_sampler [32mINFO[0m Waiting for 60 seconds [0:01:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_for_status.lambda: self.exists)[0m
+2026-02-22T15:39:06.357803 ocp_resources PersistentVolumeClaim [32mINFO[0m Status of PersistentVolumeClaim rhel9-1771774696-9476905 is Bound[0m
+2026-02-22T15:39:06.358175 timeout_sampler [32mINFO[0m Elapsed time: 0.0002396106719970703 [0:00:00.000240][0m
+2026-02-22T15:39:06.358526 timeout_sampler [32mINFO[0m Waiting for 5 seconds [0:00:05], retry every 1 seconds. (Function: utilities.virt.<locals>.lambda: vm.instance.get)[0m
+2026-02-22T15:39:06.678020 timeout_sampler [32mINFO[0m Elapsed time: 0.0002105236053466797 [0:00:00.000211][0m
+2026-02-22T15:39:06.991533 ocp_resources VirtualMachine [32mINFO[0m Delete VirtualMachine rhel-cpu-max-sockets-limit-vm-1771774696-9790561[0m
+2026-02-22T15:39:07.317534 ocp_resources VirtualMachine [32mINFO[0m Deleting {'apiVersion': 'kubevirt.io/v1', 'kind': 'VirtualMachine', 'metadata': {'annotations': {'kubemacpool.io/transaction-timestamp': '2026-02-22T15:38:18.991645758Z', 'kubevirt.io/latest-observed-api-version': 'v1', 'kubevirt.io/storage-observed-api-version': 'v1', 'vm.kubevirt.io/validations': '[\n  {\n    "name": "minimal-required-memory",\n    "path": "jsonpath::.spec.domain.memory.guest",\n    "rule": "integer",\n    "message": "This VM requires more memory.",\n    "min": 1610612736\n  }\n]\n'}, 'creationTimestamp': '2026-02-22T15:38:18Z', 'finalizers': ['kubevirt.io/virtualMachineControllerFinalize'], 'generation': 2, 'labels': {'app': 'rhel-cpu-max-sockets-limit-vm-1771774696-9790561', 'kubevirt.io/dynamic-credentials-support': 'true', 'vm.kubevirt.io/template': 'rhel9-server-tiny', 'vm.kubevirt.io/template.namespace': 'openshift', 'vm.kubevirt.io/template.revision': '1', 'vm.kubevirt.io/template.version': 'v0.34.1'}, 'managedFields': [{'apiVersion': 'kubevirt.io/v1', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:annotations': {'.': {}, 'f:vm.kubevirt.io/validations': {}}, 'f:labels': {'.': {}, 'f:app': {}, 'f:kubevirt.io/dynamic-credentials-support': {}, 'f:vm.kubevirt.io/template': {}, 'f:vm.kubevirt.io/template.namespace': {}, 'f:vm.kubevirt.io/template.revision': {}, 'f:vm.kubevirt.io/template.version': {}}}, 'f:spec': {'.': {}, 'f:dataVolumeTemplates': {}, 'f:template': {'.': {}, 'f:metadata': {'.': {}, 'f:annotations': {'.': {}, 'f:vm.kubevirt.io/flavor': {}, 'f:vm.kubevirt.io/os': {}, 'f:vm.kubevirt.io/workload': {}}, 'f:labels': {'.': {}, 'f:debugLogs': {}, 'f:kubevirt.io/domain': {}, 'f:kubevirt.io/size': {}, 'f:kubevirt.io/vm': {}}}, 'f:spec': {'.': {}, 'f:architecture': {}, 'f:domain': {'.': {}, 'f:cpu': {'.': {}, 'f:cores': {}, 'f:features': {}, 'f:maxSockets': {}, 'f:sockets': {}, 'f:threads': {}}, 'f:devices': {'.': {}, 'f:disks': {}, 'f:interfaces': {}, 'f:rng': {}}, 'f:features': {'.': {}, 'f:smm': {'.': {}, 'f:enabled': {}}}, 'f:firmware': {'.': {}, 'f:bootloader': {'.': {}, 'f:efi': {}}}, 'f:memory': {'.': {}, 'f:guest': {}, 'f:maxGuest': {}}}, 'f:networks': {}, 'f:terminationGracePeriodSeconds': {}, 'f:volumes': {}}}}}, 'manager': 'OpenAPI-Generator', 'operation': 'Update', 'time': '2026-02-22T15:38:18Z'}, {'apiVersion': 'kubevirt.io/v1', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:spec': {'f:runStrategy': {}}}, 'manager': 'virt-api', 'operation': 'Update', 'time': '2026-02-22T15:38:18Z'}, {'apiVersion': 'kubevirt.io/v1', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:annotations': {'f:kubevirt.io/latest-observed-api-version': {}, 'f:kubevirt.io/storage-observed-api-version': {}}, 'f:finalizers': {'.': {}, 'v:"kubevirt.io/virtualMachineControllerFinalize"': {}}}}, 'manager': 'virt-controller', 'operation': 'Update', 'time': '2026-02-22T15:38:18Z'}, {'apiVersion': 'kubevirt.io/v1', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:status': {'.': {}, 'f:conditions': {}, 'f:created': {}, 'f:desiredGeneration': {}, 'f:observedGeneration': {}, 'f:printableStatus': {}, 'f:runStrategy': {}, 'f:volumeSnapshotStatuses': {}}}, 'manager': 'virt-controller', 'operation': 'Update', 'subresource': 'status', 'time': '2026-02-22T15:39:05Z'}], 'name': 'rhel-cpu-max-sockets-limit-vm-1771774696-9790561', 'namespace': 'node-hotplug-test-cpu-hotplug-max-limits', 'resourceVersion': '22151456', 'uid': '4bb27c89-7a01-4914-bb1a-d5073061b70e'}, 'spec': {'dataVolumeTemplates': [{'apiVersion': 'cdi.kubevirt.io/v1beta1', 'kind': 'DataVolume', 'metadata': {'creationTimestamp': None, 'name': 'rhel9-1771774696-9476905'}, 'spec': {'sourceRef': {'kind': 'DataSource', 'name': 'rhel9', 'namespace': 'openshift-virtualization-os-images'}, 'storage': {'accessModes': ['ReadWriteMany'], 'resources': {'requests': {'storage': '34144990004'}}, 'storageClassName': 'ocs-storagecluster-ceph-rbd-virtualization'}}}], 'runStrategy': 'Always', 'template': {'metadata': {'annotations': {'vm.kubevirt.io/flavor': 'tiny', 'vm.kubevirt.io/os': 'rhel9', 'vm.kubevirt.io/workload': 'server'}, 'creationTimestamp': None, 'labels': {'debugLogs': 'true', 'kubevirt.io/domain': 'rhel-cpu-max-sockets-limit-vm-1771774696-9790561', 'kubevirt.io/size': 'tiny', 'kubevirt.io/vm': 'rhel-cpu-max-sockets-limit-vm-1771774696-9790561'}}, 'spec': {'architecture': 'amd64', 'domain': {'cpu': {'cores': 1, 'features': [{'name': 'vmx', 'policy': 'disable'}], 'maxSockets': 1024, 'sockets': 2, 'threads': 1}, 'devices': {'disks': [{'disk': {'bus': 'virtio'}, 'name': 'rootdisk'}, {'disk': {'bus': 'virtio'}, 'name': 'cloudinitdisk'}], 'interfaces': [{'macAddress': '02:22:9f:48:8e:5f', 'masquerade': {}, 'model': 'virtio', 'name': 'default'}], 'rng': {}}, 'features': {'acpi': {}, 'smm': {'enabled': True}}, 'firmware': {'bootloader': {'efi': {}}, 'serial': '5fe35786-647f-44b8-86f3-d5d043c49318', 'uuid': 'c8ae4396-d30d-41c7-a05e-0cd1647340a6'}, 'machine': {'type': 'pc-q35-rhel9.6.0'}, 'memory': {'guest': '4Gi', 'maxGuest': '10Gi'}, 'resources': {}}, 'networks': [{'name': 'default', 'pod': {}}], 'terminationGracePeriodSeconds': 180, 'volumes': [{'dataVolume': {'name': 'rhel9-1771774696-9476905'}, 'name': 'rootdisk'}, {'cloudInitNoCloud': {'userData': '*******'}, 'name': 'cloudinitdisk'}]}}}, 'status': {'conditions': [{'lastProbeTime': '2026-02-22T15:39:05Z', 'lastTransitionTime': '2026-02-22T15:39:05Z', 'message': 'Guest VM is not reported as running', 'reason': 'GuestNotRunning', 'status': 'False', 'type': 'Ready'}, {'lastProbeTime': None, 'lastTransitionTime': None, 'message': "All of the VMI's DVs are bound and ready", 'reason': 'AllDVsReady', 'status': 'True', 'type': 'DataVolumesReady'}, {'lastProbeTime': None, 'lastTransitionTime': '2026-02-22T15:39:05Z', 'message': '0/6 nodes are available: 3 Insufficient memory, 3 node(s) had untolerated taint(s). no new claims to deallocate, preemption: 0/6 nodes are available: 3 No preemption victims found for incoming pod, 3 Preemption is not helpful for scheduling.', 'reason': 'Unschedulable', 'status': 'False', 'type': 'PodScheduled'}], 'created': True, 'desiredGeneration': 2, 'observedGeneration': 2, 'printableStatus': 'ErrorUnschedulable', 'runStrategy': 'Always', 'volumeSnapshotStatuses': [{'enabled': True, 'name': 'rootdisk'}, {'enabled': False, 'name': 'cloudinitdisk', 'reason': 'Snapshot is not supported for this volumeSource type [cloudinitdisk]'}]}}[0m
+2026-02-22T15:39:07.562471 ocp_resources VirtualMachine [32mINFO[0m Wait until VirtualMachine rhel-cpu-max-sockets-limit-vm-1771774696-9790561 is deleted[0m
+2026-02-22T15:39:07.562943 timeout_sampler [32mINFO[0m Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_deleted.lambda: self.exists)[0m
+2026-02-22T15:39:08.876935 timeout_sampler [32mINFO[0m Elapsed time: 1.1570048332214355 [0:00:01.157005][0m
+_ 1 of 5 completed, 0 Pass, 0 Fail, 0 Skip, 0 XPass, 0 XFail, 1 Error, 0 ReRun _
+
+tests/virt/node/hotplug/test_cpu_hotplug_max_limits.py 
+TEST: TestCPUHotplugMaxSocketsLimit.test_hotplug_cpu_up_to_max_sockets[hotplugged_cpu_sockets0-RHEL-VM] STATUS: [1;33mSKIPPED[0m
+s
+_ 2 of 5 completed, 0 Pass, 0 Fail, 1 Skip, 0 XPass, 0 XFail, 1 Error, 0 ReRun _
+
+tests/virt/node/hotplug/test_cpu_hotplug_max_limits.py 
+TEST: TestCPUHotplugMaxSocketsLimit.test_hotplug_cpu_beyond_max_sockets_rejected[RHEL-VM] STATUS: [1;33mSKIPPED[0m
+s
+_ 3 of 5 completed, 0 Pass, 0 Fail, 2 Skip, 0 XPass, 0 XFail, 1 Error, 0 ReRun _
+
+tests/virt/node/hotplug/test_cpu_hotplug_max_limits.py ------------------------------------------------------- TEARDOWN -------------------------------------------------------
+
+------------------------ test_full_hotplug_cycle_within_limits[hotplugged_cpu_sockets0-RHEL-VM] ------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-22T15:39:09.051572 pytest_dependency [32mINFO[0m skip test_full_hotplug_cycle_within_limits[hotplugged_cpu_sockets0-RHEL-VM] because it depends on TestCPUHotplugMaxSocketsLimit::hotplug_within_limit[0m
+
+TEST: TestCPUHotplugMaxSocketsLimit.test_full_hotplug_cycle_within_limits[hotplugged_cpu_sockets0-RHEL-VM] STATUS: [1;33mSKIPPED[0m
+s
+_ 4 of 5 completed, 0 Pass, 0 Fail, 3 Skip, 0 XPass, 0 XFail, 1 Error, 0 ReRun _
+
+tests/deprecated_api/test_deprecation_audit_logs.py 
+TEST: test_deprecated_apis_in_audit_logs STATUS: [1;33mQUARANTINED[0m
+[NOTRUN] quarantined: Timeout after 180s retrieving logs Tracked <a href='https://issues.redhat.com/browse/CNV-76514' target='_blank'>CNV-76514</a>
+_ 5 of 5 completed, 0 Pass, 0 Fail, 3 Skip, 0 XPass, 1 XFail, 1 Error, 0 ReRun _
+                                                                         [100%]2026-02-22T15:40:30.167670 ocp_resources ConfigMap [32mINFO[0m Delete ConfigMap cnv-tests-run-in-progress[0m
+2026-02-22T15:40:30.484039 ocp_resources ConfigMap [32mINFO[0m Deleting {'kind': 'ConfigMap', 'apiVersion': 'v1', 'metadata': {'name': 'cnv-tests-run-in-progress', 'namespace': 'cnv-tests-run-in-progress-ns', 'uid': 'dd6a6d31-34fb-4ebb-9b2c-d405426d1da4', 'resourceVersion': '22146762', 'creationTimestamp': '2026-02-22T15:34:37Z', 'managedFields': [{'manager': 'OpenAPI-Generator', 'operation': 'Update', 'apiVersion': 'v1', 'time': '2026-02-22T15:34:37Z', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:data': {'.': {}, 'f:host': {}, 'f:pytest_cmd': {}, 'f:run-in-container': {}, 'f:running_from_dir': {}, 'f:session-id': {}, 'f:user': {}}}}]}, 'data': '*******'}[0m
+2026-02-22T15:40:30.651372 ocp_resources ConfigMap [32mINFO[0m Wait until ConfigMap cnv-tests-run-in-progress is deleted[0m
+2026-02-22T15:40:30.966917 ocp_resources Namespace [32mINFO[0m Delete Namespace cnv-tests-run-in-progress-ns[0m
+2026-02-22T15:40:31.277611 ocp_resources Namespace [32mINFO[0m Deleting {'kind': 'Namespace', 'apiVersion': 'v1', 'metadata': {'name': 'cnv-tests-run-in-progress-ns', 'uid': 'ba335b28-8524-42e1-9782-5be85d74227a', 'resourceVersion': '22146760', 'creationTimestamp': '2026-02-22T15:34:36Z', 'labels': {'kubernetes.io/metadata.name': 'cnv-tests-run-in-progress-ns', 'pod-security.kubernetes.io/audit': 'restricted', 'pod-security.kubernetes.io/audit-version': 'latest', 'pod-security.kubernetes.io/enforce': 'privileged', 'pod-security.kubernetes.io/warn': 'restricted', 'pod-security.kubernetes.io/warn-version': 'latest', 'security.openshift.io/scc.podSecurityLabelSync': 'false'}, 'annotations': {'openshift.io/sa.scc.mcs': 's0:c34,c9', 'openshift.io/sa.scc.supplemental-groups': '1001140000/10000', 'openshift.io/sa.scc.uid-range': '1001140000/10000', 'security.openshift.io/MinimallySufficientPodSecurityStandard': 'restricted'}, 'managedFields': [{'manager': 'cluster-policy-controller', 'operation': 'Apply', 'apiVersion': 'v1', 'time': '2026-02-22T15:34:36Z', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:annotations': {'f:openshift.io/sa.scc.mcs': {}, 'f:openshift.io/sa.scc.supplemental-groups': {}, 'f:openshift.io/sa.scc.uid-range': {}}}}}, {'manager': 'pod-security-admission-label-synchronization-controller', 'operation': 'Apply', 'apiVersion': 'v1', 'time': '2026-02-22T15:34:36Z', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:annotations': {'f:security.openshift.io/MinimallySufficientPodSecurityStandard': {}}, 'f:labels': {'f:pod-security.kubernetes.io/audit': {}, 'f:pod-security.kubernetes.io/audit-version': {}, 'f:pod-security.kubernetes.io/warn': {}, 'f:pod-security.kubernetes.io/warn-version': {}}}}}, {'manager': 'OpenAPI-Generator', 'operation': 'Update', 'apiVersion': 'v1', 'time': '2026-02-22T15:34:36Z', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:labels': {'.': {}, 'f:kubernetes.io/metadata.name': {}, 'f:pod-security.kubernetes.io/enforce': {}, 'f:security.openshift.io/scc.podSecurityLabelSync': {}}}}}]}, 'spec': {'finalizers': ['kubernetes']}, 'status': {'phase': 'Active'}}[0m
+2026-02-22T15:40:31.447712 ocp_resources Namespace [32mINFO[0m Wait until Namespace cnv-tests-run-in-progress-ns is deleted[0m
+2026-02-22T15:40:30.651804 timeout_sampler [32mINFO[0m Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_deleted.lambda: self.exists)[0m
+2026-02-22T15:40:30.810741 timeout_sampler [32mINFO[0m Elapsed time: 0.0003025531768798828 [0:00:00.000303][0m
+2026-02-22T15:40:31.448242 timeout_sampler [32mINFO[0m Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_deleted.lambda: self.exists)[0m
+2026-02-22T15:40:39.706257 timeout_sampler [32mINFO[0m Elapsed time: 8.097953081130981 [0:00:08.097953][0m
+===== 3 skipped, 16 warnings, 1 error, 1 quarantined in 362.29s (0:06:02) ======
+
+==================================== ERRORS ====================================
+_ ERROR at setup of TestCPUHotplugMaxSocketsLimit.test_max_sockets_limited_by_vcpu_ceiling[RHEL-VM] _
+
+request = <SubRequest 'vm_with_high_max_sockets' for <Function test_max_sockets_limited_by_vcpu_ceiling[RHEL-VM]>>
+namespace = <ocp_resources.namespace.Namespace object at 0x7fa569247bb0>
+unprivileged_client = <kubernetes.dynamic.client.DynamicClient object at 0x7fa569247230>
+golden_image_data_volume_template_for_test_scope_class = {'apiVersion': 'cdi.kubevirt.io/v1beta1', 'kind': 'DataVolume', 'metadata': {'name': 'rhel9-1771774696-9476905'}, 'spe...sources': {'requests': {'storage': '34144990004'}}, 'storageClassName': 'ocs-storagecluster-ceph-rbd-virtualization'}}}
+modern_cpu_for_migration = None
+vmx_disabled_flag = {'cores': 1, 'features': [{'name': 'vmx', 'policy': 'disable'}], 'maxSockets': 1024, 'sockets': 2, ...}
+is_s390x_cluster = False
+
+    @pytest.fixture(scope="class")
+    def vm_with_high_max_sockets(
+        request,
+        namespace,
+        unprivileged_client,
+        golden_image_data_volume_template_for_test_scope_class,
+        modern_cpu_for_migration,
+        vmx_disabled_flag,
+        is_s390x_cluster,
+    ):
+        """VM with intentionally high cpu_max_sockets to trigger MaxSockets capping."""
+        with VirtualMachineForTestsFromTemplate(
+            name=request.param["vm_name"],
+            labels=Template.generate_template_labels(**request.param["template_labels"]),
+            namespace=namespace.name,
+            client=unprivileged_client,
+            data_volume_template=golden_image_data_volume_template_for_test_scope_class,
+            cpu_max_sockets=HIGH_MAX_SOCKETS,
+            memory_max_guest=None if is_s390x_cluster else TEN_GI_MEMORY,
+            cpu_sockets=TWO_CPU_SOCKETS,
+            cpu_threads=ONE_CPU_THREAD,
+            cpu_cores=ONE_CPU_CORE,
+            memory_guest=FOUR_GI_MEMORY,
+            cpu_model=modern_cpu_for_migration,
+            cpu_flags=vmx_disabled_flag,
+        ) as vm:
+>           running_vm(vm=vm)
+
+tests/virt/node/hotplug/test_cpu_hotplug_max_limits.py:76: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+utilities/virt.py:1767: in running_vm
+    wait_for_running_vm(
+utilities/virt.py:1693: in wait_for_running_vm
+    assert_vm_not_error_status(vm=vm)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+vm = <utilities.virt.VirtualMachineForTestsFromTemplate object at 0x7fa56a5eb230>
+timeout = 5
+
+    def assert_vm_not_error_status(vm: VirtualMachineForTests, timeout: int = TIMEOUT_5SEC) -> None:
+        try:
+            for status in TimeoutSampler(
+                wait_timeout=timeout, sleep=TIMEOUT_1SEC, func=lambda: vm.instance.get("status", {})
+            ):
+                if status:
+                    printable_status = status.get("printableStatus")
+                    error_list = VM_ERROR_STATUSES.copy()
+                    if vm.instance.spec.template.spec.domain.devices.gpus:
+                        error_list.remove(VirtualMachine.Status.ERROR_UNSCHEDULABLE)
+>                   assert printable_status not in error_list, (
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        f"VM {vm.name} error printable status: {printable_status}\nVM status:\n{status}"
+                    )
+E                   AssertionError: VM rhel-cpu-max-sockets-limit-vm-1771774696-9790561 error printable status: ErrorUnschedulable
+E                   VM status:
+E                   {'conditions': [{'lastProbeTime': '2026-02-22T15:39:05Z',
+E                    'lastTransitionTime': '2026-02-22T15:39:05Z',
+E                    'message': 'Guest VM is not reported as running',
+E                    'reason': 'GuestNotRunning',
+E                    'status': 'False',
+E                    'type': 'Ready'},
+E                                   {'lastProbeTime': None,
+E                    'lastTransitionTime': None,
+E                    'message': "All of the VMI's DVs are bound and ready",
+E                    'reason': 'AllDVsReady',
+E                    'status': 'True',
+E                    'type': 'DataVolumesReady'},
+E                                   {'lastProbeTime': None,
+E                    'lastTransitionTime': '2026-02-22T15:39:05Z',
+E                    'message': '0/6 nodes are available: 3 Insufficient memory, 3 node(s) had '
+E                               'untolerated taint(s). no new claims to deallocate, preemption: '
+E                               '0/6 nodes are available: 3 No preemption victims found for '
+E                               'incoming pod, 3 Preemption is not helpful for scheduling.',
+E                    'reason': 'Unschedulable',
+E                    'status': 'False',
+E                    'type': 'PodScheduled'}],
+E                    'created': True,
+E                    'desiredGeneration': 2,
+E                    'observedGeneration': 2,
+E                    'printableStatus': 'ErrorUnschedulable',
+E                    'runStrategy': 'Always',
+E                    'volumeSnapshotStatuses': [{'enabled': True, 'name': 'rootdisk'},
+E                                               {'enabled': False,
+E                    'name': 'cloudinitdisk',
+E                    'reason': 'Snapshot is not supported for this volumeSource type '
+E                              '[cloudinitdisk]'}]}
+
+utilities/virt.py:1664: AssertionError
+---------------------------- Captured stderr setup -----------------------------
+
+---------------------------------- test_max_sockets_limited_by_vcpu_ceiling[RHEL-VM] ----------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-22T15:34:37.451937 conftest [32mINFO[0m Executing session fixture: admin_client[0m
+2026-02-22T15:34:37.452201 conftest [32mINFO[0m Executing session fixture: pytestconfig[0m
+2026-02-22T15:34:37.452373 conftest [32mINFO[0m Executing session fixture: installing_cnv[0m
+2026-02-22T15:34:37.452494 conftest [32mINFO[0m Executing session fixture: cnv_tests_utilities_namespace[0m
+2026-02-22T15:34:37.611956 ocp_resources Namespace [32mINFO[0m Create Namespace cnv-tests-utilities[0m
+2026-02-22T15:34:37.612275 ocp_resources Namespace [32mINFO[0m Posting {'apiVersion': 'v1', 'kind': 'Namespace', 'metadata': {'name': 'cnv-tests-utilities', 'labels': {'pod-security.kubernetes.io/enforce': 'privileged', 'security.openshift.io/scc.podSecurityLabelSync': 'false'}}, 'spec': {}}[0m
+2026-02-22T15:34:37.928017 ocp_resources Namespace [32mINFO[0m Wait for Namespace cnv-tests-utilities status to be Active[0m
+2026-02-22T15:34:37.928390 timeout_sampler [32mINFO[0m Waiting for 120 seconds [0:02:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_for_status.lambda: self.exists)[0m
+2026-02-22T15:34:38.084374 ocp_resources Namespace [32mINFO[0m Status of Namespace cnv-tests-utilities is Active[0m
+2026-02-22T15:34:38.084713 timeout_sampler [32mINFO[0m Elapsed time: 0.0002429485321044922 [0:00:00.000243][0m
+2026-02-22T15:34:38.085258 conftest [32mINFO[0m Executing session fixture: skip_unprivileged_client[0m
+2026-02-22T15:34:38.086555 ocp_resources.resource [32mINFO[0m kind: OAuth api version: config.openshift.io/v1[0m
+2026-02-22T15:34:38.085716 conftest [32mINFO[0m Executing session fixture: identity_provider_config[0m
+2026-02-22T15:34:38.087516 conftest [32mINFO[0m Executing session fixture: leftovers_cleanup[0m
+2026-02-22T15:34:38.087867 tests.conftest [32mINFO[0m Checking for leftover resources[0m
+2026-02-22T15:34:38.088643 ocp_resources.resource [32mINFO[0m kind: DaemonSet api version: apps/v1[0m
+2026-02-22T15:34:38.563301 ocp_resources.resource [32mINFO[0m ResourceEdits: Updating data for resource OAuth cluster[0m
+2026-02-22T15:34:38.563651 ocp_resources OAuth [32mINFO[0m Update OAuth cluster:
+{'metadata': {'name': 'cluster'}, 'spec': {'tokenConfig': {'accessTokenMaxAgeSeconds': 604800}}}[0m
+2026-02-22T15:34:38.723888 conftest [32mINFO[0m Executing session fixture: artifactory_setup[0m
+2026-02-22T15:34:38.724424 tests.conftest [32mINFO[0m Checking for artifactory credentials:[0m
+2026-02-22T15:34:38.724652 tests.conftest [33mWARNING[0m Explicitly skipping artifactory setup check due to use of --skip-artifactory-check[0m
+2026-02-22T15:34:38.725046 conftest [32mINFO[0m Executing session fixture: os_path_environment[0m
+2026-02-22T15:34:38.725537 conftest [32mINFO[0m Executing session fixture: tmpdir_factory[0m
+2026-02-22T15:34:38.725961 conftest [32mINFO[0m Executing session fixture: bin_directory[0m
+2026-02-22T15:34:38.727529 conftest [32mINFO[0m Executing session fixture: virtctl_binary[0m
+2026-02-22T15:34:38.728428 ocp_resources.resource [32mINFO[0m kind: ConsoleCLIDownload api version: console.openshift.io/v1[0m
+2026-02-22T15:34:39.040049 utilities.infra [32mINFO[0m Downloading archive using: url=https://hyperconverged-cluster-cli-download-openshift-cnv.apps.c01-mv-421.rhos-psi.cnv-qe.rhood.us/amd64/linux/virtctl.tar.gz[0m
+2026-02-22T15:34:43.625830 utilities.infra [32mINFO[0m Extract the downloaded archive.[0m
+2026-02-22T15:34:43.860474 utilities.infra [32mINFO[0m Downloaded file: ['virtctl'][0m
+2026-02-22T15:34:43.864606 conftest [32mINFO[0m Executing session fixture: oc_binary[0m
+2026-02-22T15:34:44.180260 utilities.infra [32mINFO[0m Downloading archive using: url=https://downloads-openshift-console.apps.c01-mv-421.rhos-psi.cnv-qe.rhood.us/amd64/linux/oc.tar[0m
+2026-02-22T15:35:07.919671 utilities.infra [32mINFO[0m Extract the downloaded archive.[0m
+2026-02-22T15:35:08.141239 utilities.infra [32mINFO[0m Downloaded file: ['oc'][0m
+2026-02-22T15:35:08.157288 ocp_resources.resource [32mINFO[0m kind: ClusterVersion api version: config.openshift.io/v1[0m
+2026-02-22T15:35:08.156181 conftest [32mINFO[0m Executing session fixture: bin_directory_to_os_path[0m
+2026-02-22T15:35:08.156643 tests.conftest [32mINFO[0m Adding /tmp/pytest-dPkZTPK7dcwaSuCXqxukxc/bin0 to $PATH[0m
+2026-02-22T15:35:08.156876 conftest [32mINFO[0m Executing session fixture: openshift_current_version[0m
+2026-02-22T15:35:08.481726 conftest [32mINFO[0m Executing session fixture: hco_namespace[0m
+2026-02-22T15:35:08.638259 conftest [32mINFO[0m Executing session fixture: csv_scope_session[0m
+2026-02-22T15:35:08.639346 ocp_resources.resource [32mINFO[0m kind: Subscription api version: operators.coreos.com/v1alpha1[0m
+2026-02-22T15:35:08.952742 ocp_resources.resource [32mINFO[0m kind: ClusterServiceVersion api version: operators.coreos.com/v1alpha1[0m
+2026-02-22T15:35:09.736112 conftest [32mINFO[0m Executing session fixture: cnv_current_version[0m
+2026-02-22T15:35:10.077116 conftest [32mINFO[0m Executing session fixture: cnv_subscription_scope_session[0m
+2026-02-22T15:35:10.077471 ocp_resources.resource [32mINFO[0m kind: Subscription api version: operators.coreos.com/v1alpha1[0m
+2026-02-22T15:35:10.232926 conftest [32mINFO[0m Executing session fixture: hco_image[0m
+2026-02-22T15:35:10.388896 ocp_resources.resource [32mINFO[0m kind: CatalogSource api version: operators.coreos.com/v1alpha1[0m
+2026-02-22T15:35:10.701471 ocp_resources.resource [32mINFO[0m kind: StorageClass api version: storage.k8s.io/v1[0m
+2026-02-22T15:35:10.700751 conftest [32mINFO[0m Executing session fixture: cluster_storage_classes[0m
+2026-02-22T15:35:10.860039 conftest [32mINFO[0m Executing session fixture: ocs_storage_class[0m
+2026-02-22T15:35:10.860653 conftest [32mINFO[0m Executing session fixture: ocs_current_version[0m
+2026-02-22T15:35:10.861346 ocp_resources.resource [32mINFO[0m kind: ClusterServiceVersion api version: operators.coreos.com/v1alpha1[0m
+2026-02-22T15:35:11.185748 ocp_resources.resource [32mINFO[0m kind: KubeVirt api version: kubevirt.io/v1[0m
+2026-02-22T15:35:11.184920 conftest [32mINFO[0m Executing session fixture: kubevirt_resource_scope_session[0m
+2026-02-22T15:35:11.348770 conftest [32mINFO[0m Executing session fixture: cluster_service_network[0m
+2026-02-22T15:35:11.349628 ocp_resources.resource [32mINFO[0m kind: Network api version: config.openshift.io/v1[0m
+2026-02-22T15:35:11.507114 conftest [32mINFO[0m Executing session fixture: ipv6_supported_cluster[0m
+2026-02-22T15:35:11.507951 conftest [32mINFO[0m Executing session fixture: ipv4_supported_cluster[0m
+2026-02-22T15:35:11.508522 conftest [32mINFO[0m Executing session fixture: nodes[0m
+2026-02-22T15:35:11.894670 conftest [32mINFO[0m Executing session fixture: workers[0m
+2026-02-22T15:35:12.861593 conftest [32mINFO[0m Executing session fixture: cnv_source[0m
+2026-02-22T15:35:12.862545 conftest [32mINFO[0m Executing session fixture: is_production_source[0m
+2026-02-22T15:35:12.863009 conftest [32mINFO[0m Executing session fixture: generated_pulled_secret[0m
+2026-02-22T15:35:12.863728 ocp_resources.resource [32mINFO[0m Trying to get client via new_client_from_config[0m
+2026-02-22T15:35:13.818355 conftest [32mINFO[0m Executing session fixture: cnv_tests_utilities_service_account[0m
+2026-02-22T15:35:13.844891 ocp_resources ServiceAccount [32mINFO[0m Create ServiceAccount cnv-tests-sa[0m
+2026-02-22T15:35:13.845015 ocp_resources ServiceAccount [32mINFO[0m Posting {'apiVersion': 'v1', 'kind': 'ServiceAccount', 'metadata': {'name': 'cnv-tests-sa', 'namespace': 'cnv-tests-utilities'}}[0m
+2026-02-22T15:35:15.652784 conftest [32mINFO[0m Executing session fixture: utility_daemonset[0m
+2026-02-22T15:35:15.653746 timeout_sampler [32mINFO[0m Waiting for 10 seconds [0:00:10], retry every 1 seconds. (Function: utilities.virt._get_image_json  Kwargs: {'cmd': 'oc image -o json info quay.io/openshift-cnv/qe-net-utils:latest --filter-by-os linux/amd64 --registry-config=/tmp/tmpctj_7s0w-cnv-tests-pull-secret/pull-secrets.json'})[0m
+2026-02-22T15:35:15.654119 pyhelper_utils.shell [32mINFO[0m Running oc image -o json info quay.io/openshift-cnv/qe-net-utils:latest --filter-by-os linux/amd64 --registry-config=/tmp/tmpctj_7s0w-cnv-tests-pull-secret/pull-secrets.json command[0m
+2026-02-22T15:35:17.932442 timeout_sampler [32mINFO[0m Elapsed time: 0.0002484321594238281 [0:00:00.000248][0m
+2026-02-22T15:35:17.962097 ocp_resources.resource [32mINFO[0m kind: DaemonSet api version: apps/v1 --- [DuplicateFilter: Last log `Trying to get client via new_client_from_config` repeated 2 times][0m
+2026-02-22T15:35:17.970574 ocp_resources DaemonSet [32mINFO[0m Create DaemonSet utility[0m
+2026-02-22T15:35:17.970744 ocp_resources DaemonSet [32mINFO[0m Posting {'apiVersion': 'apps/v1', 'kind': 'DaemonSet', 'metadata': {'annotations': {'deprecated.daemonset.template.generation': '0'}, 'creationTimestamp': None, 'labels': {'cnv-test': 'utility', 'tier': 'node'}, 'name': 'utility', 'namespace': 'cnv-tests-utilities'}, 'spec': {'revisionHistoryLimit': 10, 'selector': {'matchLabels': {'cnv-test': 'utility', 'tier': 'node'}}, 'template': {'metadata': {'creationTimestamp': None, 'labels': {'cnv-test': 'utility', 'tier': 'node'}}, 'spec': {'containers': [{'command': ['/bin/bash', '-c', 'echo ok > /tmp/healthy && sleep INF'], 'image': 'quay.io/openshift-cnv/qe-net-utils:latest@sha256:2c8e11ac0f0b36553bed603c1c67dccb703d7059ccbcf8c91e3a35c99719ce20', 'imagePullPolicy': 'IfNotPresent', 'name': 'utility', 'readinessProbe': {'exec': {'command': ['cat', '/tmp/healthy']}, 'failureThreshold': 3, 'initialDelaySeconds': 5, 'periodSeconds': 5, 'successThreshold': 1, 'timeoutSeconds': 1}, 'resources': {'limits': {'cpu': '100m', 'memory': '50Mi'}, 'requests': {'cpu': '100m', 'memory': '50Mi'}}, 'securityContext': {'privileged': True, 'runAsUser': 0}, 'stdin': True, 'stdinOnce': True, 'terminationMessagePath': '/dev/termination-log', 'terminationMessagePolicy': 'File', 'tty': True, 'volumeMounts': [{'mountPath': '/host', 'name': 'host'}, {'mountPath': '/var/run/secrets/kubernetes.io/serviceaccount', 'name': 'kube-api-access-m5ch7', 'readOnly': True}, {'mountPath': '/host/run/openvswitch', 'name': 'ovs-run'}, {'mountPath': '/run/dbus/system_bus_socket', 'name': 'dbus-socket'}, {'mountPath': '/host/dev', 'name': 'dev'}, {'mountPath': '/host/etc', 'name': 'etc'}, {'mountPath': '/host/var', 'name': 'var'}]}], 'dnsPolicy': 'ClusterFirst', 'enableServiceLinks': True, 'hostNetwork': True, 'hostPID': True, 'imagePullSecrets': [{'name': 'default-dockercfg-xrlbh'}], 'preemptionPolicy': 'PreemptLowerPriority', 'priority': 0, 'restartPolicy': 'Always', 'schedulerName': 'default-scheduler', 'securityContext': {'privileged': True}, 'serviceAccount': 'cnv-tests-sa', 'serviceAccountName': 'cnv-tests-sa', 'terminationGracePeriodSeconds': 30, 'tolerations': [{'effect': 'NoSchedule', 'key': 'node-role.kubernetes.io/master', 'operator': 'Exists'}], 'volumes': [{'hostPath': {'path': '/', 'type': 'Directory'}, 'name': 'host'}, {'hostPath': {'path': '/run/openvswitch', 'type': ''}, 'name': 'ovs-run'}, {'hostPath': {'path': '/run/dbus/system_bus_socket', 'type': 'Socket'}, 'name': 'dbus-socket'}, {'hostPath': {'path': '/dev', 'type': 'Directory'}, 'name': 'dev'}, {'hostPath': {'path': '/etc', 'type': 'Directory'}, 'name': 'etc'}, {'hostPath': {'path': '/var', 'type': 'Directory'}, 'name': 'var'}, {'name': 'kube-api-access-m5ch7', 'projected': {'defaultMode': 420, 'sources': [{'serviceAccountToken': {'path': 'token'}}, {'configMap': {'items': [{'key': 'ca.crt', 'path': 'ca.crt'}], 'name': 'kube-root-ca.crt'}}, {'downwardAPI': {'items': [{'fieldRef': {'apiVersion': 'v1', 'fieldPath': 'metadata.namespace'}, 'path': 'namespace'}]}}, {'configMap': {'items': [{'key': 'service-ca.crt', 'path': 'service-ca.crt'}], 'name': 'openshift-service-ca.crt'}}]}}]}}, 'updateStrategy': {'type': 'OnDelete'}}}[0m
+2026-02-22T15:35:18.767986 ocp_resources DaemonSet [32mINFO[0m Wait for DaemonSet utility to deploy all desired pods[0m
+2026-02-22T15:35:18.768535 timeout_sampler [32mINFO[0m Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: kubernetes.dynamic.client.get  Kwargs: {'field_selector': 'metadata.name==utility', 'namespace': 'cnv-tests-utilities'})[0m
+2026-02-22T15:35:28.190070 timeout_sampler [32mINFO[0m Elapsed time: 9.26491403579712 [0:00:09.264914][0m
+2026-02-22T15:35:28.190947 conftest [32mINFO[0m Executing session fixture: workers_utility_pods[0m
+2026-02-22T15:35:32.432184 conftest [32mINFO[0m Executing session fixture: workers_type[0m
+2026-02-22T15:35:32.906394 ocp_resources Pod [32mINFO[0m Execute ['chroot', '/host', 'bash', '-c', 'systemd-detect-virt'] on utility-h6kbs (c01-mv-421-qgr9v-worker-0-rgbwd)[0m
+2026-02-22T15:35:34.766461 ocp_resources Pod [32mINFO[0m Execute ['chroot', '/host', 'bash', '-c', 'systemd-detect-virt'] on utility-pgct9 (c01-mv-421-qgr9v-worker-0-gwsf6)[0m
+2026-02-22T15:35:36.842549 ocp_resources Pod [32mINFO[0m Execute ['chroot', '/host', 'bash', '-c', 'systemd-detect-virt'] on utility-s6cng (c01-mv-421-qgr9v-worker-0-6brx9)[0m
+2026-02-22T15:35:38.090624 tests.conftest [32mINFO[0m Cluster workers are: virtual[0m
+2026-02-22T15:35:38.091286 conftest [32mINFO[0m Executing session fixture: nodes_cpu_architecture[0m
+2026-02-22T15:35:39.341474 conftest [32mINFO[0m Executing session fixture: cluster_info[0m
+2026-02-22T15:35:39.341970 pyhelper_utils.shell [32mINFO[0m Running virtctl --kubeconfig /home/fedora/.kube/config version command[0m
+2026-02-22T15:35:40.138544 ocp_resources.resource [32mINFO[0m kind: Network api version: config.openshift.io/v1[0m
+2026-02-22T15:35:40.294682 tests.conftest [32mINFO[0m 
+Cluster info:
+	Openshift version: 4.21.0
+	CNV version: 4.21.0
+	HCO image: brew.registry.redhat.io/rh-osbs/iib:1097155
+	OCS version: 4.21.0-104.stable
+	CNI type: OVNKubernetes
+	Workers type: virtual
+	Cluster CPU Architecture: amd64
+	IPv4 cluster: True
+	IPv6 cluster: False
+	Virtctl version: 
+	Client Version: version.Info{GitVersion:"v1.7.0-45-g33ff10241e", GitCommit:"33ff10241e848425ef145a49e450c5d1c0255edd", GitTreeState:"clean", BuildDate:"2026-01-15T09:28:24Z", GoVersion:"go1.24.11 (Red Hat 1.24.11-1.el8_10) X:strictfipsruntime", Compiler:"gc", Platform:"linux/amd64"}
+	Server Version: version.Info{GitVersion:"v1.7.0-45-g33ff10241e", GitCommit:"33ff10241e848425ef145a49e450c5d1c0255edd", GitTreeState:"clean", BuildDate:"2026-01-15T09:20:24Z", GoVersion:"go1.24.11 (Red Hat 1.24.11-1.el9_6) X:strictfipsruntime", Compiler:"gc", Platform:"linux/amd64"}
+[0m
+2026-02-22T15:35:40.295327 conftest [32mINFO[0m Executing function fixture: term_handler_scope_function[0m
+2026-02-22T15:35:40.295768 conftest [32mINFO[0m Executing class fixture: term_handler_scope_class[0m
+2026-02-22T15:35:40.296171 conftest [32mINFO[0m Executing module fixture: term_handler_scope_module[0m
+2026-02-22T15:35:40.296543 conftest [32mINFO[0m Executing session fixture: term_handler_scope_session[0m
+2026-02-22T15:35:40.297057 conftest [32mINFO[0m Executing session fixture: record_testsuite_property[0m
+2026-02-22T15:35:40.297496 conftest [32mINFO[0m Executing session fixture: junitxml_polarion[0m
+2026-02-22T15:35:40.297990 conftest [32mINFO[0m Executing session fixture: cluster_storage_classes_names[0m
+2026-02-22T15:35:40.298445 conftest [32mINFO[0m Executing session fixture: junitxml_plugin[0m
+2026-02-22T15:35:40.298890 conftest [32mINFO[0m Executing session fixture: hyperconverged_resource_scope_session[0m
+2026-02-22T15:35:40.299614 ocp_resources.resource [32mINFO[0m kind: HyperConverged api version: hco.kubevirt.io/v1beta1[0m
+2026-02-22T15:35:40.459055 conftest [32mINFO[0m Executing session fixture: cluster_sanity_scope_session[0m
+2026-02-22T15:35:40.459597 utilities.infra [32mINFO[0m Running cluster sanity. (To skip cluster sanity check pass --cluster-sanity-skip-check to pytest)[0m
+2026-02-22T15:35:40.459862 utilities.infra [32mINFO[0m Check storage classes sanity. (To skip storage class sanity check pass --cluster-sanity-skip-storage-check to pytest)[0m
+2026-02-22T15:35:40.460071 utilities.infra [32mINFO[0m Check nodes sanity. (To skip nodes sanity check pass --cluster-sanity-skip-nodes-check to pytest)[0m
+2026-02-22T15:35:40.460261 ocp_utilities.infra [32mINFO[0m Verify all nodes are in a healthy condition.[0m
+2026-02-22T15:35:41.560071 ocp_utilities.infra [32mINFO[0m Verify all nodes are schedulable.[0m
+2026-02-22T15:35:42.512762 timeout_sampler [32mINFO[0m Waiting for 300 seconds [0:05:00], retry every 5 seconds. (Function: utilities.infra.get_pods  Kwargs: {'client': <kubernetes.dynamic.client.DynamicClient object at 0x7fa56beae660>, 'namespace': <ocp_resources.namespace.Namespace object at 0x7fa56a643bb0>})[0m
+2026-02-22T15:35:57.630308 timeout_sampler [32mINFO[0m Elapsed time: 0.0004112720489501953 [0:00:00.000411][0m
+2026-02-22T15:35:57.631777 ocp_resources.resource [32mINFO[0m kind: MutatingWebhookConfiguration api version: admissionregistration.k8s.io/v1[0m
+2026-02-22T15:35:57.630847 utilities.infra [32mINFO[0m Check webhook endpoints health. (To skip webhook check pass --cluster-sanity-skip-webhook-check to pytest)[0m
+2026-02-22T15:35:57.631169 utilities.infra [32mINFO[0m Checking webhook endpoints health for services in namespace: openshift-cnv[0m
+2026-02-22T15:35:57.631383 utilities.infra [32mINFO[0m Scanning MutatingWebhookConfiguration resources for webhook services[0m
+2026-02-22T15:36:00.136441 utilities.infra [32mINFO[0m Scanning ValidatingWebhookConfiguration resources for webhook services[0m
+2026-02-22T15:36:00.137054 ocp_resources.resource [32mINFO[0m kind: ValidatingWebhookConfiguration api version: admissionregistration.k8s.io/v1[0m
+2026-02-22T15:36:04.847934 utilities.infra [32mINFO[0m Checking endpoints for service: cdi-api[0m
+2026-02-22T15:36:05.161013 utilities.infra [32mINFO[0m Service cdi-api has 1 ready endpoint address(es)[0m
+2026-02-22T15:36:05.161382 utilities.infra [32mINFO[0m Checking endpoints for service: hco-webhook-service[0m
+2026-02-22T15:36:05.473354 utilities.infra [32mINFO[0m Service hco-webhook-service has 1 ready endpoint address(es)[0m
+2026-02-22T15:36:05.473737 utilities.infra [32mINFO[0m Checking endpoints for service: hostpath-provisioner-operator-service[0m
+2026-02-22T15:36:05.787918 utilities.infra [32mINFO[0m Service hostpath-provisioner-operator-service has 1 ready endpoint address(es)[0m
+2026-02-22T15:36:05.788358 utilities.infra [32mINFO[0m Checking endpoints for service: kubemacpool-service[0m
+2026-02-22T15:36:06.103909 utilities.infra [32mINFO[0m Service kubemacpool-service has 1 ready endpoint address(es)[0m
+2026-02-22T15:36:06.104257 utilities.infra [32mINFO[0m Checking endpoints for service: kubevirt-ipam-controller-webhook-service[0m
+2026-02-22T15:36:06.415691 utilities.infra [32mINFO[0m Service kubevirt-ipam-controller-webhook-service has 2 ready endpoint address(es)[0m
+2026-02-22T15:36:06.416068 utilities.infra [32mINFO[0m Checking endpoints for service: kubevirt-operator-webhook[0m
+2026-02-22T15:36:06.731571 utilities.infra [32mINFO[0m Service kubevirt-operator-webhook has 2 ready endpoint address(es)[0m
+2026-02-22T15:36:06.731935 utilities.infra [32mINFO[0m Checking endpoints for service: ssp-operator-service[0m
+2026-02-22T15:36:07.043356 utilities.infra [32mINFO[0m Service ssp-operator-service has 1 ready endpoint address(es)[0m
+2026-02-22T15:36:07.043710 utilities.infra [32mINFO[0m Checking endpoints for service: virt-api[0m
+2026-02-22T15:36:07.355596 utilities.infra [32mINFO[0m Service virt-api has 2 ready endpoint address(es)[0m
+2026-02-22T15:36:07.355983 utilities.infra [32mINFO[0m Checking endpoints for service: virt-template-validator[0m
+2026-02-22T15:36:07.668797 utilities.infra [32mINFO[0m Service virt-template-validator has 2 ready endpoint address(es)[0m
+2026-02-22T15:36:07.669170 utilities.infra [32mINFO[0m All discovered webhook services have available endpoints[0m
+2026-02-22T15:36:07.669373 utilities.infra [32mINFO[0m Checking VM creation capability via dry-run in namespace: default[0m
+2026-02-22T15:36:07.670324 ocp_resources.resource [32mINFO[0m kind: VirtualMachine api version: kubevirt.io/v1[0m
+2026-02-22T15:36:07.672579 ocp_resources VirtualMachine [32mINFO[0m Create VirtualMachine sanity-check-dry-run-vm[0m
+2026-02-22T15:36:07.672870 ocp_resources VirtualMachine [32mINFO[0m Posting {'apiVersion': 'kubevirt.io/v1', 'kind': 'VirtualMachine', 'metadata': {'name': 'sanity-check-dry-run-vm', 'namespace': 'default'}, 'spec': {'running': False, 'template': {'spec': {'domain': {'devices': {}, 'resources': {'requests': {'memory': '64Mi'}}}}}}}[0m
+2026-02-22T15:36:08.041674 utilities.infra [32mINFO[0m Dry-run VM creation succeeded[0m
+2026-02-22T15:36:08.042061 utilities.infra [32mINFO[0m Waiting for resource to stabilize: resource_kind=HyperConverged conditions={'Available': 'True', 'Progressing': 'False', 'ReconcileComplete': 'True', 'Degraded': 'False', 'Upgradeable': 'True'} sleep=600 consecutive_checks_count=3[0m
+2026-02-22T15:36:08.042295 timeout_sampler [32mINFO[0m Waiting for 600 seconds [0:10:00], retry every 5 seconds. (Function: utilities.infra.<locals>.lambda: dynamic_client.namespace.resource_kind.resource_name.list.get)[0m
+2026-02-22T15:36:08.043225 ocp_resources.resource [32mINFO[0m kind: HyperConverged api version: hco.kubevirt.io/v1beta1[0m
+2026-02-22T15:36:19.284191 timeout_sampler [32mINFO[0m Elapsed time: 10.778368949890137 [0:00:10.778369][0m
+2026-02-22T15:36:19.286047 ocp_utilities.infra [32mINFO[0m Verify all nodes are in a healthy condition.[0m
+2026-02-22T15:36:19.284944 conftest [32mINFO[0m Executing module fixture: cluster_sanity_scope_module[0m
+2026-02-22T15:36:19.285445 utilities.infra [32mINFO[0m Running cluster sanity. (To skip cluster sanity check pass --cluster-sanity-skip-check to pytest)[0m
+2026-02-22T15:36:19.285658 utilities.infra [32mINFO[0m Check storage classes sanity. (To skip storage class sanity check pass --cluster-sanity-skip-storage-check to pytest)[0m
+2026-02-22T15:36:19.285876 utilities.infra [32mINFO[0m Check nodes sanity. (To skip nodes sanity check pass --cluster-sanity-skip-nodes-check to pytest)[0m
+2026-02-22T15:36:20.382612 ocp_utilities.infra [32mINFO[0m Verify all nodes are schedulable.[0m
+2026-02-22T15:36:21.340322 timeout_sampler [32mINFO[0m Waiting for 300 seconds [0:05:00], retry every 5 seconds. (Function: utilities.infra.get_pods  Kwargs: {'client': <kubernetes.dynamic.client.DynamicClient object at 0x7fa56beae660>, 'namespace': <ocp_resources.namespace.Namespace object at 0x7fa56a643bb0>})[0m
+2026-02-22T15:36:36.360327 timeout_sampler [32mINFO[0m Elapsed time: 0.00038123130798339844 [0:00:00.000381][0m
+2026-02-22T15:36:36.360747 utilities.infra [32mINFO[0m Check webhook endpoints health. (To skip webhook check pass --cluster-sanity-skip-webhook-check to pytest)[0m
+2026-02-22T15:36:36.361033 utilities.infra [32mINFO[0m Checking webhook endpoints health for services in namespace: openshift-cnv[0m
+2026-02-22T15:36:36.361251 utilities.infra [32mINFO[0m Scanning MutatingWebhookConfiguration resources for webhook services[0m
+2026-02-22T15:36:38.859746 utilities.infra [32mINFO[0m Scanning ValidatingWebhookConfiguration resources for webhook services[0m
+2026-02-22T15:36:43.544932 utilities.infra [32mINFO[0m Checking endpoints for service: cdi-api[0m
+2026-02-22T15:36:43.859661 utilities.infra [32mINFO[0m Service cdi-api has 1 ready endpoint address(es)[0m
+2026-02-22T15:36:43.860030 utilities.infra [32mINFO[0m Checking endpoints for service: hco-webhook-service[0m
+2026-02-22T15:36:44.171448 utilities.infra [32mINFO[0m Service hco-webhook-service has 1 ready endpoint address(es)[0m
+2026-02-22T15:36:44.171799 utilities.infra [32mINFO[0m Checking endpoints for service: hostpath-provisioner-operator-service[0m
+2026-02-22T15:36:44.483521 utilities.infra [32mINFO[0m Service hostpath-provisioner-operator-service has 1 ready endpoint address(es)[0m
+2026-02-22T15:36:44.483768 utilities.infra [32mINFO[0m Checking endpoints for service: kubemacpool-service[0m
+2026-02-22T15:36:44.795721 utilities.infra [32mINFO[0m Service kubemacpool-service has 1 ready endpoint address(es)[0m
+2026-02-22T15:36:44.796258 utilities.infra [32mINFO[0m Checking endpoints for service: kubevirt-ipam-controller-webhook-service[0m
+2026-02-22T15:36:45.106703 utilities.infra [32mINFO[0m Service kubevirt-ipam-controller-webhook-service has 2 ready endpoint address(es)[0m
+2026-02-22T15:36:45.107073 utilities.infra [32mINFO[0m Checking endpoints for service: kubevirt-operator-webhook[0m
+2026-02-22T15:36:45.419354 utilities.infra [32mINFO[0m Service kubevirt-operator-webhook has 2 ready endpoint address(es)[0m
+2026-02-22T15:36:45.419703 utilities.infra [32mINFO[0m Checking endpoints for service: ssp-operator-service[0m
+2026-02-22T15:36:45.729865 utilities.infra [32mINFO[0m Service ssp-operator-service has 1 ready endpoint address(es)[0m
+2026-02-22T15:36:45.730313 utilities.infra [32mINFO[0m Checking endpoints for service: virt-api[0m
+2026-02-22T15:36:46.043588 utilities.infra [32mINFO[0m Service virt-api has 2 ready endpoint address(es)[0m
+2026-02-22T15:36:46.043963 utilities.infra [32mINFO[0m Checking endpoints for service: virt-template-validator[0m
+2026-02-22T15:36:46.355360 utilities.infra [32mINFO[0m Service virt-template-validator has 2 ready endpoint address(es)[0m
+2026-02-22T15:36:46.355717 utilities.infra [32mINFO[0m All discovered webhook services have available endpoints[0m
+2026-02-22T15:36:46.355942 utilities.infra [32mINFO[0m Checking VM creation capability via dry-run in namespace: default[0m
+2026-02-22T15:36:46.356441 ocp_resources.resource [32mINFO[0m kind: VirtualMachine api version: kubevirt.io/v1[0m
+2026-02-22T15:36:46.358659 ocp_resources VirtualMachine [32mINFO[0m Create VirtualMachine sanity-check-dry-run-vm[0m
+2026-02-22T15:36:46.359189 ocp_resources VirtualMachine [32mINFO[0m Posting {'apiVersion': 'kubevirt.io/v1', 'kind': 'VirtualMachine', 'metadata': {'name': 'sanity-check-dry-run-vm', 'namespace': 'default'}, 'spec': {'running': False, 'template': {'spec': {'domain': {'devices': {}, 'resources': {'requests': {'memory': '64Mi'}}}}}}}[0m
+2026-02-22T15:36:46.686506 utilities.infra [32mINFO[0m Dry-run VM creation succeeded[0m
+2026-02-22T15:36:46.686917 utilities.infra [32mINFO[0m Waiting for resource to stabilize: resource_kind=HyperConverged conditions={'Available': 'True', 'Progressing': 'False', 'ReconcileComplete': 'True', 'Degraded': 'False', 'Upgradeable': 'True'} sleep=600 consecutive_checks_count=3[0m
+2026-02-22T15:36:46.687189 timeout_sampler [32mINFO[0m Waiting for 600 seconds [0:10:00], retry every 5 seconds. (Function: utilities.infra.<locals>.lambda: dynamic_client.namespace.resource_kind.resource_name.list.get)[0m
+2026-02-22T15:36:57.945513 timeout_sampler [32mINFO[0m Elapsed time: 10.794285535812378 [0:00:10.794286][0m
+2026-02-22T15:36:57.946112 conftest [32mINFO[0m Executing session fixture: ssh_key_tmpdir_scope_session[0m
+2026-02-22T15:36:57.947666 conftest [32mINFO[0m Executing session fixture: generated_ssh_key_for_vm_access[0m
+2026-02-22T15:36:57.999459 conftest [32mINFO[0m Executing session fixture: session_start_time[0m
+2026-02-22T15:36:57.999677 conftest [32mINFO[0m Executing function fixture: autouse_fixtures[0m
+2026-02-22T15:36:57.999958 conftest [32mINFO[0m Executing session fixture: schedulable_nodes[0m
+2026-02-22T15:37:01.012472 conftest [32mINFO[0m Executing session fixture: gpu_nodes[0m
+2026-02-22T15:37:01.971185 conftest [32mINFO[0m Executing session fixture: nodes_with_supported_gpus[0m
+2026-02-22T15:37:01.971708 conftest [32mINFO[0m Executing session fixture: sriov_workers[0m
+2026-02-22T15:37:02.452630 conftest [32mINFO[0m Executing session fixture: nodes_cpu_vendor[0m
+2026-02-22T15:37:02.612342 conftest [32mINFO[0m Executing session fixture: nodes_cpu_virt_extension[0m
+2026-02-22T15:37:02.612932 conftest [32mINFO[0m Executing session fixture: allocatable_memory_per_node_scope_session[0m
+2026-02-22T15:37:02.942501 tests.virt.utils [32mINFO[0m Node c01-mv-421-qgr9v-worker-0-6brx9 has 12.515708923339844 GiB of allocatable memory[0m
+2026-02-22T15:37:03.264392 tests.virt.utils [32mINFO[0m Node c01-mv-421-qgr9v-worker-0-gwsf6 has 12.515708923339844 GiB of allocatable memory[0m
+2026-02-22T15:37:03.585892 tests.virt.utils [32mINFO[0m Node c01-mv-421-qgr9v-worker-0-rgbwd has 12.515701293945312 GiB of allocatable memory[0m
+2026-02-22T15:37:03.586519 conftest [32mINFO[0m Executing session fixture: hugepages_gib_values[0m
+2026-02-22T15:37:04.062347 conftest [32mINFO[0m Executing session fixture: virt_special_infra_sanity[0m
+2026-02-22T15:37:04.062654 tests.virt.conftest [32mINFO[0m Verifying that cluster has all required capabilities for special_infra marked tests[0m
+2026-02-22T15:37:04.062839 tests.utils [32mINFO[0m Verifying default storage class ocs-storagecluster-ceph-rbd-virtualization supports RWX mode[0m
+2026-02-22T15:37:04.063168 ocp_resources.resource [32mINFO[0m kind: StorageProfile api version: cdi.kubevirt.io/v1beta1[0m
+2026-02-22T15:37:04.376082 conftest [32mINFO[0m Executing session fixture: unprivileged_secret[0m
+2026-02-22T15:37:04.383365 ocp_resources Secret [32mINFO[0m Create Secret htpass-secret-for-cnv-tests[0m
+2026-02-22T15:37:04.383591 ocp_resources Secret [32mINFO[0m Posting {'apiVersion': 'v1', 'kind': 'Secret', 'metadata': {'name': 'htpass-secret-for-cnv-tests', 'namespace': 'openshift-config'}, 'data': '*******'}[0m
+2026-02-22T15:37:04.699482 conftest [32mINFO[0m Executing session fixture: identity_provider_with_htpasswd[0m
+2026-02-22T15:37:04.699972 ocp_resources.resource [32mINFO[0m ResourceEdit: Backing up old data[0m
+2026-02-22T15:37:04.858925 ocp_resources.resource [32mINFO[0m ResourceEdits: Updating data for resource OAuth cluster[0m
+2026-02-22T15:37:04.859304 ocp_resources OAuth [32mINFO[0m Update OAuth cluster:
+{'metadata': {'name': 'cluster'}, 'spec': {'identityProviders': [{'name': 'htpasswd_provider', 'mappingMethod': 'claim', 'type': 'HTPasswd', 'htpasswd': {'fileData': {'name': 'htpass-secret-for-cnv-tests'}}}], 'tokenConfig': {'accessTokenMaxAgeSeconds': 604800, 'accessTokenInactivityTimeout': None}}}[0m
+2026-02-22T15:37:05.021652 ocp_resources.resource [32mINFO[0m kind: Deployment api version: apps/v1[0m
+2026-02-22T15:37:05.179071 timeout_sampler [32mINFO[0m Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: tests.conftest.<locals>.lambda: dp.instance.status.conditions)[0m
+2026-02-22T15:37:05.178635 tests.conftest [32mINFO[0m Wait for oauth-openshift -> Type: Progressing -> Reason: ReplicaSetUpdated[0m
+2026-02-22T15:37:08.956850 timeout_sampler [32mINFO[0m Elapsed time: 3.472933769226074 [0:00:03.472934][0m
+2026-02-22T15:37:08.957266 timeout_sampler [32mINFO[0m Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: tests.conftest.<locals>.lambda: dp.instance.status.conditions)[0m
+2026-02-22T15:37:08.957078 tests.conftest [32mINFO[0m Wait for oauth-openshift -> Type: Progressing -> Reason: NewReplicaSetAvailable[0m
+2026-02-22T15:38:05.300798 timeout_sampler [32mINFO[0m Elapsed time: 56.0393922328949 [0:00:56.039392][0m
+2026-02-22T15:38:05.301195 conftest [32mINFO[0m Executing session fixture: kubeconfig_export_path[0m
+2026-02-22T15:38:05.301424 conftest [32mINFO[0m Executing session fixture: exported_kubeconfig[0m
+2026-02-22T15:38:05.301884 tests.conftest [33mWARNING[0m Both KUBECONFIG /home/fedora/.kube/config and /home/fedora/.kube/config exist. /home/fedora/.kube/config is used as kubeconfig source for this run.[0m
+2026-02-22T15:38:05.302247 tests.conftest [32mINFO[0m Setting KUBECONFIG dir for this run to point to: /tmp/tmpq_q_7msy-cnv-tests-kubeconfig[0m
+2026-02-22T15:38:05.302362 tests.conftest [32mINFO[0m Copy KUBECONFIG to /tmp/tmpq_q_7msy-cnv-tests-kubeconfig/kubeconfig[0m
+2026-02-22T15:38:05.302929 tests.conftest [32mINFO[0m Set: KUBECONFIG=/tmp/tmpq_q_7msy-cnv-tests-kubeconfig/kubeconfig[0m
+2026-02-22T15:38:05.303218 conftest [32mINFO[0m Executing session fixture: unprivileged_client[0m
+2026-02-22T15:38:06.032542 utilities.infra [32mINFO[0m Trying to login to account[0m
+2026-02-22T15:38:06.032984 timeout_sampler [32mINFO[0m Waiting for 60 seconds [0:01:00], retry every 3 seconds. (Function: subprocess.Popen  Kwargs: {'args': 'oc login https://api.c01-mv-421.rhos-psi.cnv-qe.rhood.us:6443 -u unprivileged-user -p unprivileged-password', 'shell': True, 'stdout': -1, 'stderr': -1})[0m
+2026-02-22T15:38:11.025976 timeout_sampler [32mINFO[0m Elapsed time: 0.0006184577941894531 [0:00:00.000618][0m
+2026-02-22T15:38:11.025720 utilities.infra [32mINFO[0m Login - success[0m
+2026-02-22T15:38:11.041293 timeout_sampler [32mINFO[0m Waiting for 60 seconds [0:01:00], retry every 3 seconds. (Function: subprocess.Popen  Kwargs: {'args': 'oc login https://api.c01-mv-421.rhos-psi.cnv-qe.rhood.us:6443 -u system:admin', 'shell': True, 'stdout': -1, 'stderr': -1})[0m
+2026-02-22T15:38:11.041131 utilities.infra [32mINFO[0m Trying to login to account[0m
+2026-02-22T15:38:13.022351 utilities.infra [32mINFO[0m Login - success[0m
+2026-02-22T15:38:13.022584 timeout_sampler [32mINFO[0m Elapsed time: 0.00010085105895996094 [0:00:00.000101][0m
+2026-02-22T15:38:13.023143 ocp_resources.resource [32mINFO[0m Trying to get client via new_client_from_config[0m
+2026-02-22T15:38:13.046847 conftest [32mINFO[0m Executing session fixture: golden_images_namespace[0m
+2026-02-22T15:38:13.202976 conftest [32mINFO[0m Executing session fixture: cluster_node_cpus[0m
+2026-02-22T15:38:13.983103 conftest [32mINFO[0m Executing session fixture: cluster_common_modern_node_cpu[0m
+2026-02-22T15:38:13.983389 utilities.cpu [32mINFO[0m Common CPU used is Dhyana[0m
+2026-02-22T15:38:13.983593 conftest [32mINFO[0m Executing session fixture: host_cpu_model[0m
+2026-02-22T15:38:14.465926 ocp_resources.resource [32mINFO[0m kind: ProjectRequest api version: project.openshift.io/v1[0m
+2026-02-22T15:38:14.466199 ocp_resources ProjectRequest [32mINFO[0m Create ProjectRequest node-hotplug-test-cpu-hotplug-max-limits[0m
+2026-02-22T15:38:14.466355 ocp_resources ProjectRequest [32mINFO[0m Posting {'apiVersion': 'project.openshift.io/v1', 'kind': 'ProjectRequest', 'metadata': {'name': 'node-hotplug-test-cpu-hotplug-max-limits'}}[0m
+2026-02-22T15:38:14.463444 conftest [32mINFO[0m Executing session fixture: modern_cpu_for_migration[0m
+2026-02-22T15:38:14.463893 utilities.cpu [32mINFO[0m Host model cpus for all nodes are same {'c01-mv-421-qgr9v-worker-0-6brx9': 'EPYC-Rome', 'c01-mv-421-qgr9v-worker-0-gwsf6': 'EPYC-Rome', 'c01-mv-421-qgr9v-worker-0-rgbwd': 'EPYC-Rome'}. No common cpus are needed[0m
+2026-02-22T15:38:14.464262 conftest [32mINFO[0m Executing session fixture: vmx_disabled_flag[0m
+2026-02-22T15:38:14.464471 utilities.jira [32mINFO[0m Conformance tests without JIRA credentials: assuming CNV-62851 is open[0m
+2026-02-22T15:38:14.464723 conftest [32mINFO[0m Executing session fixture: is_s390x_cluster[0m
+2026-02-22T15:38:14.465219 conftest [32mINFO[0m Executing module fixture: namespace[0m
+2026-02-22T15:38:15.355114 ocp_resources.resource [32mINFO[0m kind: Project api version: project.openshift.io/v1[0m
+2026-02-22T15:38:15.355428 ocp_resources Project [32mINFO[0m Wait for Project node-hotplug-test-cpu-hotplug-max-limits status to be Active[0m
+2026-02-22T15:38:15.355644 timeout_sampler [32mINFO[0m Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_for_status.lambda: self.exists)[0m
+2026-02-22T15:38:15.516114 ocp_resources Project [32mINFO[0m Status of Project node-hotplug-test-cpu-hotplug-max-limits is Active[0m
+2026-02-22T15:38:15.516530 timeout_sampler [32mINFO[0m Elapsed time: 0.0001811981201171875 [0:00:00.000181][0m
+2026-02-22T15:38:15.673978 ocp_resources Namespace [32mINFO[0m Wait for Namespace node-hotplug-test-cpu-hotplug-max-limits status to be Active[0m
+2026-02-22T15:38:15.674419 timeout_sampler [32mINFO[0m Waiting for 120 seconds [0:02:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_for_status.lambda: self.exists)[0m
+2026-02-22T15:38:15.829588 ocp_resources Namespace [32mINFO[0m Status of Namespace node-hotplug-test-cpu-hotplug-max-limits is Active[0m
+2026-02-22T15:38:15.829962 timeout_sampler [32mINFO[0m Elapsed time: 0.0003662109375 [0:00:00.000366][0m
+2026-02-22T15:38:15.830311 ocp_resources.resource [32mINFO[0m ResourceEdits: Updating data for resource Namespace node-hotplug-test-cpu-hotplug-max-limits[0m
+2026-02-22T15:38:15.830531 ocp_resources Namespace [32mINFO[0m Update Namespace node-hotplug-test-cpu-hotplug-max-limits:
+{'metadata': {'labels': None, 'name': 'node-hotplug-test-cpu-hotplug-max-limits'}}[0m
+2026-02-22T15:38:16.148949 conftest [32mINFO[0m Executing class fixture: golden_image_data_source_for_test_scope_class[0m
+2026-02-22T15:38:16.149964 ocp_resources.resource [32mINFO[0m kind: DataSource api version: cdi.kubevirt.io/v1beta1[0m
+2026-02-22T15:38:16.617951 tests.virt.utils [32mINFO[0m DataSource rhel9 already exists and has a source pvc/snapshot.[0m
+2026-02-22T15:38:16.618612 conftest [32mINFO[0m Executing class fixture: golden_image_data_volume_template_for_test_scope_class[0m
+2026-02-22T15:38:16.948384 ocp_resources.resource [32mINFO[0m Trying to get client via new_client_from_config[0m
+2026-02-22T15:38:16.978406 ocp_resources.resource [32mINFO[0m kind: DataVolume api version: cdi.kubevirt.io/v1beta1[0m
+2026-02-22T15:38:16.978684 conftest [32mINFO[0m Executing class fixture: vm_with_high_max_sockets[0m
+2026-02-22T15:38:16.979188 ocp_resources.resource [32mINFO[0m kind: VirtualMachine api version: kubevirt.io/v1[0m
+2026-02-22T15:38:16.979510 utilities.virt [33mWARNING[0m `os_login_param` not defined for rhel[0m
+2026-02-22T15:38:17.142543 utilities.virt [32mINFO[0m Setting random username and password[0m
+2026-02-22T15:38:17.144429 ocp_resources.resource [32mINFO[0m kind: Template api version: template.openshift.io/v1[0m
+2026-02-22T15:38:17.143698 utilities.virt [33mWARNING[0m `os_login_param` not defined for rhel[0m
+2026-02-22T15:38:17.469732 utilities.virt [32mINFO[0m Get VM credentials from cloud-init[0m
+2026-02-22T15:38:17.470490 ocp_resources.resource [32mINFO[0m Trying to get client via new_client_from_config[0m
+2026-02-22T15:38:18.334123 ocp_resources VirtualMachine [32mINFO[0m Create VirtualMachine rhel-cpu-max-sockets-limit-vm-1771774696-9790561[0m
+2026-02-22T15:38:18.334332 ocp_resources VirtualMachine [32mINFO[0m Posting {'apiVersion': 'kubevirt.io/v1', 'kind': 'VirtualMachine', 'metadata': {'annotations': {'vm.kubevirt.io/validations': '[\n  {\n    "name": "minimal-required-memory",\n    "path": "jsonpath::.spec.domain.memory.guest",\n    "rule": "integer",\n    "message": "This VM requires more memory.",\n    "min": 1610612736\n  }\n]\n'}, 'labels': {'app': 'rhel-cpu-max-sockets-limit-vm-1771774696-9790561', 'kubevirt.io/dynamic-credentials-support': 'true', 'vm.kubevirt.io/template': 'rhel9-server-tiny', 'vm.kubevirt.io/template.namespace': 'openshift', 'vm.kubevirt.io/template.revision': '1', 'vm.kubevirt.io/template.version': 'v0.34.1'}, 'name': 'rhel-cpu-max-sockets-limit-vm-1771774696-9790561'}, 'spec': {'dataVolumeTemplates': [{'apiVersion': 'cdi.kubevirt.io/v1beta1', 'kind': 'DataVolume', 'metadata': {'name': 'rhel9-1771774696-9476905'}, 'spec': {'storage': {'storageClassName': 'ocs-storagecluster-ceph-rbd-virtualization', 'resources': {'requests': {'storage': '34144990004'}}, 'accessModes': ['ReadWriteMany']}, 'sourceRef': {'kind': 'DataSource', 'name': 'rhel9', 'namespace': 'openshift-virtualization-os-images'}}}], 'runStrategy': 'Halted', 'template': {'metadata': {'annotations': {'vm.kubevirt.io/flavor': 'tiny', 'vm.kubevirt.io/os': 'rhel9', 'vm.kubevirt.io/workload': 'server'}, 'labels': {'kubevirt.io/domain': 'rhel-cpu-max-sockets-limit-vm-1771774696-9790561', 'kubevirt.io/size': 'tiny', 'kubevirt.io/vm': 'rhel-cpu-max-sockets-limit-vm-1771774696-9790561', 'debugLogs': 'true'}}, 'spec': {'architecture': 'amd64', 'domain': {'cpu': {'features': [{'name': 'vmx', 'policy': 'disable'}], 'cores': 1, 'threads': 1, 'sockets': 2, 'maxSockets': 1024}, 'devices': {'disks': [{'disk': {'bus': 'virtio'}, 'name': 'rootdisk'}, {'disk': {'bus': 'virtio'}, 'name': 'cloudinitdisk'}], 'interfaces': [{'masquerade': {}, 'model': 'virtio', 'name': 'default'}], 'rng': {}}, 'features': {'smm': {'enabled': True}}, 'firmware': {'bootloader': {'efi': {}}}, 'memory': {'guest': '4Gi', 'maxGuest': '10Gi'}}, 'networks': [{'name': 'default', 'pod': {}}], 'terminationGracePeriodSeconds': 180, 'volumes': [{'dataVolume': {'name': 'rhel9-1771774696-9476905'}, 'name': 'rootdisk'}, {'cloudInitNoCloud': {'userData': '*******'}, 'name': 'cloudinitdisk'}]}}}}[0m
+2026-02-22T15:38:19.116843 timeout_sampler [32mINFO[0m Waiting for 5 seconds [0:00:05], retry every 1 seconds. (Function: utilities.virt.<locals>.lambda: vm.instance.get)[0m
+2026-02-22T15:38:19.432617 timeout_sampler [32mINFO[0m Elapsed time: 0.0003998279571533203 [0:00:00.000400][0m
+2026-02-22T15:38:19.591794 utilities.virt [32mINFO[0m VM rhel-cpu-max-sockets-limit-vm-1771774696-9790561 status before dv check: Provisioning[0m
+2026-02-22T15:38:19.592199 utilities.virt [32mINFO[0m Volume(s) in VM spec: ['rhel9-1771774696-9476905'] [0m
+2026-02-22T15:38:19.592676 ocp_resources.resource [32mINFO[0m kind: DataVolume api version: cdi.kubevirt.io/v1beta1[0m
+2026-02-22T15:38:19.593606 ocp_resources DataVolume [32mINFO[0m Wait DV success for 1800 seconds[0m
+2026-02-22T15:38:19.593948 timeout_sampler [32mINFO[0m Waiting for 120 seconds [0:02:00], retry every 10 seconds. (Function: ocp_resources.datavolume._check_none_pending_status.lambda: self.exists)[0m
+2026-02-22T15:38:19.750515 timeout_sampler [32mINFO[0m Elapsed time: 0.00028133392333984375 [0:00:00.000281][0m
+2026-02-22T15:38:19.750950 timeout_sampler [32mINFO[0m Waiting for 1800 seconds [0:30:00], retry every 1 seconds. (Function: ocp_resources.datavolume.wait_for_dv_success.lambda: self.exists)[0m
+2026-02-22T15:39:06.201344 timeout_sampler [32mINFO[0m Elapsed time: 46.29368734359741 [0:00:46.293687][0m
+2026-02-22T15:39:06.201791 ocp_resources PersistentVolumeClaim [32mINFO[0m Wait for PersistentVolumeClaim rhel9-1771774696-9476905 status to be Bound[0m
+2026-02-22T15:39:06.202063 timeout_sampler [32mINFO[0m Waiting for 60 seconds [0:01:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_for_status.lambda: self.exists)[0m
+2026-02-22T15:39:06.357803 ocp_resources PersistentVolumeClaim [32mINFO[0m Status of PersistentVolumeClaim rhel9-1771774696-9476905 is Bound[0m
+2026-02-22T15:39:06.358175 timeout_sampler [32mINFO[0m Elapsed time: 0.0002396106719970703 [0:00:00.000240][0m
+2026-02-22T15:39:06.358526 timeout_sampler [32mINFO[0m Waiting for 5 seconds [0:00:05], retry every 1 seconds. (Function: utilities.virt.<locals>.lambda: vm.instance.get)[0m
+2026-02-22T15:39:06.678020 timeout_sampler [32mINFO[0m Elapsed time: 0.0002105236053466797 [0:00:00.000211][0m
+2026-02-22T15:39:06.991533 ocp_resources VirtualMachine [32mINFO[0m Delete VirtualMachine rhel-cpu-max-sockets-limit-vm-1771774696-9790561[0m
+2026-02-22T15:39:07.317534 ocp_resources VirtualMachine [32mINFO[0m Deleting {'apiVersion': 'kubevirt.io/v1', 'kind': 'VirtualMachine', 'metadata': {'annotations': {'kubemacpool.io/transaction-timestamp': '2026-02-22T15:38:18.991645758Z', 'kubevirt.io/latest-observed-api-version': 'v1', 'kubevirt.io/storage-observed-api-version': 'v1', 'vm.kubevirt.io/validations': '[\n  {\n    "name": "minimal-required-memory",\n    "path": "jsonpath::.spec.domain.memory.guest",\n    "rule": "integer",\n    "message": "This VM requires more memory.",\n    "min": 1610612736\n  }\n]\n'}, 'creationTimestamp': '2026-02-22T15:38:18Z', 'finalizers': ['kubevirt.io/virtualMachineControllerFinalize'], 'generation': 2, 'labels': {'app': 'rhel-cpu-max-sockets-limit-vm-1771774696-9790561', 'kubevirt.io/dynamic-credentials-support': 'true', 'vm.kubevirt.io/template': 'rhel9-server-tiny', 'vm.kubevirt.io/template.namespace': 'openshift', 'vm.kubevirt.io/template.revision': '1', 'vm.kubevirt.io/template.version': 'v0.34.1'}, 'managedFields': [{'apiVersion': 'kubevirt.io/v1', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:annotations': {'.': {}, 'f:vm.kubevirt.io/validations': {}}, 'f:labels': {'.': {}, 'f:app': {}, 'f:kubevirt.io/dynamic-credentials-support': {}, 'f:vm.kubevirt.io/template': {}, 'f:vm.kubevirt.io/template.namespace': {}, 'f:vm.kubevirt.io/template.revision': {}, 'f:vm.kubevirt.io/template.version': {}}}, 'f:spec': {'.': {}, 'f:dataVolumeTemplates': {}, 'f:template': {'.': {}, 'f:metadata': {'.': {}, 'f:annotations': {'.': {}, 'f:vm.kubevirt.io/flavor': {}, 'f:vm.kubevirt.io/os': {}, 'f:vm.kubevirt.io/workload': {}}, 'f:labels': {'.': {}, 'f:debugLogs': {}, 'f:kubevirt.io/domain': {}, 'f:kubevirt.io/size': {}, 'f:kubevirt.io/vm': {}}}, 'f:spec': {'.': {}, 'f:architecture': {}, 'f:domain': {'.': {}, 'f:cpu': {'.': {}, 'f:cores': {}, 'f:features': {}, 'f:maxSockets': {}, 'f:sockets': {}, 'f:threads': {}}, 'f:devices': {'.': {}, 'f:disks': {}, 'f:interfaces': {}, 'f:rng': {}}, 'f:features': {'.': {}, 'f:smm': {'.': {}, 'f:enabled': {}}}, 'f:firmware': {'.': {}, 'f:bootloader': {'.': {}, 'f:efi': {}}}, 'f:memory': {'.': {}, 'f:guest': {}, 'f:maxGuest': {}}}, 'f:networks': {}, 'f:terminationGracePeriodSeconds': {}, 'f:volumes': {}}}}}, 'manager': 'OpenAPI-Generator', 'operation': 'Update', 'time': '2026-02-22T15:38:18Z'}, {'apiVersion': 'kubevirt.io/v1', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:spec': {'f:runStrategy': {}}}, 'manager': 'virt-api', 'operation': 'Update', 'time': '2026-02-22T15:38:18Z'}, {'apiVersion': 'kubevirt.io/v1', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:annotations': {'f:kubevirt.io/latest-observed-api-version': {}, 'f:kubevirt.io/storage-observed-api-version': {}}, 'f:finalizers': {'.': {}, 'v:"kubevirt.io/virtualMachineControllerFinalize"': {}}}}, 'manager': 'virt-controller', 'operation': 'Update', 'time': '2026-02-22T15:38:18Z'}, {'apiVersion': 'kubevirt.io/v1', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:status': {'.': {}, 'f:conditions': {}, 'f:created': {}, 'f:desiredGeneration': {}, 'f:observedGeneration': {}, 'f:printableStatus': {}, 'f:runStrategy': {}, 'f:volumeSnapshotStatuses': {}}}, 'manager': 'virt-controller', 'operation': 'Update', 'subresource': 'status', 'time': '2026-02-22T15:39:05Z'}], 'name': 'rhel-cpu-max-sockets-limit-vm-1771774696-9790561', 'namespace': 'node-hotplug-test-cpu-hotplug-max-limits', 'resourceVersion': '22151456', 'uid': '4bb27c89-7a01-4914-bb1a-d5073061b70e'}, 'spec': {'dataVolumeTemplates': [{'apiVersion': 'cdi.kubevirt.io/v1beta1', 'kind': 'DataVolume', 'metadata': {'creationTimestamp': None, 'name': 'rhel9-1771774696-9476905'}, 'spec': {'sourceRef': {'kind': 'DataSource', 'name': 'rhel9', 'namespace': 'openshift-virtualization-os-images'}, 'storage': {'accessModes': ['ReadWriteMany'], 'resources': {'requests': {'storage': '34144990004'}}, 'storageClassName': 'ocs-storagecluster-ceph-rbd-virtualization'}}}], 'runStrategy': 'Always', 'template': {'metadata': {'annotations': {'vm.kubevirt.io/flavor': 'tiny', 'vm.kubevirt.io/os': 'rhel9', 'vm.kubevirt.io/workload': 'server'}, 'creationTimestamp': None, 'labels': {'debugLogs': 'true', 'kubevirt.io/domain': 'rhel-cpu-max-sockets-limit-vm-1771774696-9790561', 'kubevirt.io/size': 'tiny', 'kubevirt.io/vm': 'rhel-cpu-max-sockets-limit-vm-1771774696-9790561'}}, 'spec': {'architecture': 'amd64', 'domain': {'cpu': {'cores': 1, 'features': [{'name': 'vmx', 'policy': 'disable'}], 'maxSockets': 1024, 'sockets': 2, 'threads': 1}, 'devices': {'disks': [{'disk': {'bus': 'virtio'}, 'name': 'rootdisk'}, {'disk': {'bus': 'virtio'}, 'name': 'cloudinitdisk'}], 'interfaces': [{'macAddress': '02:22:9f:48:8e:5f', 'masquerade': {}, 'model': 'virtio', 'name': 'default'}], 'rng': {}}, 'features': {'acpi': {}, 'smm': {'enabled': True}}, 'firmware': {'bootloader': {'efi': {}}, 'serial': '5fe35786-647f-44b8-86f3-d5d043c49318', 'uuid': 'c8ae4396-d30d-41c7-a05e-0cd1647340a6'}, 'machine': {'type': 'pc-q35-rhel9.6.0'}, 'memory': {'guest': '4Gi', 'maxGuest': '10Gi'}, 'resources': {}}, 'networks': [{'name': 'default', 'pod': {}}], 'terminationGracePeriodSeconds': 180, 'volumes': [{'dataVolume': {'name': 'rhel9-1771774696-9476905'}, 'name': 'rootdisk'}, {'cloudInitNoCloud': {'userData': '*******'}, 'name': 'cloudinitdisk'}]}}}, 'status': {'conditions': [{'lastProbeTime': '2026-02-22T15:39:05Z', 'lastTransitionTime': '2026-02-22T15:39:05Z', 'message': 'Guest VM is not reported as running', 'reason': 'GuestNotRunning', 'status': 'False', 'type': 'Ready'}, {'lastProbeTime': None, 'lastTransitionTime': None, 'message': "All of the VMI's DVs are bound and ready", 'reason': 'AllDVsReady', 'status': 'True', 'type': 'DataVolumesReady'}, {'lastProbeTime': None, 'lastTransitionTime': '2026-02-22T15:39:05Z', 'message': '0/6 nodes are available: 3 Insufficient memory, 3 node(s) had untolerated taint(s). no new claims to deallocate, preemption: 0/6 nodes are available: 3 No preemption victims found for incoming pod, 3 Preemption is not helpful for scheduling.', 'reason': 'Unschedulable', 'status': 'False', 'type': 'PodScheduled'}], 'created': True, 'desiredGeneration': 2, 'observedGeneration': 2, 'printableStatus': 'ErrorUnschedulable', 'runStrategy': 'Always', 'volumeSnapshotStatuses': [{'enabled': True, 'name': 'rootdisk'}, {'enabled': False, 'name': 'cloudinitdisk', 'reason': 'Snapshot is not supported for this volumeSource type [cloudinitdisk]'}]}}[0m
+2026-02-22T15:39:07.562471 ocp_resources VirtualMachine [32mINFO[0m Wait until VirtualMachine rhel-cpu-max-sockets-limit-vm-1771774696-9790561 is deleted[0m
+2026-02-22T15:39:07.562943 timeout_sampler [32mINFO[0m Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_deleted.lambda: self.exists)[0m
+2026-02-22T15:39:08.876935 timeout_sampler [32mINFO[0m Elapsed time: 1.1570048332214355 [0:00:01.157005][0m
+=============================== warnings summary ===============================
+tests/virt/node/hotplug/test_cpu_hotplug_max_limits.py: 9 warnings
+tests/deprecated_api/test_deprecation_audit_logs.py: 4 warnings
+.venv/lib64/python3.14/site-packages/kubernetes/client/exceptions.py:91: 2 warnings
+  /home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/kubernetes/client/exceptions.py:91: DeprecationWarning: HTTPResponse.getheaders() is deprecated and will be removed in urllib3 v2.1.0. Instead access HTTPResponse.headers directly.
+    self.headers = http_resp.getheaders()
+
+tests/virt/node/hotplug/test_cpu_hotplug_max_limits.py::TestCPUHotplugMaxSocketsLimit::test_max_sockets_limited_by_vcpu_ceiling[RHEL-VM]
+tests/virt/node/hotplug/test_cpu_hotplug_max_limits.py::TestCPUHotplugMaxSocketsLimit::test_max_sockets_limited_by_vcpu_ceiling[RHEL-VM]
+tests/virt/node/hotplug/test_cpu_hotplug_max_limits.py::TestCPUHotplugMaxSocketsLimit::test_max_sockets_limited_by_vcpu_ceiling[RHEL-VM]
+  /home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py:1612: FutureWarning: 'client' arg will be mandatory in the next major release. `config_file` and `context` args will be removed.
+    super().__init__(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+ERROR tests/virt/node/hotplug/test_cpu_hotplug_max_limits.py::TestCPUHotplugMaxSocketsLimit::test_max_sockets_limited_by_vcpu_ceiling[RHEL-VM]
+===== 3 skipped, 18 warnings, 1 error, 1 quarantined in 362.29s (0:06:02) ======

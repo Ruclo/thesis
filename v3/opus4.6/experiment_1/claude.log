@@ -1,0 +1,150 @@
+Phase 1 is complete. Here is the result:
+
+**Generated STD file:** `tests/std/common_instancetypes_deployment/std_cnv_61256.md`
+
+**Summary:**
+- **Feature:** Common Instancetypes Deployment Configuration (`commonInstancetypesDeployment` HCO CR field)
+- **Jira:** CNV-61256 / CNV-59564
+- **Test file planned:** `tests/install_upgrade_operators/common_instancetypes_deployment/test_common_instancetypes_deployment.py`
+- **Test class:** `TestCommonInstancetypesDeployment` with 7 tests:
+
+| # | Test Method | STP Scenario | Priority |
+|---|------------|--------------|----------|
+| 1 | `test_common_instancetypes_deployed_by_default` | Scenario 3 (Default) | P0 |
+| 2 | `test_common_preferences_deployed_by_default` | Scenario 3 (Default) | P0 |
+| 3 | `test_disable_common_instancetypes_removes_instancetype_resources` | Scenario 1 (Disable) | P0 |
+| 4 | `test_disable_common_instancetypes_removes_preference_resources` | Scenario 1 (Disable) | P0 |
+| 5 | `test_enable_common_instancetypes_deploys_instancetype_resources` | Scenario 2 (Enable) | P0 |
+| 6 | `test_enable_common_instancetypes_deploys_preference_resources` | Scenario 2 (Enable) | P0 |
+| 7 | `test_disabled_setting_persists_after_reconciliation` | Scenario 4 (Persistence) | P1 |
+
+- **Markers:** `gating`, `arm64`, `s390x`
+- **Scenario 5 (Upgrade)** excluded -- requires separate upgrade test infrastructure
+Phase 2 complete. Here is the exploration summary:
+
+---
+
+## Repository Exploration Complete
+
+### Documentation Findings
+- Google Python Style Guide, Google-format docstrings
+- **Absolute imports only** - never relative
+- **Type hints required** for new code (mypy strict in `libs/`)
+- Descriptive names only, no single-letter variables
+- Fixtures: **nouns** (not verbs), single responsibility, ordering: pytest native → session → other scopes
+- `@pytest.mark.usefixtures` **required** when fixture return value is not used
+- **All new tests must have markers** from `pytest.ini`
+- Do not import from `conftest.py` files (fixtures only, no utilities)
+- Architecture markers: `arm64`, `s390x` (x86_64 is default, no marker needed)
+
+### Available Utilities (Relevant to Feature)
+
+**Classes:**
+- `ResourceEditorValidateHCOReconcile` (from `utilities.hco`) - context manager that patches HCO CR, waits for reconciliation on restore
+- `ResourceEditor` (from `ocp_resources.resource`) - generic resource editor with backup/restore
+
+**Functions:**
+- `wait_for_hco_conditions(admin_client, hco_namespace, ...)` (from `utilities.hco`) - waits for HCO conditions to stabilize
+- `get_hyperconverged_resource(client, hco_ns_name)` (from `utilities.infra`) - retrieves the HCO CR
+- `get_hco_namespace(admin_client, namespace)` (from `utilities.hco`) - retrieves HCO namespace
+
+**Key Resources (ocp_resources):**
+- `VirtualMachineClusterInstancetype` - from `ocp_resources.virtual_machine_cluster_instancetype`
+- `VirtualMachineClusterPreference` - from `ocp_resources.virtual_machine_cluster_preference`
+- `HyperConverged` - from `ocp_resources.hyperconverged`
+
+**Existing Label Selector:**
+- `COMMON_INSTANCETYPE_SELECTOR = f"{Resource.ApiGroup.INSTANCETYPE_KUBEVIRT_IO}/vendor=redhat.com"` (defined in `tests/infrastructure/instance_types/conftest.py:10`)
+
+### Common Fixtures (from `tests/conftest.py`)
+
+| Fixture | Scope | Returns |
+|---------|-------|---------|
+| `admin_client` | session | `DynamicClient` |
+| `unprivileged_client` | session | `DynamicClient` |
+| `hco_namespace` | session | `Namespace` for HCO |
+| `hyperconverged_resource_scope_function` | function | HCO resource |
+| `hyperconverged_resource_scope_class` | class | HCO resource |
+| `hyperconverged_resource_scope_module` | module | HCO resource |
+| `hyperconverged_resource_scope_session` | session | HCO resource |
+
+**Instance Types Fixtures** (`tests/infrastructure/instance_types/conftest.py`):
+- `base_vm_cluster_instancetypes` (session) - lists VirtualMachineClusterInstancetype with vendor label
+- `base_vm_cluster_preferences` (session) - lists VirtualMachineClusterPreference with vendor label
+
+### Import Patterns
+```python
+import pytest
+from ocp_resources.resource import Resource, ResourceEditor
+from ocp_resources.hyperconverged import HyperConverged
+from ocp_resources.virtual_machine_cluster_instancetype import VirtualMachineClusterInstancetype
+from ocp_resources.virtual_machine_cluster_preference import VirtualMachineClusterPreference
+from utilities.hco import ResourceEditorValidateHCOReconcile, wait_for_hco_conditions
+from utilities.infra import get_hyperconverged_resource
+```
+
+### Test Structure Conventions
+- Module-level markers: `pytestmark = [pytest.mark.gating, pytest.mark.arm64, pytest.mark.s390x]`
+- Polarion IDs: `@pytest.mark.polarion("CNV-XXXXX")`
+- Class-level fixtures: `@pytest.mark.usefixtures("fixture_name")`
+- HCO spec modification: `ResourceEditorValidateHCOReconcile(patches={hco: {"spec": {...}}}, list_resource_reconcile=[...], wait_for_reconcile_post_update=True)`
+- Test file location: `tests/install_upgrade_operators/common_instancetypes_deployment/` (exists, currently empty)
+
+### GRAVEYARD Lessons
+**GRAVEYARD.md does not exist yet.** This is expected for the first run. No past mistakes are documented.
+Phase 3 is complete. Here is what was generated:
+
+**Generated test files:**
+
+| File | Description |
+|------|-------------|
+| `tests/install_upgrade_operators/common_instancetypes_deployment/__init__.py` | Module marker (empty) |
+| `tests/install_upgrade_operators/common_instancetypes_deployment/conftest.py` | 3 fixtures for HCO state management |
+| `tests/install_upgrade_operators/common_instancetypes_deployment/test_common_instancetypes_deployment.py` | 7 tests in 1 class |
+
+**Fixtures created in `conftest.py`:**
+
+| Fixture | Purpose |
+|---------|---------|
+| `disabled_common_instancetypes_deployment` | Sets HCO `commonInstancetypesDeployment: Disabled` with automatic restore |
+| `reenabled_common_instancetypes_deployment` | Toggles Disabled -> Enabled to test re-enablement, restores on cleanup |
+| `disabled_common_instancetypes_deployment_after_reconcile` | Disables + triggers additional reconciliation via annotation to test persistence |
+
+**Test class `TestCommonInstancetypesDeployment` (7 tests):**
+
+| Test | Fixture Used | Asserts |
+|------|-------------|---------|
+| `test_common_instancetypes_deployed_by_default` | none | instancetypes exist |
+| `test_common_preferences_deployed_by_default` | none | preferences exist |
+| `test_disable_..._removes_instancetype_resources` | `disabled_...` | instancetypes do NOT exist |
+| `test_disable_..._removes_preference_resources` | `disabled_...` | preferences do NOT exist |
+| `test_enable_..._deploys_instancetype_resources` | `reenabled_...` | instancetypes exist |
+| `test_enable_..._deploys_preference_resources` | `reenabled_...` | preferences exist |
+| `test_disabled_setting_persists_after_reconciliation` | `..._after_reconcile` | instancetypes do NOT exist |
+
+All files pass Python syntax validation. Module-level markers: `gating`, `arm64`, `s390x`.
+Phase 4 complete.
+
+**GRAVEYARD Verification Result:**
+
+`GRAVEYARD.md` does not exist in the repository. There are no past mistakes to verify against. This is expected for the first run of the test generation pipeline.
+
+- **Entries checked:** 0
+- **Violations found:** 0
+- **Fixes applied:** 0
+
+No modifications were made to the generated test file. The file remains as-is:
+`tests/install_upgrade_operators/common_instancetypes_deployment/test_common_instancetypes_deployment.py`
+Phase 5 complete.
+
+**Pyright Validation Result:**
+
+Both files passed pyright with zero errors on the first run -- no healing iterations needed.
+
+| File | Errors | Warnings | Iterations |
+|------|--------|----------|------------|
+| `test_common_instancetypes_deployment.py` | 0 | 0 | 0 |
+| `conftest.py` | 0 | 0 | 0 |
+
+No modifications were made. The generated code is type-safe as written.
+All 6 phases are complete. The final state is documented in the summary above. The `TimeoutSampler` fix was applied to the remaining disable test post-iteration 3, and the linter has already processed the file. The GRAVEYARD.md is in place with 2 lessons for future runs.

@@ -1,0 +1,622 @@
+/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/kubernetes/client/exceptions.py:91: DeprecationWarning: HTTPResponse.getheaders() is deprecated and will be removed in urllib3 v2.1.0. Instead access HTTPResponse.headers directly.
+  self.headers = http_resp.getheaders()
+/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/kubernetes/client/exceptions.py:91: DeprecationWarning: HTTPResponse.getheaders() is deprecated and will be removed in urllib3 v2.1.0. Instead access HTTPResponse.headers directly.
+  self.headers = http_resp.getheaders()
+2026-02-22T11:06:01.763321 ocp_resources Namespace [32mINFO[0m Create Namespace cnv-tests-run-in-progress-ns[0m
+2026-02-22T11:06:01.763704 ocp_resources Namespace [32mINFO[0m Posting {'apiVersion': 'v1', 'kind': 'Namespace', 'metadata': {'name': 'cnv-tests-run-in-progress-ns'}, 'spec': {}}[0m
+2026-02-22T11:06:02.077531 ocp_resources Namespace [32mINFO[0m Wait until Namespace cnv-tests-run-in-progress-ns is created[0m
+2026-02-22T11:06:02.233069 ocp_resources Namespace [32mINFO[0m Wait for Namespace cnv-tests-run-in-progress-ns status to be Active[0m
+2026-02-22T11:06:02.391267 ocp_resources Namespace [32mINFO[0m Status of Namespace cnv-tests-run-in-progress-ns is Active[0m
+2026-02-22T11:06:02.392163 ocp_resources Namespace [32mINFO[0m Update Namespace cnv-tests-run-in-progress-ns:
+{'metadata': {'labels': {'pod-security.kubernetes.io/enforce': 'privileged', 'security.openshift.io/scc.podSecurityLabelSync': 'false'}, 'name': 'cnv-tests-run-in-progress-ns'}}[0m
+2026-02-22T11:06:02.553858 ocp_resources ConfigMap [32mINFO[0m Create ConfigMap cnv-tests-run-in-progress[0m
+2026-02-22T11:06:02.554289 ocp_resources ConfigMap [32mINFO[0m Posting {'apiVersion': 'v1', 'kind': 'ConfigMap', 'metadata': {'name': 'cnv-tests-run-in-progress', 'namespace': 'cnv-tests-run-in-progress-ns'}, 'data': '*******'}[0m
+2026-02-22T11:06:02.869924 ocp_resources ConfigMap [32mINFO[0m Wait until ConfigMap cnv-tests-run-in-progress is created[0m
+============================= test session starts ==============================
+platform linux -- Python 3.14.0, pytest-9.0.2, pluggy-1.6.0
+benchmark: 5.2.3 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /home/fedora/thesis/openshift-virtualization-tests
+configfile: pytest.ini (WARNING: ignoring pytest config in pyproject.toml!)
+plugins: anyio-4.12.1, benchmark-5.2.3, html-4.1.1, order-1.3.0, testconfig-0.2.0, metadata-3.1.1, mock-3.15.1, repeat-0.9.4, progress-1.4.0, dependency-0.6.0, jira-0.3.22
+collected 8 items
+
+tests/install_upgrade_operators/common_instancetypes_deployment/test_common_instancetypes_deployment.py 
+TEST: TestCommonInstancetypesDeployment.test_common_instancetypes_deployed_by_default STATUS: [0;32mPASSED[0m
+. [ 12%]
+------------------------------------------------------- TEARDOWN -------------------------------------------------------
+
+_ 1 of 8 completed, 1 Pass, 0 Fail, 0 Skip, 0 XPass, 0 XFail, 0 Error, 0 ReRun _
+
+tests/install_upgrade_operators/common_instancetypes_deployment/test_common_instancetypes_deployment.py 
+TEST: TestCommonInstancetypesDeployment.test_common_preferences_deployed_by_default STATUS: [0;32mPASSED[0m
+. [ 25%]
+
+_ 2 of 8 completed, 2 Pass, 0 Fail, 0 Skip, 0 XPass, 0 XFail, 0 Error, 0 ReRun _
+
+tests/install_upgrade_operators/common_instancetypes_deployment/test_common_instancetypes_deployment.py F [ 37%]
+
+TEST: TestCommonInstancetypesDeployment.test_disable_common_instancetypes_removes_instancetype_resources STATUS: [0;31mFAILED[0m
+
+
+_ TestCommonInstancetypesDeployment.test_disable_common_instancetypes_removes_instancetype_resources _
+
+self = <tests.install_upgrade_operators.common_instancetypes_deployment.test_common_instancetypes_deployment.TestCommonInstancetypesDeployment object at 0x7f3d2039d6e0>
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f3d21ca6660>
+
+    @pytest.mark.polarion("CNV-61256")
+    @pytest.mark.usefixtures("disabled_common_instancetypes_deployment")
+    def test_disable_common_instancetypes_removes_instancetype_resources(self, admin_client):
+        """
+        Test that setting commonInstancetypesDeployment to Disabled removes
+        common instancetype resources.
+    
+        Preconditions:
+            - HCO CR commonInstancetypesDeployment set to Disabled
+            - HCO reconciliation completed
+    
+        Steps:
+            1. Query VirtualMachineClusterInstancetype resources with vendor label
+               "redhat.com"
+    
+        Expected:
+            - VirtualMachineClusterInstancetype resources with vendor label
+              "redhat.com" do NOT exist
+        """
+        LOGGER.info("Querying VirtualMachineClusterInstancetype resources after disabling deployment")
+        common_instancetypes = list(
+            VirtualMachineClusterInstancetype.get(
+                client=admin_client,
+                label_selector=COMMON_INSTANCETYPE_VENDOR_LABEL,
+            )
+        )
+>       assert not common_instancetypes, (
+            "Common VirtualMachineClusterInstancetype resources still exist after disabling: "
+            f"{[instancetype.name for instancetype in common_instancetypes]}"
+        )
+E       AssertionError: Common VirtualMachineClusterInstancetype resources still exist after disabling: ['cx1.2xlarge', 'cx1.2xlarge1gi', 'cx1.4xlarge', 'cx1.4xlarge1gi', 'cx1.8xlarge', 'cx1.8xlarge1gi', 'cx1.large', 'cx1.large1gi', 'cx1.medium', 'cx1.medium1gi', 'cx1.xlarge', 'cx1.xlarge1gi', 'd1.2xlarge', 'd1.2xmedium', 'd1.4xlarge', 'd1.8xlarge', 'd1.large', 'd1.medium', 'd1.micro', 'd1.nano', 'd1.small', 'd1.xlarge', 'm1.2xlarge', 'm1.2xlarge1gi', 'm1.4xlarge', 'm1.4xlarge1gi', 'm1.8xlarge', 'm1.8xlarge1gi', 'm1.large', 'm1.large1gi', 'm1.xlarge', 'm1.xlarge1gi', 'n1.2xlarge', 'n1.4xlarge', 'n1.8xlarge', 'n1.large', 'n1.medium', 'n1.xlarge', 'o1.2xlarge', 'o1.4xlarge', 'o1.8xlarge', 'o1.large', 'o1.medium', 'o1.micro', 'o1.nano', 'o1.small', 'o1.xlarge', 'rt1.2xlarge', 'rt1.4xlarge', 'rt1.8xlarge', 'rt1.large', 'rt1.medium', 'rt1.micro', 'rt1.small', 'rt1.xlarge', 'u1.2xlarge', 'u1.2xmedium', 'u1.4xlarge', 'u1.8xlarge', 'u1.large', 'u1.medium', 'u1.micro', 'u1.nano', 'u1.small', 'u1.xlarge']
+E       assert not [<ocp_resources.virtual_machine_cluster_instancetype.VirtualMachineClusterInstancetype object at 0x7f3d2034e490>, <ocp..., <ocp_resources.virtual_machine_cluster_instancetype.VirtualMachineClusterInstancetype object at 0x7f3d2034dd10>, ...]
+
+tests/install_upgrade_operators/common_instancetypes_deployment/test_common_instancetypes_deployment.py:115: AssertionError
+---------------------------- Captured stderr setup -----------------------------
+
+--------------------------- test_disable_common_instancetypes_removes_instancetype_resources ---------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-22T11:08:17.158886 conftest [32mINFO[0m Executing function fixture: term_handler_scope_function[0m
+2026-02-22T11:08:17.159188 conftest [32mINFO[0m Executing function fixture: autouse_fixtures[0m
+2026-02-22T11:08:17.159401 conftest [32mINFO[0m Executing function fixture: hyperconverged_resource_scope_function[0m
+2026-02-22T11:08:17.317142 conftest [32mINFO[0m Executing function fixture: disabled_common_instancetypes_deployment[0m
+2026-02-22T11:08:17.317586 tests.install_upgrade_operators.common_instancetypes_deployment.conftest [32mINFO[0m Setting commonInstancetypesDeployment to Disabled in HCO CR[0m
+2026-02-22T11:08:17.317974 utilities.hco [32mINFO[0m Patches: {<ocp_resources.hyperconverged.HyperConverged object at 0x7f3d2034ccd0>: {'spec': {'commonInstancetypesDeployment': 'Disabled'}}}[0m
+2026-02-22T11:08:17.318179 ocp_resources.resource [32mINFO[0m ResourceEdit: Backing up old data[0m
+2026-02-22T11:08:17.480208 ocp_resources.resource [32mINFO[0m ResourceEdits: Updating data for resource HyperConverged kubevirt-hyperconverged[0m
+2026-02-22T11:08:17.480576 ocp_resources HyperConverged [32mINFO[0m Update HyperConverged kubevirt-hyperconverged:
+{'spec': {'commonInstancetypesDeployment': 'Disabled'}, 'metadata': {'name': 'kubevirt-hyperconverged'}}[0m
+2026-02-22T11:08:17.703953 utilities.infra [32mINFO[0m Waiting for resource to stabilize: resource_kind=HyperConverged conditions={'Available': 'True', 'Progressing': 'False', 'ReconcileComplete': 'True', 'Degraded': 'False', 'Upgradeable': 'True'} sleep=600 consecutive_checks_count=3[0m
+2026-02-22T11:08:17.704244 timeout_sampler [32mINFO[0m Waiting for 600 seconds [0:10:00], retry every 5 seconds. (Function: utilities.infra.<locals>.lambda: dynamic_client.namespace.resource_kind.resource_name.list.get)[0m
+2026-02-22T11:08:28.953404 timeout_sampler [32mINFO[0m Elapsed time: 10.781014919281006 [0:00:10.781015][0m
+----------------------------- Captured stderr call -----------------------------
+--------------------------------------------------------- CALL ---------------------------------------------------------
+2026-02-22T11:08:28.955421 tests.install_upgrade_operators.common_instancetypes_deployment.test_common_instancetypes_deployment [32mINFO[0m Querying VirtualMachineClusterInstancetype resources after disabling deployment[0m
+_ 3 of 8 completed, 2 Pass, 1 Fail, 0 Skip, 0 XPass, 0 XFail, 0 Error, 0 ReRun _
+
+tests/install_upgrade_operators/common_instancetypes_deployment/test_common_instancetypes_deployment.py 
+TEST: TestCommonInstancetypesDeployment.test_disable_common_instancetypes_removes_preference_resources STATUS: [0;31mFAILED[0m
+F [ 50%]
+self = <tests.install_upgrade_operators.common_instancetypes_deployment.test_common_instancetypes_deployment.TestCommonInstancetypesDeployment object at 0x7f3d2039efd0>
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f3d21ca6660>
+
+    @pytest.mark.polarion("CNV-61256")
+    @pytest.mark.usefixtures("disabled_common_instancetypes_deployment")
+    def test_disable_common_instancetypes_removes_preference_resources(self, admin_client):
+        """
+        Test that setting commonInstancetypesDeployment to Disabled removes
+        common preference resources.
+    
+        Preconditions:
+            - HCO CR commonInstancetypesDeployment set to Disabled
+            - HCO reconciliation completed
+    
+        Steps:
+            1. Query VirtualMachineClusterPreference resources with vendor label
+               "redhat.com"
+    
+        Expected:
+            - VirtualMachineClusterPreference resources with vendor label
+              "redhat.com" do NOT exist
+        """
+        LOGGER.info("Querying VirtualMachineClusterPreference resources after disabling deployment")
+        common_preferences = list(
+            VirtualMachineClusterPreference.get(
+                client=admin_client,
+                label_selector=COMMON_INSTANCETYPE_VENDOR_LABEL,
+            )
+        )
+>       assert not common_preferences, (
+            "Common VirtualMachineClusterPreference resources still exist after disabling: "
+            f"{[preference.name for preference in common_preferences]}"
+        )
+E       AssertionError: Common VirtualMachineClusterPreference resources still exist after disabling: ['alpine', 'centos.stream10', 'centos.stream10.desktop', 'centos.stream9', 'centos.stream9.desktop', 'centos.stream9.dpdk', 'cirros', 'debian', 'fedora', 'fedora.arm64', 'fedora.s390x', 'legacy', 'linux', 'linux.efi', 'linux.virtiotransitional', 'opensuse.leap', 'opensuse.tumbleweed', 'oraclelinux', 'rhel.10', 'rhel.10.arm64', 'rhel.10.s390x', 'rhel.7', 'rhel.7.desktop', 'rhel.8', 'rhel.8.desktop', 'rhel.8.dpdk', 'rhel.9', 'rhel.9.arm64', 'rhel.9.desktop', 'rhel.9.dpdk', 'rhel.9.realtime', 'rhel.9.s390x', 'sles', 'ubuntu', 'windows.10', 'windows.10.virtio', 'windows.11', 'windows.11.virtio', 'windows.2k12', 'windows.2k12.virtio', 'windows.2k16', 'windows.2k16.virtio', 'windows.2k19', 'windows.2k19.virtio', 'windows.2k22', 'windows.2k22.virtio', 'windows.2k25', 'windows.2k25.virtio', 'windows.2k3', 'windows.2k8', 'windows.2k8.virtio', 'windows.7', 'windows.7.virtio', 'windows.xp']
+E       assert not [<ocp_resources.virtual_machine_cluster_preference.VirtualMachineClusterPreference object at 0x7f3d2034ccd0>, <ocp_res...5d0>, <ocp_resources.virtual_machine_cluster_preference.VirtualMachineClusterPreference object at 0x7f3d2034d810>, ...]
+
+tests/install_upgrade_operators/common_instancetypes_deployment/test_common_instancetypes_deployment.py:146: AssertionError
+
+
+_ TestCommonInstancetypesDeployment.test_disable_common_instancetypes_removes_preference_resources _
+
+self = <tests.install_upgrade_operators.common_instancetypes_deployment.test_common_instancetypes_deployment.TestCommonInstancetypesDeployment object at 0x7f3d2039efd0>
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f3d21ca6660>
+
+    @pytest.mark.polarion("CNV-61256")
+    @pytest.mark.usefixtures("disabled_common_instancetypes_deployment")
+    def test_disable_common_instancetypes_removes_preference_resources(self, admin_client):
+        """
+        Test that setting commonInstancetypesDeployment to Disabled removes
+        common preference resources.
+    
+        Preconditions:
+            - HCO CR commonInstancetypesDeployment set to Disabled
+            - HCO reconciliation completed
+    
+        Steps:
+            1. Query VirtualMachineClusterPreference resources with vendor label
+               "redhat.com"
+    
+        Expected:
+            - VirtualMachineClusterPreference resources with vendor label
+              "redhat.com" do NOT exist
+        """
+        LOGGER.info("Querying VirtualMachineClusterPreference resources after disabling deployment")
+        common_preferences = list(
+            VirtualMachineClusterPreference.get(
+                client=admin_client,
+                label_selector=COMMON_INSTANCETYPE_VENDOR_LABEL,
+            )
+        )
+>       assert not common_preferences, (
+            "Common VirtualMachineClusterPreference resources still exist after disabling: "
+            f"{[preference.name for preference in common_preferences]}"
+        )
+E       AssertionError: Common VirtualMachineClusterPreference resources still exist after disabling: ['alpine', 'centos.stream10', 'centos.stream10.desktop', 'centos.stream9', 'centos.stream9.desktop', 'centos.stream9.dpdk', 'cirros', 'debian', 'fedora', 'fedora.arm64', 'fedora.s390x', 'legacy', 'linux', 'linux.efi', 'linux.virtiotransitional', 'opensuse.leap', 'opensuse.tumbleweed', 'oraclelinux', 'rhel.10', 'rhel.10.arm64', 'rhel.10.s390x', 'rhel.7', 'rhel.7.desktop', 'rhel.8', 'rhel.8.desktop', 'rhel.8.dpdk', 'rhel.9', 'rhel.9.arm64', 'rhel.9.desktop', 'rhel.9.dpdk', 'rhel.9.realtime', 'rhel.9.s390x', 'sles', 'ubuntu', 'windows.10', 'windows.10.virtio', 'windows.11', 'windows.11.virtio', 'windows.2k12', 'windows.2k12.virtio', 'windows.2k16', 'windows.2k16.virtio', 'windows.2k19', 'windows.2k19.virtio', 'windows.2k22', 'windows.2k22.virtio', 'windows.2k25', 'windows.2k25.virtio', 'windows.2k3', 'windows.2k8', 'windows.2k8.virtio', 'windows.7', 'windows.7.virtio', 'windows.xp']
+E       assert not [<ocp_resources.virtual_machine_cluster_preference.VirtualMachineClusterPreference object at 0x7f3d2034ccd0>, <ocp_res...5d0>, <ocp_resources.virtual_machine_cluster_preference.VirtualMachineClusterPreference object at 0x7f3d2034d810>, ...]
+
+tests/install_upgrade_operators/common_instancetypes_deployment/test_common_instancetypes_deployment.py:146: AssertionError
+---------------------------- Captured stderr setup -----------------------------
+
+---------------------------- test_disable_common_instancetypes_removes_preference_resources ----------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-22T11:08:40.949909 conftest [32mINFO[0m Executing function fixture: term_handler_scope_function[0m
+2026-02-22T11:08:40.950754 conftest [32mINFO[0m Executing function fixture: autouse_fixtures[0m
+2026-02-22T11:08:40.951276 conftest [32mINFO[0m Executing function fixture: hyperconverged_resource_scope_function[0m
+2026-02-22T11:08:41.112103 ocp_resources.resource [32mINFO[0m ResourceEdit: Backing up old data[0m
+2026-02-22T11:08:41.111113 conftest [32mINFO[0m Executing function fixture: disabled_common_instancetypes_deployment[0m
+2026-02-22T11:08:41.111556 tests.install_upgrade_operators.common_instancetypes_deployment.conftest [32mINFO[0m Setting commonInstancetypesDeployment to Disabled in HCO CR[0m
+2026-02-22T11:08:41.111907 utilities.hco [32mINFO[0m Patches: {<ocp_resources.hyperconverged.HyperConverged object at 0x7f3d2034e350>: {'spec': {'commonInstancetypesDeployment': 'Disabled'}}}[0m
+2026-02-22T11:08:41.270460 ocp_resources.resource [32mINFO[0m ResourceEdits: Updating data for resource HyperConverged kubevirt-hyperconverged[0m
+2026-02-22T11:08:41.270834 ocp_resources HyperConverged [32mINFO[0m Update HyperConverged kubevirt-hyperconverged:
+{'spec': {'commonInstancetypesDeployment': 'Disabled'}, 'metadata': {'name': 'kubevirt-hyperconverged'}}[0m
+2026-02-22T11:08:41.450155 timeout_sampler [32mINFO[0m Waiting for 600 seconds [0:10:00], retry every 5 seconds. (Function: utilities.infra.<locals>.lambda: dynamic_client.namespace.resource_kind.resource_name.list.get)[0m
+2026-02-22T11:08:41.449754 utilities.infra [32mINFO[0m Waiting for resource to stabilize: resource_kind=HyperConverged conditions={'Available': 'True', 'Progressing': 'False', 'ReconcileComplete': 'True', 'Degraded': 'False', 'Upgradeable': 'True'} sleep=600 consecutive_checks_count=3[0m
+2026-02-22T11:08:52.693387 timeout_sampler [32mINFO[0m Elapsed time: 10.779585599899292 [0:00:10.779586][0m
+----------------------------- Captured stderr call -----------------------------
+--------------------------------------------------------- CALL ---------------------------------------------------------
+2026-02-22T11:08:52.695429 tests.install_upgrade_operators.common_instancetypes_deployment.test_common_instancetypes_deployment [32mINFO[0m Querying VirtualMachineClusterPreference resources after disabling deployment[0m
+_ 4 of 8 completed, 2 Pass, 2 Fail, 0 Skip, 0 XPass, 0 XFail, 0 Error, 0 ReRun _
+
+tests/install_upgrade_operators/common_instancetypes_deployment/test_common_instancetypes_deployment.py . [ 62%]
+
+TEST: TestCommonInstancetypesDeployment.test_enable_common_instancetypes_deploys_instancetype_resources STATUS: [0;32mPASSED[0m
+
+_ 5 of 8 completed, 3 Pass, 2 Fail, 0 Skip, 0 XPass, 0 XFail, 0 Error, 0 ReRun _
+
+tests/install_upgrade_operators/common_instancetypes_deployment/test_common_instancetypes_deployment.py . [ 75%]
+
+_ 6 of 8 completed, 4 Pass, 2 Fail, 0 Skip, 0 XPass, 0 XFail, 0 Error, 0 ReRun _
+
+tests/install_upgrade_operators/common_instancetypes_deployment/test_common_instancetypes_deployment.py 
+TEST: TestCommonInstancetypesDeployment.test_disabled_setting_persists_after_reconciliation STATUS: [0;31mFAILED[0m
+F [ 87%]
+self = <tests.install_upgrade_operators.common_instancetypes_deployment.test_common_instancetypes_deployment.TestCommonInstancetypesDeployment object at 0x7f3d20441d00>
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f3d21ca6660>
+
+    @pytest.mark.polarion("CNV-61256")
+    @pytest.mark.usefixtures("disabled_common_instancetypes_deployment_after_reconcile")
+    def test_disabled_setting_persists_after_reconciliation(self, admin_client):
+        """
+        Test that the Disabled setting persists after HCO reconciliation is
+        triggered by an unrelated spec change.
+    
+        Preconditions:
+            - HCO CR commonInstancetypesDeployment set to Disabled
+            - HCO reconciliation completed
+            - Common instancetype resources confirmed removed
+    
+        Steps:
+            1. Trigger HCO reconciliation by modifying an unrelated HCO spec field
+            2. Wait for HCO reconciliation to complete
+            3. Query VirtualMachineClusterInstancetype resources with vendor label
+               "redhat.com"
+    
+        Expected:
+            - VirtualMachineClusterInstancetype resources with vendor label
+              "redhat.com" do NOT exist
+        """
+        LOGGER.info("Querying VirtualMachineClusterInstancetype resources after additional reconciliation")
+        common_instancetypes = list(
+            VirtualMachineClusterInstancetype.get(
+                client=admin_client,
+                label_selector=COMMON_INSTANCETYPE_VENDOR_LABEL,
+            )
+        )
+>       assert not common_instancetypes, (
+            "Common VirtualMachineClusterInstancetype resources reappeared after reconciliation: "
+            f"{[instancetype.name for instancetype in common_instancetypes]}"
+        )
+E       AssertionError: Common VirtualMachineClusterInstancetype resources reappeared after reconciliation: ['cx1.2xlarge', 'cx1.2xlarge1gi', 'cx1.4xlarge', 'cx1.4xlarge1gi', 'cx1.8xlarge', 'cx1.8xlarge1gi', 'cx1.large', 'cx1.large1gi', 'cx1.medium', 'cx1.medium1gi', 'cx1.xlarge', 'cx1.xlarge1gi', 'd1.2xlarge', 'd1.2xmedium', 'd1.4xlarge', 'd1.8xlarge', 'd1.large', 'd1.medium', 'd1.micro', 'd1.nano', 'd1.small', 'd1.xlarge', 'm1.2xlarge', 'm1.2xlarge1gi', 'm1.4xlarge', 'm1.4xlarge1gi', 'm1.8xlarge', 'm1.8xlarge1gi', 'm1.large', 'm1.large1gi', 'm1.xlarge', 'm1.xlarge1gi', 'n1.2xlarge', 'n1.4xlarge', 'n1.8xlarge', 'n1.large', 'n1.medium', 'n1.xlarge', 'o1.2xlarge', 'o1.4xlarge', 'o1.8xlarge', 'o1.large', 'o1.medium', 'o1.micro', 'o1.nano', 'o1.small', 'o1.xlarge', 'rt1.2xlarge', 'rt1.4xlarge', 'rt1.8xlarge', 'rt1.large', 'rt1.medium', 'rt1.micro', 'rt1.small', 'rt1.xlarge', 'u1.2xlarge', 'u1.2xmedium', 'u1.4xlarge', 'u1.8xlarge', 'u1.large', 'u1.medium', 'u1.micro', 'u1.nano', 'u1.small', 'u1.xlarge']
+E       assert not [<ocp_resources.virtual_machine_cluster_instancetype.VirtualMachineClusterInstancetype object at 0x7f3d2034ccd0>, <ocp..., <ocp_resources.virtual_machine_cluster_instancetype.VirtualMachineClusterInstancetype object at 0x7f3d2034d810>, ...]
+
+tests/install_upgrade_operators/common_instancetypes_deployment/test_common_instancetypes_deployment.py:244: AssertionError
+
+
+_ TestCommonInstancetypesDeployment.test_disabled_setting_persists_after_reconciliation _
+
+self = <tests.install_upgrade_operators.common_instancetypes_deployment.test_common_instancetypes_deployment.TestCommonInstancetypesDeployment object at 0x7f3d20441d00>
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f3d21ca6660>
+
+    @pytest.mark.polarion("CNV-61256")
+    @pytest.mark.usefixtures("disabled_common_instancetypes_deployment_after_reconcile")
+    def test_disabled_setting_persists_after_reconciliation(self, admin_client):
+        """
+        Test that the Disabled setting persists after HCO reconciliation is
+        triggered by an unrelated spec change.
+    
+        Preconditions:
+            - HCO CR commonInstancetypesDeployment set to Disabled
+            - HCO reconciliation completed
+            - Common instancetype resources confirmed removed
+    
+        Steps:
+            1. Trigger HCO reconciliation by modifying an unrelated HCO spec field
+            2. Wait for HCO reconciliation to complete
+            3. Query VirtualMachineClusterInstancetype resources with vendor label
+               "redhat.com"
+    
+        Expected:
+            - VirtualMachineClusterInstancetype resources with vendor label
+              "redhat.com" do NOT exist
+        """
+        LOGGER.info("Querying VirtualMachineClusterInstancetype resources after additional reconciliation")
+        common_instancetypes = list(
+            VirtualMachineClusterInstancetype.get(
+                client=admin_client,
+                label_selector=COMMON_INSTANCETYPE_VENDOR_LABEL,
+            )
+        )
+>       assert not common_instancetypes, (
+            "Common VirtualMachineClusterInstancetype resources reappeared after reconciliation: "
+            f"{[instancetype.name for instancetype in common_instancetypes]}"
+        )
+E       AssertionError: Common VirtualMachineClusterInstancetype resources reappeared after reconciliation: ['cx1.2xlarge', 'cx1.2xlarge1gi', 'cx1.4xlarge', 'cx1.4xlarge1gi', 'cx1.8xlarge', 'cx1.8xlarge1gi', 'cx1.large', 'cx1.large1gi', 'cx1.medium', 'cx1.medium1gi', 'cx1.xlarge', 'cx1.xlarge1gi', 'd1.2xlarge', 'd1.2xmedium', 'd1.4xlarge', 'd1.8xlarge', 'd1.large', 'd1.medium', 'd1.micro', 'd1.nano', 'd1.small', 'd1.xlarge', 'm1.2xlarge', 'm1.2xlarge1gi', 'm1.4xlarge', 'm1.4xlarge1gi', 'm1.8xlarge', 'm1.8xlarge1gi', 'm1.large', 'm1.large1gi', 'm1.xlarge', 'm1.xlarge1gi', 'n1.2xlarge', 'n1.4xlarge', 'n1.8xlarge', 'n1.large', 'n1.medium', 'n1.xlarge', 'o1.2xlarge', 'o1.4xlarge', 'o1.8xlarge', 'o1.large', 'o1.medium', 'o1.micro', 'o1.nano', 'o1.small', 'o1.xlarge', 'rt1.2xlarge', 'rt1.4xlarge', 'rt1.8xlarge', 'rt1.large', 'rt1.medium', 'rt1.micro', 'rt1.small', 'rt1.xlarge', 'u1.2xlarge', 'u1.2xmedium', 'u1.4xlarge', 'u1.8xlarge', 'u1.large', 'u1.medium', 'u1.micro', 'u1.nano', 'u1.small', 'u1.xlarge']
+E       assert not [<ocp_resources.virtual_machine_cluster_instancetype.VirtualMachineClusterInstancetype object at 0x7f3d2034ccd0>, <ocp..., <ocp_resources.virtual_machine_cluster_instancetype.VirtualMachineClusterInstancetype object at 0x7f3d2034d810>, ...]
+
+tests/install_upgrade_operators/common_instancetypes_deployment/test_common_instancetypes_deployment.py:244: AssertionError
+---------------------------- Captured stderr setup -----------------------------
+
+--------------------------------- test_disabled_setting_persists_after_reconciliation ---------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-22T11:10:38.112724 conftest [32mINFO[0m Executing function fixture: term_handler_scope_function[0m
+2026-02-22T11:10:38.113702 conftest [32mINFO[0m Executing function fixture: autouse_fixtures[0m
+2026-02-22T11:10:38.114264 conftest [32mINFO[0m Executing function fixture: hyperconverged_resource_scope_function[0m
+2026-02-22T11:10:38.274507 conftest [32mINFO[0m Executing function fixture: disabled_common_instancetypes_deployment_after_reconcile[0m
+2026-02-22T11:10:38.274974 tests.install_upgrade_operators.common_instancetypes_deployment.conftest [32mINFO[0m Setting commonInstancetypesDeployment to Disabled in HCO CR[0m
+2026-02-22T11:10:38.275320 utilities.hco [32mINFO[0m Patches: {<ocp_resources.hyperconverged.HyperConverged object at 0x7f3d2034e350>: {'spec': {'commonInstancetypesDeployment': 'Disabled'}}}[0m
+2026-02-22T11:10:38.275517 ocp_resources.resource [32mINFO[0m ResourceEdit: Backing up old data[0m
+2026-02-22T11:10:38.434554 ocp_resources.resource [32mINFO[0m ResourceEdits: Updating data for resource HyperConverged kubevirt-hyperconverged[0m
+2026-02-22T11:10:38.434915 ocp_resources HyperConverged [32mINFO[0m Update HyperConverged kubevirt-hyperconverged:
+{'spec': {'commonInstancetypesDeployment': 'Disabled'}, 'metadata': {'name': 'kubevirt-hyperconverged'}}[0m
+2026-02-22T11:10:38.611352 timeout_sampler [32mINFO[0m Waiting for 600 seconds [0:10:00], retry every 5 seconds. (Function: utilities.infra.<locals>.lambda: dynamic_client.namespace.resource_kind.resource_name.list.get)[0m
+2026-02-22T11:10:38.610899 utilities.infra [32mINFO[0m Waiting for resource to stabilize: resource_kind=HyperConverged conditions={'Available': 'True', 'Progressing': 'False', 'ReconcileComplete': 'True', 'Degraded': 'False', 'Upgradeable': 'True'} sleep=600 consecutive_checks_count=3[0m
+2026-02-22T11:10:49.859051 timeout_sampler [32mINFO[0m Elapsed time: 10.78268313407898 [0:00:10.782683][0m
+2026-02-22T11:10:49.859370 tests.install_upgrade_operators.common_instancetypes_deployment.conftest [32mINFO[0m Triggering additional HCO reconciliation via annotation update[0m
+2026-02-22T11:10:49.859745 utilities.hco [32mINFO[0m Patches: {<ocp_resources.hyperconverged.HyperConverged object at 0x7f3d2034e350>: {'metadata': {'annotations': {'test.cnv.io/reconcile-trigger': 'true'}}}}[0m
+2026-02-22T11:10:49.859967 ocp_resources.resource [32mINFO[0m ResourceEdit: Backing up old data[0m
+2026-02-22T11:10:50.020873 ocp_resources.resource [32mINFO[0m ResourceEdits: Updating data for resource HyperConverged kubevirt-hyperconverged[0m
+2026-02-22T11:10:50.021203 ocp_resources HyperConverged [32mINFO[0m Update HyperConverged kubevirt-hyperconverged:
+{'metadata': {'annotations': {'test.cnv.io/reconcile-trigger': 'true'}, 'name': 'kubevirt-hyperconverged'}}[0m
+2026-02-22T11:10:50.291271 utilities.infra [32mINFO[0m Waiting for resource to stabilize: resource_kind=HyperConverged conditions={'Available': 'True', 'Progressing': 'False', 'ReconcileComplete': 'True', 'Degraded': 'False', 'Upgradeable': 'True'} sleep=600 consecutive_checks_count=3[0m
+2026-02-22T11:10:50.291674 timeout_sampler [32mINFO[0m Waiting for 600 seconds [0:10:00], retry every 5 seconds. (Function: utilities.infra.<locals>.lambda: dynamic_client.namespace.resource_kind.resource_name.list.get)[0m
+2026-02-22T11:11:01.549354 timeout_sampler [32mINFO[0m Elapsed time: 10.78571891784668 [0:00:10.785719][0m
+----------------------------- Captured stderr call -----------------------------
+--------------------------------------------------------- CALL ---------------------------------------------------------
+2026-02-22T11:11:01.550828 tests.install_upgrade_operators.common_instancetypes_deployment.test_common_instancetypes_deployment [32mINFO[0m Querying VirtualMachineClusterInstancetype resources after additional reconciliation[0m
+_ 7 of 8 completed, 4 Pass, 3 Fail, 0 Skip, 0 XPass, 0 XFail, 0 Error, 0 ReRun _
+
+tests/deprecated_api/test_deprecation_audit_logs.py 
+TEST: test_deprecated_apis_in_audit_logs STATUS: [1;33mQUARANTINED[0m
+[NOTRUN] quarantined: Timeout after 180s retrieving logs Tracked <a href='https://issues.redhat.com/browse/CNV-76514' target='_blank'>CNV-76514</a>
+_ 8 of 8 completed, 4 Pass, 3 Fail, 0 Skip, 0 XPass, 1 XFail, 0 Error, 0 ReRun _
+                                                                         [100%]2026-02-22T11:11:37.156513 ocp_resources ConfigMap [32mINFO[0m Delete ConfigMap cnv-tests-run-in-progress[0m
+2026-02-22T11:11:37.473147 ocp_resources ConfigMap [32mINFO[0m Deleting {'kind': 'ConfigMap', 'apiVersion': 'v1', 'metadata': {'name': 'cnv-tests-run-in-progress', 'namespace': 'cnv-tests-run-in-progress-ns', 'uid': '0f8fef49-d672-47be-92e6-292adb55070a', 'resourceVersion': '21883458', 'creationTimestamp': '2026-02-22T11:06:02Z', 'managedFields': [{'manager': 'OpenAPI-Generator', 'operation': 'Update', 'apiVersion': 'v1', 'time': '2026-02-22T11:06:02Z', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:data': {'.': {}, 'f:host': {}, 'f:pytest_cmd': {}, 'f:run-in-container': {}, 'f:running_from_dir': {}, 'f:session-id': {}, 'f:user': {}}}}]}, 'data': '*******'}[0m
+2026-02-22T11:11:37.637044 ocp_resources ConfigMap [32mINFO[0m Wait until ConfigMap cnv-tests-run-in-progress is deleted[0m
+2026-02-22T11:11:37.952885 ocp_resources Namespace [32mINFO[0m Delete Namespace cnv-tests-run-in-progress-ns[0m
+2026-02-22T11:11:38.266068 ocp_resources Namespace [32mINFO[0m Deleting {'kind': 'Namespace', 'apiVersion': 'v1', 'metadata': {'name': 'cnv-tests-run-in-progress-ns', 'uid': 'ea2c5ecc-cc0c-4a3d-82b3-c9ee3fb082ff', 'resourceVersion': '21883452', 'creationTimestamp': '2026-02-22T11:06:01Z', 'labels': {'kubernetes.io/metadata.name': 'cnv-tests-run-in-progress-ns', 'pod-security.kubernetes.io/audit': 'restricted', 'pod-security.kubernetes.io/audit-version': 'latest', 'pod-security.kubernetes.io/enforce': 'privileged', 'pod-security.kubernetes.io/warn': 'restricted', 'pod-security.kubernetes.io/warn-version': 'latest', 'security.openshift.io/scc.podSecurityLabelSync': 'false'}, 'annotations': {'openshift.io/sa.scc.mcs': 's0:c30,c0', 'openshift.io/sa.scc.supplemental-groups': '1000870000/10000', 'openshift.io/sa.scc.uid-range': '1000870000/10000', 'security.openshift.io/MinimallySufficientPodSecurityStandard': 'restricted'}, 'managedFields': [{'manager': 'cluster-policy-controller', 'operation': 'Apply', 'apiVersion': 'v1', 'time': '2026-02-22T11:06:01Z', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:annotations': {'f:openshift.io/sa.scc.mcs': {}, 'f:openshift.io/sa.scc.supplemental-groups': {}, 'f:openshift.io/sa.scc.uid-range': {}}}}}, {'manager': 'pod-security-admission-label-synchronization-controller', 'operation': 'Apply', 'apiVersion': 'v1', 'time': '2026-02-22T11:06:01Z', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:annotations': {'f:security.openshift.io/MinimallySufficientPodSecurityStandard': {}}, 'f:labels': {'f:pod-security.kubernetes.io/audit': {}, 'f:pod-security.kubernetes.io/audit-version': {}, 'f:pod-security.kubernetes.io/warn': {}, 'f:pod-security.kubernetes.io/warn-version': {}}}}}, {'manager': 'OpenAPI-Generator', 'operation': 'Update', 'apiVersion': 'v1', 'time': '2026-02-22T11:06:02Z', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:labels': {'.': {}, 'f:kubernetes.io/metadata.name': {}, 'f:pod-security.kubernetes.io/enforce': {}, 'f:security.openshift.io/scc.podSecurityLabelSync': {}}}}}]}, 'spec': {'finalizers': ['kubernetes']}, 'status': {'phase': 'Active'}}[0m
+2026-02-22T11:11:38.433436 ocp_resources Namespace [32mINFO[0m Wait until Namespace cnv-tests-run-in-progress-ns is deleted[0m
+2026-02-22T11:11:37.637488 timeout_sampler [32mINFO[0m Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_deleted.lambda: self.exists)[0m
+2026-02-22T11:11:37.797475 timeout_sampler [32mINFO[0m Elapsed time: 0.00027179718017578125 [0:00:00.000272][0m
+2026-02-22T11:11:38.433961 timeout_sampler [32mINFO[0m Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_deleted.lambda: self.exists)[0m
+2026-02-22T11:11:46.688936 timeout_sampler [32mINFO[0m Elapsed time: 8.095273733139038 [0:00:08.095274][0m
+===== 3 failed, 4 passed, 10 warnings, 1 quarantined in 343.65s (0:05:43) ======
+
+=================================== FAILURES ===================================
+_ TestCommonInstancetypesDeployment.test_disable_common_instancetypes_removes_instancetype_resources _
+
+self = <tests.install_upgrade_operators.common_instancetypes_deployment.test_common_instancetypes_deployment.TestCommonInstancetypesDeployment object at 0x7f3d2039d6e0>
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f3d21ca6660>
+
+    @pytest.mark.polarion("CNV-61256")
+    @pytest.mark.usefixtures("disabled_common_instancetypes_deployment")
+    def test_disable_common_instancetypes_removes_instancetype_resources(self, admin_client):
+        """
+        Test that setting commonInstancetypesDeployment to Disabled removes
+        common instancetype resources.
+    
+        Preconditions:
+            - HCO CR commonInstancetypesDeployment set to Disabled
+            - HCO reconciliation completed
+    
+        Steps:
+            1. Query VirtualMachineClusterInstancetype resources with vendor label
+               "redhat.com"
+    
+        Expected:
+            - VirtualMachineClusterInstancetype resources with vendor label
+              "redhat.com" do NOT exist
+        """
+        LOGGER.info("Querying VirtualMachineClusterInstancetype resources after disabling deployment")
+        common_instancetypes = list(
+            VirtualMachineClusterInstancetype.get(
+                client=admin_client,
+                label_selector=COMMON_INSTANCETYPE_VENDOR_LABEL,
+            )
+        )
+>       assert not common_instancetypes, (
+            "Common VirtualMachineClusterInstancetype resources still exist after disabling: "
+            f"{[instancetype.name for instancetype in common_instancetypes]}"
+        )
+E       AssertionError: Common VirtualMachineClusterInstancetype resources still exist after disabling: ['cx1.2xlarge', 'cx1.2xlarge1gi', 'cx1.4xlarge', 'cx1.4xlarge1gi', 'cx1.8xlarge', 'cx1.8xlarge1gi', 'cx1.large', 'cx1.large1gi', 'cx1.medium', 'cx1.medium1gi', 'cx1.xlarge', 'cx1.xlarge1gi', 'd1.2xlarge', 'd1.2xmedium', 'd1.4xlarge', 'd1.8xlarge', 'd1.large', 'd1.medium', 'd1.micro', 'd1.nano', 'd1.small', 'd1.xlarge', 'm1.2xlarge', 'm1.2xlarge1gi', 'm1.4xlarge', 'm1.4xlarge1gi', 'm1.8xlarge', 'm1.8xlarge1gi', 'm1.large', 'm1.large1gi', 'm1.xlarge', 'm1.xlarge1gi', 'n1.2xlarge', 'n1.4xlarge', 'n1.8xlarge', 'n1.large', 'n1.medium', 'n1.xlarge', 'o1.2xlarge', 'o1.4xlarge', 'o1.8xlarge', 'o1.large', 'o1.medium', 'o1.micro', 'o1.nano', 'o1.small', 'o1.xlarge', 'rt1.2xlarge', 'rt1.4xlarge', 'rt1.8xlarge', 'rt1.large', 'rt1.medium', 'rt1.micro', 'rt1.small', 'rt1.xlarge', 'u1.2xlarge', 'u1.2xmedium', 'u1.4xlarge', 'u1.8xlarge', 'u1.large', 'u1.medium', 'u1.micro', 'u1.nano', 'u1.small', 'u1.xlarge']
+E       assert not [<ocp_resources.virtual_machine_cluster_instancetype.VirtualMachineClusterInstancetype object at 0x7f3d2034e490>, <ocp..., <ocp_resources.virtual_machine_cluster_instancetype.VirtualMachineClusterInstancetype object at 0x7f3d2034dd10>, ...]
+
+tests/install_upgrade_operators/common_instancetypes_deployment/test_common_instancetypes_deployment.py:115: AssertionError
+---------------------------- Captured stderr setup -----------------------------
+
+--------------------------- test_disable_common_instancetypes_removes_instancetype_resources ---------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-22T11:08:17.158886 conftest [32mINFO[0m Executing function fixture: term_handler_scope_function[0m
+2026-02-22T11:08:17.159188 conftest [32mINFO[0m Executing function fixture: autouse_fixtures[0m
+2026-02-22T11:08:17.159401 conftest [32mINFO[0m Executing function fixture: hyperconverged_resource_scope_function[0m
+2026-02-22T11:08:17.317142 conftest [32mINFO[0m Executing function fixture: disabled_common_instancetypes_deployment[0m
+2026-02-22T11:08:17.317586 tests.install_upgrade_operators.common_instancetypes_deployment.conftest [32mINFO[0m Setting commonInstancetypesDeployment to Disabled in HCO CR[0m
+2026-02-22T11:08:17.317974 utilities.hco [32mINFO[0m Patches: {<ocp_resources.hyperconverged.HyperConverged object at 0x7f3d2034ccd0>: {'spec': {'commonInstancetypesDeployment': 'Disabled'}}}[0m
+2026-02-22T11:08:17.318179 ocp_resources.resource [32mINFO[0m ResourceEdit: Backing up old data[0m
+2026-02-22T11:08:17.480208 ocp_resources.resource [32mINFO[0m ResourceEdits: Updating data for resource HyperConverged kubevirt-hyperconverged[0m
+2026-02-22T11:08:17.480576 ocp_resources HyperConverged [32mINFO[0m Update HyperConverged kubevirt-hyperconverged:
+{'spec': {'commonInstancetypesDeployment': 'Disabled'}, 'metadata': {'name': 'kubevirt-hyperconverged'}}[0m
+2026-02-22T11:08:17.703953 utilities.infra [32mINFO[0m Waiting for resource to stabilize: resource_kind=HyperConverged conditions={'Available': 'True', 'Progressing': 'False', 'ReconcileComplete': 'True', 'Degraded': 'False', 'Upgradeable': 'True'} sleep=600 consecutive_checks_count=3[0m
+2026-02-22T11:08:17.704244 timeout_sampler [32mINFO[0m Waiting for 600 seconds [0:10:00], retry every 5 seconds. (Function: utilities.infra.<locals>.lambda: dynamic_client.namespace.resource_kind.resource_name.list.get)[0m
+2026-02-22T11:08:28.953404 timeout_sampler [32mINFO[0m Elapsed time: 10.781014919281006 [0:00:10.781015][0m
+----------------------------- Captured stderr call -----------------------------
+--------------------------------------------------------- CALL ---------------------------------------------------------
+2026-02-22T11:08:28.955421 tests.install_upgrade_operators.common_instancetypes_deployment.test_common_instancetypes_deployment [32mINFO[0m Querying VirtualMachineClusterInstancetype resources after disabling deployment[0m
+--------------------------- Captured stderr teardown ---------------------------
+2026-02-22T11:08:29.520354 ocp_resources.resource [32mINFO[0m ResourceEdits: Restoring data for resource HyperConverged kubevirt-hyperconverged[0m
+2026-02-22T11:08:29.520481 ocp_resources HyperConverged [32mINFO[0m Update HyperConverged kubevirt-hyperconverged:
+{'spec': {'commonInstancetypesDeployment': None}, 'metadata': {'name': 'kubevirt-hyperconverged'}}[0m
+self = <tests.install_upgrade_operators.common_instancetypes_deployment.test_common_instancetypes_deployment.TestCommonInstancetypesDeployment object at 0x7f3d2039d6e0>
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f3d21ca6660>
+
+    @pytest.mark.polarion("CNV-61256")
+    @pytest.mark.usefixtures("disabled_common_instancetypes_deployment")
+    def test_disable_common_instancetypes_removes_instancetype_resources(self, admin_client):
+        """
+        Test that setting commonInstancetypesDeployment to Disabled removes
+        common instancetype resources.
+    
+        Preconditions:
+            - HCO CR commonInstancetypesDeployment set to Disabled
+            - HCO reconciliation completed
+    
+        Steps:
+            1. Query VirtualMachineClusterInstancetype resources with vendor label
+               "redhat.com"
+    
+        Expected:
+            - VirtualMachineClusterInstancetype resources with vendor label
+              "redhat.com" do NOT exist
+        """
+        LOGGER.info("Querying VirtualMachineClusterInstancetype resources after disabling deployment")
+        common_instancetypes = list(
+            VirtualMachineClusterInstancetype.get(
+                client=admin_client,
+                label_selector=COMMON_INSTANCETYPE_VENDOR_LABEL,
+            )
+        )
+>       assert not common_instancetypes, (
+            "Common VirtualMachineClusterInstancetype resources still exist after disabling: "
+            f"{[instancetype.name for instancetype in common_instancetypes]}"
+        )
+E       AssertionError: Common VirtualMachineClusterInstancetype resources still exist after disabling: ['cx1.2xlarge', 'cx1.2xlarge1gi', 'cx1.4xlarge', 'cx1.4xlarge1gi', 'cx1.8xlarge', 'cx1.8xlarge1gi', 'cx1.large', 'cx1.large1gi', 'cx1.medium', 'cx1.medium1gi', 'cx1.xlarge', 'cx1.xlarge1gi', 'd1.2xlarge', 'd1.2xmedium', 'd1.4xlarge', 'd1.8xlarge', 'd1.large', 'd1.medium', 'd1.micro', 'd1.nano', 'd1.small', 'd1.xlarge', 'm1.2xlarge', 'm1.2xlarge1gi', 'm1.4xlarge', 'm1.4xlarge1gi', 'm1.8xlarge', 'm1.8xlarge1gi', 'm1.large', 'm1.large1gi', 'm1.xlarge', 'm1.xlarge1gi', 'n1.2xlarge', 'n1.4xlarge', 'n1.8xlarge', 'n1.large', 'n1.medium', 'n1.xlarge', 'o1.2xlarge', 'o1.4xlarge', 'o1.8xlarge', 'o1.large', 'o1.medium', 'o1.micro', 'o1.nano', 'o1.small', 'o1.xlarge', 'rt1.2xlarge', 'rt1.4xlarge', 'rt1.8xlarge', 'rt1.large', 'rt1.medium', 'rt1.micro', 'rt1.small', 'rt1.xlarge', 'u1.2xlarge', 'u1.2xmedium', 'u1.4xlarge', 'u1.8xlarge', 'u1.large', 'u1.medium', 'u1.micro', 'u1.nano', 'u1.small', 'u1.xlarge']
+E       assert not [<ocp_resources.virtual_machine_cluster_instancetype.VirtualMachineClusterInstancetype object at 0x7f3d2034e490>, <ocp..., <ocp_resources.virtual_machine_cluster_instancetype.VirtualMachineClusterInstancetype object at 0x7f3d2034dd10>, ...]
+
+tests/install_upgrade_operators/common_instancetypes_deployment/test_common_instancetypes_deployment.py:115: AssertionError
+------------------------------------------------------- TEARDOWN -------------------------------------------------------
+2026-02-22T11:08:29.700454 utilities.infra [32mINFO[0m Waiting for resource to stabilize: resource_kind=HyperConverged conditions={'Available': 'True', 'Progressing': 'False', 'ReconcileComplete': 'True', 'Degraded': 'False', 'Upgradeable': 'True'} sleep=600 consecutive_checks_count=3[0m
+2026-02-22T11:08:29.700890 timeout_sampler [32mINFO[0m Waiting for 600 seconds [0:10:00], retry every 5 seconds. (Function: utilities.infra.<locals>.lambda: dynamic_client.namespace.resource_kind.resource_name.list.get)[0m
+2026-02-22T11:08:40.946269 timeout_sampler [32mINFO[0m Elapsed time: 10.781379699707031 [0:00:10.781380][0m
+_ TestCommonInstancetypesDeployment.test_disable_common_instancetypes_removes_preference_resources _
+
+self = <tests.install_upgrade_operators.common_instancetypes_deployment.test_common_instancetypes_deployment.TestCommonInstancetypesDeployment object at 0x7f3d2039efd0>
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f3d21ca6660>
+
+    @pytest.mark.polarion("CNV-61256")
+    @pytest.mark.usefixtures("disabled_common_instancetypes_deployment")
+    def test_disable_common_instancetypes_removes_preference_resources(self, admin_client):
+        """
+        Test that setting commonInstancetypesDeployment to Disabled removes
+        common preference resources.
+    
+        Preconditions:
+            - HCO CR commonInstancetypesDeployment set to Disabled
+            - HCO reconciliation completed
+    
+        Steps:
+            1. Query VirtualMachineClusterPreference resources with vendor label
+               "redhat.com"
+    
+        Expected:
+            - VirtualMachineClusterPreference resources with vendor label
+              "redhat.com" do NOT exist
+        """
+        LOGGER.info("Querying VirtualMachineClusterPreference resources after disabling deployment")
+        common_preferences = list(
+            VirtualMachineClusterPreference.get(
+                client=admin_client,
+                label_selector=COMMON_INSTANCETYPE_VENDOR_LABEL,
+            )
+        )
+>       assert not common_preferences, (
+            "Common VirtualMachineClusterPreference resources still exist after disabling: "
+            f"{[preference.name for preference in common_preferences]}"
+        )
+E       AssertionError: Common VirtualMachineClusterPreference resources still exist after disabling: ['alpine', 'centos.stream10', 'centos.stream10.desktop', 'centos.stream9', 'centos.stream9.desktop', 'centos.stream9.dpdk', 'cirros', 'debian', 'fedora', 'fedora.arm64', 'fedora.s390x', 'legacy', 'linux', 'linux.efi', 'linux.virtiotransitional', 'opensuse.leap', 'opensuse.tumbleweed', 'oraclelinux', 'rhel.10', 'rhel.10.arm64', 'rhel.10.s390x', 'rhel.7', 'rhel.7.desktop', 'rhel.8', 'rhel.8.desktop', 'rhel.8.dpdk', 'rhel.9', 'rhel.9.arm64', 'rhel.9.desktop', 'rhel.9.dpdk', 'rhel.9.realtime', 'rhel.9.s390x', 'sles', 'ubuntu', 'windows.10', 'windows.10.virtio', 'windows.11', 'windows.11.virtio', 'windows.2k12', 'windows.2k12.virtio', 'windows.2k16', 'windows.2k16.virtio', 'windows.2k19', 'windows.2k19.virtio', 'windows.2k22', 'windows.2k22.virtio', 'windows.2k25', 'windows.2k25.virtio', 'windows.2k3', 'windows.2k8', 'windows.2k8.virtio', 'windows.7', 'windows.7.virtio', 'windows.xp']
+E       assert not [<ocp_resources.virtual_machine_cluster_preference.VirtualMachineClusterPreference object at 0x7f3d2034ccd0>, <ocp_res...5d0>, <ocp_resources.virtual_machine_cluster_preference.VirtualMachineClusterPreference object at 0x7f3d2034d810>, ...]
+
+tests/install_upgrade_operators/common_instancetypes_deployment/test_common_instancetypes_deployment.py:146: AssertionError
+---------------------------- Captured stderr setup -----------------------------
+
+---------------------------- test_disable_common_instancetypes_removes_preference_resources ----------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-22T11:08:40.949909 conftest [32mINFO[0m Executing function fixture: term_handler_scope_function[0m
+2026-02-22T11:08:40.950754 conftest [32mINFO[0m Executing function fixture: autouse_fixtures[0m
+2026-02-22T11:08:40.951276 conftest [32mINFO[0m Executing function fixture: hyperconverged_resource_scope_function[0m
+2026-02-22T11:08:41.112103 ocp_resources.resource [32mINFO[0m ResourceEdit: Backing up old data[0m
+2026-02-22T11:08:41.111113 conftest [32mINFO[0m Executing function fixture: disabled_common_instancetypes_deployment[0m
+2026-02-22T11:08:41.111556 tests.install_upgrade_operators.common_instancetypes_deployment.conftest [32mINFO[0m Setting commonInstancetypesDeployment to Disabled in HCO CR[0m
+2026-02-22T11:08:41.111907 utilities.hco [32mINFO[0m Patches: {<ocp_resources.hyperconverged.HyperConverged object at 0x7f3d2034e350>: {'spec': {'commonInstancetypesDeployment': 'Disabled'}}}[0m
+2026-02-22T11:08:41.270460 ocp_resources.resource [32mINFO[0m ResourceEdits: Updating data for resource HyperConverged kubevirt-hyperconverged[0m
+2026-02-22T11:08:41.270834 ocp_resources HyperConverged [32mINFO[0m Update HyperConverged kubevirt-hyperconverged:
+{'spec': {'commonInstancetypesDeployment': 'Disabled'}, 'metadata': {'name': 'kubevirt-hyperconverged'}}[0m
+2026-02-22T11:08:41.450155 timeout_sampler [32mINFO[0m Waiting for 600 seconds [0:10:00], retry every 5 seconds. (Function: utilities.infra.<locals>.lambda: dynamic_client.namespace.resource_kind.resource_name.list.get)[0m
+2026-02-22T11:08:41.449754 utilities.infra [32mINFO[0m Waiting for resource to stabilize: resource_kind=HyperConverged conditions={'Available': 'True', 'Progressing': 'False', 'ReconcileComplete': 'True', 'Degraded': 'False', 'Upgradeable': 'True'} sleep=600 consecutive_checks_count=3[0m
+2026-02-22T11:08:52.693387 timeout_sampler [32mINFO[0m Elapsed time: 10.779585599899292 [0:00:10.779586][0m
+----------------------------- Captured stderr call -----------------------------
+--------------------------------------------------------- CALL ---------------------------------------------------------
+2026-02-22T11:08:52.695429 tests.install_upgrade_operators.common_instancetypes_deployment.test_common_instancetypes_deployment [32mINFO[0m Querying VirtualMachineClusterPreference resources after disabling deployment[0m
+--------------------------- Captured stderr teardown ---------------------------
+------------------------------------------------------- TEARDOWN -------------------------------------------------------
+2026-02-22T11:08:53.173370 ocp_resources.resource [32mINFO[0m ResourceEdits: Restoring data for resource HyperConverged kubevirt-hyperconverged[0m
+2026-02-22T11:08:53.173620 ocp_resources HyperConverged [32mINFO[0m Update HyperConverged kubevirt-hyperconverged:
+{'spec': {'commonInstancetypesDeployment': None}, 'metadata': {'name': 'kubevirt-hyperconverged'}}[0m
+2026-02-22T11:08:53.350667 utilities.infra [32mINFO[0m Waiting for resource to stabilize: resource_kind=HyperConverged conditions={'Available': 'True', 'Progressing': 'False', 'ReconcileComplete': 'True', 'Degraded': 'False', 'Upgradeable': 'True'} sleep=600 consecutive_checks_count=3[0m
+2026-02-22T11:08:53.351095 timeout_sampler [32mINFO[0m Waiting for 600 seconds [0:10:00], retry every 5 seconds. (Function: utilities.infra.<locals>.lambda: dynamic_client.namespace.resource_kind.resource_name.list.get)[0m
+2026-02-22T11:09:04.801312 timeout_sampler [32mINFO[0m Elapsed time: 10.985935926437378 [0:00:10.985936][0m
+_ TestCommonInstancetypesDeployment.test_disabled_setting_persists_after_reconciliation _
+
+self = <tests.install_upgrade_operators.common_instancetypes_deployment.test_common_instancetypes_deployment.TestCommonInstancetypesDeployment object at 0x7f3d20441d00>
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f3d21ca6660>
+
+    @pytest.mark.polarion("CNV-61256")
+    @pytest.mark.usefixtures("disabled_common_instancetypes_deployment_after_reconcile")
+    def test_disabled_setting_persists_after_reconciliation(self, admin_client):
+        """
+        Test that the Disabled setting persists after HCO reconciliation is
+        triggered by an unrelated spec change.
+    
+        Preconditions:
+            - HCO CR commonInstancetypesDeployment set to Disabled
+            - HCO reconciliation completed
+            - Common instancetype resources confirmed removed
+    
+        Steps:
+            1. Trigger HCO reconciliation by modifying an unrelated HCO spec field
+            2. Wait for HCO reconciliation to complete
+            3. Query VirtualMachineClusterInstancetype resources with vendor label
+               "redhat.com"
+    
+        Expected:
+            - VirtualMachineClusterInstancetype resources with vendor label
+              "redhat.com" do NOT exist
+        """
+        LOGGER.info("Querying VirtualMachineClusterInstancetype resources after additional reconciliation")
+        common_instancetypes = list(
+            VirtualMachineClusterInstancetype.get(
+                client=admin_client,
+                label_selector=COMMON_INSTANCETYPE_VENDOR_LABEL,
+            )
+        )
+>       assert not common_instancetypes, (
+            "Common VirtualMachineClusterInstancetype resources reappeared after reconciliation: "
+            f"{[instancetype.name for instancetype in common_instancetypes]}"
+        )
+E       AssertionError: Common VirtualMachineClusterInstancetype resources reappeared after reconciliation: ['cx1.2xlarge', 'cx1.2xlarge1gi', 'cx1.4xlarge', 'cx1.4xlarge1gi', 'cx1.8xlarge', 'cx1.8xlarge1gi', 'cx1.large', 'cx1.large1gi', 'cx1.medium', 'cx1.medium1gi', 'cx1.xlarge', 'cx1.xlarge1gi', 'd1.2xlarge', 'd1.2xmedium', 'd1.4xlarge', 'd1.8xlarge', 'd1.large', 'd1.medium', 'd1.micro', 'd1.nano', 'd1.small', 'd1.xlarge', 'm1.2xlarge', 'm1.2xlarge1gi', 'm1.4xlarge', 'm1.4xlarge1gi', 'm1.8xlarge', 'm1.8xlarge1gi', 'm1.large', 'm1.large1gi', 'm1.xlarge', 'm1.xlarge1gi', 'n1.2xlarge', 'n1.4xlarge', 'n1.8xlarge', 'n1.large', 'n1.medium', 'n1.xlarge', 'o1.2xlarge', 'o1.4xlarge', 'o1.8xlarge', 'o1.large', 'o1.medium', 'o1.micro', 'o1.nano', 'o1.small', 'o1.xlarge', 'rt1.2xlarge', 'rt1.4xlarge', 'rt1.8xlarge', 'rt1.large', 'rt1.medium', 'rt1.micro', 'rt1.small', 'rt1.xlarge', 'u1.2xlarge', 'u1.2xmedium', 'u1.4xlarge', 'u1.8xlarge', 'u1.large', 'u1.medium', 'u1.micro', 'u1.nano', 'u1.small', 'u1.xlarge']
+E       assert not [<ocp_resources.virtual_machine_cluster_instancetype.VirtualMachineClusterInstancetype object at 0x7f3d2034ccd0>, <ocp..., <ocp_resources.virtual_machine_cluster_instancetype.VirtualMachineClusterInstancetype object at 0x7f3d2034d810>, ...]
+
+tests/install_upgrade_operators/common_instancetypes_deployment/test_common_instancetypes_deployment.py:244: AssertionError
+---------------------------- Captured stderr setup -----------------------------
+
+--------------------------------- test_disabled_setting_persists_after_reconciliation ---------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-22T11:10:38.112724 conftest [32mINFO[0m Executing function fixture: term_handler_scope_function[0m
+2026-02-22T11:10:38.113702 conftest [32mINFO[0m Executing function fixture: autouse_fixtures[0m
+2026-02-22T11:10:38.114264 conftest [32mINFO[0m Executing function fixture: hyperconverged_resource_scope_function[0m
+2026-02-22T11:10:38.274507 conftest [32mINFO[0m Executing function fixture: disabled_common_instancetypes_deployment_after_reconcile[0m
+2026-02-22T11:10:38.274974 tests.install_upgrade_operators.common_instancetypes_deployment.conftest [32mINFO[0m Setting commonInstancetypesDeployment to Disabled in HCO CR[0m
+2026-02-22T11:10:38.275320 utilities.hco [32mINFO[0m Patches: {<ocp_resources.hyperconverged.HyperConverged object at 0x7f3d2034e350>: {'spec': {'commonInstancetypesDeployment': 'Disabled'}}}[0m
+2026-02-22T11:10:38.275517 ocp_resources.resource [32mINFO[0m ResourceEdit: Backing up old data[0m
+2026-02-22T11:10:38.434554 ocp_resources.resource [32mINFO[0m ResourceEdits: Updating data for resource HyperConverged kubevirt-hyperconverged[0m
+2026-02-22T11:10:38.434915 ocp_resources HyperConverged [32mINFO[0m Update HyperConverged kubevirt-hyperconverged:
+{'spec': {'commonInstancetypesDeployment': 'Disabled'}, 'metadata': {'name': 'kubevirt-hyperconverged'}}[0m
+2026-02-22T11:10:38.611352 timeout_sampler [32mINFO[0m Waiting for 600 seconds [0:10:00], retry every 5 seconds. (Function: utilities.infra.<locals>.lambda: dynamic_client.namespace.resource_kind.resource_name.list.get)[0m
+2026-02-22T11:10:38.610899 utilities.infra [32mINFO[0m Waiting for resource to stabilize: resource_kind=HyperConverged conditions={'Available': 'True', 'Progressing': 'False', 'ReconcileComplete': 'True', 'Degraded': 'False', 'Upgradeable': 'True'} sleep=600 consecutive_checks_count=3[0m
+2026-02-22T11:10:49.859051 timeout_sampler [32mINFO[0m Elapsed time: 10.78268313407898 [0:00:10.782683][0m
+2026-02-22T11:10:49.859370 tests.install_upgrade_operators.common_instancetypes_deployment.conftest [32mINFO[0m Triggering additional HCO reconciliation via annotation update[0m
+2026-02-22T11:10:49.859745 utilities.hco [32mINFO[0m Patches: {<ocp_resources.hyperconverged.HyperConverged object at 0x7f3d2034e350>: {'metadata': {'annotations': {'test.cnv.io/reconcile-trigger': 'true'}}}}[0m
+2026-02-22T11:10:49.859967 ocp_resources.resource [32mINFO[0m ResourceEdit: Backing up old data[0m
+2026-02-22T11:10:50.020873 ocp_resources.resource [32mINFO[0m ResourceEdits: Updating data for resource HyperConverged kubevirt-hyperconverged[0m
+2026-02-22T11:10:50.021203 ocp_resources HyperConverged [32mINFO[0m Update HyperConverged kubevirt-hyperconverged:
+{'metadata': {'annotations': {'test.cnv.io/reconcile-trigger': 'true'}, 'name': 'kubevirt-hyperconverged'}}[0m
+2026-02-22T11:10:50.291271 utilities.infra [32mINFO[0m Waiting for resource to stabilize: resource_kind=HyperConverged conditions={'Available': 'True', 'Progressing': 'False', 'ReconcileComplete': 'True', 'Degraded': 'False', 'Upgradeable': 'True'} sleep=600 consecutive_checks_count=3[0m
+2026-02-22T11:10:50.291674 timeout_sampler [32mINFO[0m Waiting for 600 seconds [0:10:00], retry every 5 seconds. (Function: utilities.infra.<locals>.lambda: dynamic_client.namespace.resource_kind.resource_name.list.get)[0m
+2026-02-22T11:11:01.549354 timeout_sampler [32mINFO[0m Elapsed time: 10.78571891784668 [0:00:10.785719][0m
+----------------------------- Captured stderr call -----------------------------
+--------------------------------------------------------- CALL ---------------------------------------------------------
+2026-02-22T11:11:01.550828 tests.install_upgrade_operators.common_instancetypes_deployment.test_common_instancetypes_deployment [32mINFO[0m Querying VirtualMachineClusterInstancetype resources after additional reconciliation[0m
+--------------------------- Captured stderr teardown ---------------------------
+------------------------------------------------------- TEARDOWN -------------------------------------------------------
+2026-02-22T11:11:02.031242 ocp_resources.resource [32mINFO[0m ResourceEdits: Restoring data for resource HyperConverged kubevirt-hyperconverged[0m
+2026-02-22T11:11:02.031510 ocp_resources HyperConverged [32mINFO[0m Update HyperConverged kubevirt-hyperconverged:
+{'metadata': {'annotations': None, 'name': 'kubevirt-hyperconverged'}}[0m
+2026-02-22T11:11:02.246335 timeout_sampler [32mINFO[0m Waiting for 600 seconds [0:10:00], retry every 5 seconds. (Function: utilities.infra.<locals>.lambda: dynamic_client.namespace.resource_kind.resource_name.list.get)[0m
+2026-02-22T11:11:02.245915 utilities.infra [32mINFO[0m Waiting for resource to stabilize: resource_kind=HyperConverged conditions={'Available': 'True', 'Progressing': 'False', 'ReconcileComplete': 'True', 'Degraded': 'False', 'Upgradeable': 'True'} sleep=600 consecutive_checks_count=3[0m
+2026-02-22T11:11:13.487887 timeout_sampler [32mINFO[0m Elapsed time: 10.776916027069092 [0:00:10.776916][0m
+2026-02-22T11:11:13.488422 ocp_resources HyperConverged [32mINFO[0m Update HyperConverged kubevirt-hyperconverged:
+{'spec': {'commonInstancetypesDeployment': None}, 'metadata': {'name': 'kubevirt-hyperconverged'}}[0m
+2026-02-22T11:11:13.668396 timeout_sampler [32mINFO[0m Waiting for 600 seconds [0:10:00], retry every 5 seconds. (Function: utilities.infra.<locals>.lambda: dynamic_client.namespace.resource_kind.resource_name.list.get)[0m
+2026-02-22T11:11:13.668017 utilities.infra [32mINFO[0m Waiting for resource to stabilize: resource_kind=HyperConverged conditions={'Available': 'True', 'Progressing': 'False', 'ReconcileComplete': 'True', 'Degraded': 'False', 'Upgradeable': 'True'} sleep=600 consecutive_checks_count=3[0m
+2026-02-22T11:11:24.910326 timeout_sampler [32mINFO[0m Elapsed time: 10.777974367141724 [0:00:10.777974][0m
+=============================== warnings summary ===============================
+tests/install_upgrade_operators/common_instancetypes_deployment/test_common_instancetypes_deployment.py: 5 warnings
+tests/deprecated_api/test_deprecation_audit_logs.py: 3 warnings
+.venv/lib64/python3.14/site-packages/kubernetes/client/exceptions.py:91: 2 warnings
+  /home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/kubernetes/client/exceptions.py:91: DeprecationWarning: HTTPResponse.getheaders() is deprecated and will be removed in urllib3 v2.1.0. Instead access HTTPResponse.headers directly.
+    self.headers = http_resp.getheaders()
+
+tests/install_upgrade_operators/common_instancetypes_deployment/test_common_instancetypes_deployment.py::TestCommonInstancetypesDeployment::test_common_instancetypes_deployed_by_default
+tests/install_upgrade_operators/common_instancetypes_deployment/test_common_instancetypes_deployment.py::TestCommonInstancetypesDeployment::test_common_instancetypes_deployed_by_default
+  /home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py:1612: FutureWarning: 'client' arg will be mandatory in the next major release. `config_file` and `context` args will be removed.
+    super().__init__(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/install_upgrade_operators/common_instancetypes_deployment/test_common_instancetypes_deployment.py::TestCommonInstancetypesDeployment::test_disable_common_instancetypes_removes_instancetype_resources
+FAILED tests/install_upgrade_operators/common_instancetypes_deployment/test_common_instancetypes_deployment.py::TestCommonInstancetypesDeployment::test_disable_common_instancetypes_removes_preference_resources
+FAILED tests/install_upgrade_operators/common_instancetypes_deployment/test_common_instancetypes_deployment.py::TestCommonInstancetypesDeployment::test_disabled_setting_persists_after_reconciliation
+===== 3 failed, 4 passed, 12 warnings, 1 quarantined in 343.65s (0:05:43) ======

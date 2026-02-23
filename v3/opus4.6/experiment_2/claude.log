@@ -1,0 +1,212 @@
+**Phase 1 complete.** The STD file was generated at:
+
+```
+tests/std/vnc_console_screenshot/std_cnv_61271.md
+```
+
+### Summary of what was generated:
+
+- **Feature:** VNC Console Screenshot via libvirt API (CNV-61271 / CNV-60117)
+- **Test file path (planned):** `tests/virt/cluster/vnc_screenshot/test_vnc_screenshot.py`
+- **2 test classes, 5 total tests:**
+
+| Class | Tests | Tier |
+|---|---|---|
+| `TestVncScreenshot` | 4 tests (screenshot without VNC, valid image, VNC stable during single screenshot, VNC stable during repeated screenshots) | Tier 1 (P0/P1) |
+| `TestVncScreenshotGuestCompatibility` | 1 parametrized test (fedora, rhel) | Tier 2 (P2) |
+
+All 6 STP scenarios are traced to test methods. Tests are stub-only (`pass` bodies) with comprehensive docstrings following the Preconditions/Steps/Expected format.
+**Phase 2 complete.** Here is the repository exploration summary:
+
+---
+
+## Repository Exploration Complete
+
+### Documentation Findings
+- Google Python Style Guide for docstrings and coding
+- **Absolute imports only** - never relative
+- **Named arguments** for function calls with >1 arg
+- **No single-letter variables**
+- Fixtures must be nouns (not verbs), single-action, with `yield` for cleanup
+- `@pytest.mark.usefixtures` when fixture return value is not used
+- No imports from `conftest.py` files (fixtures only)
+
+### Available Markers (from `pytest.ini`)
+- `tier3` - complex/hardware-specific tests
+- `polarion` - Polarion test IDs
+- `s390x`, `arm64`, `x86_64` - architecture markers
+- `gating` - tier2 gating tests
+- `virt`, `infrastructure` - team markers
+- `dependency` - inter-test dependencies
+- `conformance`, `smoke`, `ci`
+
+### Key Utilities for VNC/Screenshot Tests
+
+**`utilities/vnc_utils.py` - `VNCConnection` class:**
+- Context manager: `with VNCConnection(vm=vm) as child:`
+- Uses `virtctl vnc {vm.name} --proxy-only -n {vm.namespace}`
+- Returns a pexpect child process; waits for `'"port":'` output
+- Logs output to data collector directory
+
+**`utilities/data_collector.py` - `collect_vnc_screenshot_for_vms()`:**
+- Calls `run_virtctl_command(command=shlex.split(f"vnc screenshot {vm_name} -f {path}"))`
+- Used by `wait_for_running_vm()` on timeout to capture VM state
+
+**`utilities/infra.py` - `run_virtctl_command()`:**
+- Signature: `run_virtctl_command(command, virtctl_binary=VIRTCTL, namespace=None, check=False, verify_stderr=True)`
+- `command` is a **list** of args (not a string)
+- Returns `tuple: (True, out)` or `(False, err)`
+
+**`utilities/virt.py` - `VirtualMachineForTests`:**
+- Extended `VirtualMachine` with many params (image, namespace, os_flavor, run_strategy, etc.)
+- Context manager support (`with ... as vm:`)
+- Key params: `name`, `namespace`, `image`, `os_flavor`, `run_strategy`
+
+**`utilities/virt.py` - `wait_for_running_vm()`:**
+- Signature: `wait_for_running_vm(vm, wait_until_running_timeout=TIMEOUT_4MIN, wait_for_interfaces=True, check_ssh_connectivity=True, ssh_timeout=TIMEOUT_2MIN)`
+
+### Constants
+- Timeout values: `TIMEOUT_5SEC`, `TIMEOUT_30SEC`, `TIMEOUT_1MIN`, `TIMEOUT_2MIN`, `TIMEOUT_4MIN`, `TIMEOUT_5MIN`, `TIMEOUT_10MIN`
+- OS flavors: `OS_FLAVOR_FEDORA`, `OS_FLAVOR_RHEL`
+- Images: `Images.Fedora.LATEST_RELEASE_STR`, `Images.Rhel.RHEL10_REGISTRY_GUEST_IMG`
+- `VIRTCTL = "virtctl"`
+
+### Common Fixtures (from `tests/conftest.py`)
+- `admin_client` (session scope) - DynamicClient
+- `unprivileged_client` (session scope) - unprivileged DynamicClient
+- `namespace` (module scope) - creates isolated test namespace with auto-cleanup
+
+### Test Structure Conventions
+- File: `test_<feature>.py` in feature subdirectory
+- Conftest: `conftest.py` in same feature directory
+- Class: `class Test<FeatureName>:` with `@pytest.mark.usefixtures(...)`
+- Imports: absolute, specific functions (`from utilities.virt import VirtualMachineForTests`)
+
+### GRAVEYARD Lessons (2 entries)
+
+**1. HCO CRD field name uses PascalCase, not camelCase**
+- DO NOT trust STP field names verbatim - verify CRD schema on cluster
+- Kubernetes CRDs use case-sensitive fields and silently ignore unknown fields
+
+**2. HCO reconciliation completes before downstream resources are ready**
+- DO NOT assert immediately after HCO reconciliation completes
+- ALWAYS use `TimeoutSampler` to poll for expected resource state
+- HCO "ReconcileComplete=True" does NOT mean downstream resources exist yet
+
+**General lesson**: Always verify assumptions against the actual cluster state rather than trusting documentation at face value.
+**Phase 3 complete.** The following test files were generated:
+
+```
+tests/virt/cluster/vnc_screenshot/
+├── conftest.py          # Fixtures: vm_for_vnc_screenshot, vm_for_guest_compatibility
+├── test_vnc_screenshot.py  # 5 tests across 2 classes
+└── utils.py             # capture_vm_screenshot helper + PNG_HEADER constant
+```
+
+### Generated files summary:
+
+**`utils.py`** - Helper utility:
+- `capture_vm_screenshot(vm_name, vm_namespace, output_path)` - wraps `run_virtctl_command` with `vnc screenshot`
+- `PNG_HEADER` constant for PNG validation
+
+**`conftest.py`** - Two fixtures:
+- `vm_for_vnc_screenshot` (class-scoped) - Fedora VM using `fedora_vm_body` pattern
+- `vm_for_guest_compatibility` (class-scoped, parametrized) - creates Fedora or RHEL VM based on parameter
+
+**`test_vnc_screenshot.py`** - Two test classes, 5 tests:
+
+| Class | Test | What it verifies |
+|---|---|---|
+| `TestVncScreenshot` | `test_screenshot_without_active_vnc_connection` | Screenshot produces a file without VNC |
+| `TestVncScreenshot` | `test_screenshot_returns_valid_image` | Screenshot file has valid PNG header |
+| `TestVncScreenshot` | `test_vnc_remains_connected_during_screenshot` | VNC stays alive during screenshot |
+| `TestVncScreenshot` | `test_vnc_remains_connected_during_repeated_screenshots` | VNC stays alive during 5 consecutive screenshots |
+| `TestVncScreenshotGuestCompatibility` | `test_screenshot_succeeds_for_guest_os` | Screenshot works for fedora and rhel guests |
+**Phase 4 complete.** GRAVEYARD verification results:
+
+```
+GRAVEYARD Verification Summary
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Entries checked:  2
+Violations found: 0
+Fixes applied:    0
+
+Entry 1: HCO CRD PascalCase ........... NOT APPLICABLE (no HCO interaction)
+Entry 2: HCO reconciliation timing .... NOT APPLICABLE (no HCO interaction)
+```
+
+The generated VNC screenshot tests do not interact with HCO CRs or downstream resource lifecycle, so neither GRAVEYARD entry applies. No modifications were needed.
+**Phase 5 complete.** Pyright validation results:
+
+```
+Pyright Validation Summary
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+Iterations: 2
+Initial errors: 2
+Final errors:   0
+
+Files checked:
+  ✓ test_vnc_screenshot.py  (2 errors → 0)
+  ✓ conftest.py             (0 errors)
+  ✓ utils.py                (0 errors)
+
+Fixes applied:
+  1. test_vnc_screenshot.py:84 - Added `assert vnc_child is not None` after
+     VNCConnection context entry (VNCConnection.__enter__ can return None)
+  2. test_vnc_screenshot.py:108 - Same fix for repeated screenshots test
+```
+
+Both fixes add a fail-fast assertion that the VNC connection was established before attempting to call `isalive()`. This handles the fact that `VNCConnection.__enter__` has a `SpawnBase | None` return type.
+**Phase 6 complete.** All tests passed on the first run against the live cluster.
+
+```
+Test Execution Summary
+━━━━━━━━━━━━━━━━━━━━━━
+Iterations:      1 / 3 (max)
+Tests collected: 7 (6 feature tests + 1 quarantined audit log test)
+Tests passed:    6
+Tests failed:    0
+Quarantined:     1 (pre-existing CNV-76514 - unrelated)
+Duration:        9m 23s
+Fixes applied:   0
+GRAVEYARD updates: 0 (no new lessons)
+
+Results by test:
+  ✓ TestVncScreenshot::test_screenshot_without_active_vnc_connection
+  ✓ TestVncScreenshot::test_screenshot_returns_valid_image
+  ✓ TestVncScreenshot::test_vnc_remains_connected_during_screenshot
+  ✓ TestVncScreenshot::test_vnc_remains_connected_during_repeated_screenshots
+  ✓ TestVncScreenshotGuestCompatibility::test_screenshot_succeeds_for_guest_os[fedora]
+  ✓ TestVncScreenshotGuestCompatibility::test_screenshot_succeeds_for_guest_os[rhel]
+```
+
+---
+
+All 6 phases are now complete. Here is the full pipeline summary:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Test Generation Complete
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Input:  stps/2.md (STP: VNC Console Disconnect Fix)
+Output: tests/virt/cluster/vnc_screenshot/test_vnc_screenshot.py
+
+Phases:
+  Phase 1 - STD Generation .............. tests/std/vnc_console_screenshot/std_cnv_61271.md
+  Phase 2 - Repository Exploration ...... utilities, fixtures, conventions, GRAVEYARD
+  Phase 3 - Pytest Code Generation ...... 3 files, 149 lines
+  Phase 4 - GRAVEYARD Verification ...... 0 violations (2 entries checked)
+  Phase 5 - Pyright Validation .......... 0 errors (2 iterations, 2 fixes)
+  Phase 6 - Test Execution & Healing .... 6/6 passing (1 iteration, 0 fixes)
+
+Generated Files:
+  tests/virt/cluster/vnc_screenshot/test_vnc_screenshot.py
+  tests/virt/cluster/vnc_screenshot/conftest.py
+  tests/virt/cluster/vnc_screenshot/utils.py
+  tests/std/vnc_console_screenshot/std_cnv_61271.md
+
+Ready for Execution:
+  uv run pytest tests/virt/cluster/vnc_screenshot/test_vnc_screenshot.py
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```

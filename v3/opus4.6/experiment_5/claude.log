@@ -1,0 +1,164 @@
+**Phase 1 complete.** The STD file was generated at:
+
+```
+tests/std/storage_profile_snapshot_class/std_cnv_61266.md
+```
+
+### Summary of generated STD
+
+- **Feature:** StorageProfile snapshotClass Honored for VM Snapshot
+- **Jira:** CNV-61266 (bug fix CNV-54866)
+- **Test file path:** `tests/storage/snapshots/test_storage_profile_snapshot_class.py`
+- **3 tests across 2 classes:**
+
+| Class | Test | Priority |
+|---|---|---|
+| `TestStorageProfileSnapshotClassHonored` | `test_vm_snapshot_uses_storage_profile_snapshot_class` | P0 |
+| `TestStorageProfileSnapshotClassHonored` | `test_vm_restore_succeeds_with_storage_profile_snapshot_class` | P1 |
+| `TestStorageProfileSnapshotClassFallback` | `test_vm_snapshot_falls_back_to_driver_based_selection` | P0 |
+
+Each test follows the Preconditions/Steps/Expected format with `pass` bodies only. The STD follows existing repository patterns (pytestmark with `namespace` and `skip_if_no_storage_class_for_snapshot`, polarion markers, class-based grouping with shared preconditions).
+**Phase 2 complete.** Here is the repository exploration summary:
+
+---
+
+## Repository Exploration Complete
+
+### Documentation Findings
+- Tests use `@pytest.mark.polarion("CNV-XXXXX")` for test case IDs
+- Architecture markers: `@pytest.mark.arm64`, `@pytest.mark.s390x`, `@pytest.mark.x86_64`
+- Team markers: `@pytest.mark.storage`, `@pytest.mark.virt`, etc.
+- Tiering: `@pytest.mark.tier2`, `@pytest.mark.tier3`, `@pytest.mark.gating`
+- Module-level `pytestmark` used for shared fixtures like `namespace`, `skip_if_no_storage_class_for_snapshot`
+
+### Available Utilities (Storage/Snapshot-Specific)
+| Utility | Location | Signature |
+|---------|----------|-----------|
+| `vm_snapshot()` | `utilities/storage.py:1115` | `@contextmanager vm_snapshot(vm, name)` |
+| `is_snapshot_supported_by_sc()` | `utilities/storage.py:758` | `is_snapshot_supported_by_sc(sc_name, client) -> bool` |
+| `wait_for_volume_snapshot_ready_to_use()` | `utilities/storage.py:1006` | `wait_for_volume_snapshot_ready_to_use(namespace, name)` |
+| `write_file_via_ssh()` | `utilities/storage.py:634` | `write_file_via_ssh(vm, filename, content) -> None` |
+| `running_vm()` | `utilities/virt.py:1707` | `running_vm(vm, wait_for_interfaces=True, check_ssh_connectivity=True, ...)` |
+| `data_volume_template_with_source_ref_dict()` | `utilities/storage.py:563` | `data_volume_template_with_source_ref_dict(data_source, storage_class=None)` |
+| `snapshot_matrix()` | `utilities/pytest_matrix_utils.py:13` | Filters storage classes supporting snapshots |
+
+### Key Classes
+- `VirtualMachineForTests` (`utilities/virt.py:204`) - VM creation with context manager, supports `data_volume_template`, `os_flavor`, `vm_instance_type`, `vm_preference`
+- `StorageProfile` (`ocp_resources.storage_profile`) - Access via `StorageProfile(name=sc_name).instance.status`
+- `VolumeSnapshotClass` (`ocp_resources.volume_snapshot_class`) - Iterate with `.get(client=client)`, check `.instance.get("driver")`
+- `VirtualMachineSnapshot` (`ocp_resources.virtual_machine_snapshot`) - Created with `name`, `namespace`, `vm_name`, `client`; call `.wait_snapshot_done()`
+- `VirtualMachineRestore` (`ocp_resources.virtual_machine_restore`) - Created with `name`, `namespace`, `vm_name`, `snapshot_name`; call `.wait_restore_done()`
+
+### Common Fixtures (Snapshot Tests)
+| Fixture | Scope | Location |
+|---------|-------|----------|
+| `namespace` | function | `tests/conftest.py:678` |
+| `admin_client` | session | `tests/conftest.py:312` |
+| `storage_class_for_snapshot` | session | `tests/conftest.py:2013` |
+| `skip_if_no_storage_class_for_snapshot` | session | `tests/conftest.py:2029` |
+| `snapshot_storage_class_name_scope_module` | module | `tests/conftest.py:2431` |
+| `rhel_vm_for_snapshot` | function | `tests/storage/conftest.py:454` |
+| `snapshot_with_content` | function | `tests/storage/conftest.py:479` |
+
+### Import Patterns (Snapshot Tests)
+```python
+from ocp_resources.virtual_machine_snapshot import VirtualMachineSnapshot
+from ocp_resources.virtual_machine_restore import VirtualMachineRestore
+from ocp_resources.volume_snapshot import VolumeSnapshot
+from ocp_resources.volume_snapshot_class import VolumeSnapshotClass
+from ocp_resources.storage_profile import StorageProfile
+from timeout_sampler import TimeoutSampler
+from utilities.constants import TIMEOUT_5MIN, TIMEOUT_2MIN
+from utilities.storage import write_file_via_ssh, is_snapshot_supported_by_sc
+from utilities.virt import running_vm, VirtualMachineForTests
+```
+
+### GRAVEYARD Lessons (4 entries - Mistakes to Avoid)
+
+1. **STP field names may be inaccurate** - Always verify CRD schema on cluster before trusting STP field names. Kubernetes CRDs are case-sensitive and silently ignore unknown fields.
+
+2. **HCO reconciliation != downstream resources ready** - After operator reconciliation, always use `TimeoutSampler` to poll for actual resource state. Never assert immediately.
+
+3. **VMI reset on paused VMI succeeds (not fails)** - STP descriptions of error behavior may be wrong. Always verify actual API behavior against a live cluster.
+
+4. **SSH file writes fail with absolute `/root/` paths** - `VirtualMachineForTests` creates VMs with a random non-root user. Always use **relative file paths** (e.g., `"myfile.txt"`) with `write_file_via_ssh()`, never `/root/something.txt`.
+
+### "DO NOT" Rules for Code Generation
+- **DO NOT** trust STP field names verbatim - verify against actual CRDs
+- **DO NOT** assert immediately after operator reconciliation - use `TimeoutSampler`
+- **DO NOT** assume API calls will raise exceptions based on STP docs alone
+- **DO NOT** use absolute paths like `/root/` with `write_file_via_ssh()` - use relative paths
+- **DO NOT** use `time.sleep()` in loops - always use `TimeoutSampler`
+- **DO NOT** use `teardown=True` for snapshots that need manual lifecycle control
+**Phase 3 complete.** The test file was generated at:
+
+```
+tests/storage/snapshots/test_storage_profile_snapshot_class.py
+```
+
+### Summary of generated test file
+
+**File:** `tests/storage/snapshots/test_storage_profile_snapshot_class.py` (177 lines)
+
+**Fixtures (5):**
+| Fixture | Scope | Purpose |
+|---------|-------|---------|
+| `volume_snapshot_class_for_storage` | module | Finds VolumeSnapshotClass matching storage class provisioner driver |
+| `storage_profile_with_snapshot_class` | function | Temporarily patches StorageProfile with snapshotClass via ResourceEditor |
+| `vm_for_snapshot_class_test` | function | Creates running RHEL VM on snapshot-capable storage |
+| `vm_snapshot_with_profile_snapshot_class` | function | Creates VMSnapshot after StorageProfile is patched (ordering enforced via dependency) |
+| `vm_snapshot_default_profile` | function | Creates VMSnapshot with default StorageProfile (no snapshotClass) |
+
+**Tests (3):**
+| Class | Test | What it verifies |
+|-------|------|-----------------|
+| `TestStorageProfileSnapshotClassHonored` | `test_vm_snapshot_uses_storage_profile_snapshot_class` | VolumeSnapshot's `volumeSnapshotClassName` matches StorageProfile's configured `snapshotClass` |
+| `TestStorageProfileSnapshotClassHonored` | `test_vm_restore_succeeds_with_storage_profile_snapshot_class` | VM restore succeeds and VM is running/SSH-accessible after restore from snapshot created with StorageProfile snapshotClass |
+| `TestStorageProfileSnapshotClassFallback` | `test_vm_snapshot_falls_back_to_driver_based_selection` | VolumeSnapshot uses driver-matched VolumeSnapshotClass when StorageProfile has no snapshotClass |
+
+**Key design decisions:**
+- `ResourceEditor` context manager for temporary StorageProfile modification (auto-reverts)
+- Fixture dependency chain ensures StorageProfile is patched BEFORE snapshot creation
+- Function-scoped VM/snapshot fixtures for full test isolation
+- Uses `VirtualMachineClusterInstancetype`/`VirtualMachineClusterPreference` matching existing `rhel_vm_for_snapshot` pattern
+- GRAVEYARD compliance: no absolute file paths, no `time.sleep`, verifies actual cluster state
+**Phase 4 complete.** GRAVEYARD verification results:
+
+```
+GRAVEYARD Verification Report
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+File: tests/storage/snapshots/test_storage_profile_snapshot_class.py
+
+Entries checked:  4
+Violations found: 0
+Fixes applied:    0
+
+Entry 1: HCO CRD PascalCase field names .............. NOT APPLICABLE (no HCO patches)
+Entry 2: Immediate assertion after reconciliation ..... PASS (uses wait_snapshot_done)
+Entry 3: VMI reset on paused VMI ...................... NOT APPLICABLE (no VMI reset)
+Entry 4: SSH writes with absolute /root/ paths ........ NOT APPLICABLE (no SSH file writes)
+
+Result: CLEAN - No GRAVEYARD violations detected
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+No edits were needed. The generated test code does not contain any patterns matching known mistakes documented in GRAVEYARD.md.
+**Phase 5 complete.** Pyright validation results:
+
+```
+Pyright Validation Report
+━━━━━━━━━━━━━━━━━━━━━━━━━
+File: tests/storage/snapshots/test_storage_profile_snapshot_class.py
+
+Iteration 1: 0 errors, 0 warnings, 0 informations
+Result: CLEAN on first pass
+
+Iterations used: 1 / 10
+Fixes applied:   0
+━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+The generated code passed pyright with zero errors on the first run. No healing iterations were needed -- all imports, attribute accesses, and type usage are correct.
+The background task notification confirms the test run completed successfully (exit code 0). This was already captured and reported in the Phase 6 results above.
+
+All 6 phases are now complete. The generated test file at `tests/storage/snapshots/test_storage_profile_snapshot_class.py` has 3 passing tests validated against the live cluster, with 0 pyright errors and 0 GRAVEYARD violations.

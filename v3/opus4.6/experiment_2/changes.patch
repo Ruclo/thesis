@@ -1,0 +1,558 @@
+diff --git a/GRAVEYARD.md b/GRAVEYARD.md
+new file mode 100644
+index 0000000..69dbcc7
+--- /dev/null
++++ b/GRAVEYARD.md
+@@ -0,0 +1,91 @@
++# GRAVEYARD - Test Generation Lessons Learned
++
++This file documents mistakes made during automated test generation and how to avoid them.
++It is read during the exploration phase to prevent repeating past errors.
++
++---
++
++## Entry: HCO CRD field name uses PascalCase, not camelCase
++
++**Category**: ResourceError
++**Date**: 2026-02-22
++**Test**: tests/install_upgrade_operators/common_instancetypes_deployment/test_common_instancetypes_deployment.py::TestCommonInstancetypesDeployment::test_disable_common_instancetypes_removes_instancetype_resources
++
++### What Went Wrong
++The STP described the HCO field as `commonInstancetypesDeployment` (camelCase) with string values `"Enabled"` and `"Disabled"`. The actual CRD field is `CommonInstancetypesDeployment` (PascalCase) with an object value containing `{"enabled": <bool>}`. Kubernetes silently ignored the incorrectly-cased field, so HCO reconciled successfully but the setting had no effect.
++
++### Wrong Code
++```python
++COMMON_INSTANCETYPES_DEPLOYMENT_SPEC_KEY = "commonInstancetypesDeployment"
++DEPLOYMENT_DISABLED = "Disabled"
++DEPLOYMENT_ENABLED = "Enabled"
++
++# Patch: {"spec": {"commonInstancetypesDeployment": "Disabled"}}
++```
++
++### Correct Code
++```python
++COMMON_INSTANCETYPES_DEPLOYMENT_SPEC_KEY = "CommonInstancetypesDeployment"
++DEPLOYMENT_DISABLED = {"enabled": False}
++DEPLOYMENT_ENABLED = {"enabled": True}
++
++# Patch: {"spec": {"CommonInstancetypesDeployment": {"enabled": False}}}
++```
++
++### Lesson Learned
++STP documents may describe API fields inaccurately. Always verify the actual CRD schema on the cluster using `kubectl get crd <crd-name> -o jsonpath='{.spec.versions[0].schema.openAPIV3Schema.properties.spec.properties.<FieldName>}'` before generating test code. Kubernetes CRDs use case-sensitive field names and silently ignore unknown fields.
++
++### How to Avoid
++Before writing any HCO spec patch, verify the exact field name and value type from the CRD schema using `kubectl get crd hyperconvergeds.hco.kubevirt.io -o jsonpath='{.spec.versions[0].schema.openAPIV3Schema.properties.spec.properties}'`. Never trust STP field names verbatim.
++
++---
++
++## Entry: HCO reconciliation completes before downstream resources are fully created or deleted
++
++**Category**: AssertionError
++**Date**: 2026-02-22
++**Test**: tests/install_upgrade_operators/common_instancetypes_deployment/test_common_instancetypes_deployment.py::TestCommonInstancetypesDeployment::test_enable_common_instancetypes_deploys_preference_resources
++
++### What Went Wrong
++After modifying the HCO CR `CommonInstancetypesDeployment` field and waiting for HCO conditions to stabilize (Available=True, Progressing=False, ReconcileComplete=True), the downstream VirtualMachineClusterInstancetype and VirtualMachineClusterPreference resources had not yet been fully created or deleted. The HCO operator reports reconciliation complete before the downstream controller (common-instancetypes) finishes processing.
++
++### Wrong Code
++```python
++# Immediate assertion after HCO reconciliation
++common_preferences = list(
++    VirtualMachineClusterPreference.get(
++        client=admin_client,
++        label_selector=COMMON_INSTANCETYPE_VENDOR_LABEL,
++    )
++)
++assert common_preferences, "No common preferences found after re-enabling"
++```
++
++### Correct Code
++```python
++# Poll with TimeoutSampler for async resource creation/deletion
++from timeout_sampler import TimeoutSampler
++from utilities.constants import TIMEOUT_2MIN
++
++for sample in TimeoutSampler(
++    wait_timeout=TIMEOUT_2MIN,
++    sleep=5,
++    func=lambda: list(
++        VirtualMachineClusterPreference.get(
++            client=admin_client,
++            label_selector=COMMON_INSTANCETYPE_VENDOR_LABEL,
++        )
++    ),
++):
++    if sample:  # For creation: wait until resources exist
++        break
++    # For deletion: use `if not sample: break`
++```
++
++### Lesson Learned
++HCO reconciliation completing does NOT mean downstream resources are immediately available. The common-instancetypes controller processes changes asynchronously. Always use `TimeoutSampler` to poll for the actual expected resource state rather than asserting immediately after HCO reconciliation.
++
++### How to Avoid
++When testing resource creation or deletion triggered by HCO CR changes, always use `TimeoutSampler` to poll for the expected resource state. Never assume resources are immediately available after `wait_for_hco_conditions` returns. This applies to any HCO-managed downstream resources (instancetypes, preferences, templates, etc.).
++
++---
+diff --git a/tests/std/vnc_console_screenshot/std_cnv_61271.md b/tests/std/vnc_console_screenshot/std_cnv_61271.md
+new file mode 100644
+index 0000000..59a25a6
+--- /dev/null
++++ b/tests/std/vnc_console_screenshot/std_cnv_61271.md
+@@ -0,0 +1,191 @@
++# Software Test Description (STD)
++
++## Feature: VNC Console Screenshot via libvirt API
++
++**STP Reference:** [stps/2.md](/home/fedora/thesis/stps/2.md)
++**Jira ID:** [CNV-61271](https://issues.redhat.com/browse/CNV-61271)
++**Bug Fix:** [CNV-60117](https://issues.redhat.com/browse/CNV-60117)
++**PR:** [kubevirt/kubevirt#15238](https://github.com/kubevirt/kubevirt/pull/15238)
++**Generated:** 2026-02-22
++
++---
++
++## Summary
++
++This STD covers tests for the fix that changes the VM screenshot backend from VNC to libvirt's `virDomainScreenshot` API. The original bug caused VNC console disconnections when the VM overview thumbnail and full-screen VNC competed for the same VNC connection. By decoupling screenshots from VNC, both can operate concurrently without interference.
++
++Tests verify:
++- Screenshot API functions independently of VNC connections
++- Screenshot produces valid image output
++- Active VNC connections remain stable during concurrent screenshot operations
++- Functionality works across different guest OS types
++
++---
++
++## Test Files
++
++### File: `tests/virt/cluster/vnc_screenshot/test_vnc_screenshot.py`
++
++```python
++"""
++VNC Console Screenshot Tests
++
++STP Reference: stps/2.md
++Jira: CNV-61271 / CNV-60117
++
++Tests verifying that the VM screenshot endpoint uses libvirt's virDomainScreenshot
++API instead of VNC, allowing screenshots and VNC connections to coexist without
++interference.
++"""
++
++import pytest
++
++
++class TestVncScreenshot:
++    """
++    Tests for VM screenshot functionality via libvirt API.
++
++    Markers:
++        - tier3
++
++    Preconditions:
++        - Running Fedora VM with VNC graphics device
++        - VM is SSH accessible
++    """
++
++    def test_screenshot_without_active_vnc_connection(self):
++        """
++        Test that a VM screenshot can be captured without any active VNC connection.
++
++        Steps:
++            1. Capture a screenshot of the VM using virtctl vnc screenshot
++
++        Expected:
++            - Screenshot command succeeds and produces a file
++        """
++        pass
++
++    def test_screenshot_returns_valid_image(self):
++        """
++        Test that the captured screenshot is a valid PNG image.
++
++        Steps:
++            1. Capture a screenshot of the VM using virtctl vnc screenshot
++            2. Read the output file and check its header bytes
++
++        Expected:
++            - Screenshot file has a valid PNG header
++        """
++        pass
++
++    def test_vnc_remains_connected_during_screenshot(self):
++        """
++        Test that an active VNC connection is not disrupted when a screenshot
++        is captured concurrently.
++
++        Steps:
++            1. Establish a VNC connection to the VM
++            2. Capture a screenshot of the VM while VNC is connected
++            3. Verify the VNC connection is still active
++
++        Expected:
++            - VNC connection is still active after screenshot capture
++        """
++        pass
++
++    def test_vnc_remains_connected_during_repeated_screenshots(self):
++        """
++        Test that an active VNC connection remains stable when multiple
++        screenshots are captured in succession.
++
++        Steps:
++            1. Establish a VNC connection to the VM
++            2. Capture 5 consecutive screenshots of the VM
++            3. Verify the VNC connection is still active after all screenshots
++
++        Expected:
++            - VNC connection is still active after all screenshot captures
++        """
++        pass
++
++
++class TestVncScreenshotGuestCompatibility:
++    """
++    Tests for VM screenshot functionality across different guest operating systems.
++
++    Markers:
++        - tier3
++
++    Parametrize:
++        - guest_os_image: [fedora, rhel]
++
++    Preconditions:
++        - Running VM with the parametrized guest OS image
++        - VM has VNC graphics device configured
++    """
++
++    def test_screenshot_succeeds_for_guest_os(self):
++        """
++        Test that a screenshot can be captured for a VM running the given guest OS.
++
++        Steps:
++            1. Capture a screenshot of the VM using virtctl vnc screenshot
++
++        Expected:
++            - Screenshot command succeeds and produces a valid image file
++        """
++        pass
++```
++
++---
++
++## Test Coverage Summary
++
++| Test File | Test Class | Test Count | Priority | Tier |
++| :--- | :--- | :--- | :--- | :--- |
++| `test_vnc_screenshot.py` | `TestVncScreenshot` | 4 | P0/P1 | Tier 1 |
++| `test_vnc_screenshot.py` | `TestVncScreenshotGuestCompatibility` | 1 (parametrized x2) | P2 | Tier 2 |
++
++---
++
++## STP Scenario Traceability
++
++| STP Scenario | Test Method | Priority |
++| :--- | :--- | :--- |
++| Scenario 1: VNC Stability with Concurrent Thumbnail | `test_vnc_remains_connected_during_screenshot` | P0 |
++| Scenario 2: Screenshot API Without VNC Connection | `test_screenshot_without_active_vnc_connection` | P0 |
++| Scenario 3: Screenshot Quality Verification | `test_screenshot_returns_valid_image` | P1 |
++| Scenario 4: Thumbnail Updates Without VNC Impact | `test_vnc_remains_connected_during_repeated_screenshots` | P0 |
++| Scenario 5: Extended Dual-Tab Usage | Covered by `test_vnc_remains_connected_during_repeated_screenshots` | P1 |
++| Scenario 6: Multiple Guest OS Types | `test_screenshot_succeeds_for_guest_os` (parametrized) | P2 |
++
++---
++
++## Design Decisions
++
++1. **UI scenarios mapped to backend tests**: STP scenarios reference browser tabs and thumbnails. Since this test framework operates at the API/CLI level, tests exercise the same backend paths (`virtctl vnc screenshot` and `VNCConnection`) that the UI consumes.
++
++2. **Screenshot via virtctl**: The repository already uses `virtctl vnc screenshot` in `utilities/data_collector.py`. Tests reuse this mechanism rather than calling libvirt directly, matching the actual user-facing command path.
++
++3. **VNC stability verified via VNCConnection**: The existing `utilities/vnc_utils.VNCConnection` context manager provides a reliable way to establish and verify VNC connections, used in the same way as `tests/infrastructure/vm_console_proxy/`.
++
++4. **Windows guest excluded from parametrization**: The STP lists Windows as a Tier 2/P2 guest OS, but Windows VM provisioning is significantly more complex and may not be available in all test environments. Fedora and RHEL provide sufficient coverage for the screenshot API path.
++
++5. **Scenario 5 merged into Scenario 4 test**: Extended dual-tab usage (30-minute stability) is impractical for automated CI. The repeated-screenshots test covers the same concern (concurrent VNC + multiple screenshots) in a CI-friendly manner.
++
++---
++
++## Checklist
++
++- [x] STP link in module docstring
++- [x] Tests grouped in classes with shared preconditions
++- [x] Each test has: description, Steps, Expected
++- [x] Each test verifies ONE thing with ONE Expected
++- [x] No negative tests required (all scenarios verify positive behavior)
++- [x] Test methods contain only `pass`
++- [x] Appropriate pytest markers documented
++- [x] Parametrization documented where needed
++- [x] All files in single markdown output
++- [x] Coverage summary table included
++- [x] STP scenario traceability table included
++- [x] Output saved to `tests/std/vnc_console_screenshot/std_cnv_61271.md`
+diff --git a/tests/virt/cluster/vnc_screenshot/conftest.py b/tests/virt/cluster/vnc_screenshot/conftest.py
+new file mode 100644
+index 0000000..957bb5e
+--- /dev/null
++++ b/tests/virt/cluster/vnc_screenshot/conftest.py
+@@ -0,0 +1,70 @@
++"""Fixtures for VNC console screenshot tests."""
++
++import pytest
++from ocp_resources.virtual_machine import VirtualMachine
++from ocp_resources.virtual_machine_cluster_instancetype import VirtualMachineClusterInstancetype
++from ocp_resources.virtual_machine_cluster_preference import VirtualMachineClusterPreference
++
++from utilities.constants import (
++    Images,
++    OS_FLAVOR_RHEL,
++    RHEL10_PREFERENCE,
++    U1_SMALL,
++)
++from utilities.virt import VirtualMachineForTests, fedora_vm_body, running_vm
++
++VNC_SCREENSHOT_PREFIX = "vnc-screenshot"
++
++
++@pytest.fixture(scope="class")
++def vm_for_vnc_screenshot(unprivileged_client, namespace):
++    vm_name = f"fedora-{VNC_SCREENSHOT_PREFIX}"
++    with VirtualMachineForTests(
++        name=vm_name,
++        namespace=namespace.name,
++        body=fedora_vm_body(name=vm_name),
++        client=unprivileged_client,
++    ) as vm:
++        running_vm(vm=vm)
++        yield vm
++
++
++@pytest.fixture(
++    scope="class",
++    params=[
++        pytest.param("fedora", id="fedora"),
++        pytest.param("rhel", id="rhel"),
++    ],
++)
++def vm_for_guest_compatibility(request, unprivileged_client, namespace):
++    guest_os = request.param
++    vm_name = f"{guest_os}-{VNC_SCREENSHOT_PREFIX}"
++
++    if guest_os == "fedora":
++        vm = VirtualMachineForTests(
++            name=vm_name,
++            namespace=namespace.name,
++            body=fedora_vm_body(name=vm_name),
++            client=unprivileged_client,
++        )
++    else:
++        vm = VirtualMachineForTests(
++            name=vm_name,
++            namespace=namespace.name,
++            client=unprivileged_client,
++            image=Images.Rhel.RHEL10_REGISTRY_GUEST_IMG,
++            os_flavor=OS_FLAVOR_RHEL,
++            run_strategy=VirtualMachine.RunStrategy.ALWAYS,
++            vm_instance_type=VirtualMachineClusterInstancetype(
++                name=U1_SMALL,
++                client=unprivileged_client,
++            ),
++            vm_preference=VirtualMachineClusterPreference(
++                name=RHEL10_PREFERENCE,
++                client=unprivileged_client,
++            ),
++        )
++
++    with vm:
++        running_vm(vm=vm)
++        yield vm
+diff --git a/tests/virt/cluster/vnc_screenshot/test_vnc_screenshot.py b/tests/virt/cluster/vnc_screenshot/test_vnc_screenshot.py
+new file mode 100644
+index 0000000..ff0b8a5
+--- /dev/null
++++ b/tests/virt/cluster/vnc_screenshot/test_vnc_screenshot.py
+@@ -0,0 +1,150 @@
++"""
++VNC Console Screenshot Tests
++
++STP Reference: stps/2.md
++Jira: CNV-61271 / CNV-60117
++
++Tests verifying that the VM screenshot endpoint uses libvirt's virDomainScreenshot
++API instead of VNC, allowing screenshots and VNC connections to coexist without
++interference.
++"""
++
++import logging
++from pathlib import Path
++
++import pytest
++
++from tests.virt.cluster.vnc_screenshot.utils import PNG_HEADER, capture_vm_screenshot
++from utilities.vnc_utils import VNCConnection
++
++LOGGER = logging.getLogger(__name__)
++
++SCREENSHOT_REPEAT_COUNT = 5
++
++
++@pytest.mark.tier3
++class TestVncScreenshot:
++    """Tests for VM screenshot functionality via libvirt API."""
++
++    def test_screenshot_without_active_vnc_connection(self, tmp_path, vm_for_vnc_screenshot):
++        """
++        Test that a VM screenshot can be captured without any active VNC connection.
++
++        Steps:
++            1. Capture a screenshot of the VM using virtctl vnc screenshot
++
++        Expected:
++            - Screenshot command succeeds and produces a file
++        """
++        screenshot_path = str(tmp_path / f"{vm_for_vnc_screenshot.name}.png")
++        LOGGER.info(f"Capturing screenshot of VM {vm_for_vnc_screenshot.name} without active VNC connection")
++        capture_vm_screenshot(
++            vm_name=vm_for_vnc_screenshot.name,
++            vm_namespace=vm_for_vnc_screenshot.namespace,
++            output_path=screenshot_path,
++        )
++        assert Path(screenshot_path).exists(), f"Screenshot file was not created at {screenshot_path}"
++
++    def test_screenshot_returns_valid_image(self, tmp_path, vm_for_vnc_screenshot):
++        """
++        Test that the captured screenshot is a valid PNG image.
++
++        Steps:
++            1. Capture a screenshot of the VM using virtctl vnc screenshot
++            2. Read the output file and check its header bytes
++
++        Expected:
++            - Screenshot file has a valid PNG header
++        """
++        screenshot_path = str(tmp_path / f"{vm_for_vnc_screenshot.name}.png")
++        LOGGER.info(f"Capturing screenshot for PNG validation from VM {vm_for_vnc_screenshot.name}")
++        capture_vm_screenshot(
++            vm_name=vm_for_vnc_screenshot.name,
++            vm_namespace=vm_for_vnc_screenshot.namespace,
++            output_path=screenshot_path,
++        )
++        with open(screenshot_path, "rb") as screenshot_file:
++            header = screenshot_file.read(len(PNG_HEADER))
++        assert header == PNG_HEADER, f"Screenshot file does not have valid PNG header: got {header!r}"
++
++    def test_vnc_remains_connected_during_screenshot(self, tmp_path, vm_for_vnc_screenshot):
++        """
++        Test that an active VNC connection is not disrupted when a screenshot
++        is captured concurrently.
++
++        Steps:
++            1. Establish a VNC connection to the VM
++            2. Capture a screenshot of the VM while VNC is connected
++            3. Verify the VNC connection is still active
++
++        Expected:
++            - VNC connection is still active after screenshot capture
++        """
++        screenshot_path = str(tmp_path / f"{vm_for_vnc_screenshot.name}.png")
++        with VNCConnection(vm=vm_for_vnc_screenshot) as vnc_child:
++            assert vnc_child is not None, "VNC connection failed to establish"
++            LOGGER.info(f"VNC connection established to VM {vm_for_vnc_screenshot.name}")
++            capture_vm_screenshot(
++                vm_name=vm_for_vnc_screenshot.name,
++                vm_namespace=vm_for_vnc_screenshot.namespace,
++                output_path=screenshot_path,
++            )
++            LOGGER.info("Screenshot captured, verifying VNC connection is still active")
++            assert vnc_child.isalive(), "VNC connection was disconnected during screenshot capture"
++
++    def test_vnc_remains_connected_during_repeated_screenshots(self, tmp_path, vm_for_vnc_screenshot):
++        """
++        Test that an active VNC connection remains stable when multiple
++        screenshots are captured in succession.
++
++        Steps:
++            1. Establish a VNC connection to the VM
++            2. Capture 5 consecutive screenshots of the VM
++            3. Verify the VNC connection is still active after all screenshots
++
++        Expected:
++            - VNC connection is still active after all screenshot captures
++        """
++        with VNCConnection(vm=vm_for_vnc_screenshot) as vnc_child:
++            assert vnc_child is not None, "VNC connection failed to establish"
++            LOGGER.info(f"VNC connection established to VM {vm_for_vnc_screenshot.name}")
++            for screenshot_index in range(SCREENSHOT_REPEAT_COUNT):
++                screenshot_path = str(tmp_path / f"{vm_for_vnc_screenshot.name}-{screenshot_index}.png")
++                LOGGER.info(f"Capturing screenshot {screenshot_index + 1}/{SCREENSHOT_REPEAT_COUNT}")
++                capture_vm_screenshot(
++                    vm_name=vm_for_vnc_screenshot.name,
++                    vm_namespace=vm_for_vnc_screenshot.namespace,
++                    output_path=screenshot_path,
++                )
++            LOGGER.info("All screenshots captured, verifying VNC connection is still active")
++            assert vnc_child.isalive(), (
++                f"VNC connection was disconnected after {SCREENSHOT_REPEAT_COUNT} screenshot captures"
++            )
++
++
++@pytest.mark.tier3
++class TestVncScreenshotGuestCompatibility:
++    """Tests for VM screenshot functionality across different guest operating systems."""
++
++    def test_screenshot_succeeds_for_guest_os(self, tmp_path, vm_for_guest_compatibility):
++        """
++        Test that a screenshot can be captured for a VM running the given guest OS.
++
++        Steps:
++            1. Capture a screenshot of the VM using virtctl vnc screenshot
++
++        Expected:
++            - Screenshot command succeeds and produces a valid image file
++        """
++        screenshot_path = str(tmp_path / f"{vm_for_guest_compatibility.name}.png")
++        LOGGER.info(f"Capturing screenshot of VM {vm_for_guest_compatibility.name}")
++        capture_vm_screenshot(
++            vm_name=vm_for_guest_compatibility.name,
++            vm_namespace=vm_for_guest_compatibility.namespace,
++            output_path=screenshot_path,
++        )
++        screenshot_file_path = Path(screenshot_path)
++        assert screenshot_file_path.exists(), f"Screenshot file was not created at {screenshot_path}"
++        with open(screenshot_path, "rb") as screenshot_file:
++            header = screenshot_file.read(len(PNG_HEADER))
++        assert header == PNG_HEADER, f"Screenshot file does not have valid PNG header: got {header!r}"
+diff --git a/tests/virt/cluster/vnc_screenshot/utils.py b/tests/virt/cluster/vnc_screenshot/utils.py
+new file mode 100644
+index 0000000..702ce21
+--- /dev/null
++++ b/tests/virt/cluster/vnc_screenshot/utils.py
+@@ -0,0 +1,26 @@
++"""VNC screenshot test utilities."""
++
++import shlex
++
++from utilities.infra import run_virtctl_command
++
++PNG_HEADER = b"\x89PNG\r\n\x1a\n"
++
++
++def capture_vm_screenshot(vm_name: str, vm_namespace: str, output_path: str) -> None:
++    """Capture a VM screenshot using the virtctl vnc screenshot command.
++
++    Args:
++        vm_name: Name of the virtual machine.
++        vm_namespace: Namespace of the virtual machine.
++        output_path: File path where the screenshot PNG will be saved.
++
++    Raises:
++        CalledProcessError: If the virtctl screenshot command fails.
++    """
++    run_virtctl_command(
++        command=shlex.split(f"vnc screenshot {vm_name} -f {output_path}"),
++        namespace=vm_namespace,
++        check=True,
++        verify_stderr=False,
++    )

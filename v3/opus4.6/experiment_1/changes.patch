@@ -1,0 +1,716 @@
+diff --git a/GRAVEYARD.md b/GRAVEYARD.md
+new file mode 100644
+index 0000000..69dbcc7
+--- /dev/null
++++ b/GRAVEYARD.md
+@@ -0,0 +1,91 @@
++# GRAVEYARD - Test Generation Lessons Learned
++
++This file documents mistakes made during automated test generation and how to avoid them.
++It is read during the exploration phase to prevent repeating past errors.
++
++---
++
++## Entry: HCO CRD field name uses PascalCase, not camelCase
++
++**Category**: ResourceError
++**Date**: 2026-02-22
++**Test**: tests/install_upgrade_operators/common_instancetypes_deployment/test_common_instancetypes_deployment.py::TestCommonInstancetypesDeployment::test_disable_common_instancetypes_removes_instancetype_resources
++
++### What Went Wrong
++The STP described the HCO field as `commonInstancetypesDeployment` (camelCase) with string values `"Enabled"` and `"Disabled"`. The actual CRD field is `CommonInstancetypesDeployment` (PascalCase) with an object value containing `{"enabled": <bool>}`. Kubernetes silently ignored the incorrectly-cased field, so HCO reconciled successfully but the setting had no effect.
++
++### Wrong Code
++```python
++COMMON_INSTANCETYPES_DEPLOYMENT_SPEC_KEY = "commonInstancetypesDeployment"
++DEPLOYMENT_DISABLED = "Disabled"
++DEPLOYMENT_ENABLED = "Enabled"
++
++# Patch: {"spec": {"commonInstancetypesDeployment": "Disabled"}}
++```
++
++### Correct Code
++```python
++COMMON_INSTANCETYPES_DEPLOYMENT_SPEC_KEY = "CommonInstancetypesDeployment"
++DEPLOYMENT_DISABLED = {"enabled": False}
++DEPLOYMENT_ENABLED = {"enabled": True}
++
++# Patch: {"spec": {"CommonInstancetypesDeployment": {"enabled": False}}}
++```
++
++### Lesson Learned
++STP documents may describe API fields inaccurately. Always verify the actual CRD schema on the cluster using `kubectl get crd <crd-name> -o jsonpath='{.spec.versions[0].schema.openAPIV3Schema.properties.spec.properties.<FieldName>}'` before generating test code. Kubernetes CRDs use case-sensitive field names and silently ignore unknown fields.
++
++### How to Avoid
++Before writing any HCO spec patch, verify the exact field name and value type from the CRD schema using `kubectl get crd hyperconvergeds.hco.kubevirt.io -o jsonpath='{.spec.versions[0].schema.openAPIV3Schema.properties.spec.properties}'`. Never trust STP field names verbatim.
++
++---
++
++## Entry: HCO reconciliation completes before downstream resources are fully created or deleted
++
++**Category**: AssertionError
++**Date**: 2026-02-22
++**Test**: tests/install_upgrade_operators/common_instancetypes_deployment/test_common_instancetypes_deployment.py::TestCommonInstancetypesDeployment::test_enable_common_instancetypes_deploys_preference_resources
++
++### What Went Wrong
++After modifying the HCO CR `CommonInstancetypesDeployment` field and waiting for HCO conditions to stabilize (Available=True, Progressing=False, ReconcileComplete=True), the downstream VirtualMachineClusterInstancetype and VirtualMachineClusterPreference resources had not yet been fully created or deleted. The HCO operator reports reconciliation complete before the downstream controller (common-instancetypes) finishes processing.
++
++### Wrong Code
++```python
++# Immediate assertion after HCO reconciliation
++common_preferences = list(
++    VirtualMachineClusterPreference.get(
++        client=admin_client,
++        label_selector=COMMON_INSTANCETYPE_VENDOR_LABEL,
++    )
++)
++assert common_preferences, "No common preferences found after re-enabling"
++```
++
++### Correct Code
++```python
++# Poll with TimeoutSampler for async resource creation/deletion
++from timeout_sampler import TimeoutSampler
++from utilities.constants import TIMEOUT_2MIN
++
++for sample in TimeoutSampler(
++    wait_timeout=TIMEOUT_2MIN,
++    sleep=5,
++    func=lambda: list(
++        VirtualMachineClusterPreference.get(
++            client=admin_client,
++            label_selector=COMMON_INSTANCETYPE_VENDOR_LABEL,
++        )
++    ),
++):
++    if sample:  # For creation: wait until resources exist
++        break
++    # For deletion: use `if not sample: break`
++```
++
++### Lesson Learned
++HCO reconciliation completing does NOT mean downstream resources are immediately available. The common-instancetypes controller processes changes asynchronously. Always use `TimeoutSampler` to poll for the actual expected resource state rather than asserting immediately after HCO reconciliation.
++
++### How to Avoid
++When testing resource creation or deletion triggered by HCO CR changes, always use `TimeoutSampler` to poll for the expected resource state. Never assume resources are immediately available after `wait_for_hco_conditions` returns. This applies to any HCO-managed downstream resources (instancetypes, preferences, templates, etc.).
++
++---
+diff --git a/tests/install_upgrade_operators/common_instancetypes_deployment/__init__.py b/tests/install_upgrade_operators/common_instancetypes_deployment/__init__.py
+new file mode 100644
+index 0000000..e69de29
+diff --git a/tests/install_upgrade_operators/common_instancetypes_deployment/conftest.py b/tests/install_upgrade_operators/common_instancetypes_deployment/conftest.py
+new file mode 100644
+index 0000000..0d886ee
+--- /dev/null
++++ b/tests/install_upgrade_operators/common_instancetypes_deployment/conftest.py
+@@ -0,0 +1,105 @@
++import logging
++
++import pytest
++
++from utilities.hco import ResourceEditorValidateHCOReconcile
++
++LOGGER = logging.getLogger(__name__)
++
++COMMON_INSTANCETYPES_DEPLOYMENT_SPEC_KEY = "CommonInstancetypesDeployment"
++DEPLOYMENT_DISABLED = {"enabled": False}
++DEPLOYMENT_ENABLED = {"enabled": True}
++RECONCILE_TRIGGER_ANNOTATION_KEY = "test.cnv.io/reconcile-trigger"
++
++
++@pytest.fixture()
++def disabled_common_instancetypes_deployment(
++    admin_client,
++    hco_namespace,
++    hyperconverged_resource_scope_function,
++):
++    """HCO CR with CommonInstancetypesDeployment.enabled set to false."""
++    LOGGER.info("Setting CommonInstancetypesDeployment.enabled to false in HCO CR")
++    with ResourceEditorValidateHCOReconcile(
++        patches={
++            hyperconverged_resource_scope_function: {
++                "spec": {COMMON_INSTANCETYPES_DEPLOYMENT_SPEC_KEY: DEPLOYMENT_DISABLED}
++            }
++        },
++        wait_for_reconcile_post_update=True,
++        admin_client=admin_client,
++        hco_namespace=hco_namespace.name,
++    ):
++        yield
++
++
++@pytest.fixture()
++def reenabled_common_instancetypes_deployment(
++    admin_client,
++    hco_namespace,
++    hyperconverged_resource_scope_function,
++):
++    """HCO CR with CommonInstancetypesDeployment toggled from disabled to enabled."""
++    LOGGER.info("Setting CommonInstancetypesDeployment.enabled to false before re-enabling")
++    disabled_editor = ResourceEditorValidateHCOReconcile(
++        patches={
++            hyperconverged_resource_scope_function: {
++                "spec": {COMMON_INSTANCETYPES_DEPLOYMENT_SPEC_KEY: DEPLOYMENT_DISABLED}
++            }
++        },
++        wait_for_reconcile_post_update=True,
++        admin_client=admin_client,
++        hco_namespace=hco_namespace.name,
++    )
++    disabled_editor.update(backup_resources=True)
++
++    LOGGER.info("Setting CommonInstancetypesDeployment.enabled to true in HCO CR")
++    enabled_editor = ResourceEditorValidateHCOReconcile(
++        patches={
++            hyperconverged_resource_scope_function: {
++                "spec": {COMMON_INSTANCETYPES_DEPLOYMENT_SPEC_KEY: DEPLOYMENT_ENABLED}
++            }
++        },
++        wait_for_reconcile_post_update=True,
++        admin_client=admin_client,
++        hco_namespace=hco_namespace.name,
++    )
++    enabled_editor.update(backup_resources=True)
++
++    yield
++
++    LOGGER.info("Restoring HCO CR to original state")
++    enabled_editor.restore()
++    disabled_editor.restore()
++
++
++@pytest.fixture()
++def disabled_common_instancetypes_deployment_after_reconcile(
++    admin_client,
++    hco_namespace,
++    hyperconverged_resource_scope_function,
++):
++    """HCO CR with CommonInstancetypesDeployment.enabled set to false, verified after additional reconciliation."""
++    LOGGER.info("Setting CommonInstancetypesDeployment.enabled to false in HCO CR")
++    with ResourceEditorValidateHCOReconcile(
++        patches={
++            hyperconverged_resource_scope_function: {
++                "spec": {COMMON_INSTANCETYPES_DEPLOYMENT_SPEC_KEY: DEPLOYMENT_DISABLED}
++            }
++        },
++        wait_for_reconcile_post_update=True,
++        admin_client=admin_client,
++        hco_namespace=hco_namespace.name,
++    ):
++        LOGGER.info("Triggering additional HCO reconciliation via annotation update")
++        with ResourceEditorValidateHCOReconcile(
++            patches={
++                hyperconverged_resource_scope_function: {
++                    "metadata": {"annotations": {RECONCILE_TRIGGER_ANNOTATION_KEY: "true"}}
++                }
++            },
++            wait_for_reconcile_post_update=True,
++            admin_client=admin_client,
++            hco_namespace=hco_namespace.name,
++        ):
++            yield
+diff --git a/tests/install_upgrade_operators/common_instancetypes_deployment/test_common_instancetypes_deployment.py b/tests/install_upgrade_operators/common_instancetypes_deployment/test_common_instancetypes_deployment.py
+new file mode 100644
+index 0000000..93e4421
+--- /dev/null
++++ b/tests/install_upgrade_operators/common_instancetypes_deployment/test_common_instancetypes_deployment.py
+@@ -0,0 +1,260 @@
++"""
++Common Instancetypes Deployment Configuration Tests
++
++STP Reference: /home/fedora/thesis/stps/1.md
++Jira: https://issues.redhat.com/browse/CNV-61256
++
++This module contains tests for the commonInstancetypesDeployment field in the
++HyperConverged CR spec, which controls whether common VirtualMachineClusterInstancetype
++and VirtualMachineClusterPreference resources are deployed by the operator.
++"""
++
++import logging
++
++import pytest
++from ocp_resources.resource import Resource
++from ocp_resources.virtual_machine_cluster_instancetype import (
++    VirtualMachineClusterInstancetype,
++)
++from ocp_resources.virtual_machine_cluster_preference import (
++    VirtualMachineClusterPreference,
++)
++from timeout_sampler import TimeoutSampler
++
++from utilities.constants import TIMEOUT_2MIN
++
++LOGGER = logging.getLogger(__name__)
++
++COMMON_INSTANCETYPE_VENDOR_LABEL = f"{Resource.ApiGroup.INSTANCETYPE_KUBEVIRT_IO}/vendor=redhat.com"
++
++pytestmark = [pytest.mark.gating, pytest.mark.arm64, pytest.mark.s390x]
++
++
++class TestCommonInstancetypesDeployment:
++    """
++    Tests for common instancetypes deployment configuration via HCO CR.
++
++    Preconditions:
++        - OpenShift Virtualization installed and HCO CR accessible
++        - HCO version supports commonInstancetypesDeployment field
++    """
++
++    @pytest.mark.polarion("CNV-61256")
++    def test_common_instancetypes_deployed_by_default(self, admin_client):
++        """
++        Test that common instancetype resources are deployed by default.
++
++        Steps:
++            1. Query VirtualMachineClusterInstancetype resources with vendor label
++               "redhat.com"
++
++        Expected:
++            - VirtualMachineClusterInstancetype resources with vendor label
++              "redhat.com" exist
++        """
++        LOGGER.info("Querying VirtualMachineClusterInstancetype resources with vendor label")
++        common_instancetypes = list(
++            VirtualMachineClusterInstancetype.get(
++                client=admin_client,
++                label_selector=COMMON_INSTANCETYPE_VENDOR_LABEL,
++            )
++        )
++        assert common_instancetypes, (
++            "No common VirtualMachineClusterInstancetype resources found with label "
++            f"'{COMMON_INSTANCETYPE_VENDOR_LABEL}', expected resources to be deployed by default"
++        )
++
++    @pytest.mark.polarion("CNV-61256")
++    def test_common_preferences_deployed_by_default(self, admin_client):
++        """
++        Test that common preference resources are deployed by default.
++
++        Steps:
++            1. Query VirtualMachineClusterPreference resources with vendor label
++               "redhat.com"
++
++        Expected:
++            - VirtualMachineClusterPreference resources with vendor label
++              "redhat.com" exist
++        """
++        LOGGER.info("Querying VirtualMachineClusterPreference resources with vendor label")
++        common_preferences = list(
++            VirtualMachineClusterPreference.get(
++                client=admin_client,
++                label_selector=COMMON_INSTANCETYPE_VENDOR_LABEL,
++            )
++        )
++        assert common_preferences, (
++            "No common VirtualMachineClusterPreference resources found with label "
++            f"'{COMMON_INSTANCETYPE_VENDOR_LABEL}', expected resources to be deployed by default"
++        )
++
++    @pytest.mark.polarion("CNV-61256")
++    @pytest.mark.usefixtures("disabled_common_instancetypes_deployment")
++    def test_disable_common_instancetypes_removes_instancetype_resources(self, admin_client):
++        """
++        Test that setting commonInstancetypesDeployment to Disabled removes
++        common instancetype resources.
++
++        Preconditions:
++            - HCO CR commonInstancetypesDeployment set to Disabled
++            - HCO reconciliation completed
++
++        Steps:
++            1. Query VirtualMachineClusterInstancetype resources with vendor label
++               "redhat.com"
++
++        Expected:
++            - VirtualMachineClusterInstancetype resources with vendor label
++              "redhat.com" do NOT exist
++        """
++        LOGGER.info("Waiting for VirtualMachineClusterInstancetype resources to be removed after disabling")
++        for sample in TimeoutSampler(
++            wait_timeout=TIMEOUT_2MIN,
++            sleep=5,
++            func=lambda: list(
++                VirtualMachineClusterInstancetype.get(
++                    client=admin_client,
++                    label_selector=COMMON_INSTANCETYPE_VENDOR_LABEL,
++                )
++            ),
++        ):
++            if not sample:
++                break
++
++    @pytest.mark.polarion("CNV-61256")
++    @pytest.mark.usefixtures("disabled_common_instancetypes_deployment")
++    def test_disable_common_instancetypes_removes_preference_resources(self, admin_client):
++        """
++        Test that setting commonInstancetypesDeployment to Disabled removes
++        common preference resources.
++
++        Preconditions:
++            - HCO CR commonInstancetypesDeployment set to Disabled
++            - HCO reconciliation completed
++
++        Steps:
++            1. Query VirtualMachineClusterPreference resources with vendor label
++               "redhat.com"
++
++        Expected:
++            - VirtualMachineClusterPreference resources with vendor label
++              "redhat.com" do NOT exist
++        """
++        LOGGER.info("Waiting for VirtualMachineClusterPreference resources to be removed after disabling")
++        for sample in TimeoutSampler(
++            wait_timeout=TIMEOUT_2MIN,
++            sleep=5,
++            func=lambda: list(
++                VirtualMachineClusterPreference.get(
++                    client=admin_client,
++                    label_selector=COMMON_INSTANCETYPE_VENDOR_LABEL,
++                )
++            ),
++        ):
++            if not sample:
++                break
++
++    @pytest.mark.polarion("CNV-61256")
++    @pytest.mark.usefixtures("reenabled_common_instancetypes_deployment")
++    def test_enable_common_instancetypes_deploys_instancetype_resources(self, admin_client):
++        """
++        Test that setting commonInstancetypesDeployment to Enabled restores
++        common instancetype resources.
++
++        Preconditions:
++            - HCO CR commonInstancetypesDeployment previously set to Disabled
++            - HCO CR commonInstancetypesDeployment set back to Enabled
++            - HCO reconciliation completed
++
++        Steps:
++            1. Query VirtualMachineClusterInstancetype resources with vendor label
++               "redhat.com"
++
++        Expected:
++            - VirtualMachineClusterInstancetype resources with vendor label
++              "redhat.com" exist
++        """
++        LOGGER.info("Waiting for VirtualMachineClusterInstancetype resources to be deployed after re-enabling")
++        for sample in TimeoutSampler(
++            wait_timeout=TIMEOUT_2MIN,
++            sleep=5,
++            func=lambda: list(
++                VirtualMachineClusterInstancetype.get(
++                    client=admin_client,
++                    label_selector=COMMON_INSTANCETYPE_VENDOR_LABEL,
++                )
++            ),
++        ):
++            if sample:
++                break
++
++    @pytest.mark.polarion("CNV-61256")
++    @pytest.mark.usefixtures("reenabled_common_instancetypes_deployment")
++    def test_enable_common_instancetypes_deploys_preference_resources(self, admin_client):
++        """
++        Test that setting commonInstancetypesDeployment to Enabled restores
++        common preference resources.
++
++        Preconditions:
++            - HCO CR commonInstancetypesDeployment previously set to Disabled
++            - HCO CR commonInstancetypesDeployment set back to Enabled
++            - HCO reconciliation completed
++
++        Steps:
++            1. Query VirtualMachineClusterPreference resources with vendor label
++               "redhat.com"
++
++        Expected:
++            - VirtualMachineClusterPreference resources with vendor label
++              "redhat.com" exist
++        """
++        LOGGER.info("Waiting for VirtualMachineClusterPreference resources to be deployed after re-enabling")
++        for sample in TimeoutSampler(
++            wait_timeout=TIMEOUT_2MIN,
++            sleep=5,
++            func=lambda: list(
++                VirtualMachineClusterPreference.get(
++                    client=admin_client,
++                    label_selector=COMMON_INSTANCETYPE_VENDOR_LABEL,
++                )
++            ),
++        ):
++            if sample:
++                break
++
++    @pytest.mark.polarion("CNV-61256")
++    @pytest.mark.usefixtures("disabled_common_instancetypes_deployment_after_reconcile")
++    def test_disabled_setting_persists_after_reconciliation(self, admin_client):
++        """
++        Test that the Disabled setting persists after HCO reconciliation is
++        triggered by an unrelated spec change.
++
++        Preconditions:
++            - HCO CR commonInstancetypesDeployment set to Disabled
++            - HCO reconciliation completed
++            - Common instancetype resources confirmed removed
++
++        Steps:
++            1. Trigger HCO reconciliation by modifying an unrelated HCO spec field
++            2. Wait for HCO reconciliation to complete
++            3. Query VirtualMachineClusterInstancetype resources with vendor label
++               "redhat.com"
++
++        Expected:
++            - VirtualMachineClusterInstancetype resources with vendor label
++              "redhat.com" do NOT exist
++        """
++        LOGGER.info("Waiting for VirtualMachineClusterInstancetype resources to remain absent after reconciliation")
++        for sample in TimeoutSampler(
++            wait_timeout=TIMEOUT_2MIN,
++            sleep=5,
++            func=lambda: list(
++                VirtualMachineClusterInstancetype.get(
++                    client=admin_client,
++                    label_selector=COMMON_INSTANCETYPE_VENDOR_LABEL,
++                )
++            ),
++        ):
++            if not sample:
++                break
+diff --git a/tests/std/common_instancetypes_deployment/std_cnv_61256.md b/tests/std/common_instancetypes_deployment/std_cnv_61256.md
+new file mode 100644
+index 0000000..03c40f1
+--- /dev/null
++++ b/tests/std/common_instancetypes_deployment/std_cnv_61256.md
+@@ -0,0 +1,233 @@
++# Software Test Description (STD)
++
++## Feature: Common Instancetypes Deployment Configuration
++
++**STP Reference:** [/home/fedora/thesis/stps/1.md](/home/fedora/thesis/stps/1.md)
++**Jira ID:** [CNV-61256](https://issues.redhat.com/browse/CNV-61256)
++**Bug Fix:** [CNV-59564](https://issues.redhat.com/browse/CNV-59564)
++**Generated:** 2026-02-22
++
++---
++
++## Summary
++
++Tests for the `commonInstancetypesDeployment` field introduced in the HyperConverged Cluster Operator (HCO) CR spec. This field allows users to control whether common instancetype and preference resources (VirtualMachineClusterInstancetype and VirtualMachineClusterPreference) are deployed by the operator. The field accepts two values: `Enabled` (default) and `Disabled`.
++
++Coverage includes:
++- Default behavior verification (common instancetypes deployed when field is unset)
++- Disabling common instancetypes deployment and verifying resource removal
++- Re-enabling common instancetypes deployment and verifying resource restoration
++- Setting persistence across HCO reconciliation cycles
++
++---
++
++## Test Files
++
++### File: `tests/install_upgrade_operators/common_instancetypes_deployment/test_common_instancetypes_deployment.py`
++
++```python
++"""
++Common Instancetypes Deployment Configuration Tests
++
++STP Reference: /home/fedora/thesis/stps/1.md
++Jira: https://issues.redhat.com/browse/CNV-61256
++
++This module contains tests for the commonInstancetypesDeployment field in the
++HyperConverged CR spec, which controls whether common VirtualMachineClusterInstancetype
++and VirtualMachineClusterPreference resources are deployed.
++"""
++
++import pytest
++
++
++pytestmark = [pytest.mark.gating, pytest.mark.arm64, pytest.mark.s390x]
++
++
++class TestCommonInstancetypesDeployment:
++    """
++    Tests for common instancetypes deployment configuration via HCO CR.
++
++    Preconditions:
++        - OpenShift Virtualization installed and HCO CR accessible
++        - HCO version supports commonInstancetypesDeployment field
++    """
++
++    def test_common_instancetypes_deployed_by_default(self):
++        """
++        Test that common instancetype resources are deployed by default.
++
++        Polarion:
++            CNV-61256
++
++        Steps:
++            1. Query VirtualMachineClusterInstancetype resources with vendor label
++               "redhat.com"
++
++        Expected:
++            - VirtualMachineClusterInstancetype resources with vendor label
++              "redhat.com" exist
++        """
++        pass
++
++    def test_common_preferences_deployed_by_default(self):
++        """
++        Test that common preference resources are deployed by default.
++
++        Polarion:
++            CNV-61256
++
++        Steps:
++            1. Query VirtualMachineClusterPreference resources with vendor label
++               "redhat.com"
++
++        Expected:
++            - VirtualMachineClusterPreference resources with vendor label
++              "redhat.com" exist
++        """
++        pass
++
++    def test_disable_common_instancetypes_removes_instancetype_resources(self):
++        """
++        Test that setting commonInstancetypesDeployment to Disabled removes
++        common instancetype resources.
++
++        Preconditions:
++            - HCO CR commonInstancetypesDeployment set to Disabled
++            - HCO reconciliation completed
++
++        Steps:
++            1. Query VirtualMachineClusterInstancetype resources with vendor label
++               "redhat.com"
++
++        Expected:
++            - VirtualMachineClusterInstancetype resources with vendor label
++              "redhat.com" do NOT exist
++        """
++        pass
++
++    def test_disable_common_instancetypes_removes_preference_resources(self):
++        """
++        Test that setting commonInstancetypesDeployment to Disabled removes
++        common preference resources.
++
++        Preconditions:
++            - HCO CR commonInstancetypesDeployment set to Disabled
++            - HCO reconciliation completed
++
++        Steps:
++            1. Query VirtualMachineClusterPreference resources with vendor label
++               "redhat.com"
++
++        Expected:
++            - VirtualMachineClusterPreference resources with vendor label
++              "redhat.com" do NOT exist
++        """
++        pass
++
++    def test_enable_common_instancetypes_deploys_instancetype_resources(self):
++        """
++        Test that setting commonInstancetypesDeployment to Enabled restores
++        common instancetype resources.
++
++        Preconditions:
++            - HCO CR commonInstancetypesDeployment previously set to Disabled
++            - HCO CR commonInstancetypesDeployment set back to Enabled
++            - HCO reconciliation completed
++
++        Steps:
++            1. Query VirtualMachineClusterInstancetype resources with vendor label
++               "redhat.com"
++
++        Expected:
++            - VirtualMachineClusterInstancetype resources with vendor label
++              "redhat.com" exist
++        """
++        pass
++
++    def test_enable_common_instancetypes_deploys_preference_resources(self):
++        """
++        Test that setting commonInstancetypesDeployment to Enabled restores
++        common preference resources.
++
++        Preconditions:
++            - HCO CR commonInstancetypesDeployment previously set to Disabled
++            - HCO CR commonInstancetypesDeployment set back to Enabled
++            - HCO reconciliation completed
++
++        Steps:
++            1. Query VirtualMachineClusterPreference resources with vendor label
++               "redhat.com"
++
++        Expected:
++            - VirtualMachineClusterPreference resources with vendor label
++              "redhat.com" exist
++        """
++        pass
++
++    def test_disabled_setting_persists_after_reconciliation(self):
++        """
++        Test that the Disabled setting persists after HCO reconciliation is
++        triggered by an unrelated spec change.
++
++        Preconditions:
++            - HCO CR commonInstancetypesDeployment set to Disabled
++            - HCO reconciliation completed
++            - Common instancetype resources confirmed removed
++
++        Steps:
++            1. Trigger HCO reconciliation by modifying an unrelated HCO spec field
++            2. Wait for HCO reconciliation to complete
++            3. Query VirtualMachineClusterInstancetype resources with vendor label
++               "redhat.com"
++
++        Expected:
++            - VirtualMachineClusterInstancetype resources with vendor label
++              "redhat.com" do NOT exist
++        """
++        pass
++```
++
++---
++
++## Test Coverage Summary
++
++| Test File | Test Class | Test Count | Priority | Tier |
++| --------- | ---------- | ---------- | -------- | ---- |
++| `test_common_instancetypes_deployment.py` | `TestCommonInstancetypesDeployment` | 7 | P0-P1 | Tier 1 |
++
++---
++
++## STP Scenario Mapping
++
++| STP Scenario | Test Method(s) | Priority |
++| ------------ | -------------- | -------- |
++| Scenario 1: Disable Common-Instancetypes | `test_disable_common_instancetypes_removes_instancetype_resources`, `test_disable_common_instancetypes_removes_preference_resources` | P0 |
++| Scenario 2: Enable Common-Instancetypes | `test_enable_common_instancetypes_deploys_instancetype_resources`, `test_enable_common_instancetypes_deploys_preference_resources` | P0 |
++| Scenario 3: Default Behavior | `test_common_instancetypes_deployed_by_default`, `test_common_preferences_deployed_by_default` | P0 |
++| Scenario 4: Setting Persistence | `test_disabled_setting_persists_after_reconciliation` | P1 |
++| Scenario 5: Upgrade with Disabled Setting | Out of scope (Tier 2 upgrade test, separate test module) | P2 |
++
++---
++
++## Notes
++
++- **Scenario 5 (Upgrade)** is excluded from this STD. Upgrade tests require a separate test module under the upgrade test infrastructure and a dedicated test environment with upgrade capabilities.
++- The common instancetype resources are identified by the vendor label `instancetype.kubevirt.io/vendor=redhat.com`, consistent with the existing pattern in `tests/infrastructure/instance_types/conftest.py`.
++- HCO CR modification uses the `ResourceEditorValidateHCOReconcile` pattern from `utilities/hco.py` to ensure reconciliation completes after spec changes.
++- Test file is placed under `tests/install_upgrade_operators/common_instancetypes_deployment/` which already exists in the repository as a placeholder for these tests.
++
++---
++
++## Checklist
++
++- [x] STP link in module docstring
++- [x] Tests grouped in class with shared preconditions
++- [x] Each test has: description, Preconditions (where applicable), Steps, Expected
++- [x] Each test verifies ONE thing with ONE Expected
++- [x] Negative tests not applicable (no negative scenarios in this feature)
++- [x] Test methods contain only `pass`
++- [x] Appropriate pytest markers documented (gating, arm64, s390x)
++- [x] Parametrization not needed for these tests
++- [x] All files in single markdown output
++- [x] Coverage summary table included
++- [x] Output saved to `tests/std/common_instancetypes_deployment/std_cnv_61256.md`

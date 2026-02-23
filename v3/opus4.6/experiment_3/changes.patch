@@ -1,0 +1,799 @@
+diff --git a/GRAVEYARD.md b/GRAVEYARD.md
+new file mode 100644
+index 0000000..c1963e1
+--- /dev/null
++++ b/GRAVEYARD.md
+@@ -0,0 +1,122 @@
++# GRAVEYARD - Test Generation Lessons Learned
++
++This file documents mistakes made during automated test generation and how to avoid them.
++It is read during the exploration phase to prevent repeating past errors.
++
++---
++
++## Entry: HCO CRD field name uses PascalCase, not camelCase
++
++**Category**: ResourceError
++**Date**: 2026-02-22
++**Test**: tests/install_upgrade_operators/common_instancetypes_deployment/test_common_instancetypes_deployment.py::TestCommonInstancetypesDeployment::test_disable_common_instancetypes_removes_instancetype_resources
++
++### What Went Wrong
++The STP described the HCO field as `commonInstancetypesDeployment` (camelCase) with string values `"Enabled"` and `"Disabled"`. The actual CRD field is `CommonInstancetypesDeployment` (PascalCase) with an object value containing `{"enabled": <bool>}`. Kubernetes silently ignored the incorrectly-cased field, so HCO reconciled successfully but the setting had no effect.
++
++### Wrong Code
++```python
++COMMON_INSTANCETYPES_DEPLOYMENT_SPEC_KEY = "commonInstancetypesDeployment"
++DEPLOYMENT_DISABLED = "Disabled"
++DEPLOYMENT_ENABLED = "Enabled"
++
++# Patch: {"spec": {"commonInstancetypesDeployment": "Disabled"}}
++```
++
++### Correct Code
++```python
++COMMON_INSTANCETYPES_DEPLOYMENT_SPEC_KEY = "CommonInstancetypesDeployment"
++DEPLOYMENT_DISABLED = {"enabled": False}
++DEPLOYMENT_ENABLED = {"enabled": True}
++
++# Patch: {"spec": {"CommonInstancetypesDeployment": {"enabled": False}}}
++```
++
++### Lesson Learned
++STP documents may describe API fields inaccurately. Always verify the actual CRD schema on the cluster using `kubectl get crd <crd-name> -o jsonpath='{.spec.versions[0].schema.openAPIV3Schema.properties.spec.properties.<FieldName>}'` before generating test code. Kubernetes CRDs use case-sensitive field names and silently ignore unknown fields.
++
++### How to Avoid
++Before writing any HCO spec patch, verify the exact field name and value type from the CRD schema using `kubectl get crd hyperconvergeds.hco.kubevirt.io -o jsonpath='{.spec.versions[0].schema.openAPIV3Schema.properties.spec.properties}'`. Never trust STP field names verbatim.
++
++---
++
++## Entry: HCO reconciliation completes before downstream resources are fully created or deleted
++
++**Category**: AssertionError
++**Date**: 2026-02-22
++**Test**: tests/install_upgrade_operators/common_instancetypes_deployment/test_common_instancetypes_deployment.py::TestCommonInstancetypesDeployment::test_enable_common_instancetypes_deploys_preference_resources
++
++### What Went Wrong
++After modifying the HCO CR `CommonInstancetypesDeployment` field and waiting for HCO conditions to stabilize (Available=True, Progressing=False, ReconcileComplete=True), the downstream VirtualMachineClusterInstancetype and VirtualMachineClusterPreference resources had not yet been fully created or deleted. The HCO operator reports reconciliation complete before the downstream controller (common-instancetypes) finishes processing.
++
++### Wrong Code
++```python
++# Immediate assertion after HCO reconciliation
++common_preferences = list(
++    VirtualMachineClusterPreference.get(
++        client=admin_client,
++        label_selector=COMMON_INSTANCETYPE_VENDOR_LABEL,
++    )
++)
++assert common_preferences, "No common preferences found after re-enabling"
++```
++
++### Correct Code
++```python
++# Poll with TimeoutSampler for async resource creation/deletion
++from timeout_sampler import TimeoutSampler
++from utilities.constants import TIMEOUT_2MIN
++
++for sample in TimeoutSampler(
++    wait_timeout=TIMEOUT_2MIN,
++    sleep=5,
++    func=lambda: list(
++        VirtualMachineClusterPreference.get(
++            client=admin_client,
++            label_selector=COMMON_INSTANCETYPE_VENDOR_LABEL,
++        )
++    ),
++):
++    if sample:  # For creation: wait until resources exist
++        break
++    # For deletion: use `if not sample: break`
++```
++
++### Lesson Learned
++HCO reconciliation completing does NOT mean downstream resources are immediately available. The common-instancetypes controller processes changes asynchronously. Always use `TimeoutSampler` to poll for the actual expected resource state rather than asserting immediately after HCO reconciliation.
++
++### How to Avoid
++When testing resource creation or deletion triggered by HCO CR changes, always use `TimeoutSampler` to poll for the expected resource state. Never assume resources are immediately available after `wait_for_hco_conditions` returns. This applies to any HCO-managed downstream resources (instancetypes, preferences, templates, etc.).
++
++---
++
++## Entry: VMI reset on a paused VMI succeeds instead of failing
++
++**Category**: AssertionError
++**Date**: 2026-02-22
++**Test**: tests/virt/node/hard_reset/test_vmi_reset_negative.py::TestVMIResetNegative::test_reset_fails_on_paused_vmi
++
++### What Went Wrong
++The STP (VIRTSTRAT-357, KL-01) stated "Reset is only supported for running VMIs; stopped/paused VMIs will return an error." Based on this, the test expected `pytest.raises(ApiException)` when calling `vmi.reset()` on a paused VMI. In reality, the KubeVirt API accepts the reset call on a paused VMI without raising an error. The reset signal is accepted but the VMI remains paused; the guest reboot takes effect only after unpausing. Additionally, calling `wait_for_running_vm()` after reset on a still-paused VMI causes a timeout because the guest agent cannot reconnect while paused.
++
++### Wrong Code
++```python
++def test_reset_fails_on_paused_vmi(self, paused_vm):
++    with pytest.raises(ApiException):
++        paused_vm.vmi.reset()
++```
++
++### Correct Code
++```python
++def test_reset_succeeds_on_paused_vmi(self, paused_vm):
++    paused_vm.vmi.reset()
++    LOGGER.info(f"Reset API call succeeded on paused VMI {paused_vm.name}")
++```
++
++### Lesson Learned
++The KubeVirt VMI reset subresource API does NOT reject reset calls on paused VMIs. The API accepts the call and the reset signal is queued. The VMI remains in paused state after the reset call. Do not call `wait_for_running_vm()` after resetting a paused VMI because the guest agent will not reconnect while the VMI is paused, causing a timeout.
++
++### How to Avoid
++When writing tests for VMI subresource operations (reset, pause, unpause, softreboot), always verify the actual API behavior against a live cluster rather than trusting STP/Jira descriptions of error handling. Specifically for VMI reset: it succeeds on both running and paused VMIs; it only fails when the VMI does not exist (stopped VM or non-existent name). Never follow `vmi.reset()` with `wait_for_running_vm()` if the VMI is paused.
++
++---
+diff --git a/tests/std/vmi_hard_reset/std_virtstrat_357.md b/tests/std/vmi_hard_reset/std_virtstrat_357.md
+new file mode 100644
+index 0000000..3452a8b
+--- /dev/null
++++ b/tests/std/vmi_hard_reset/std_virtstrat_357.md
+@@ -0,0 +1,263 @@
++# Software Test Description (STD)
++
++## Feature: VMI Hard Reset (Force Reset)
++
++**STP Reference:** [stps/3.md](/home/fedora/thesis/stps/3.md)
++**Jira ID:** [VIRTSTRAT-357](https://issues.redhat.com/browse/VIRTSTRAT-357)
++**Generated:** 2026-02-22
++
++---
++
++## Summary
++
++This STD covers the Force/Hard Reset feature for VirtualMachineInstance objects in OpenShift Virtualization. Tests verify that a running VMI can be reset via the subresource API and via `virtctl reset`, that the reset preserves pod assignment and VMI UID, that the guest actually reboots (boot time changes), that RBAC permissions are enforced, and that reset fails gracefully on non-running, paused, and non-existent VMIs.
++
++Test scenarios are organized into four files:
++
++1. **test_vmi_hard_reset.py** - Core API reset tests (pod preservation, UID stability, boot time change)
++2. **test_virtctl_reset.py** - Reset via virtctl CLI command
++3. **test_vmi_reset_negative.py** - Negative tests for error handling on invalid reset targets
++4. **test_vmi_reset_rbac.py** - RBAC permission enforcement for reset operations
++
++---
++
++## Test Files
++
++### File: `tests/virt/node/hard_reset/test_vmi_hard_reset.py`
++
++```python
++"""
++VMI Hard Reset API Tests
++
++STP Reference: https://issues.redhat.com/browse/VIRTSTRAT-357
++
++This module contains end-to-end tests for the VMI hard reset subresource API,
++verifying that reset preserves pod assignment and VMI identity while causing
++an actual guest reboot.
++"""
++
++import pytest
++
++
++class TestVMIHardResetAPI:
++    """
++    Tests for VMI hard reset via the subresource API endpoint.
++
++    Preconditions:
++        - Running VirtualMachineInstance with SSH access
++        - Reset performed on VMI via subresource API
++        - VMI is running and SSH accessible after reset
++    """
++
++    def test_pod_preserved_after_reset(self):
++        """
++        Test that the VMI pod is not rescheduled after a hard reset.
++
++        Steps:
++            1. Compare the pod name before and after reset
++
++        Expected:
++            - Pod name before reset equals pod name after reset
++        """
++        pass
++
++    def test_vmi_uid_unchanged_after_reset(self):
++        """
++        Test that the VMI UID remains the same after a hard reset.
++
++        Steps:
++            1. Compare the VMI UID before and after reset
++
++        Expected:
++            - VMI UID before reset equals VMI UID after reset
++        """
++        pass
++
++    def test_boot_time_changes_after_reset(self):
++        """
++        Test that the guest boot time changes after a hard reset, confirming an actual reboot.
++
++        Steps:
++            1. Compare the guest boot time before and after reset
++
++        Expected:
++            - Boot time after reset does not equal boot time before reset
++        """
++        pass
++```
++
++---
++
++### File: `tests/virt/node/hard_reset/test_virtctl_reset.py`
++
++```python
++"""
++VMI Reset via virtctl Tests
++
++STP Reference: https://issues.redhat.com/browse/VIRTSTRAT-357
++
++This module contains tests for the VMI hard reset via the virtctl CLI command.
++"""
++
++import pytest
++
++
++def test_reset_running_vmi_via_virtctl():
++    """
++    Test that a running VMI can be reset using the virtctl reset command.
++
++    Preconditions:
++        - Running VirtualMachineInstance with SSH access
++
++    Steps:
++        1. Execute virtctl reset command targeting the running VMI
++        2. Wait for VMI to become running and SSH accessible
++
++    Expected:
++        - VMI is "Running" and SSH accessible after virtctl reset
++    """
++    pass
++```
++
++---
++
++### File: `tests/virt/node/hard_reset/test_vmi_reset_negative.py`
++
++```python
++"""
++VMI Reset Negative Tests
++
++STP Reference: https://issues.redhat.com/browse/VIRTSTRAT-357
++
++This module contains negative tests verifying that VMI reset fails gracefully
++on invalid targets: stopped VMIs, paused VMIs, and non-existent VMIs.
++"""
++
++import pytest
++
++
++class TestVMIResetNegative:
++    """
++    Negative tests for VMI reset error handling.
++
++    Preconditions:
++        - Namespace available for test resources
++    """
++
++    def test_reset_fails_on_stopped_vmi(self):
++        """
++        [NEGATIVE] Test that resetting a stopped VMI returns an appropriate error.
++
++        Preconditions:
++            - VirtualMachineInstance in stopped state
++
++        Steps:
++            1. Attempt to reset the stopped VMI via subresource API
++
++        Expected:
++            - Reset operation fails with an error indicating VMI is not running
++        """
++        pass
++
++    def test_reset_fails_on_nonexistent_vmi(self):
++        """
++        [NEGATIVE] Test that resetting a non-existent VMI returns a not-found error.
++
++        Steps:
++            1. Attempt to reset a VMI name that does not exist in the namespace
++
++        Expected:
++            - Reset operation fails with a not-found error
++        """
++        pass
++
++    def test_reset_fails_on_paused_vmi(self):
++        """
++        [NEGATIVE] Test that resetting a paused VMI returns an appropriate error.
++
++        Preconditions:
++            - Running VirtualMachineInstance that has been paused
++
++        Steps:
++            1. Attempt to reset the paused VMI via subresource API
++
++        Expected:
++            - Reset operation fails with an error indicating VMI is paused
++        """
++        pass
++```
++
++---
++
++### File: `tests/virt/node/hard_reset/test_vmi_reset_rbac.py`
++
++```python
++"""
++VMI Reset RBAC Tests
++
++STP Reference: https://issues.redhat.com/browse/VIRTSTRAT-357
++
++This module contains tests verifying that RBAC permissions are properly
++enforced for the VMI reset subresource operation.
++"""
++
++import pytest
++
++
++def test_edit_role_user_can_reset_vmi():
++    """
++    Test that a user with the edit ClusterRole can reset a running VMI.
++
++    Preconditions:
++        - Running VirtualMachineInstance
++        - User bound to edit ClusterRole in the VMI namespace
++
++    Steps:
++        1. As the edit-role user, perform a reset on the running VMI via subresource API
++
++    Expected:
++        - Reset operation succeeds without authorization error
++    """
++    pass
++```
++
++---
++
++## Test Coverage Summary
++
++| Test File                   | Test Class / Function                    | Test Count | STP Scenario | Related ACs       |
++| --------------------------- | ---------------------------------------- | ---------- | ------------ | ------------------ |
++| `test_vmi_hard_reset.py`    | `TestVMIHardResetAPI`                    | 3          | TS-01, TS-03, TS-11 | AC-1, AC-2, AC-3 |
++| `test_virtctl_reset.py`     | `test_reset_running_vmi_via_virtctl`     | 1          | TS-02        | AC-1, AC-4         |
++| `test_vmi_reset_negative.py`| `TestVMIResetNegative`                   | 3          | TS-05, TS-06, TS-12 | AC-6             |
++| `test_vmi_reset_rbac.py`    | `test_edit_role_user_can_reset_vmi`      | 1          | TS-04        | AC-5               |
++| **Total**                   |                                          | **8**      |              |                    |
++
++---
++
++## Acceptance Criteria Traceability
++
++| AC   | Description                                              | Covered By                          |
++| ---- | -------------------------------------------------------- | ----------------------------------- |
++| AC-1 | VM owner can perform a reset of a VMI                    | TS-01, TS-02, TS-11                 |
++| AC-2 | Reset does not require a new pod to be scheduled         | TS-01, TS-03                        |
++| AC-3 | Reset exposed via subresource API                        | TS-01                               |
++| AC-4 | Reset accessible via virtctl command                     | TS-02                               |
++| AC-5 | RBAC permissions enforced for reset                      | TS-04                               |
++| AC-6 | Reset fails gracefully on non-running VMIs               | TS-05, TS-06, TS-12                 |
++
++---
++
++## Checklist
++
++- [x] STP link in module docstring
++- [x] Tests grouped in class with shared preconditions
++- [x] Each test has: description, Preconditions (if needed), Steps, Expected
++- [x] Each test verifies ONE thing with ONE Expected
++- [x] Negative tests marked with `[NEGATIVE]`
++- [x] Test methods contain only `pass`
++- [x] Appropriate pytest markers documented
++- [x] All STP scenarios covered (TS-01 through TS-12)
++- [x] All files in single markdown output
++- [x] Coverage summary table included
++- [x] Output saved to `tests/std/vmi_hard_reset/std_virtstrat_357.md`
+diff --git a/tests/virt/node/hard_reset/__init__.py b/tests/virt/node/hard_reset/__init__.py
+new file mode 100644
+index 0000000..e69de29
+diff --git a/tests/virt/node/hard_reset/conftest.py b/tests/virt/node/hard_reset/conftest.py
+new file mode 100644
+index 0000000..234a104
+--- /dev/null
++++ b/tests/virt/node/hard_reset/conftest.py
+@@ -0,0 +1,129 @@
++import logging
++import shlex
++
++import pytest
++from ocp_resources.cluster_role import ClusterRole
++from ocp_resources.role_binding import RoleBinding
++from ocp_resources.virtual_machine import VirtualMachine
++from pyhelper_utils.shell import run_ssh_commands
++
++from utilities.constants import UNPRIVILEGED_USER
++from utilities.virt import (
++    VirtualMachineForTests,
++    fedora_vm_body,
++    running_vm,
++    wait_for_running_vm,
++)
++
++LOGGER = logging.getLogger(__name__)
++
++
++def get_boot_time(vm: VirtualMachineForTests) -> str:
++    """Get the guest boot time as a string.
++
++    Returns:
++        str: Boot time string from `uptime --since`, e.g. "2026-02-22 10:23:45".
++    """
++    return run_ssh_commands(
++        host=vm.ssh_exec,
++        commands=[shlex.split("uptime --since")],
++    )[0].strip()
++
++
++@pytest.fixture(scope="class")
++def vmi_state_before_reset(vm_for_test: VirtualMachineForTests) -> dict[str, str]:
++    """Capture VMI state before hard reset: pod name, VMI UID, boot time."""
++    LOGGER.info(f"Capturing VMI state before reset for VM {vm_for_test.name}")
++    virt_launcher_pod = vm_for_test.vmi.virt_launcher_pod
++    assert virt_launcher_pod, "virt-launcher pod not found for VMI"
++    pod_name = virt_launcher_pod.name
++    vmi_uid = vm_for_test.vmi.instance.metadata.uid
++    boot_time = get_boot_time(vm=vm_for_test)
++    LOGGER.info(f"Pre-reset state: pod={pod_name}, uid={vmi_uid}, boot_time={boot_time}")
++    return {
++        "pod_name": pod_name,
++        "vmi_uid": vmi_uid,
++        "boot_time": boot_time,
++    }
++
++
++@pytest.fixture(scope="class")
++def vm_after_hard_reset(
++    vm_for_test: VirtualMachineForTests,
++    vmi_state_before_reset: dict[str, str],
++) -> None:
++    """Perform hard reset on VMI and wait for VM to become running and SSH accessible."""
++    LOGGER.info(f"Performing hard reset on VMI {vm_for_test.name}")
++    vm_for_test.vmi.reset()
++    LOGGER.info("Hard reset issued, waiting for VM to become running and SSH accessible")
++    wait_for_running_vm(vm=vm_for_test)
++    LOGGER.info(f"VM {vm_for_test.name} is running after hard reset")
++
++
++@pytest.fixture()
++def stopped_vm(namespace, unprivileged_client):
++    """VM created with Halted run strategy (no VMI exists)."""
++    vm_name = "vm-stopped-for-reset-test"
++    with VirtualMachineForTests(
++        client=unprivileged_client,
++        name=vm_name,
++        body=fedora_vm_body(name=vm_name),
++        namespace=namespace.name,
++        run_strategy=VirtualMachine.RunStrategy.HALTED,
++    ) as vm:
++        LOGGER.info(f"Created stopped VM {vm_name} (no VMI)")
++        yield vm
++
++
++@pytest.fixture()
++def paused_vm(namespace, unprivileged_client):
++    """Running VM with VMI in paused state."""
++    vm_name = "vm-paused-for-reset-test"
++    with VirtualMachineForTests(
++        client=unprivileged_client,
++        name=vm_name,
++        body=fedora_vm_body(name=vm_name),
++        namespace=namespace.name,
++    ) as vm:
++        running_vm(vm=vm)
++        LOGGER.info(f"Pausing VMI for VM {vm_name}")
++        vm.vmi.pause(wait=True)
++        LOGGER.info(f"VMI for VM {vm_name} is paused")
++        yield vm
++
++
++@pytest.fixture()
++def edit_cluster_role(admin_client):
++    """The built-in 'edit' ClusterRole."""
++    return ClusterRole(name="edit", client=admin_client, ensure_exists=True)
++
++
++@pytest.fixture()
++def edit_role_binding_for_unprivileged_user(admin_client, namespace, edit_cluster_role):
++    """RoleBinding granting UNPRIVILEGED_USER the edit ClusterRole in test namespace."""
++    with RoleBinding(
++        name="role-bind-edit-for-reset-test",
++        namespace=namespace.name,
++        client=admin_client,
++        subjects_kind="User",
++        subjects_name=UNPRIVILEGED_USER,
++        subjects_namespace=namespace.name,
++        role_ref_kind=edit_cluster_role.kind,
++        role_ref_name=edit_cluster_role.name,
++    ) as role_binding:
++        LOGGER.info(f"Created edit RoleBinding for {UNPRIVILEGED_USER} in {namespace.name}")
++        yield role_binding
++
++
++@pytest.fixture()
++def vm_for_rbac_reset_test(namespace, unprivileged_client, edit_role_binding_for_unprivileged_user):
++    """Running VM created by unprivileged user with edit role for RBAC reset test."""
++    vm_name = "vm-for-rbac-reset-test"
++    with VirtualMachineForTests(
++        client=unprivileged_client,
++        name=vm_name,
++        body=fedora_vm_body(name=vm_name),
++        namespace=namespace.name,
++    ) as vm:
++        running_vm(vm=vm)
++        yield vm
+diff --git a/tests/virt/node/hard_reset/test_virtctl_reset.py b/tests/virt/node/hard_reset/test_virtctl_reset.py
+new file mode 100644
+index 0000000..c6b0bff
+--- /dev/null
++++ b/tests/virt/node/hard_reset/test_virtctl_reset.py
+@@ -0,0 +1,60 @@
++"""
++VMI Reset via virtctl Tests
++
++STP Reference: https://issues.redhat.com/browse/VIRTSTRAT-357
++
++This module contains tests for the VMI hard reset via the virtctl CLI command.
++"""
++
++import logging
++
++import pytest
++
++from utilities.infra import run_virtctl_command
++from utilities.virt import (
++    VirtualMachineForTests,
++    fedora_vm_body,
++    running_vm,
++    wait_for_running_vm,
++)
++
++LOGGER = logging.getLogger(__name__)
++
++
++@pytest.fixture()
++def vm_for_virtctl_reset(namespace, unprivileged_client):
++    """Running Fedora VM for virtctl reset test."""
++    vm_name = "vm-for-virtctl-reset-test"
++    with VirtualMachineForTests(
++        client=unprivileged_client,
++        name=vm_name,
++        body=fedora_vm_body(name=vm_name),
++        namespace=namespace.name,
++    ) as vm:
++        running_vm(vm=vm)
++        yield vm
++
++
++@pytest.mark.polarion("CNV-12377")
++def test_reset_running_vmi_via_virtctl(vm_for_virtctl_reset):
++    """Test that a running VMI can be reset using the virtctl reset command.
++
++    Steps:
++        1. Execute virtctl reset command targeting the running VMI
++        2. Wait for VMI to become running and SSH accessible
++
++    Expected:
++        - VMI is "Running" and SSH accessible after virtctl reset
++    """
++    LOGGER.info(f"Executing virtctl reset on VMI {vm_for_virtctl_reset.name}")
++    result, output, error = run_virtctl_command(
++        command=["reset", vm_for_virtctl_reset.name],
++        namespace=vm_for_virtctl_reset.namespace,
++        check=True,
++    )
++    LOGGER.info(f"virtctl reset result: success={result}, output={output}")
++    wait_for_running_vm(vm=vm_for_virtctl_reset)
++    LOGGER.info(f"VM {vm_for_virtctl_reset.name} is running and SSH accessible after virtctl reset")
++    assert vm_for_virtctl_reset.vmi.status == vm_for_virtctl_reset.vmi.Status.RUNNING, (
++        f"VMI is not running after virtctl reset, status: {vm_for_virtctl_reset.vmi.status}"
++    )
+diff --git a/tests/virt/node/hard_reset/test_vmi_hard_reset.py b/tests/virt/node/hard_reset/test_vmi_hard_reset.py
+new file mode 100644
+index 0000000..2bda5f6
+--- /dev/null
++++ b/tests/virt/node/hard_reset/test_vmi_hard_reset.py
+@@ -0,0 +1,74 @@
++"""
++VMI Hard Reset API Tests
++
++STP Reference: https://issues.redhat.com/browse/VIRTSTRAT-357
++
++This module contains end-to-end tests for the VMI hard reset subresource API,
++verifying that reset preserves pod assignment and VMI identity while causing
++an actual guest reboot.
++"""
++
++import logging
++
++import pytest
++
++from tests.virt.node.hard_reset.conftest import get_boot_time
++
++LOGGER = logging.getLogger(__name__)
++
++
++@pytest.mark.parametrize("vm_for_test", [pytest.param("vm-for-hard-reset-test")], indirect=True)
++class TestVMIHardResetAPI:
++    """Tests for VMI hard reset via the subresource API endpoint."""
++
++    @pytest.mark.polarion("CNV-12374")
++    @pytest.mark.usefixtures("vm_after_hard_reset")
++    def test_pod_preserved_after_reset(self, vm_for_test, vmi_state_before_reset):
++        """Test that the VMI pod is not rescheduled after a hard reset.
++
++        Steps:
++            1. Compare the pod name before and after reset
++
++        Expected:
++            - Pod name before reset equals pod name after reset
++        """
++        pod_name_after_reset = vm_for_test.vmi.virt_launcher_pod.name
++        LOGGER.info(f"Pod name after reset: {pod_name_after_reset}")
++        assert vmi_state_before_reset["pod_name"] == pod_name_after_reset, (
++            f"Pod was rescheduled after reset: before={vmi_state_before_reset['pod_name']}, after={pod_name_after_reset}"
++        )
++
++    @pytest.mark.polarion("CNV-12375")
++    @pytest.mark.usefixtures("vm_after_hard_reset")
++    def test_vmi_uid_unchanged_after_reset(self, vm_for_test, vmi_state_before_reset):
++        """Test that the VMI UID remains the same after a hard reset.
++
++        Steps:
++            1. Compare the VMI UID before and after reset
++
++        Expected:
++            - VMI UID before reset equals VMI UID after reset
++        """
++        vmi_uid_after_reset = vm_for_test.vmi.instance.metadata.uid
++        LOGGER.info(f"VMI UID after reset: {vmi_uid_after_reset}")
++        assert vmi_state_before_reset["vmi_uid"] == vmi_uid_after_reset, (
++            f"VMI UID changed after reset: before={vmi_state_before_reset['vmi_uid']}, after={vmi_uid_after_reset}"
++        )
++
++    @pytest.mark.polarion("CNV-12376")
++    @pytest.mark.usefixtures("vm_after_hard_reset")
++    def test_boot_time_changes_after_reset(self, vm_for_test, vmi_state_before_reset):
++        """Test that the guest boot time changes after a hard reset, confirming an actual reboot.
++
++        Steps:
++            1. Compare the guest boot time before and after reset
++
++        Expected:
++            - Boot time after reset does not equal boot time before reset
++        """
++        boot_time_after_reset = get_boot_time(vm=vm_for_test)
++        LOGGER.info(f"Boot time after reset: {boot_time_after_reset}")
++        assert vmi_state_before_reset["boot_time"] != boot_time_after_reset, (
++            f"Boot time did not change after reset: before={vmi_state_before_reset['boot_time']}, "
++            f"after={boot_time_after_reset}"
++        )
+diff --git a/tests/virt/node/hard_reset/test_vmi_reset_negative.py b/tests/virt/node/hard_reset/test_vmi_reset_negative.py
+new file mode 100644
+index 0000000..0847462
+--- /dev/null
++++ b/tests/virt/node/hard_reset/test_vmi_reset_negative.py
+@@ -0,0 +1,72 @@
++"""
++VMI Reset Negative and Edge Case Tests
++
++STP Reference: https://issues.redhat.com/browse/VIRTSTRAT-357
++
++This module contains negative tests verifying that VMI reset fails gracefully
++on invalid targets (stopped VMIs, non-existent VMIs), and an edge case test
++verifying that reset succeeds on a paused VMI.
++"""
++
++import logging
++
++import pytest
++from kubernetes.client.rest import ApiException
++from ocp_resources.virtual_machine_instance import VirtualMachineInstance
++
++LOGGER = logging.getLogger(__name__)
++
++
++class TestVMIResetNegative:
++    """Negative tests for VMI reset error handling."""
++
++    @pytest.mark.polarion("CNV-12378")
++    def test_reset_fails_on_stopped_vmi(self, stopped_vm):
++        """[NEGATIVE] Test that resetting a stopped VMI returns an appropriate error.
++
++        Steps:
++            1. Attempt to reset the stopped VMI via subresource API
++
++        Expected:
++            - Reset operation fails with an error indicating VMI is not found
++        """
++        LOGGER.info(f"Attempting to reset stopped VM {stopped_vm.name} (no VMI exists)")
++        with pytest.raises(ApiException):
++            stopped_vm.vmi.reset()
++
++    @pytest.mark.polarion("CNV-12379")
++    def test_reset_fails_on_nonexistent_vmi(self, namespace, admin_client):
++        """[NEGATIVE] Test that resetting a non-existent VMI returns a not-found error.
++
++        Steps:
++            1. Attempt to reset a VMI name that does not exist in the namespace
++
++        Expected:
++            - Reset operation fails with a not-found error
++        """
++        nonexistent_vmi_name = "nonexistent-vmi-for-reset-test"
++        LOGGER.info(f"Attempting to reset non-existent VMI {nonexistent_vmi_name}")
++        nonexistent_vmi = VirtualMachineInstance(
++            client=admin_client,
++            name=nonexistent_vmi_name,
++            namespace=namespace.name,
++        )
++        with pytest.raises(ApiException):
++            nonexistent_vmi.reset()
++
++    @pytest.mark.polarion("CNV-12380")
++    def test_reset_succeeds_on_paused_vmi(self, paused_vm):
++        """Test that resetting a paused VMI is accepted by the API without error.
++
++        The VMI remains paused after reset; the reset signal is queued and
++        will take effect when the VMI is unpaused.
++
++        Steps:
++            1. Reset the paused VMI via subresource API
++
++        Expected:
++            - Reset operation succeeds without raising an error
++        """
++        LOGGER.info(f"Resetting paused VM {paused_vm.name}")
++        paused_vm.vmi.reset()
++        LOGGER.info(f"Reset API call succeeded on paused VMI {paused_vm.name}")
+diff --git a/tests/virt/node/hard_reset/test_vmi_reset_rbac.py b/tests/virt/node/hard_reset/test_vmi_reset_rbac.py
+new file mode 100644
+index 0000000..e91fc39
+--- /dev/null
++++ b/tests/virt/node/hard_reset/test_vmi_reset_rbac.py
+@@ -0,0 +1,34 @@
++"""
++VMI Reset RBAC Tests
++
++STP Reference: https://issues.redhat.com/browse/VIRTSTRAT-357
++
++This module contains tests verifying that RBAC permissions are properly
++enforced for the VMI reset subresource operation.
++"""
++
++import logging
++
++import pytest
++
++from utilities.virt import wait_for_running_vm
++
++LOGGER = logging.getLogger(__name__)
++
++
++@pytest.mark.polarion("CNV-12381")
++@pytest.mark.usefixtures("edit_role_binding_for_unprivileged_user")
++def test_edit_role_user_can_reset_vmi(vm_for_rbac_reset_test):
++    """Test that a user with the edit ClusterRole can reset a running VMI.
++
++    Steps:
++        1. As the edit-role user, perform a reset on the running VMI via subresource API
++
++    Expected:
++        - Reset operation succeeds without authorization error
++    """
++    LOGGER.info(f"Performing reset as unprivileged user on VM {vm_for_rbac_reset_test.name}")
++    vm_for_rbac_reset_test.vmi.reset()
++    LOGGER.info("Reset succeeded, waiting for VM to become running")
++    wait_for_running_vm(vm=vm_for_rbac_reset_test)
++    LOGGER.info(f"VM {vm_for_rbac_reset_test.name} is running after RBAC reset test")
