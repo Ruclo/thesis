@@ -147,17 +147,17 @@ Repository Exploration Complete
 # Explore repository context
 /v2.1-explore-test-context
 
-# The findings will be used by subsequent /v2.1-generate-pytest calls
+# The findings will be used by subsequent /v2.1-generate-pytest or /v2.1-generate-std calls
 ```
 
-## Difference from V2 (Full)
+## Difference from V2.3
 
 In v2.1, this skill:
 - ❌ Does NOT create context.json
 - ✅ Reports findings in conversation
 - ✅ Findings are used immediately but not cached
 
-In v2 (full), the same skill:
+In v2.2, the same skill:
 - ✅ Creates context.json for reuse
 - ✅ Enables context caching across multiple test generations
 

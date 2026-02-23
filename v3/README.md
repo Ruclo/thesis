@@ -2,9 +2,9 @@
 
 ## Overview
 
-V3 extends v2.2 with GRAVEYARD verification, runtime self-healing, and a persistent learning loop. Generated code is verified against GRAVEYARD.md before static analysis, then tested against a real cluster with automatic failure recovery.
+V3 extends v2.1 with GRAVEYARD verification, runtime self-healing, and a persistent learning loop. Generated code is verified against GRAVEYARD.md before static analysis, then tested against a real cluster with automatic failure recovery.
 
-Key additions over v2.2:
+Key additions over v2.1:
 - ✅ Phase 4: GRAVEYARD verification — catch known mistakes before runtime
 - ✅ Phase 6: Run tests against live cluster and self-heal failures
 - ✅ GRAVEYARD.md: Persistent record of mistakes and lessons learned
@@ -162,7 +162,7 @@ Each run benefits from all previous runs' lessons, creating cumulative improveme
 
 Each experiment will:
 1. Run the 6-phase orchestrator workflow
-2. Compare success rate vs. v2.2
+2. Compare success rate vs. v2.1
 3. Measure how many GRAVEYARD violations are caught pre-runtime (Phase 4)
 4. Measure how many runtime fixes are needed (Phase 6 iterations)
 5. Track GRAVEYARD.md growth across experiments

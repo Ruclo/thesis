@@ -1,0 +1,29 @@
+The test file has been generated at `tests/storage/snapshots/test_snapshot_restore_run_strategy.py`. The file contains:
+
+**Test classes and functions:**
+
+1. **`TestSnapshotRestoreRunStrategy`** (Tier 1 - Functional):
+   - `test_snapshot_restore_with_rerun_on_failure` - Core test for CNV-63819
+   - `test_vm_does_not_auto_start_during_restore` - Verifies no VMI created during restore
+   - `test_vm_starts_after_restore_with_rerun_on_failure` - Manual start + data validation
+   - `test_snapshot_restore_with_always_strategy` - Regression for Always strategy
+   - `test_snapshot_restore_with_other_strategies` - Regression for Manual and Halted
+
+2. **`TestSnapshotRestoreDataIntegrity`** (Tier 2 - E2E):
+   - `test_complete_snapshot_restore_workflow` - Full E2E with data validation
+   - `test_multiple_snapshot_restores` - Multiple snapshots/restores
+
+**Fixtures:**
+- `vm_for_snapshot_restore` - Parametrized fixture creating RHEL VM with specified runStrategy
+- `vm_snapshot_for_restore` - Takes offline snapshot after writing test data
+
+**Follows repository conventions:**
+- Module-level `pytestmark` with `usefixtures`
+- Noun-based fixture names
+- Context managers for resources
+- `TimeoutSampler` for polling
+- Absolute imports
+- `@pytest.mark.polarion()` markers
+- `@pytest.mark.tier2` for E2E tests
+
+The generated file is ready for Phase 3 pyright validation.

@@ -172,6 +172,33 @@ else
     print_error "v1/prompt.md not found"
 fi
 
+# v2: Copy orchestrator as command with v2- prefix and skills
+print_info "Setting up v2 command and skills..."
+if [ -f "$THESIS_DIR/v2/orchestrator.md" ]; then
+    cp "$THESIS_DIR/v2/orchestrator.md" ".claude/commands/v2-orchestrator.md"
+    print_success "v2 orchestrator command set up"
+else
+    print_error "v2/orchestrator.md not found"
+fi
+
+# Copy v2 skills (directories already have v2- prefix)
+if [ -d "$THESIS_DIR/v2/skills" ]; then
+    print_info "Copying v2 skills to .claude/skills/"
+    for skill_dir in "$THESIS_DIR"/v2/skills/*/; do
+        if [ -d "$skill_dir" ]; then
+            skill_name=$(basename "$skill_dir")
+            mkdir -p ".claude/skills/$skill_name"
+            if [ -f "$skill_dir/SKILL.md" ]; then
+                cp "$skill_dir/SKILL.md" ".claude/skills/$skill_name/"
+                print_info "  Copied skill: $skill_name"
+            fi
+        fi
+    done
+    print_success "v2 skills set up"
+else
+    print_error "v2/skills directory not found"
+fi
+
 # v2.1: Copy orchestrator as command with v2.1- prefix and skills
 print_info "Setting up v2.1 command and skills..."
 if [ -f "$THESIS_DIR/v2.1/orchestrator.md" ]; then
@@ -226,33 +253,6 @@ else
     print_error "v2.2/skills directory not found"
 fi
 
-# v2: Copy orchestrator as command with v2- prefix and skills
-print_info "Setting up v2 (full) command and skills..."
-if [ -f "$THESIS_DIR/v2/orchestrator.md" ]; then
-    cp "$THESIS_DIR/v2/orchestrator.md" ".claude/commands/v2-orchestrator.md"
-    print_success "v2 orchestrator command set up"
-else
-    print_error "v2/orchestrator.md not found"
-fi
-
-# Copy v2 skills (directories already have v2- prefix)
-if [ -d "$THESIS_DIR/v2/skills" ]; then
-    print_info "Copying v2 skills to .claude/skills/"
-    for skill_dir in "$THESIS_DIR"/v2/skills/*/; do
-        if [ -d "$skill_dir" ]; then
-            skill_name=$(basename "$skill_dir")
-            mkdir -p ".claude/skills/$skill_name"
-            if [ -f "$skill_dir/SKILL.md" ]; then
-                cp "$skill_dir/SKILL.md" ".claude/skills/$skill_name/"
-                print_info "  Copied skill: $skill_name"
-            fi
-        fi
-    done
-    print_success "v2 skills set up"
-else
-    print_error "v2/skills directory not found"
-fi
-
 # v3: Copy orchestrator as command with v3- prefix and skills
 print_info "Setting up v3 command and skills..."
 if [ -f "$THESIS_DIR/v3/orchestrator.md" ]; then
@@ -305,6 +305,14 @@ if [ -d "$STPS_DIR" ]; then
                 cp "$THESIS_DIR/v1/prompt.md" "$WORKTREE_DIR/.claude/commands/v1-unified-prompt.md"
             fi
 
+            # Copy v2
+            if [ -f "$THESIS_DIR/v2/orchestrator.md" ]; then
+                cp "$THESIS_DIR/v2/orchestrator.md" "$WORKTREE_DIR/.claude/commands/v2-orchestrator.md"
+            fi
+            if [ -d "$THESIS_DIR/v2/skills" ]; then
+                cp -r "$THESIS_DIR/v2/skills/"* "$WORKTREE_DIR/.claude/skills/" 2>/dev/null || true
+            fi
+
             # Copy v2.1
             if [ -f "$THESIS_DIR/v2.1/orchestrator.md" ]; then
                 cp "$THESIS_DIR/v2.1/orchestrator.md" "$WORKTREE_DIR/.claude/commands/v2.1-orchestrator.md"
@@ -319,14 +327,6 @@ if [ -d "$STPS_DIR" ]; then
             fi
             if [ -d "$THESIS_DIR/v2.2/skills" ]; then
                 cp -r "$THESIS_DIR/v2.2/skills/"* "$WORKTREE_DIR/.claude/skills/" 2>/dev/null || true
-            fi
-
-            # Copy v2
-            if [ -f "$THESIS_DIR/v2/orchestrator.md" ]; then
-                cp "$THESIS_DIR/v2/orchestrator.md" "$WORKTREE_DIR/.claude/commands/v2-orchestrator.md"
-            fi
-            if [ -d "$THESIS_DIR/v2/skills" ]; then
-                cp -r "$THESIS_DIR/v2/skills/"* "$WORKTREE_DIR/.claude/skills/" 2>/dev/null || true
             fi
 
             # Copy v3
@@ -349,18 +349,18 @@ echo ""
 echo "Available commands:"
 echo "  v0-experiment-* : Individual experiment prompts from v0"
 echo "  v1-unified-prompt : Single unified prompt from v1"
-echo "  v2.1-orchestrator : Orchestrator command from v2.1 (modular, no context.json)"
-echo "  v2.2-orchestrator : Orchestrator command from v2.2 (+ STD generation)"
-echo "  v2-orchestrator : Orchestrator command from v2 (full, with context.json)"
+echo "  v2-orchestrator : Orchestrator command from v2 (modular, no context.json)"
+echo "  v2.1-orchestrator : Orchestrator command from v2.1 (+ STD generation)"
+echo "  v2.2-orchestrator : Orchestrator command from v2.2 (full, with context.json)"
 echo "  v3-orchestrator : Orchestrator command from v3 (6-phase: GRAVEYARD verify + runtime self-healing)"
 echo ""
 echo "Available skills:"
 ls -1 "$TARGET_DIR/.claude/skills/" 2>/dev/null | sed 's/^/  /'
 echo ""
 echo "Skill versions:"
-echo "  v2.1-* : Skills from v2.1 (exploration outputs verbal summary, no context.json)"
-echo "  v2.2-* : Skills from v2.2 (adds STD generation)"
-echo "  v2-* : Skills from v2 (full version with context.json caching)"
+echo "  v2-* : Skills from v2 (exploration outputs verbal summary, no context.json)"
+echo "  v2.1-* : Skills from v2.1 (adds STD generation)"
+echo "  v2.2-* : Skills from v2.2 (full version with context.json caching)"
 echo "  v3-* : Skills from v3 (6 skills: STD, explore, generate, graveyard-verify, pyright-heal, test-heal)"
 echo ""
 
@@ -376,9 +376,9 @@ if [ -d "$STPS_DIR" ]; then
         echo ""
         echo "Each worktree shares the same git repository and has:"
         echo "  - v1 (command: /v1-unified-prompt)"
+        echo "  - v2 (command: /v2-orchestrator, skills: /v2-*)"
         echo "  - v2.1 (command: /v2.1-orchestrator, skills: /v2.1-*)"
         echo "  - v2.2 (command: /v2.2-orchestrator, skills: /v2.2-*)"
-        echo "  - v2 (command: /v2-orchestrator, skills: /v2-*)"
         echo "  - v3 (command: /v3-orchestrator, skills: /v3-*)"
         echo ""
     fi

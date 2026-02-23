@@ -6,142 +6,163 @@
 - **Required**: Repository root (implicit - current working directory)
 
 ## Output
-- **File**: `context.json`
-- **Format**: Structured JSON containing:
-```json
-{
-  "utilities": {
-    "classes": ["ClassName", ...],
-    "methods": ["method_name", ...],
-    "constants": ["CONSTANT_NAME", ...]
-  },
-  "fixtures": {
-    "common": ["fixture_name", ...],
-    "scopes": {"fixture_name": "scope"}
-  },
-  "imports": {
-    "common_patterns": ["from ocp_resources import ...", ...]
-  },
-  "conventions": {
-    "markers": ["@pytest.mark.polarion(...)", ...],
-    "naming": "test_<feature>_<scenario>",
-    "file_structure": "tests/<domain>/<feature>/test_*.py"
-  },
-  "precedents": {
-    "similar_tests": ["path/to/test.py:line", ...]
-  }
-}
-```
+- **No file artifacts** - findings are reported in conversation and used for subsequent code generation
+- **Format**: Verbal summary of discovered patterns, utilities, fixtures, and conventions
 
-## Implementation
+## Role
+You are exploring the test repository to understand its structure, patterns, and available utilities before generating test code.
+
+## Exploration Phases
 
 ### Phase 1: Scan Documentation
-```python
-# Read docs/ for testing conventions
-- docs/testing_guidelines.md
-- docs/pytest_markers.md
-- docs/fixture_usage.md
-```
+Read `docs/` to understand testing conventions:
+- Testing guidelines and best practices
+- Pytest marker usage
+- Fixture conventions
+- Coding standards
+
+**Report findings:**
+- Key conventions documented
+- Marker patterns used
+- Special testing requirements
 
 ### Phase 2: Map Utilities
-```python
-# Analyze libs/ and utilities/
-- Scan utilities/*.py for helper classes
-- Extract method signatures
-- Identify constants (TIMEOUT_*, DEFAULT_*, etc.)
-- Map commonly used patterns
+Analyze `libs/` and `utilities/` to discover available helpers:
+- Helper classes and their methods
+- Method signatures and parameters
+- Constants (TIMEOUT_*, DEFAULT_*, etc.)
+- Common patterns and utilities
+
+**Report findings:**
+- Available utility classes (e.g., VirtualMachineForTests, DataVolumeForTests)
+- Commonly used methods (e.g., wait_for_vm_running, create_snapshot)
+- Important constants (e.g., TIMEOUT_5MIN, DEFAULT_STORAGE_CLASS)
+
+### Phase 3: Check Precedents
+Look at existing tests in `tests/` to see valid patterns:
+- Import patterns and structure
+- Fixture usage examples
+- Test class organization
+- Assertion patterns
+- Common test patterns
+
+**Report findings:**
+- Typical import statements
+- Common fixtures used (e.g., namespace, admin_client, storage_class_matrix)
+- Test file structure conventions
+- Naming conventions (test_<feature>_<scenario>)
+
+## Exploration Algorithm
+
 ```
+1. READ docs/testing_guidelines.md (if exists)
+   - Extract conventions
+   - Note marker patterns
 
-### Phase 3: Analyze Precedents
-```python
-# Look at existing tests in tests/
-- Find similar test files (by domain)
-- Extract import patterns
-- Identify fixture usage patterns
-- Note pytest markers and decorators
-```
-
-### Thoroughness
-- Deep scan all docs
-- Analyze all utilities
-- Review 10+ existing tests
-- Extract detailed signatures
-- Map all fixtures
-
-## Algorithm
-
-```
-1. READ docs/testing_guidelines.md
 2. GLOB utilities/*.py
    FOR each utility_file:
-     EXTRACT classes, methods, constants
-3. GLOB tests/**/*.py
-   FILTER by domain similarity
+     - READ file
+     - EXTRACT class names
+     - EXTRACT method signatures
+     - EXTRACT constants
+     - SUMMARIZE findings
+
+3. GLOB tests/**/*.py (sample 5-10 files)
    FOR each test_file:
-     EXTRACT imports, fixtures, markers
-4. GENERATE context.json
-5. WRITE context.json to disk
-6. RETURN success
+     - READ file
+     - EXTRACT import patterns
+     - EXTRACT fixture usage
+     - NOTE test structure
+     - SUMMARIZE patterns
+
+4. REPORT comprehensive findings:
+   - Available utilities summary
+   - Common fixtures summary
+   - Import patterns summary
+   - Testing conventions summary
 ```
 
-## Output Example
+## Example Output
 
-```json
-{
-  "utilities": {
-    "classes": ["VirtualMachineForTests", "DataVolumeForTests"],
-    "methods": ["wait_for_vm_running", "create_snapshot"],
-    "constants": ["TIMEOUT_5MIN", "DEFAULT_STORAGE_CLASS"]
-  },
-  "fixtures": {
-    "common": ["namespace", "admin_client", "storage_class_matrix"],
-    "scopes": {
-      "namespace": "function",
-      "admin_client": "session"
-    }
-  },
-  "imports": {
-    "common_patterns": [
-      "from ocp_resources.virtual_machine import VirtualMachine",
-      "from utilities.virt import VirtualMachineForTests"
-    ]
-  },
-  "conventions": {
-    "markers": [
-      "@pytest.mark.polarion('CNV-XXXXX')",
-      "@pytest.mark.tier1"
-    ],
-    "naming": "test_<feature>_<scenario>",
-    "file_structure": "tests/<domain>/<feature>/test_*.py"
-  },
-  "precedents": {
-    "similar_tests": [
-      "tests/storage/snapshots/test_snapshots.py:145",
-      "tests/virt/lifecycle/test_reset.py:89"
-    ]
-  }
-}
+After exploration, provide a summary like:
+
 ```
+Repository Exploration Complete
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📚 Documentation Findings:
+  - Tests use @pytest.mark.polarion() for test case IDs
+  - Architecture markers: @pytest.mark.arm64, @pytest.mark.s390x
+  - Tiering: @pytest.mark.tier1, @pytest.mark.tier2
+
+🔧 Available Utilities:
+  Classes:
+    - VirtualMachineForTests (from utilities.virt)
+    - DataVolumeForTests (from utilities.storage)
+
+  Methods:
+    - wait_for_vm_running(vm, timeout=300)
+    - create_snapshot(vm, snapshot_name)
+    - ssh_to_vm(vm, command)
+
+  Constants:
+    - TIMEOUT_5MIN = 300
+    - TIMEOUT_10MIN = 600
+    - DEFAULT_STORAGE_CLASS = "ocs-storagecluster-ceph-rbd"
+
+🧪 Common Fixtures:
+  - namespace (function scope) - provides isolated test namespace
+  - admin_client (session scope) - provides cluster admin client
+  - storage_class_matrix (parametrized) - tests across storage classes
+
+📋 Import Patterns:
+  - from ocp_resources.virtual_machine import VirtualMachine
+  - from utilities.virt import VirtualMachineForTests
+  - from utilities.constants import TIMEOUT_5MIN
+
+🏗️ Test Structure Conventions:
+  - File naming: test_<feature_name>.py
+  - Test naming: test_<action>_<expected_outcome>
+  - Class grouping: class Test<FeatureName>
+  - Shared preconditions in class docstrings
+```
+
+## Key Principles
+
+1. **Thorough but Focused**: Explore enough to understand patterns, don't read everything
+2. **No Hallucination**: Only report what actually exists in the repository
+3. **Pattern Recognition**: Look for common patterns across multiple files
+4. **Actionable Findings**: Report findings that will be useful for code generation
+
+## Constraints
+
+- **Must not hallucinate**: Only report actual findings from the repository
+- **Must verify**: Check that classes/methods actually exist
+- **No file output**: This skill does NOT create context.json or any other file
+- **Conversational output**: Findings are reported in the conversation for immediate use
 
 ## Usage
 
 ```bash
 # Explore repository context
 /v2-explore-test-context
+
+# The findings will be used by subsequent /v2-generate-pytest calls
 ```
 
-## Constraints
-- **Must not hallucinate**: Only report actual findings
-- **Must verify**: Check that classes/methods actually exist
-- **Cache-friendly**: Output must be JSON for easy reuse
-- **Deterministic**: Same repo state = same output
+## Difference from V2.3 (Full)
+
+In v2, this skill:
+- ❌ Does NOT create context.json
+- ✅ Reports findings in conversation
+- ✅ Findings are used immediately but not cached
+
+In v2.2 (full), the same skill:
+- ✅ Creates context.json for reuse
+- ✅ Enables context caching across multiple test generations
 
 ## Reusability
-**Very High** - Can be used for:
-- Any test generation in this repository
-- Manual test development (developers read context.json)
-- CI/CD validation (ensure conventions are followed)
-- Onboarding new developers (show patterns)
+**Medium** - Useful before generating tests in this repository, but findings are not persisted for reuse
 
 ## Dependencies
 - Glob tool (file discovery)

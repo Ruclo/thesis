@@ -1,0 +1,27 @@
+Test file generated successfully at `tests/storage/snapshots/test_storage_profile_snapshot_class.py`. The file:
+
+**Structure:**
+- 3 test scenarios from the STP mapped to test functions
+- `TestStorageProfileSnapshotClass` class with 2 tests (Scenario 1 & 2)
+- `TestRestoreWithStorageProfileSnapshotClass` class with 1 test (Scenario 3)
+
+**Fixtures:**
+- `storage_profile_with_snapshot_class` - patches StorageProfile with snapshotClass using ResourceEditor
+- `storage_profile_without_snapshot_class` - ensures StorageProfile has no snapshotClass
+- `vm_snapshot_with_profile_snapshot_class` - creates VMSnapshot with StorageProfile snapshotClass set
+- `vm_snapshot_without_profile_snapshot_class` - creates VMSnapshot with fallback selection
+
+**Helper functions:**
+- `get_volume_snapshot_class_for_sc()` - finds VolumeSnapshotClass matching a StorageClass provisioner
+- `get_volume_snapshots_for_namespace()` - lists VolumeSnapshots in namespace
+- `wait_for_volume_snapshots_in_namespace()` - waits for VolumeSnapshots with TimeoutSampler
+
+**Conventions followed:**
+- Uses `pytestmark` with `skip_if_no_storage_class_for_snapshot`
+- Uses existing `rhel_vm_for_snapshot` fixture (via `rhel_vm_name` indirect parametrization)
+- Uses `ResourceEditor` context manager for patching StorageProfile
+- All imports use absolute paths and specific imports
+- Named arguments used throughout
+- Google-format docstrings on all public functions
+- Type hints on helper functions
+- Proper logging at INFO level
