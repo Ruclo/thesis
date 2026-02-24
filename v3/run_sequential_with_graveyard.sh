@@ -26,7 +26,7 @@ PROGRESS_FILE="$OUTPUT_BASE/PROGRESS.txt"
 START_TIME=$(date +%s)
 
 # Start fresh - no GRAVEYARD.md initially
-rm -f "$GRAVEYARD_ACCUMULATOR"
+#rm -f "$GRAVEYARD_ACCUMULATOR"
 
 # Initialize progress file
 cat > "$PROGRESS_FILE" <<EOF

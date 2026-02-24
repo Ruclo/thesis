@@ -1,0 +1,2187 @@
+/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/kubernetes/client/exceptions.py:91: DeprecationWarning: HTTPResponse.getheaders() is deprecated and will be removed in urllib3 v2.1.0. Instead access HTTPResponse.headers directly.
+  self.headers = http_resp.getheaders()
+/home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/kubernetes/client/exceptions.py:91: DeprecationWarning: HTTPResponse.getheaders() is deprecated and will be removed in urllib3 v2.1.0. Instead access HTTPResponse.headers directly.
+  self.headers = http_resp.getheaders()
+2026-02-23T15:25:42.883415 ocp_resources Namespace [32mINFO[0m Create Namespace cnv-tests-run-in-progress-ns[0m
+2026-02-23T15:25:42.883903 ocp_resources Namespace [32mINFO[0m Posting {'apiVersion': 'v1', 'kind': 'Namespace', 'metadata': {'name': 'cnv-tests-run-in-progress-ns'}, 'spec': {}}[0m
+2026-02-23T15:25:43.222756 ocp_resources Namespace [32mINFO[0m Wait until Namespace cnv-tests-run-in-progress-ns is created[0m
+2026-02-23T15:25:43.379213 ocp_resources Namespace [32mINFO[0m Wait for Namespace cnv-tests-run-in-progress-ns status to be Active[0m
+2026-02-23T15:25:43.535275 ocp_resources Namespace [32mINFO[0m Status of Namespace cnv-tests-run-in-progress-ns is Active[0m
+2026-02-23T15:25:43.536313 ocp_resources Namespace [32mINFO[0m Update Namespace cnv-tests-run-in-progress-ns:
+{'metadata': {'labels': {'pod-security.kubernetes.io/enforce': 'privileged', 'security.openshift.io/scc.podSecurityLabelSync': 'false'}, 'name': 'cnv-tests-run-in-progress-ns'}}[0m
+2026-02-23T15:25:43.699864 ocp_resources ConfigMap [32mINFO[0m Create ConfigMap cnv-tests-run-in-progress[0m
+2026-02-23T15:25:43.700256 ocp_resources ConfigMap [32mINFO[0m Posting {'apiVersion': 'v1', 'kind': 'ConfigMap', 'metadata': {'name': 'cnv-tests-run-in-progress', 'namespace': 'cnv-tests-run-in-progress-ns'}, 'data': '*******'}[0m
+2026-02-23T15:25:44.015023 ocp_resources ConfigMap [32mINFO[0m Wait until ConfigMap cnv-tests-run-in-progress is created[0m
+============================= test session starts ==============================
+platform linux -- Python 3.14.0, pytest-9.0.2, pluggy-1.6.0
+benchmark: 5.2.3 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /home/fedora/thesis/openshift-virtualization-tests
+configfile: pytest.ini (WARNING: ignoring pytest config in pyproject.toml!)
+plugins: anyio-4.12.1, benchmark-5.2.3, html-4.1.1, order-1.3.0, testconfig-0.2.0, metadata-3.1.1, mock-3.15.1, repeat-0.9.4, progress-1.4.0, dependency-0.6.0, jira-0.3.22
+collected 46 items
+
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py 2026-02-23T15:30:17.838889 utilities.artifactory [31mERROR[0m Unable to connect to test image server: https://{server}/artifactory/cnv-qe-server-local/ HTTPS[0m
+E
+TEST: TestWindowsGuestAgentOSInfo.test_create_vm[#win-10#] [setup] STATUS: [0;31mERROR[0m
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f6e599b6660>
+golden_images_namespace = <ocp_resources.namespace.Namespace object at 0x7f6e56f3c510>
+windows_os_matrix__class__ = {'win-10': {'container_disk_image_path': 'docker/kubevirt-common-instancetypes/windows10-container-disk:4.99', 'data_source': 'win10', 'dv_size': '70Gi', 'image_name': 'win_10_uefi.qcow2', ...}}
+
+    @pytest.fixture(scope="class")
+    def windows_ga_golden_image_data_source(admin_client, golden_images_namespace, windows_os_matrix__class__):
+>       yield from get_matrix_os_golden_image_data_source(
+            admin_client=admin_client,
+            golden_images_namespace=golden_images_namespace,
+            os_matrix=windows_os_matrix__class__,
+        )
+
+tests/virt/guest_agent/conftest.py:12: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/virt/cluster/common_templates/utils.py:493: in get_matrix_os_golden_image_data_source
+    yield from get_or_create_golden_image_data_source(
+tests/virt/utils.py:457: in get_or_create_golden_image_data_source
+    url=f"{get_test_artifact_server_url()}{os_dict['image_path']}",
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+utilities/artifactory.py:39: in get_test_artifact_server_url
+    for sample in TimeoutSampler(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <timeout_sampler.TimeoutSampler object at 0x7f6e56bda0d0>
+
+    def __iter__(self) -> Any:
+        """
+        Call `func` and yield the result, or raise an exception on timeout.
+    
+        Yields:
+            any: Return value from `func`
+    
+        Raises:
+            TimeoutExpiredError: if `func` takes longer than `wait_timeout` seconds to return a value
+        """
+        timeout_watch = TimeoutWatch(timeout=self.wait_timeout)
+        if self.print_log:
+            log = (
+                f"Waiting for {self.wait_timeout} seconds"
+                f" [{datetime.timedelta(seconds=self.wait_timeout)}], retry every"
+                f" {self.sleep} seconds."
+            )
+    
+            if self.print_func_log:
+                log += f" ({self._func_log})"
+    
+            LOGGER.info(log)
+    
+        last_exp = None
+        elapsed_time = None
+        while timeout_watch.remaining_time() > 0:
+            try:
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+                yield self.func(*self.func_args, **self.func_kwargs)
+                time.sleep(self.sleep)
+                elapsed_time = None
+    
+            except Exception as exp:
+                last_exp = exp
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+    
+                if not self._should_ignore_exception(exp=last_exp):
+                    raise TimeoutExpiredError(
+                        self._get_exception_log(exp=last_exp), last_exp=last_exp, elapsed_time=elapsed_time
+                    )
+    
+                time.sleep(self.sleep)
+                elapsed_time = None
+    
+            finally:
+                if self.print_log and elapsed_time:
+                    LOGGER.info(_elapsed_time_log(elapsed_time=elapsed_time))
+    
+>       raise TimeoutExpiredError(self._get_exception_log(exp=last_exp), last_exp=last_exp)
+E       timeout_sampler.TimeoutExpiredError: Timed Out: 60
+E       Function: utilities.artifactory.<locals>.lambda: artifactory_connection_url.requests.get.get_artifactory_header
+E       Last exception: ConnectionError: HTTPSConnectionPool(host='%7bserver%7d', port=443): Max retries exceeded with url: /artifactory/cnv-qe-server-local/ (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x7f6e5823d810>: Failed to resolve '%7bserver%7d' ([Errno -2] Name or service not known)")).
+
+.venv/lib64/python3.14/site-packages/timeout_sampler/__init__.py:182: TimeoutExpiredError
+------------------------------------------------------- TEARDOWN -------------------------------------------------------
+
+
+____ ERROR at setup of TestWindowsGuestAgentOSInfo.test_create_vm[#win-10#] ____
+
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f6e599b6660>
+golden_images_namespace = <ocp_resources.namespace.Namespace object at 0x7f6e56f3c510>
+windows_os_matrix__class__ = {'win-10': {'container_disk_image_path': 'docker/kubevirt-common-instancetypes/windows10-container-disk:4.99', 'data_source': 'win10', 'dv_size': '70Gi', 'image_name': 'win_10_uefi.qcow2', ...}}
+
+    @pytest.fixture(scope="class")
+    def windows_ga_golden_image_data_source(admin_client, golden_images_namespace, windows_os_matrix__class__):
+>       yield from get_matrix_os_golden_image_data_source(
+            admin_client=admin_client,
+            golden_images_namespace=golden_images_namespace,
+            os_matrix=windows_os_matrix__class__,
+        )
+
+tests/virt/guest_agent/conftest.py:12: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/virt/cluster/common_templates/utils.py:493: in get_matrix_os_golden_image_data_source
+    yield from get_or_create_golden_image_data_source(
+tests/virt/utils.py:457: in get_or_create_golden_image_data_source
+    url=f"{get_test_artifact_server_url()}{os_dict['image_path']}",
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+utilities/artifactory.py:39: in get_test_artifact_server_url
+    for sample in TimeoutSampler(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <timeout_sampler.TimeoutSampler object at 0x7f6e56bda0d0>
+
+    def __iter__(self) -> Any:
+        """
+        Call `func` and yield the result, or raise an exception on timeout.
+    
+        Yields:
+            any: Return value from `func`
+    
+        Raises:
+            TimeoutExpiredError: if `func` takes longer than `wait_timeout` seconds to return a value
+        """
+        timeout_watch = TimeoutWatch(timeout=self.wait_timeout)
+        if self.print_log:
+            log = (
+                f"Waiting for {self.wait_timeout} seconds"
+                f" [{datetime.timedelta(seconds=self.wait_timeout)}], retry every"
+                f" {self.sleep} seconds."
+            )
+    
+            if self.print_func_log:
+                log += f" ({self._func_log})"
+    
+            LOGGER.info(log)
+    
+        last_exp = None
+        elapsed_time = None
+        while timeout_watch.remaining_time() > 0:
+            try:
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+                yield self.func(*self.func_args, **self.func_kwargs)
+                time.sleep(self.sleep)
+                elapsed_time = None
+    
+            except Exception as exp:
+                last_exp = exp
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+    
+                if not self._should_ignore_exception(exp=last_exp):
+                    raise TimeoutExpiredError(
+                        self._get_exception_log(exp=last_exp), last_exp=last_exp, elapsed_time=elapsed_time
+                    )
+    
+                time.sleep(self.sleep)
+                elapsed_time = None
+    
+            finally:
+                if self.print_log and elapsed_time:
+                    LOGGER.info(_elapsed_time_log(elapsed_time=elapsed_time))
+    
+>       raise TimeoutExpiredError(self._get_exception_log(exp=last_exp), last_exp=last_exp)
+E       timeout_sampler.TimeoutExpiredError: Timed Out: 60
+E       Function: utilities.artifactory.<locals>.lambda: artifactory_connection_url.requests.get.get_artifactory_header
+E       Last exception: ConnectionError: HTTPSConnectionPool(host='%7bserver%7d', port=443): Max retries exceeded with url: /artifactory/cnv-qe-server-local/ (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x7f6e5823d810>: Failed to resolve '%7bserver%7d' ([Errno -2] Name or service not known)")).
+
+.venv/lib64/python3.14/site-packages/timeout_sampler/__init__.py:182: TimeoutExpiredError
+---------------------------- Captured stderr setup -----------------------------
+
+----------------------------------------------- test_create_vm[#win-10#] -----------------------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-23T15:25:44.232718 conftest [32mINFO[0m Executing session fixture: admin_client[0m
+2026-02-23T15:25:44.233017 conftest [32mINFO[0m Executing session fixture: pytestconfig[0m
+2026-02-23T15:25:44.233188 conftest [32mINFO[0m Executing session fixture: installing_cnv[0m
+2026-02-23T15:25:44.233306 conftest [32mINFO[0m Executing session fixture: cnv_tests_utilities_namespace[0m
+2026-02-23T15:25:44.395356 ocp_resources Namespace [32mINFO[0m Create Namespace cnv-tests-utilities[0m
+2026-02-23T15:25:44.395659 ocp_resources Namespace [32mINFO[0m Posting {'apiVersion': 'v1', 'kind': 'Namespace', 'metadata': {'name': 'cnv-tests-utilities', 'labels': {'pod-security.kubernetes.io/enforce': 'privileged', 'security.openshift.io/scc.podSecurityLabelSync': 'false'}}, 'spec': {}}[0m
+2026-02-23T15:25:44.716055 ocp_resources Namespace [32mINFO[0m Wait for Namespace cnv-tests-utilities status to be Active[0m
+2026-02-23T15:25:44.716420 timeout_sampler [32mINFO[0m Waiting for 120 seconds [0:02:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_for_status.lambda: self.exists)[0m
+2026-02-23T15:25:44.874192 ocp_resources Namespace [32mINFO[0m Status of Namespace cnv-tests-utilities is Active[0m
+2026-02-23T15:25:44.874487 timeout_sampler [32mINFO[0m Elapsed time: 0.00027751922607421875 [0:00:00.000278][0m
+2026-02-23T15:25:44.874951 conftest [32mINFO[0m Executing session fixture: skip_unprivileged_client[0m
+2026-02-23T15:25:44.876024 ocp_resources.resource [32mINFO[0m kind: OAuth api version: config.openshift.io/v1[0m
+2026-02-23T15:25:44.877614 ocp_resources.resource [32mINFO[0m kind: DaemonSet api version: apps/v1[0m
+2026-02-23T15:25:44.875316 conftest [32mINFO[0m Executing session fixture: identity_provider_config[0m
+2026-02-23T15:25:44.876716 conftest [32mINFO[0m Executing session fixture: leftovers_cleanup[0m
+2026-02-23T15:25:44.876978 tests.conftest [32mINFO[0m Checking for leftover resources[0m
+2026-02-23T15:25:45.352165 ocp_resources.resource [32mINFO[0m ResourceEdits: Updating data for resource OAuth cluster[0m
+2026-02-23T15:25:45.352655 ocp_resources OAuth [32mINFO[0m Update OAuth cluster:
+{'metadata': {'name': 'cluster'}, 'spec': {'tokenConfig': {'accessTokenMaxAgeSeconds': 604800}}}[0m
+2026-02-23T15:25:45.514992 conftest [32mINFO[0m Executing session fixture: artifactory_setup[0m
+2026-02-23T15:25:45.515455 tests.conftest [32mINFO[0m Checking for artifactory credentials:[0m
+2026-02-23T15:25:45.515701 tests.conftest [33mWARNING[0m Explicitly skipping artifactory setup check due to use of --skip-artifactory-check[0m
+2026-02-23T15:25:45.516091 conftest [32mINFO[0m Executing session fixture: os_path_environment[0m
+2026-02-23T15:25:45.516640 conftest [32mINFO[0m Executing session fixture: tmpdir_factory[0m
+2026-02-23T15:25:45.517089 conftest [32mINFO[0m Executing session fixture: bin_directory[0m
+2026-02-23T15:25:45.520578 conftest [32mINFO[0m Executing session fixture: virtctl_binary[0m
+2026-02-23T15:25:45.521877 ocp_resources.resource [32mINFO[0m kind: ConsoleCLIDownload api version: console.openshift.io/v1[0m
+2026-02-23T15:25:45.832942 utilities.infra [32mINFO[0m Downloading archive using: url=https://hyperconverged-cluster-cli-download-openshift-cnv.apps.c01-mv-421.rhos-psi.cnv-qe.rhood.us/amd64/linux/virtctl.tar.gz[0m
+2026-02-23T15:25:50.247527 utilities.infra [32mINFO[0m Extract the downloaded archive.[0m
+2026-02-23T15:25:50.483172 utilities.infra [32mINFO[0m Downloaded file: ['virtctl'][0m
+2026-02-23T15:25:50.487474 conftest [32mINFO[0m Executing session fixture: oc_binary[0m
+2026-02-23T15:25:50.797662 utilities.infra [32mINFO[0m Downloading archive using: url=https://downloads-openshift-console.apps.c01-mv-421.rhos-psi.cnv-qe.rhood.us/amd64/linux/oc.tar[0m
+2026-02-23T15:26:04.275616 utilities.infra [32mINFO[0m Extract the downloaded archive.[0m
+2026-02-23T15:26:04.507191 utilities.infra [32mINFO[0m Downloaded file: ['oc'][0m
+2026-02-23T15:26:04.523190 conftest [32mINFO[0m Executing session fixture: bin_directory_to_os_path[0m
+2026-02-23T15:26:04.523680 tests.conftest [32mINFO[0m Adding /tmp/pytest-THZmNMRLEep8MYBwrWv2fe/bin0 to $PATH[0m
+2026-02-23T15:26:04.523942 conftest [32mINFO[0m Executing session fixture: openshift_current_version[0m
+2026-02-23T15:26:04.524373 ocp_resources.resource [32mINFO[0m kind: ClusterVersion api version: config.openshift.io/v1[0m
+2026-02-23T15:26:04.852280 conftest [32mINFO[0m Executing session fixture: hco_namespace[0m
+2026-02-23T15:26:05.009337 conftest [32mINFO[0m Executing session fixture: csv_scope_session[0m
+2026-02-23T15:26:05.010470 ocp_resources.resource [32mINFO[0m kind: Subscription api version: operators.coreos.com/v1alpha1[0m
+2026-02-23T15:26:05.333551 ocp_resources.resource [32mINFO[0m kind: ClusterServiceVersion api version: operators.coreos.com/v1alpha1[0m
+2026-02-23T15:26:06.113378 conftest [32mINFO[0m Executing session fixture: cnv_current_version[0m
+2026-02-23T15:26:06.615517 conftest [32mINFO[0m Executing session fixture: cnv_subscription_scope_session[0m
+2026-02-23T15:26:06.615890 ocp_resources.resource [32mINFO[0m kind: Subscription api version: operators.coreos.com/v1alpha1[0m
+2026-02-23T15:26:06.772316 conftest [32mINFO[0m Executing session fixture: hco_image[0m
+2026-02-23T15:26:06.931473 ocp_resources.resource [32mINFO[0m kind: CatalogSource api version: operators.coreos.com/v1alpha1[0m
+2026-02-23T15:26:07.249325 ocp_resources.resource [32mINFO[0m kind: StorageClass api version: storage.k8s.io/v1[0m
+2026-02-23T15:26:07.248587 conftest [32mINFO[0m Executing session fixture: cluster_storage_classes[0m
+2026-02-23T15:26:07.409435 conftest [32mINFO[0m Executing session fixture: ocs_storage_class[0m
+2026-02-23T15:26:07.410044 conftest [32mINFO[0m Executing session fixture: ocs_current_version[0m
+2026-02-23T15:26:07.410568 ocp_resources.resource [32mINFO[0m kind: ClusterServiceVersion api version: operators.coreos.com/v1alpha1[0m
+2026-02-23T15:26:07.732571 conftest [32mINFO[0m Executing session fixture: kubevirt_resource_scope_session[0m
+2026-02-23T15:26:07.733140 ocp_resources.resource [32mINFO[0m kind: KubeVirt api version: kubevirt.io/v1[0m
+2026-02-23T15:26:07.894059 ocp_resources.resource [32mINFO[0m kind: Network api version: config.openshift.io/v1[0m
+2026-02-23T15:26:07.893180 conftest [32mINFO[0m Executing session fixture: cluster_service_network[0m
+2026-02-23T15:26:08.050726 conftest [32mINFO[0m Executing session fixture: ipv6_supported_cluster[0m
+2026-02-23T15:26:08.051521 conftest [32mINFO[0m Executing session fixture: ipv4_supported_cluster[0m
+2026-02-23T15:26:08.052096 conftest [32mINFO[0m Executing session fixture: nodes[0m
+2026-02-23T15:26:08.275674 conftest [32mINFO[0m Executing session fixture: workers[0m
+2026-02-23T15:26:09.228450 conftest [32mINFO[0m Executing session fixture: cnv_source[0m
+2026-02-23T15:26:09.228883 conftest [32mINFO[0m Executing session fixture: is_production_source[0m
+2026-02-23T15:26:09.229115 conftest [32mINFO[0m Executing session fixture: generated_pulled_secret[0m
+2026-02-23T15:26:09.229564 ocp_resources.resource [32mINFO[0m Trying to get client via new_client_from_config[0m
+2026-02-23T15:26:10.185760 conftest [32mINFO[0m Executing session fixture: cnv_tests_utilities_service_account[0m
+2026-02-23T15:26:10.214483 ocp_resources ServiceAccount [32mINFO[0m Create ServiceAccount cnv-tests-sa[0m
+2026-02-23T15:26:10.214612 ocp_resources ServiceAccount [32mINFO[0m Posting {'apiVersion': 'v1', 'kind': 'ServiceAccount', 'metadata': {'name': 'cnv-tests-sa', 'namespace': 'cnv-tests-utilities'}}[0m
+2026-02-23T15:26:12.033345 timeout_sampler [32mINFO[0m Waiting for 10 seconds [0:00:10], retry every 1 seconds. (Function: utilities.virt._get_image_json  Kwargs: {'cmd': 'oc image -o json info quay.io/openshift-cnv/qe-net-utils:latest --filter-by-os linux/amd64 --registry-config=/tmp/tmpwepuqmgn-cnv-tests-pull-secret/pull-secrets.json'})[0m
+2026-02-23T15:26:12.032616 conftest [32mINFO[0m Executing session fixture: utility_daemonset[0m
+2026-02-23T15:26:12.033926 pyhelper_utils.shell [32mINFO[0m Running oc image -o json info quay.io/openshift-cnv/qe-net-utils:latest --filter-by-os linux/amd64 --registry-config=/tmp/tmpwepuqmgn-cnv-tests-pull-secret/pull-secrets.json command[0m
+2026-02-23T15:26:14.823095 timeout_sampler [32mINFO[0m Elapsed time: 0.000293731689453125 [0:00:00.000294][0m
+2026-02-23T15:26:14.852123 ocp_resources.resource [32mINFO[0m kind: DaemonSet api version: apps/v1 --- [DuplicateFilter: Last log `Trying to get client via new_client_from_config` repeated 2 times][0m
+2026-02-23T15:26:14.860570 ocp_resources DaemonSet [32mINFO[0m Create DaemonSet utility[0m
+2026-02-23T15:26:14.860747 ocp_resources DaemonSet [32mINFO[0m Posting {'apiVersion': 'apps/v1', 'kind': 'DaemonSet', 'metadata': {'annotations': {'deprecated.daemonset.template.generation': '0'}, 'creationTimestamp': None, 'labels': {'cnv-test': 'utility', 'tier': 'node'}, 'name': 'utility', 'namespace': 'cnv-tests-utilities'}, 'spec': {'revisionHistoryLimit': 10, 'selector': {'matchLabels': {'cnv-test': 'utility', 'tier': 'node'}}, 'template': {'metadata': {'creationTimestamp': None, 'labels': {'cnv-test': 'utility', 'tier': 'node'}}, 'spec': {'containers': [{'command': ['/bin/bash', '-c', 'echo ok > /tmp/healthy && sleep INF'], 'image': 'quay.io/openshift-cnv/qe-net-utils:latest@sha256:2c8e11ac0f0b36553bed603c1c67dccb703d7059ccbcf8c91e3a35c99719ce20', 'imagePullPolicy': 'IfNotPresent', 'name': 'utility', 'readinessProbe': {'exec': {'command': ['cat', '/tmp/healthy']}, 'failureThreshold': 3, 'initialDelaySeconds': 5, 'periodSeconds': 5, 'successThreshold': 1, 'timeoutSeconds': 1}, 'resources': {'limits': {'cpu': '100m', 'memory': '50Mi'}, 'requests': {'cpu': '100m', 'memory': '50Mi'}}, 'securityContext': {'privileged': True, 'runAsUser': 0}, 'stdin': True, 'stdinOnce': True, 'terminationMessagePath': '/dev/termination-log', 'terminationMessagePolicy': 'File', 'tty': True, 'volumeMounts': [{'mountPath': '/host', 'name': 'host'}, {'mountPath': '/var/run/secrets/kubernetes.io/serviceaccount', 'name': 'kube-api-access-m5ch7', 'readOnly': True}, {'mountPath': '/host/run/openvswitch', 'name': 'ovs-run'}, {'mountPath': '/run/dbus/system_bus_socket', 'name': 'dbus-socket'}, {'mountPath': '/host/dev', 'name': 'dev'}, {'mountPath': '/host/etc', 'name': 'etc'}, {'mountPath': '/host/var', 'name': 'var'}]}], 'dnsPolicy': 'ClusterFirst', 'enableServiceLinks': True, 'hostNetwork': True, 'hostPID': True, 'imagePullSecrets': [{'name': 'default-dockercfg-xrlbh'}], 'preemptionPolicy': 'PreemptLowerPriority', 'priority': 0, 'restartPolicy': 'Always', 'schedulerName': 'default-scheduler', 'securityContext': {'privileged': True}, 'serviceAccount': 'cnv-tests-sa', 'serviceAccountName': 'cnv-tests-sa', 'terminationGracePeriodSeconds': 30, 'tolerations': [{'effect': 'NoSchedule', 'key': 'node-role.kubernetes.io/master', 'operator': 'Exists'}], 'volumes': [{'hostPath': {'path': '/', 'type': 'Directory'}, 'name': 'host'}, {'hostPath': {'path': '/run/openvswitch', 'type': ''}, 'name': 'ovs-run'}, {'hostPath': {'path': '/run/dbus/system_bus_socket', 'type': 'Socket'}, 'name': 'dbus-socket'}, {'hostPath': {'path': '/dev', 'type': 'Directory'}, 'name': 'dev'}, {'hostPath': {'path': '/etc', 'type': 'Directory'}, 'name': 'etc'}, {'hostPath': {'path': '/var', 'type': 'Directory'}, 'name': 'var'}, {'name': 'kube-api-access-m5ch7', 'projected': {'defaultMode': 420, 'sources': [{'serviceAccountToken': {'path': 'token'}}, {'configMap': {'items': [{'key': 'ca.crt', 'path': 'ca.crt'}], 'name': 'kube-root-ca.crt'}}, {'downwardAPI': {'items': [{'fieldRef': {'apiVersion': 'v1', 'fieldPath': 'metadata.namespace'}, 'path': 'namespace'}]}}, {'configMap': {'items': [{'key': 'service-ca.crt', 'path': 'service-ca.crt'}], 'name': 'openshift-service-ca.crt'}}]}}]}}, 'updateStrategy': {'type': 'OnDelete'}}}[0m
+2026-02-23T15:26:15.675686 ocp_resources DaemonSet [32mINFO[0m Wait for DaemonSet utility to deploy all desired pods[0m
+2026-02-23T15:26:15.676299 timeout_sampler [32mINFO[0m Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: kubernetes.dynamic.client.get  Kwargs: {'field_selector': 'metadata.name==utility', 'namespace': 'cnv-tests-utilities'})[0m
+2026-02-23T15:26:25.109274 timeout_sampler [32mINFO[0m Elapsed time: 9.263345718383789 [0:00:09.263346][0m
+2026-02-23T15:26:25.109781 conftest [32mINFO[0m Executing session fixture: workers_utility_pods[0m
+2026-02-23T15:26:29.369487 conftest [32mINFO[0m Executing session fixture: workers_type[0m
+2026-02-23T15:26:29.852037 ocp_resources Pod [32mINFO[0m Execute ['chroot', '/host', 'bash', '-c', 'systemd-detect-virt'] on utility-96c85 (c01-mv-421-qgr9v-worker-0-gwsf6)[0m
+2026-02-23T15:26:31.687858 ocp_resources Pod [32mINFO[0m Execute ['chroot', '/host', 'bash', '-c', 'systemd-detect-virt'] on utility-hrtkq (c01-mv-421-qgr9v-worker-0-rgbwd)[0m
+2026-02-23T15:26:33.725299 ocp_resources Pod [32mINFO[0m Execute ['chroot', '/host', 'bash', '-c', 'systemd-detect-virt'] on utility-xsxsq (c01-mv-421-qgr9v-worker-0-6brx9)[0m
+2026-02-23T15:26:34.996535 tests.conftest [32mINFO[0m Cluster workers are: virtual[0m
+2026-02-23T15:26:34.997420 conftest [32mINFO[0m Executing session fixture: nodes_cpu_architecture[0m
+2026-02-23T15:26:36.249361 pyhelper_utils.shell [32mINFO[0m Running virtctl --kubeconfig /home/fedora/.kube/config version command[0m
+2026-02-23T15:26:36.248993 conftest [32mINFO[0m Executing session fixture: cluster_info[0m
+2026-02-23T15:26:37.049316 ocp_resources.resource [32mINFO[0m kind: Network api version: config.openshift.io/v1[0m
+2026-02-23T15:26:37.215408 tests.conftest [32mINFO[0m 
+Cluster info:
+	Openshift version: 4.21.0
+	CNV version: 4.21.0
+	HCO image: brew.registry.redhat.io/rh-osbs/iib:1097155
+	OCS version: 4.21.0-104.stable
+	CNI type: OVNKubernetes
+	Workers type: virtual
+	Cluster CPU Architecture: amd64
+	IPv4 cluster: True
+	IPv6 cluster: False
+	Virtctl version: 
+	Client Version: version.Info{GitVersion:"v1.7.0-45-g33ff10241e", GitCommit:"33ff10241e848425ef145a49e450c5d1c0255edd", GitTreeState:"clean", BuildDate:"2026-01-15T09:28:24Z", GoVersion:"go1.24.11 (Red Hat 1.24.11-1.el8_10) X:strictfipsruntime", Compiler:"gc", Platform:"linux/amd64"}
+	Server Version: version.Info{GitVersion:"v1.7.0-45-g33ff10241e", GitCommit:"33ff10241e848425ef145a49e450c5d1c0255edd", GitTreeState:"clean", BuildDate:"2026-01-15T09:20:24Z", GoVersion:"go1.24.11 (Red Hat 1.24.11-1.el9_6) X:strictfipsruntime", Compiler:"gc", Platform:"linux/amd64"}
+[0m
+2026-02-23T15:26:37.217227 conftest [32mINFO[0m Executing function fixture: term_handler_scope_function[0m
+2026-02-23T15:26:37.217714 conftest [32mINFO[0m Executing class fixture: term_handler_scope_class[0m
+2026-02-23T15:26:37.218598 conftest [32mINFO[0m Executing module fixture: term_handler_scope_module[0m
+2026-02-23T15:26:37.219022 conftest [32mINFO[0m Executing session fixture: term_handler_scope_session[0m
+2026-02-23T15:26:37.219397 conftest [32mINFO[0m Executing session fixture: record_testsuite_property[0m
+2026-02-23T15:26:37.219682 conftest [32mINFO[0m Executing session fixture: junitxml_polarion[0m
+2026-02-23T15:26:37.220060 conftest [32mINFO[0m Executing session fixture: cluster_storage_classes_names[0m
+2026-02-23T15:26:37.220356 conftest [32mINFO[0m Executing session fixture: junitxml_plugin[0m
+2026-02-23T15:26:37.220613 conftest [32mINFO[0m Executing session fixture: hyperconverged_resource_scope_session[0m
+2026-02-23T15:26:37.221213 ocp_resources.resource [32mINFO[0m kind: HyperConverged api version: hco.kubevirt.io/v1beta1[0m
+2026-02-23T15:26:37.383303 conftest [32mINFO[0m Executing session fixture: cluster_sanity_scope_session[0m
+2026-02-23T15:26:37.385137 utilities.infra [32mINFO[0m Running cluster sanity. (To skip cluster sanity check pass --cluster-sanity-skip-check to pytest)[0m
+2026-02-23T15:26:37.385504 utilities.infra [32mINFO[0m Check storage classes sanity. (To skip storage class sanity check pass --cluster-sanity-skip-storage-check to pytest)[0m
+2026-02-23T15:26:37.385972 utilities.infra [32mINFO[0m Check nodes sanity. (To skip nodes sanity check pass --cluster-sanity-skip-nodes-check to pytest)[0m
+2026-02-23T15:26:37.386307 ocp_utilities.infra [32mINFO[0m Verify all nodes are in a healthy condition.[0m
+2026-02-23T15:26:38.341061 ocp_utilities.infra [32mINFO[0m Verify all nodes are schedulable.[0m
+2026-02-23T15:26:39.294305 timeout_sampler [32mINFO[0m Waiting for 300 seconds [0:05:00], retry every 5 seconds. (Function: utilities.infra.get_pods  Kwargs: {'client': <kubernetes.dynamic.client.DynamicClient object at 0x7f6e599b6660>, 'namespace': <ocp_resources.namespace.Namespace object at 0x7f6e5834bce0>})[0m
+2026-02-23T15:26:54.494670 timeout_sampler [32mINFO[0m Elapsed time: 0.0003933906555175781 [0:00:00.000393][0m
+2026-02-23T15:26:54.495123 utilities.infra [32mINFO[0m Check webhook endpoints health. (To skip webhook check pass --cluster-sanity-skip-webhook-check to pytest)[0m
+2026-02-23T15:26:54.495408 utilities.infra [32mINFO[0m Checking webhook endpoints health for services in namespace: openshift-cnv[0m
+2026-02-23T15:26:54.495617 utilities.infra [32mINFO[0m Scanning MutatingWebhookConfiguration resources for webhook services[0m
+2026-02-23T15:26:54.496068 ocp_resources.resource [32mINFO[0m kind: MutatingWebhookConfiguration api version: admissionregistration.k8s.io/v1[0m
+2026-02-23T15:26:57.115176 ocp_resources.resource [32mINFO[0m kind: ValidatingWebhookConfiguration api version: admissionregistration.k8s.io/v1[0m
+2026-02-23T15:26:57.114549 utilities.infra [32mINFO[0m Scanning ValidatingWebhookConfiguration resources for webhook services[0m
+2026-02-23T15:27:01.713891 utilities.infra [32mINFO[0m Checking endpoints for service: cdi-api[0m
+2026-02-23T15:27:02.027477 utilities.infra [32mINFO[0m Service cdi-api has 1 ready endpoint address(es)[0m
+2026-02-23T15:27:02.027729 utilities.infra [32mINFO[0m Checking endpoints for service: hco-webhook-service[0m
+2026-02-23T15:27:02.338870 utilities.infra [32mINFO[0m Service hco-webhook-service has 1 ready endpoint address(es)[0m
+2026-02-23T15:27:02.339221 utilities.infra [32mINFO[0m Checking endpoints for service: hostpath-provisioner-operator-service[0m
+2026-02-23T15:27:02.651278 utilities.infra [32mINFO[0m Service hostpath-provisioner-operator-service has 1 ready endpoint address(es)[0m
+2026-02-23T15:27:02.651499 utilities.infra [32mINFO[0m Checking endpoints for service: kubemacpool-service[0m
+2026-02-23T15:27:02.960648 utilities.infra [32mINFO[0m Service kubemacpool-service has 1 ready endpoint address(es)[0m
+2026-02-23T15:27:02.960968 utilities.infra [32mINFO[0m Checking endpoints for service: kubevirt-ipam-controller-webhook-service[0m
+2026-02-23T15:27:03.275796 utilities.infra [32mINFO[0m Service kubevirt-ipam-controller-webhook-service has 2 ready endpoint address(es)[0m
+2026-02-23T15:27:03.276077 utilities.infra [32mINFO[0m Checking endpoints for service: kubevirt-operator-webhook[0m
+2026-02-23T15:27:03.586264 utilities.infra [32mINFO[0m Service kubevirt-operator-webhook has 2 ready endpoint address(es)[0m
+2026-02-23T15:27:03.586613 utilities.infra [32mINFO[0m Checking endpoints for service: ssp-operator-service[0m
+2026-02-23T15:27:03.898907 utilities.infra [32mINFO[0m Service ssp-operator-service has 1 ready endpoint address(es)[0m
+2026-02-23T15:27:03.899262 utilities.infra [32mINFO[0m Checking endpoints for service: virt-api[0m
+2026-02-23T15:27:04.212520 utilities.infra [32mINFO[0m Service virt-api has 2 ready endpoint address(es)[0m
+2026-02-23T15:27:04.212891 utilities.infra [32mINFO[0m Checking endpoints for service: virt-template-validator[0m
+2026-02-23T15:27:04.526249 utilities.infra [32mINFO[0m Service virt-template-validator has 2 ready endpoint address(es)[0m
+2026-02-23T15:27:04.526611 utilities.infra [32mINFO[0m All discovered webhook services have available endpoints[0m
+2026-02-23T15:27:04.526877 utilities.infra [32mINFO[0m Checking VM creation capability via dry-run in namespace: default[0m
+2026-02-23T15:27:04.527562 ocp_resources.resource [32mINFO[0m kind: VirtualMachine api version: kubevirt.io/v1[0m
+2026-02-23T15:27:04.529841 ocp_resources VirtualMachine [32mINFO[0m Create VirtualMachine sanity-check-dry-run-vm[0m
+2026-02-23T15:27:04.530139 ocp_resources VirtualMachine [32mINFO[0m Posting {'apiVersion': 'kubevirt.io/v1', 'kind': 'VirtualMachine', 'metadata': {'name': 'sanity-check-dry-run-vm', 'namespace': 'default'}, 'spec': {'running': False, 'template': {'spec': {'domain': {'devices': {}, 'resources': {'requests': {'memory': '64Mi'}}}}}}}[0m
+2026-02-23T15:27:04.913689 utilities.infra [32mINFO[0m Dry-run VM creation succeeded[0m
+2026-02-23T15:27:04.914096 utilities.infra [32mINFO[0m Waiting for resource to stabilize: resource_kind=HyperConverged conditions={'Available': 'True', 'Progressing': 'False', 'ReconcileComplete': 'True', 'Degraded': 'False', 'Upgradeable': 'True'} sleep=600 consecutive_checks_count=3[0m
+2026-02-23T15:27:04.914346 timeout_sampler [32mINFO[0m Waiting for 600 seconds [0:10:00], retry every 5 seconds. (Function: utilities.infra.<locals>.lambda: dynamic_client.namespace.resource_kind.resource_name.list.get)[0m
+2026-02-23T15:27:04.915260 ocp_resources.resource [32mINFO[0m kind: HyperConverged api version: hco.kubevirt.io/v1beta1[0m
+2026-02-23T15:27:16.181135 timeout_sampler [32mINFO[0m Elapsed time: 10.799872636795044 [0:00:10.799873][0m
+2026-02-23T15:27:16.182215 ocp_utilities.infra [32mINFO[0m Verify all nodes are in a healthy condition.[0m
+2026-02-23T15:27:16.181606 conftest [32mINFO[0m Executing module fixture: cluster_sanity_scope_module[0m
+2026-02-23T15:27:16.181917 utilities.infra [32mINFO[0m Running cluster sanity. (To skip cluster sanity check pass --cluster-sanity-skip-check to pytest)[0m
+2026-02-23T15:27:16.182025 utilities.infra [32mINFO[0m Check storage classes sanity. (To skip storage class sanity check pass --cluster-sanity-skip-storage-check to pytest)[0m
+2026-02-23T15:27:16.182128 utilities.infra [32mINFO[0m Check nodes sanity. (To skip nodes sanity check pass --cluster-sanity-skip-nodes-check to pytest)[0m
+2026-02-23T15:27:17.289914 ocp_utilities.infra [32mINFO[0m Verify all nodes are schedulable.[0m
+2026-02-23T15:27:18.259901 timeout_sampler [32mINFO[0m Waiting for 300 seconds [0:05:00], retry every 5 seconds. (Function: utilities.infra.get_pods  Kwargs: {'client': <kubernetes.dynamic.client.DynamicClient object at 0x7f6e599b6660>, 'namespace': <ocp_resources.namespace.Namespace object at 0x7f6e5834bce0>})[0m
+2026-02-23T15:27:33.371882 timeout_sampler [32mINFO[0m Elapsed time: 0.0002732276916503906 [0:00:00.000273][0m
+2026-02-23T15:27:33.372319 utilities.infra [32mINFO[0m Check webhook endpoints health. (To skip webhook check pass --cluster-sanity-skip-webhook-check to pytest)[0m
+2026-02-23T15:27:33.372594 utilities.infra [32mINFO[0m Checking webhook endpoints health for services in namespace: openshift-cnv[0m
+2026-02-23T15:27:33.372884 utilities.infra [32mINFO[0m Scanning MutatingWebhookConfiguration resources for webhook services[0m
+2026-02-23T15:27:35.883063 utilities.infra [32mINFO[0m Scanning ValidatingWebhookConfiguration resources for webhook services[0m
+2026-02-23T15:27:40.408236 utilities.infra [32mINFO[0m Checking endpoints for service: cdi-api[0m
+2026-02-23T15:27:40.718392 utilities.infra [32mINFO[0m Service cdi-api has 1 ready endpoint address(es)[0m
+2026-02-23T15:27:40.718838 utilities.infra [32mINFO[0m Checking endpoints for service: hco-webhook-service[0m
+2026-02-23T15:27:41.030567 utilities.infra [32mINFO[0m Service hco-webhook-service has 1 ready endpoint address(es)[0m
+2026-02-23T15:27:41.030976 utilities.infra [32mINFO[0m Checking endpoints for service: hostpath-provisioner-operator-service[0m
+2026-02-23T15:27:41.340997 utilities.infra [32mINFO[0m Service hostpath-provisioner-operator-service has 1 ready endpoint address(es)[0m
+2026-02-23T15:27:41.341512 utilities.infra [32mINFO[0m Checking endpoints for service: kubemacpool-service[0m
+2026-02-23T15:27:41.653870 utilities.infra [32mINFO[0m Service kubemacpool-service has 1 ready endpoint address(es)[0m
+2026-02-23T15:27:41.654198 utilities.infra [32mINFO[0m Checking endpoints for service: kubevirt-ipam-controller-webhook-service[0m
+2026-02-23T15:27:41.966900 utilities.infra [32mINFO[0m Service kubevirt-ipam-controller-webhook-service has 2 ready endpoint address(es)[0m
+2026-02-23T15:27:41.967246 utilities.infra [32mINFO[0m Checking endpoints for service: kubevirt-operator-webhook[0m
+2026-02-23T15:27:42.281090 utilities.infra [32mINFO[0m Service kubevirt-operator-webhook has 2 ready endpoint address(es)[0m
+2026-02-23T15:27:42.281431 utilities.infra [32mINFO[0m Checking endpoints for service: ssp-operator-service[0m
+2026-02-23T15:27:42.595063 utilities.infra [32mINFO[0m Service ssp-operator-service has 1 ready endpoint address(es)[0m
+2026-02-23T15:27:42.595421 utilities.infra [32mINFO[0m Checking endpoints for service: virt-api[0m
+2026-02-23T15:27:42.908207 utilities.infra [32mINFO[0m Service virt-api has 2 ready endpoint address(es)[0m
+2026-02-23T15:27:42.908556 utilities.infra [32mINFO[0m Checking endpoints for service: virt-template-validator[0m
+2026-02-23T15:27:43.219083 utilities.infra [32mINFO[0m Service virt-template-validator has 2 ready endpoint address(es)[0m
+2026-02-23T15:27:43.219412 utilities.infra [32mINFO[0m All discovered webhook services have available endpoints[0m
+2026-02-23T15:27:43.219636 utilities.infra [32mINFO[0m Checking VM creation capability via dry-run in namespace: default[0m
+2026-02-23T15:27:43.221306 ocp_resources.resource [32mINFO[0m kind: VirtualMachine api version: kubevirt.io/v1[0m
+2026-02-23T15:27:43.223891 ocp_resources VirtualMachine [32mINFO[0m Create VirtualMachine sanity-check-dry-run-vm[0m
+2026-02-23T15:27:43.224181 ocp_resources VirtualMachine [32mINFO[0m Posting {'apiVersion': 'kubevirt.io/v1', 'kind': 'VirtualMachine', 'metadata': {'name': 'sanity-check-dry-run-vm', 'namespace': 'default'}, 'spec': {'running': False, 'template': {'spec': {'domain': {'devices': {}, 'resources': {'requests': {'memory': '64Mi'}}}}}}}[0m
+2026-02-23T15:27:43.552186 utilities.infra [32mINFO[0m Dry-run VM creation succeeded[0m
+2026-02-23T15:27:43.552585 utilities.infra [32mINFO[0m Waiting for resource to stabilize: resource_kind=HyperConverged conditions={'Available': 'True', 'Progressing': 'False', 'ReconcileComplete': 'True', 'Degraded': 'False', 'Upgradeable': 'True'} sleep=600 consecutive_checks_count=3[0m
+2026-02-23T15:27:43.552893 timeout_sampler [32mINFO[0m Waiting for 600 seconds [0:10:00], retry every 5 seconds. (Function: utilities.infra.<locals>.lambda: dynamic_client.namespace.resource_kind.resource_name.list.get)[0m
+2026-02-23T15:27:54.807452 timeout_sampler [32mINFO[0m Elapsed time: 10.781413078308105 [0:00:10.781413][0m
+2026-02-23T15:27:54.808586 conftest [32mINFO[0m Executing session fixture: ssh_key_tmpdir_scope_session[0m
+2026-02-23T15:27:54.810998 conftest [32mINFO[0m Executing session fixture: generated_ssh_key_for_vm_access[0m
+2026-02-23T15:27:54.906764 conftest [32mINFO[0m Executing session fixture: session_start_time[0m
+2026-02-23T15:27:54.907088 conftest [32mINFO[0m Executing function fixture: autouse_fixtures[0m
+2026-02-23T15:27:54.907359 conftest [32mINFO[0m Executing session fixture: schedulable_nodes[0m
+2026-02-23T15:27:57.948646 conftest [32mINFO[0m Executing session fixture: gpu_nodes[0m
+2026-02-23T15:27:58.930336 conftest [32mINFO[0m Executing session fixture: nodes_with_supported_gpus[0m
+2026-02-23T15:27:58.930777 conftest [32mINFO[0m Executing session fixture: sriov_workers[0m
+2026-02-23T15:27:59.406784 conftest [32mINFO[0m Executing session fixture: nodes_cpu_vendor[0m
+2026-02-23T15:27:59.568764 conftest [32mINFO[0m Executing session fixture: nodes_cpu_virt_extension[0m
+2026-02-23T15:27:59.569394 conftest [32mINFO[0m Executing session fixture: allocatable_memory_per_node_scope_session[0m
+2026-02-23T15:27:59.894315 tests.virt.utils [32mINFO[0m Node c01-mv-421-qgr9v-worker-0-6brx9 has 12.515708923339844 GiB of allocatable memory[0m
+2026-02-23T15:28:00.217568 tests.virt.utils [32mINFO[0m Node c01-mv-421-qgr9v-worker-0-gwsf6 has 12.515708923339844 GiB of allocatable memory[0m
+2026-02-23T15:28:00.546308 tests.virt.utils [32mINFO[0m Node c01-mv-421-qgr9v-worker-0-rgbwd has 12.515701293945312 GiB of allocatable memory[0m
+2026-02-23T15:28:00.546973 conftest [32mINFO[0m Executing session fixture: hugepages_gib_values[0m
+2026-02-23T15:28:01.037587 conftest [32mINFO[0m Executing session fixture: virt_special_infra_sanity[0m
+2026-02-23T15:28:01.038189 tests.virt.conftest [33mWARNING[0m Skipping virt special infra sanity because --skip-virt-sanity-check was passed[0m
+2026-02-23T15:28:01.038778 conftest [32mINFO[0m Executing session fixture: unprivileged_secret[0m
+2026-02-23T15:28:01.044952 ocp_resources Secret [32mINFO[0m Create Secret htpass-secret-for-cnv-tests[0m
+2026-02-23T15:28:01.045108 ocp_resources Secret [32mINFO[0m Posting {'apiVersion': 'v1', 'kind': 'Secret', 'metadata': {'name': 'htpass-secret-for-cnv-tests', 'namespace': 'openshift-config'}, 'data': '*******'}[0m
+2026-02-23T15:28:01.369958 conftest [32mINFO[0m Executing session fixture: identity_provider_with_htpasswd[0m
+2026-02-23T15:28:01.370438 ocp_resources.resource [32mINFO[0m ResourceEdit: Backing up old data[0m
+2026-02-23T15:28:01.530905 ocp_resources.resource [32mINFO[0m ResourceEdits: Updating data for resource OAuth cluster[0m
+2026-02-23T15:28:01.531286 ocp_resources OAuth [32mINFO[0m Update OAuth cluster:
+{'metadata': {'name': 'cluster'}, 'spec': {'identityProviders': [{'name': 'htpasswd_provider', 'mappingMethod': 'claim', 'type': 'HTPasswd', 'htpasswd': {'fileData': {'name': 'htpass-secret-for-cnv-tests'}}}], 'tokenConfig': {'accessTokenMaxAgeSeconds': 604800, 'accessTokenInactivityTimeout': None}}}[0m
+2026-02-23T15:28:01.694541 ocp_resources.resource [32mINFO[0m kind: Deployment api version: apps/v1[0m
+2026-02-23T15:28:01.852515 tests.conftest [32mINFO[0m Wait for oauth-openshift -> Type: Progressing -> Reason: ReplicaSetUpdated[0m
+2026-02-23T15:28:01.852976 timeout_sampler [32mINFO[0m Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: tests.conftest.<locals>.lambda: dp.instance.status.conditions)[0m
+2026-02-23T15:28:08.404649 timeout_sampler [32mINFO[0m Elapsed time: 6.242459774017334 [0:00:06.242460][0m
+2026-02-23T15:28:08.405418 timeout_sampler [32mINFO[0m Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: tests.conftest.<locals>.lambda: dp.instance.status.conditions)[0m
+2026-02-23T15:28:08.405084 tests.conftest [32mINFO[0m Wait for oauth-openshift -> Type: Progressing -> Reason: NewReplicaSetAvailable[0m
+2026-02-23T15:29:03.488215 timeout_sampler [32mINFO[0m Elapsed time: 54.776220083236694 [0:00:54.776220][0m
+2026-02-23T15:29:03.489564 conftest [32mINFO[0m Executing session fixture: kubeconfig_export_path[0m
+2026-02-23T15:29:03.490052 conftest [32mINFO[0m Executing session fixture: exported_kubeconfig[0m
+2026-02-23T15:29:03.490335 tests.conftest [33mWARNING[0m Both KUBECONFIG /home/fedora/.kube/config and /home/fedora/.kube/config exist. /home/fedora/.kube/config is used as kubeconfig source for this run.[0m
+2026-02-23T15:29:03.490747 tests.conftest [32mINFO[0m Setting KUBECONFIG dir for this run to point to: /tmp/tmpslnrnbve-cnv-tests-kubeconfig[0m
+2026-02-23T15:29:03.490918 tests.conftest [32mINFO[0m Copy KUBECONFIG to /tmp/tmpslnrnbve-cnv-tests-kubeconfig/kubeconfig[0m
+2026-02-23T15:29:03.492464 tests.conftest [32mINFO[0m Set: KUBECONFIG=/tmp/tmpslnrnbve-cnv-tests-kubeconfig/kubeconfig[0m
+2026-02-23T15:29:03.492765 conftest [32mINFO[0m Executing session fixture: unprivileged_client[0m
+2026-02-23T15:29:04.324450 timeout_sampler [32mINFO[0m Waiting for 60 seconds [0:01:00], retry every 3 seconds. (Function: subprocess.Popen  Kwargs: {'args': 'oc login https://api.c01-mv-421.rhos-psi.cnv-qe.rhood.us:6443 -u unprivileged-user -p unprivileged-password', 'shell': True, 'stdout': -1, 'stderr': -1})[0m
+2026-02-23T15:29:04.324136 utilities.infra [32mINFO[0m Trying to login to account[0m
+2026-02-23T15:29:09.206280 utilities.infra [32mINFO[0m Login - success[0m
+2026-02-23T15:29:09.206927 timeout_sampler [32mINFO[0m Elapsed time: 0.00023794174194335938 [0:00:00.000238][0m
+2026-02-23T15:29:09.238572 utilities.infra [32mINFO[0m Trying to login to account[0m
+2026-02-23T15:29:09.238878 timeout_sampler [32mINFO[0m Waiting for 60 seconds [0:01:00], retry every 3 seconds. (Function: subprocess.Popen  Kwargs: {'args': 'oc login https://api.c01-mv-421.rhos-psi.cnv-qe.rhood.us:6443 -u system:admin', 'shell': True, 'stdout': -1, 'stderr': -1})[0m
+2026-02-23T15:29:11.256410 utilities.infra [32mINFO[0m Login - success[0m
+2026-02-23T15:29:11.256720 timeout_sampler [32mINFO[0m Elapsed time: 0.0004334449768066406 [0:00:00.000433][0m
+2026-02-23T15:29:11.257726 ocp_resources.resource [32mINFO[0m Trying to get client via new_client_from_config[0m
+2026-02-23T15:29:11.281001 conftest [32mINFO[0m Executing session fixture: golden_images_namespace[0m
+2026-02-23T15:29:11.437235 conftest [32mINFO[0m Executing session fixture: cluster_node_cpus[0m
+2026-02-23T15:29:12.225641 conftest [32mINFO[0m Executing session fixture: cluster_common_modern_node_cpu[0m
+2026-02-23T15:29:12.225997 utilities.cpu [32mINFO[0m Common CPU used is EPYC-v2[0m
+2026-02-23T15:29:12.226274 conftest [32mINFO[0m Executing session fixture: host_cpu_model[0m
+2026-02-23T15:29:12.719158 conftest [32mINFO[0m Executing session fixture: modern_cpu_for_migration[0m
+2026-02-23T15:29:12.719665 utilities.cpu [32mINFO[0m Host model cpus for all nodes are same {'c01-mv-421-qgr9v-worker-0-6brx9': 'EPYC-Rome', 'c01-mv-421-qgr9v-worker-0-gwsf6': 'EPYC-Rome', 'c01-mv-421-qgr9v-worker-0-rgbwd': 'EPYC-Rome'}. No common cpus are needed[0m
+2026-02-23T15:29:12.720625 conftest [32mINFO[0m Executing module fixture: namespace[0m
+2026-02-23T15:29:12.721972 ocp_resources.resource [32mINFO[0m kind: ProjectRequest api version: project.openshift.io/v1[0m
+2026-02-23T15:29:12.723083 ocp_resources ProjectRequest [32mINFO[0m Create ProjectRequest guest-agent-test-windows-guest-agent-os-info[0m
+2026-02-23T15:29:12.723313 ocp_resources ProjectRequest [32mINFO[0m Posting {'apiVersion': 'project.openshift.io/v1', 'kind': 'ProjectRequest', 'metadata': {'name': 'guest-agent-test-windows-guest-agent-os-info'}}[0m
+2026-02-23T15:29:13.595061 ocp_resources.resource [32mINFO[0m kind: Project api version: project.openshift.io/v1[0m
+2026-02-23T15:29:13.595540 ocp_resources Project [32mINFO[0m Wait for Project guest-agent-test-windows-guest-agent-os-info status to be Active[0m
+2026-02-23T15:29:13.595906 timeout_sampler [32mINFO[0m Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_for_status.lambda: self.exists)[0m
+2026-02-23T15:29:13.764423 ocp_resources Project [32mINFO[0m Status of Project guest-agent-test-windows-guest-agent-os-info is Active[0m
+2026-02-23T15:29:13.764846 timeout_sampler [32mINFO[0m Elapsed time: 0.0003209114074707031 [0:00:00.000321][0m
+2026-02-23T15:29:13.920791 ocp_resources Namespace [32mINFO[0m Wait for Namespace guest-agent-test-windows-guest-agent-os-info status to be Active[0m
+2026-02-23T15:29:13.921152 timeout_sampler [32mINFO[0m Waiting for 120 seconds [0:02:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_for_status.lambda: self.exists)[0m
+2026-02-23T15:29:14.076629 ocp_resources Namespace [32mINFO[0m Status of Namespace guest-agent-test-windows-guest-agent-os-info is Active[0m
+2026-02-23T15:29:14.077027 timeout_sampler [32mINFO[0m Elapsed time: 0.0001938343048095703 [0:00:00.000194][0m
+2026-02-23T15:29:14.077441 ocp_resources.resource [32mINFO[0m ResourceEdits: Updating data for resource Namespace guest-agent-test-windows-guest-agent-os-info[0m
+2026-02-23T15:29:14.077679 ocp_resources Namespace [32mINFO[0m Update Namespace guest-agent-test-windows-guest-agent-os-info:
+{'metadata': {'labels': None, 'name': 'guest-agent-test-windows-guest-agent-os-info'}}[0m
+2026-02-23T15:29:14.411618 conftest [32mINFO[0m Executing class fixture: windows_os_matrix__class__[0m
+2026-02-23T15:29:14.412420 conftest [32mINFO[0m Executing class fixture: windows_ga_golden_image_data_source[0m
+2026-02-23T15:29:14.413431 ocp_resources.resource [32mINFO[0m kind: DataSource api version: cdi.kubevirt.io/v1beta1[0m
+2026-02-23T15:29:14.886717 tests.virt.utils [33mWARNING[0m No DataSource win10 found or it doesn't have a source pvc/snapshot.[0m
+2026-02-23T15:29:14.887189 utilities.artifactory [32mINFO[0m Testing connectivity to https://{server}/artifactory/cnv-qe-server-local/ HTTPS server[0m
+2026-02-23T15:29:14.887455 timeout_sampler [32mINFO[0m Waiting for 60 seconds [0:01:00], retry every 5 seconds. (Function: utilities.artifactory.<locals>.lambda: artifactory_connection_url.requests.get.get_artifactory_header)[0m
+_ 1 of 46 completed, 0 Pass, 0 Fail, 0 Skip, 0 XPass, 0 XFail, 1 Error, 0 ReRun _
+
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py -------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-23T15:30:18.059339 pytest_dependency [32mINFO[0m skip test_start_vm[#win-10#] because it depends on TestWindowsGuestAgentOSInfo::create_vm[0m
+
+TEST: TestWindowsGuestAgentOSInfo.test_start_vm[#win-10#] STATUS: [1;33mSKIPPED[0m
+s
+_ 2 of 46 completed, 0 Pass, 0 Fail, 1 Skip, 0 XPass, 0 XFail, 1 Error, 0 ReRun _
+
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py s
+_ 3 of 46 completed, 0 Pass, 0 Fail, 2 Skip, 0 XPass, 0 XFail, 1 Error, 0 ReRun _
+
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py s
+_ 4 of 46 completed, 0 Pass, 0 Fail, 3 Skip, 0 XPass, 0 XFail, 1 Error, 0 ReRun _
+
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py 
+TEST: TestWindowsGuestAgentOSInfo.test_vmi_os_info_not_empty[#win-10#] STATUS: [1;33mSKIPPED[0m
+s
+_ 5 of 46 completed, 0 Pass, 0 Fail, 4 Skip, 0 XPass, 0 XFail, 1 Error, 0 ReRun _
+
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py 
+TEST: TestWindowsGuestAgentOSInfo.test_guest_agent_info_available_after_reboot[#win-10#] STATUS: [1;33mSKIPPED[0m
+s
+_ 6 of 46 completed, 0 Pass, 0 Fail, 5 Skip, 0 XPass, 0 XFail, 1 Error, 0 ReRun _
+
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py s
+----------------------------------- test_os_info_absent_when_agent_stopped[#win-10#] -----------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-23T15:30:18.067061 pytest_dependency [32mINFO[0m skip test_os_info_absent_when_agent_stopped[#win-10#] because it depends on TestWindowsGuestAgentOSInfo::reboot[0m
+
+TEST: TestWindowsGuestAgentOSInfo.test_os_info_absent_when_agent_stopped[#win-10#] STATUS: [1;33mSKIPPED[0m
+
+_ 7 of 46 completed, 0 Pass, 0 Fail, 6 Skip, 0 XPass, 0 XFail, 1 Error, 0 ReRun _
+
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py 
+TEST: TestWindowsGuestAgentOSInfo.test_os_info_appears_when_agent_starts[#win-10#] STATUS: [1;33mSKIPPED[0m
+s
+_ 8 of 46 completed, 0 Pass, 0 Fail, 7 Skip, 0 XPass, 0 XFail, 1 Error, 0 ReRun _
+
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py ------------------------------------------------------- TEARDOWN -------------------------------------------------------
+s
+---------------------------------------------- test_vm_deletion[#win-10#] ----------------------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-23T15:30:18.070064 pytest_dependency [32mINFO[0m skip test_vm_deletion[#win-10#] because it depends on TestWindowsGuestAgentOSInfo::create_vm[0m
+
+TEST: TestWindowsGuestAgentOSInfo.test_vm_deletion[#win-10#] STATUS: [1;33mSKIPPED[0m
+
+_ 9 of 46 completed, 0 Pass, 0 Fail, 8 Skip, 0 XPass, 0 XFail, 1 Error, 0 ReRun _
+
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py 2026-02-23T15:31:21.341462 utilities.artifactory [31mERROR[0m Unable to connect to test image server: https://{server}/artifactory/cnv-qe-server-local/ HTTPS[0m
+
+TEST: TestWindowsGuestAgentOSInfo.test_create_vm[#win-2019#] [setup] STATUS: [0;31mERROR[0m
+Eadmin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f6e599b6660>
+golden_images_namespace = <ocp_resources.namespace.Namespace object at 0x7f6e56f3c510>
+windows_os_matrix__class__ = {'win-2019': {'container_disk_image_path': 'docker/kubevirt-common-instancetypes/windows2k19-container-disk:4.99', 'data_source': 'win2k19', 'dv_size': '70Gi', 'image_name': 'win_2k19_uefi.qcow2', ...}}
+
+    @pytest.fixture(scope="class")
+    def windows_ga_golden_image_data_source(admin_client, golden_images_namespace, windows_os_matrix__class__):
+>       yield from get_matrix_os_golden_image_data_source(
+            admin_client=admin_client,
+            golden_images_namespace=golden_images_namespace,
+            os_matrix=windows_os_matrix__class__,
+        )
+
+tests/virt/guest_agent/conftest.py:12: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/virt/cluster/common_templates/utils.py:493: in get_matrix_os_golden_image_data_source
+    yield from get_or_create_golden_image_data_source(
+tests/virt/utils.py:457: in get_or_create_golden_image_data_source
+    url=f"{get_test_artifact_server_url()}{os_dict['image_path']}",
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+utilities/artifactory.py:39: in get_test_artifact_server_url
+    for sample in TimeoutSampler(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <timeout_sampler.TimeoutSampler object at 0x7f6e56bd9f90>
+
+    def __iter__(self) -> Any:
+        """
+        Call `func` and yield the result, or raise an exception on timeout.
+    
+        Yields:
+            any: Return value from `func`
+    
+        Raises:
+            TimeoutExpiredError: if `func` takes longer than `wait_timeout` seconds to return a value
+        """
+        timeout_watch = TimeoutWatch(timeout=self.wait_timeout)
+        if self.print_log:
+            log = (
+                f"Waiting for {self.wait_timeout} seconds"
+                f" [{datetime.timedelta(seconds=self.wait_timeout)}], retry every"
+                f" {self.sleep} seconds."
+            )
+    
+            if self.print_func_log:
+                log += f" ({self._func_log})"
+    
+            LOGGER.info(log)
+    
+        last_exp = None
+        elapsed_time = None
+        while timeout_watch.remaining_time() > 0:
+            try:
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+                yield self.func(*self.func_args, **self.func_kwargs)
+                time.sleep(self.sleep)
+                elapsed_time = None
+    
+            except Exception as exp:
+                last_exp = exp
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+    
+                if not self._should_ignore_exception(exp=last_exp):
+                    raise TimeoutExpiredError(
+                        self._get_exception_log(exp=last_exp), last_exp=last_exp, elapsed_time=elapsed_time
+                    )
+    
+                time.sleep(self.sleep)
+                elapsed_time = None
+    
+            finally:
+                if self.print_log and elapsed_time:
+                    LOGGER.info(_elapsed_time_log(elapsed_time=elapsed_time))
+    
+>       raise TimeoutExpiredError(self._get_exception_log(exp=last_exp), last_exp=last_exp)
+E       timeout_sampler.TimeoutExpiredError: Timed Out: 60
+E       Function: utilities.artifactory.<locals>.lambda: artifactory_connection_url.requests.get.get_artifactory_header
+E       Last exception: ConnectionError: HTTPSConnectionPool(host='%7bserver%7d', port=443): Max retries exceeded with url: /artifactory/cnv-qe-server-local/ (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x7f6e56d54f50>: Failed to resolve '%7bserver%7d' ([Errno -2] Name or service not known)")).
+
+.venv/lib64/python3.14/site-packages/timeout_sampler/__init__.py:182: TimeoutExpiredError
+
+
+___ ERROR at setup of TestWindowsGuestAgentOSInfo.test_create_vm[#win-2019#] ___
+
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f6e599b6660>
+golden_images_namespace = <ocp_resources.namespace.Namespace object at 0x7f6e56f3c510>
+windows_os_matrix__class__ = {'win-2019': {'container_disk_image_path': 'docker/kubevirt-common-instancetypes/windows2k19-container-disk:4.99', 'data_source': 'win2k19', 'dv_size': '70Gi', 'image_name': 'win_2k19_uefi.qcow2', ...}}
+
+    @pytest.fixture(scope="class")
+    def windows_ga_golden_image_data_source(admin_client, golden_images_namespace, windows_os_matrix__class__):
+>       yield from get_matrix_os_golden_image_data_source(
+            admin_client=admin_client,
+            golden_images_namespace=golden_images_namespace,
+            os_matrix=windows_os_matrix__class__,
+        )
+
+tests/virt/guest_agent/conftest.py:12: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/virt/cluster/common_templates/utils.py:493: in get_matrix_os_golden_image_data_source
+    yield from get_or_create_golden_image_data_source(
+tests/virt/utils.py:457: in get_or_create_golden_image_data_source
+    url=f"{get_test_artifact_server_url()}{os_dict['image_path']}",
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+utilities/artifactory.py:39: in get_test_artifact_server_url
+    for sample in TimeoutSampler(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <timeout_sampler.TimeoutSampler object at 0x7f6e56bd9f90>
+
+    def __iter__(self) -> Any:
+        """
+        Call `func` and yield the result, or raise an exception on timeout.
+    
+        Yields:
+            any: Return value from `func`
+    
+        Raises:
+            TimeoutExpiredError: if `func` takes longer than `wait_timeout` seconds to return a value
+        """
+        timeout_watch = TimeoutWatch(timeout=self.wait_timeout)
+        if self.print_log:
+            log = (
+                f"Waiting for {self.wait_timeout} seconds"
+                f" [{datetime.timedelta(seconds=self.wait_timeout)}], retry every"
+                f" {self.sleep} seconds."
+            )
+    
+            if self.print_func_log:
+                log += f" ({self._func_log})"
+    
+            LOGGER.info(log)
+    
+        last_exp = None
+        elapsed_time = None
+        while timeout_watch.remaining_time() > 0:
+            try:
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+                yield self.func(*self.func_args, **self.func_kwargs)
+                time.sleep(self.sleep)
+                elapsed_time = None
+    
+            except Exception as exp:
+                last_exp = exp
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+    
+                if not self._should_ignore_exception(exp=last_exp):
+                    raise TimeoutExpiredError(
+                        self._get_exception_log(exp=last_exp), last_exp=last_exp, elapsed_time=elapsed_time
+                    )
+    
+                time.sleep(self.sleep)
+                elapsed_time = None
+    
+            finally:
+                if self.print_log and elapsed_time:
+                    LOGGER.info(_elapsed_time_log(elapsed_time=elapsed_time))
+    
+>       raise TimeoutExpiredError(self._get_exception_log(exp=last_exp), last_exp=last_exp)
+E       timeout_sampler.TimeoutExpiredError: Timed Out: 60
+E       Function: utilities.artifactory.<locals>.lambda: artifactory_connection_url.requests.get.get_artifactory_header
+E       Last exception: ConnectionError: HTTPSConnectionPool(host='%7bserver%7d', port=443): Max retries exceeded with url: /artifactory/cnv-qe-server-local/ (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x7f6e56d54f50>: Failed to resolve '%7bserver%7d' ([Errno -2] Name or service not known)")).
+
+.venv/lib64/python3.14/site-packages/timeout_sampler/__init__.py:182: TimeoutExpiredError
+---------------------------- Captured stderr setup -----------------------------
+
+---------------------------------------------- test_create_vm[#win-2019#] ----------------------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-23T15:30:18.071790 conftest [32mINFO[0m Executing function fixture: term_handler_scope_function[0m
+2026-02-23T15:30:18.072091 conftest [32mINFO[0m Executing function fixture: autouse_fixtures[0m
+2026-02-23T15:30:18.072423 conftest [32mINFO[0m Executing class fixture: windows_os_matrix__class__[0m
+2026-02-23T15:30:18.072564 conftest [32mINFO[0m Executing class fixture: windows_ga_golden_image_data_source[0m
+2026-02-23T15:30:18.562642 tests.virt.utils [33mWARNING[0m No DataSource win2k19 found or it doesn't have a source pvc/snapshot.[0m
+2026-02-23T15:30:18.563052 utilities.artifactory [32mINFO[0m Testing connectivity to https://{server}/artifactory/cnv-qe-server-local/ HTTPS server[0m
+_ 10 of 46 completed, 0 Pass, 0 Fail, 8 Skip, 0 XPass, 0 XFail, 2 Error, 0 ReRun _
+
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py 
+TEST: TestWindowsGuestAgentOSInfo.test_start_vm[#win-2019#] STATUS: [1;33mSKIPPED[0m
+s
+_ 11 of 46 completed, 0 Pass, 0 Fail, 9 Skip, 0 XPass, 0 XFail, 2 Error, 0 ReRun _
+
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py s
+TEST: TestWindowsGuestAgentOSInfo.test_vmi_os_info_matches_windows_os[#win-2019#] STATUS: [1;33mSKIPPED[0m
+
+_ 12 of 46 completed, 0 Pass, 0 Fail, 10 Skip, 0 XPass, 0 XFail, 2 Error, 0 ReRun _
+
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py s
+TEST: TestWindowsGuestAgentOSInfo.test_vmi_hostname_matches_windows_hostname[#win-2019#] STATUS: [1;33mSKIPPED[0m
+
+_ 13 of 46 completed, 0 Pass, 0 Fail, 11 Skip, 0 XPass, 0 XFail, 2 Error, 0 ReRun _
+
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py s
+TEST: TestWindowsGuestAgentOSInfo.test_vmi_os_info_not_empty[#win-2019#] STATUS: [1;33mSKIPPED[0m
+
+_ 14 of 46 completed, 0 Pass, 0 Fail, 12 Skip, 0 XPass, 0 XFail, 2 Error, 0 ReRun _
+
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py ------------------------------------------------------- TEARDOWN -------------------------------------------------------
+
+TEST: TestWindowsGuestAgentOSInfo.test_guest_agent_info_available_after_reboot[#win-2019#] STATUS: [1;33mSKIPPED[0m
+s
+_ 15 of 46 completed, 0 Pass, 0 Fail, 13 Skip, 0 XPass, 0 XFail, 2 Error, 0 ReRun _
+
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py 
+---------------------------------- test_os_info_absent_when_agent_stopped[#win-2019#] ----------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-23T15:31:21.385734 pytest_dependency [32mINFO[0m skip test_os_info_absent_when_agent_stopped[#win-2019#] because it depends on TestWindowsGuestAgentOSInfo::reboot[0m
+
+TEST: TestWindowsGuestAgentOSInfo.test_os_info_absent_when_agent_stopped[#win-2019#] STATUS: [1;33mSKIPPED[0m
+s
+_ 16 of 46 completed, 0 Pass, 0 Fail, 14 Skip, 0 XPass, 0 XFail, 2 Error, 0 ReRun _
+
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py 
+TEST: TestWindowsGuestAgentOSInfo.test_os_info_appears_when_agent_starts[#win-2019#] STATUS: [1;33mSKIPPED[0m
+s
+_ 17 of 46 completed, 0 Pass, 0 Fail, 15 Skip, 0 XPass, 0 XFail, 2 Error, 0 ReRun _
+
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py s
+TEST: TestWindowsGuestAgentOSInfo.test_vm_deletion[#win-2019#] STATUS: [1;33mSKIPPED[0m
+
+_ 18 of 46 completed, 0 Pass, 0 Fail, 16 Skip, 0 XPass, 0 XFail, 2 Error, 0 ReRun _
+
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py 2026-02-23T15:32:24.839953 utilities.artifactory [31mERROR[0m Unable to connect to test image server: https://{server}/artifactory/cnv-qe-server-local/ HTTPS[0m
+
+TEST: TestWindowsGuestAgentOSInfo.test_create_vm[#win-11#] [setup] STATUS: [0;31mERROR[0m
+Eadmin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f6e599b6660>
+golden_images_namespace = <ocp_resources.namespace.Namespace object at 0x7f6e56f3c510>
+windows_os_matrix__class__ = {'win-11': {'container_disk_image_path': 'docker/kubevirt-common-instancetypes/windows11-container-disk:4.99', 'data_source': 'win11', 'dv_size': '70Gi', 'image_name': 'win_11.qcow2', ...}}
+
+    @pytest.fixture(scope="class")
+    def windows_ga_golden_image_data_source(admin_client, golden_images_namespace, windows_os_matrix__class__):
+>       yield from get_matrix_os_golden_image_data_source(
+            admin_client=admin_client,
+            golden_images_namespace=golden_images_namespace,
+            os_matrix=windows_os_matrix__class__,
+        )
+
+tests/virt/guest_agent/conftest.py:12: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/virt/cluster/common_templates/utils.py:493: in get_matrix_os_golden_image_data_source
+    yield from get_or_create_golden_image_data_source(
+tests/virt/utils.py:457: in get_or_create_golden_image_data_source
+    url=f"{get_test_artifact_server_url()}{os_dict['image_path']}",
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+utilities/artifactory.py:39: in get_test_artifact_server_url
+    for sample in TimeoutSampler(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <timeout_sampler.TimeoutSampler object at 0x7f6e56dba990>
+
+    def __iter__(self) -> Any:
+        """
+        Call `func` and yield the result, or raise an exception on timeout.
+    
+        Yields:
+            any: Return value from `func`
+    
+        Raises:
+            TimeoutExpiredError: if `func` takes longer than `wait_timeout` seconds to return a value
+        """
+        timeout_watch = TimeoutWatch(timeout=self.wait_timeout)
+        if self.print_log:
+            log = (
+                f"Waiting for {self.wait_timeout} seconds"
+                f" [{datetime.timedelta(seconds=self.wait_timeout)}], retry every"
+                f" {self.sleep} seconds."
+            )
+    
+            if self.print_func_log:
+                log += f" ({self._func_log})"
+    
+            LOGGER.info(log)
+    
+        last_exp = None
+        elapsed_time = None
+        while timeout_watch.remaining_time() > 0:
+            try:
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+                yield self.func(*self.func_args, **self.func_kwargs)
+                time.sleep(self.sleep)
+                elapsed_time = None
+    
+            except Exception as exp:
+                last_exp = exp
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+    
+                if not self._should_ignore_exception(exp=last_exp):
+                    raise TimeoutExpiredError(
+                        self._get_exception_log(exp=last_exp), last_exp=last_exp, elapsed_time=elapsed_time
+                    )
+    
+                time.sleep(self.sleep)
+                elapsed_time = None
+    
+            finally:
+                if self.print_log and elapsed_time:
+                    LOGGER.info(_elapsed_time_log(elapsed_time=elapsed_time))
+    
+>       raise TimeoutExpiredError(self._get_exception_log(exp=last_exp), last_exp=last_exp)
+E       timeout_sampler.TimeoutExpiredError: Timed Out: 60
+E       Function: utilities.artifactory.<locals>.lambda: artifactory_connection_url.requests.get.get_artifactory_header
+E       Last exception: ConnectionError: HTTPSConnectionPool(host='%7bserver%7d', port=443): Max retries exceeded with url: /artifactory/cnv-qe-server-local/ (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x7f6e56d55bd0>: Failed to resolve '%7bserver%7d' ([Errno -2] Name or service not known)")).
+
+.venv/lib64/python3.14/site-packages/timeout_sampler/__init__.py:182: TimeoutExpiredError
+
+
+____ ERROR at setup of TestWindowsGuestAgentOSInfo.test_create_vm[#win-11#] ____
+
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f6e599b6660>
+golden_images_namespace = <ocp_resources.namespace.Namespace object at 0x7f6e56f3c510>
+windows_os_matrix__class__ = {'win-11': {'container_disk_image_path': 'docker/kubevirt-common-instancetypes/windows11-container-disk:4.99', 'data_source': 'win11', 'dv_size': '70Gi', 'image_name': 'win_11.qcow2', ...}}
+
+    @pytest.fixture(scope="class")
+    def windows_ga_golden_image_data_source(admin_client, golden_images_namespace, windows_os_matrix__class__):
+>       yield from get_matrix_os_golden_image_data_source(
+            admin_client=admin_client,
+            golden_images_namespace=golden_images_namespace,
+            os_matrix=windows_os_matrix__class__,
+        )
+
+tests/virt/guest_agent/conftest.py:12: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/virt/cluster/common_templates/utils.py:493: in get_matrix_os_golden_image_data_source
+    yield from get_or_create_golden_image_data_source(
+tests/virt/utils.py:457: in get_or_create_golden_image_data_source
+    url=f"{get_test_artifact_server_url()}{os_dict['image_path']}",
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+utilities/artifactory.py:39: in get_test_artifact_server_url
+    for sample in TimeoutSampler(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <timeout_sampler.TimeoutSampler object at 0x7f6e56dba990>
+
+    def __iter__(self) -> Any:
+        """
+        Call `func` and yield the result, or raise an exception on timeout.
+    
+        Yields:
+            any: Return value from `func`
+    
+        Raises:
+            TimeoutExpiredError: if `func` takes longer than `wait_timeout` seconds to return a value
+        """
+        timeout_watch = TimeoutWatch(timeout=self.wait_timeout)
+        if self.print_log:
+            log = (
+                f"Waiting for {self.wait_timeout} seconds"
+                f" [{datetime.timedelta(seconds=self.wait_timeout)}], retry every"
+                f" {self.sleep} seconds."
+            )
+    
+            if self.print_func_log:
+                log += f" ({self._func_log})"
+    
+            LOGGER.info(log)
+    
+        last_exp = None
+        elapsed_time = None
+        while timeout_watch.remaining_time() > 0:
+            try:
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+                yield self.func(*self.func_args, **self.func_kwargs)
+                time.sleep(self.sleep)
+                elapsed_time = None
+    
+            except Exception as exp:
+                last_exp = exp
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+    
+                if not self._should_ignore_exception(exp=last_exp):
+                    raise TimeoutExpiredError(
+                        self._get_exception_log(exp=last_exp), last_exp=last_exp, elapsed_time=elapsed_time
+                    )
+    
+                time.sleep(self.sleep)
+                elapsed_time = None
+    
+            finally:
+                if self.print_log and elapsed_time:
+                    LOGGER.info(_elapsed_time_log(elapsed_time=elapsed_time))
+    
+>       raise TimeoutExpiredError(self._get_exception_log(exp=last_exp), last_exp=last_exp)
+E       timeout_sampler.TimeoutExpiredError: Timed Out: 60
+E       Function: utilities.artifactory.<locals>.lambda: artifactory_connection_url.requests.get.get_artifactory_header
+E       Last exception: ConnectionError: HTTPSConnectionPool(host='%7bserver%7d', port=443): Max retries exceeded with url: /artifactory/cnv-qe-server-local/ (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x7f6e56d55bd0>: Failed to resolve '%7bserver%7d' ([Errno -2] Name or service not known)")).
+
+.venv/lib64/python3.14/site-packages/timeout_sampler/__init__.py:182: TimeoutExpiredError
+---------------------------- Captured stderr setup -----------------------------
+
+----------------------------------------------- test_create_vm[#win-11#] -----------------------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-23T15:31:21.390861 conftest [32mINFO[0m Executing function fixture: term_handler_scope_function[0m
+2026-02-23T15:31:21.391170 conftest [32mINFO[0m Executing function fixture: autouse_fixtures[0m
+2026-02-23T15:31:21.391507 conftest [32mINFO[0m Executing class fixture: windows_os_matrix__class__[0m
+2026-02-23T15:31:21.391650 conftest [32mINFO[0m Executing class fixture: windows_ga_golden_image_data_source[0m
+2026-02-23T15:31:21.877028 tests.virt.utils [33mWARNING[0m No DataSource win11 found or it doesn't have a source pvc/snapshot.[0m
+2026-02-23T15:31:21.877340 utilities.artifactory [32mINFO[0m Testing connectivity to https://{server}/artifactory/cnv-qe-server-local/ HTTPS server[0m
+_ 19 of 46 completed, 0 Pass, 0 Fail, 16 Skip, 0 XPass, 0 XFail, 3 Error, 0 ReRun _
+
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py s
+----------------------------------------------- test_start_vm[#win-11#] -----------------------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-23T15:32:24.881300 pytest_dependency [32mINFO[0m skip test_start_vm[#win-11#] because it depends on TestWindowsGuestAgentOSInfo::create_vm[0m
+
+TEST: TestWindowsGuestAgentOSInfo.test_start_vm[#win-11#] STATUS: [1;33mSKIPPED[0m
+
+_ 20 of 46 completed, 0 Pass, 0 Fail, 17 Skip, 0 XPass, 0 XFail, 3 Error, 0 ReRun _
+
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py 
+TEST: TestWindowsGuestAgentOSInfo.test_vmi_os_info_matches_windows_os[#win-11#] STATUS: [1;33mSKIPPED[0m
+s
+_ 21 of 46 completed, 0 Pass, 0 Fail, 18 Skip, 0 XPass, 0 XFail, 3 Error, 0 ReRun _
+
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py 
+--------------------------------- test_vmi_hostname_matches_windows_hostname[#win-11#] ---------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-23T15:32:24.884686 pytest_dependency [32mINFO[0m skip test_vmi_hostname_matches_windows_hostname[#win-11#] because it depends on TestWindowsGuestAgentOSInfo::start_vm[0m
+
+TEST: TestWindowsGuestAgentOSInfo.test_vmi_hostname_matches_windows_hostname[#win-11#] STATUS: [1;33mSKIPPED[0m
+s
+_ 22 of 46 completed, 0 Pass, 0 Fail, 19 Skip, 0 XPass, 0 XFail, 3 Error, 0 ReRun _
+
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py 
+----------------------------------------- test_vmi_os_info_not_empty[#win-11#] -----------------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-23T15:32:24.886276 pytest_dependency [32mINFO[0m skip test_vmi_os_info_not_empty[#win-11#] because it depends on TestWindowsGuestAgentOSInfo::start_vm[0m
+
+TEST: TestWindowsGuestAgentOSInfo.test_vmi_os_info_not_empty[#win-11#] STATUS: [1;33mSKIPPED[0m
+s
+_ 23 of 46 completed, 0 Pass, 0 Fail, 20 Skip, 0 XPass, 0 XFail, 3 Error, 0 ReRun _
+
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py ------------------------------------------------------- TEARDOWN -------------------------------------------------------
+
+TEST: TestWindowsGuestAgentOSInfo.test_guest_agent_info_available_after_reboot[#win-11#] STATUS: [1;33mSKIPPED[0m
+s------------------------------------------------------- TEARDOWN -------------------------------------------------------
+
+_ 24 of 46 completed, 0 Pass, 0 Fail, 21 Skip, 0 XPass, 0 XFail, 3 Error, 0 ReRun _
+
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py 
+TEST: TestWindowsGuestAgentOSInfo.test_os_info_absent_when_agent_stopped[#win-11#] STATUS: [1;33mSKIPPED[0m
+s
+_ 25 of 46 completed, 0 Pass, 0 Fail, 22 Skip, 0 XPass, 0 XFail, 3 Error, 0 ReRun _
+
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py ------------------------------------------------------- TEARDOWN -------------------------------------------------------
+s
+TEST: TestWindowsGuestAgentOSInfo.test_os_info_appears_when_agent_starts[#win-11#] STATUS: [1;33mSKIPPED[0m
+
+_ 26 of 46 completed, 0 Pass, 0 Fail, 23 Skip, 0 XPass, 0 XFail, 3 Error, 0 ReRun _
+
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py s
+---------------------------------------------- test_vm_deletion[#win-11#] ----------------------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-23T15:32:24.892506 pytest_dependency [32mINFO[0m skip test_vm_deletion[#win-11#] because it depends on TestWindowsGuestAgentOSInfo::create_vm[0m
+
+TEST: TestWindowsGuestAgentOSInfo.test_vm_deletion[#win-11#] STATUS: [1;33mSKIPPED[0m
+
+_ 27 of 46 completed, 0 Pass, 0 Fail, 24 Skip, 0 XPass, 0 XFail, 3 Error, 0 ReRun _
+
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py 2026-02-23T15:33:28.338912 utilities.artifactory [31mERROR[0m Unable to connect to test image server: https://{server}/artifactory/cnv-qe-server-local/ HTTPS[0m
+E
+TEST: TestWindowsGuestAgentOSInfo.test_create_vm[#win-2022#] [setup] STATUS: [0;31mERROR[0m
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f6e599b6660>
+golden_images_namespace = <ocp_resources.namespace.Namespace object at 0x7f6e56f3c510>
+windows_os_matrix__class__ = {'win-2022': {'container_disk_image_path': 'docker/kubevirt-common-instancetypes/windows2k22-container-disk:4.99', 'data_source': 'win2k22', 'dv_size': '70Gi', 'image_name': 'win_2022.qcow2', ...}}
+
+    @pytest.fixture(scope="class")
+    def windows_ga_golden_image_data_source(admin_client, golden_images_namespace, windows_os_matrix__class__):
+>       yield from get_matrix_os_golden_image_data_source(
+            admin_client=admin_client,
+            golden_images_namespace=golden_images_namespace,
+            os_matrix=windows_os_matrix__class__,
+        )
+
+tests/virt/guest_agent/conftest.py:12: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/virt/cluster/common_templates/utils.py:493: in get_matrix_os_golden_image_data_source
+    yield from get_or_create_golden_image_data_source(
+tests/virt/utils.py:457: in get_or_create_golden_image_data_source
+    url=f"{get_test_artifact_server_url()}{os_dict['image_path']}",
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+utilities/artifactory.py:39: in get_test_artifact_server_url
+    for sample in TimeoutSampler(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <timeout_sampler.TimeoutSampler object at 0x7f6e56db9950>
+
+    def __iter__(self) -> Any:
+        """
+        Call `func` and yield the result, or raise an exception on timeout.
+    
+        Yields:
+            any: Return value from `func`
+    
+        Raises:
+            TimeoutExpiredError: if `func` takes longer than `wait_timeout` seconds to return a value
+        """
+        timeout_watch = TimeoutWatch(timeout=self.wait_timeout)
+        if self.print_log:
+            log = (
+                f"Waiting for {self.wait_timeout} seconds"
+                f" [{datetime.timedelta(seconds=self.wait_timeout)}], retry every"
+                f" {self.sleep} seconds."
+            )
+    
+            if self.print_func_log:
+                log += f" ({self._func_log})"
+    
+            LOGGER.info(log)
+    
+        last_exp = None
+        elapsed_time = None
+        while timeout_watch.remaining_time() > 0:
+            try:
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+                yield self.func(*self.func_args, **self.func_kwargs)
+                time.sleep(self.sleep)
+                elapsed_time = None
+    
+            except Exception as exp:
+                last_exp = exp
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+    
+                if not self._should_ignore_exception(exp=last_exp):
+                    raise TimeoutExpiredError(
+                        self._get_exception_log(exp=last_exp), last_exp=last_exp, elapsed_time=elapsed_time
+                    )
+    
+                time.sleep(self.sleep)
+                elapsed_time = None
+    
+            finally:
+                if self.print_log and elapsed_time:
+                    LOGGER.info(_elapsed_time_log(elapsed_time=elapsed_time))
+    
+>       raise TimeoutExpiredError(self._get_exception_log(exp=last_exp), last_exp=last_exp)
+E       timeout_sampler.TimeoutExpiredError: Timed Out: 60
+E       Function: utilities.artifactory.<locals>.lambda: artifactory_connection_url.requests.get.get_artifactory_header
+E       Last exception: ConnectionError: HTTPSConnectionPool(host='%7bserver%7d', port=443): Max retries exceeded with url: /artifactory/cnv-qe-server-local/ (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x7f6e56d55a90>: Failed to resolve '%7bserver%7d' ([Errno -2] Name or service not known)")).
+
+.venv/lib64/python3.14/site-packages/timeout_sampler/__init__.py:182: TimeoutExpiredError
+
+
+___ ERROR at setup of TestWindowsGuestAgentOSInfo.test_create_vm[#win-2022#] ___
+
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f6e599b6660>
+golden_images_namespace = <ocp_resources.namespace.Namespace object at 0x7f6e56f3c510>
+windows_os_matrix__class__ = {'win-2022': {'container_disk_image_path': 'docker/kubevirt-common-instancetypes/windows2k22-container-disk:4.99', 'data_source': 'win2k22', 'dv_size': '70Gi', 'image_name': 'win_2022.qcow2', ...}}
+
+    @pytest.fixture(scope="class")
+    def windows_ga_golden_image_data_source(admin_client, golden_images_namespace, windows_os_matrix__class__):
+>       yield from get_matrix_os_golden_image_data_source(
+            admin_client=admin_client,
+            golden_images_namespace=golden_images_namespace,
+            os_matrix=windows_os_matrix__class__,
+        )
+
+tests/virt/guest_agent/conftest.py:12: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/virt/cluster/common_templates/utils.py:493: in get_matrix_os_golden_image_data_source
+    yield from get_or_create_golden_image_data_source(
+tests/virt/utils.py:457: in get_or_create_golden_image_data_source
+    url=f"{get_test_artifact_server_url()}{os_dict['image_path']}",
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+utilities/artifactory.py:39: in get_test_artifact_server_url
+    for sample in TimeoutSampler(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <timeout_sampler.TimeoutSampler object at 0x7f6e56db9950>
+
+    def __iter__(self) -> Any:
+        """
+        Call `func` and yield the result, or raise an exception on timeout.
+    
+        Yields:
+            any: Return value from `func`
+    
+        Raises:
+            TimeoutExpiredError: if `func` takes longer than `wait_timeout` seconds to return a value
+        """
+        timeout_watch = TimeoutWatch(timeout=self.wait_timeout)
+        if self.print_log:
+            log = (
+                f"Waiting for {self.wait_timeout} seconds"
+                f" [{datetime.timedelta(seconds=self.wait_timeout)}], retry every"
+                f" {self.sleep} seconds."
+            )
+    
+            if self.print_func_log:
+                log += f" ({self._func_log})"
+    
+            LOGGER.info(log)
+    
+        last_exp = None
+        elapsed_time = None
+        while timeout_watch.remaining_time() > 0:
+            try:
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+                yield self.func(*self.func_args, **self.func_kwargs)
+                time.sleep(self.sleep)
+                elapsed_time = None
+    
+            except Exception as exp:
+                last_exp = exp
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+    
+                if not self._should_ignore_exception(exp=last_exp):
+                    raise TimeoutExpiredError(
+                        self._get_exception_log(exp=last_exp), last_exp=last_exp, elapsed_time=elapsed_time
+                    )
+    
+                time.sleep(self.sleep)
+                elapsed_time = None
+    
+            finally:
+                if self.print_log and elapsed_time:
+                    LOGGER.info(_elapsed_time_log(elapsed_time=elapsed_time))
+    
+>       raise TimeoutExpiredError(self._get_exception_log(exp=last_exp), last_exp=last_exp)
+E       timeout_sampler.TimeoutExpiredError: Timed Out: 60
+E       Function: utilities.artifactory.<locals>.lambda: artifactory_connection_url.requests.get.get_artifactory_header
+E       Last exception: ConnectionError: HTTPSConnectionPool(host='%7bserver%7d', port=443): Max retries exceeded with url: /artifactory/cnv-qe-server-local/ (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x7f6e56d55a90>: Failed to resolve '%7bserver%7d' ([Errno -2] Name or service not known)")).
+
+.venv/lib64/python3.14/site-packages/timeout_sampler/__init__.py:182: TimeoutExpiredError
+---------------------------- Captured stderr setup -----------------------------
+
+---------------------------------------------- test_create_vm[#win-2022#] ----------------------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-23T15:32:24.894585 conftest [32mINFO[0m Executing function fixture: term_handler_scope_function[0m
+2026-02-23T15:32:24.895024 conftest [32mINFO[0m Executing function fixture: autouse_fixtures[0m
+2026-02-23T15:32:24.895440 conftest [32mINFO[0m Executing class fixture: windows_os_matrix__class__[0m
+2026-02-23T15:32:24.895613 conftest [32mINFO[0m Executing class fixture: windows_ga_golden_image_data_source[0m
+2026-02-23T15:32:25.383073 tests.virt.utils [33mWARNING[0m No DataSource win2k22 found or it doesn't have a source pvc/snapshot.[0m
+2026-02-23T15:32:25.383430 utilities.artifactory [32mINFO[0m Testing connectivity to https://{server}/artifactory/cnv-qe-server-local/ HTTPS server[0m
+_ 28 of 46 completed, 0 Pass, 0 Fail, 24 Skip, 0 XPass, 0 XFail, 4 Error, 0 ReRun _
+
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py 
+TEST: TestWindowsGuestAgentOSInfo.test_start_vm[#win-2022#] STATUS: [1;33mSKIPPED[0m
+s
+_ 29 of 46 completed, 0 Pass, 0 Fail, 25 Skip, 0 XPass, 0 XFail, 4 Error, 0 ReRun _
+
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py 
+----------------------------------- test_vmi_os_info_matches_windows_os[#win-2022#] -----------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-23T15:33:28.381716 pytest_dependency [32mINFO[0m skip test_vmi_os_info_matches_windows_os[#win-2022#] because it depends on TestWindowsGuestAgentOSInfo::start_vm[0m
+
+TEST: TestWindowsGuestAgentOSInfo.test_vmi_os_info_matches_windows_os[#win-2022#] STATUS: [1;33mSKIPPED[0m
+s
+_ 30 of 46 completed, 0 Pass, 0 Fail, 26 Skip, 0 XPass, 0 XFail, 4 Error, 0 ReRun _
+
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py s
+_ 31 of 46 completed, 0 Pass, 0 Fail, 27 Skip, 0 XPass, 0 XFail, 4 Error, 0 ReRun _
+
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py ------------------------------------------------------- TEARDOWN -------------------------------------------------------
+s-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-23T15:33:28.384873 pytest_dependency [32mINFO[0m skip test_vmi_os_info_not_empty[#win-2022#] because it depends on TestWindowsGuestAgentOSInfo::start_vm[0m
+
+TEST: TestWindowsGuestAgentOSInfo.test_vmi_os_info_not_empty[#win-2022#] STATUS: [1;33mSKIPPED[0m
+
+_ 32 of 46 completed, 0 Pass, 0 Fail, 28 Skip, 0 XPass, 0 XFail, 4 Error, 0 ReRun _
+
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py s
+TEST: TestWindowsGuestAgentOSInfo.test_guest_agent_info_available_after_reboot[#win-2022#] STATUS: [1;33mSKIPPED[0m
+
+_ 33 of 46 completed, 0 Pass, 0 Fail, 29 Skip, 0 XPass, 0 XFail, 4 Error, 0 ReRun _
+
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py 
+TEST: TestWindowsGuestAgentOSInfo.test_os_info_absent_when_agent_stopped[#win-2022#] STATUS: [1;33mSKIPPED[0m
+s
+_ 34 of 46 completed, 0 Pass, 0 Fail, 30 Skip, 0 XPass, 0 XFail, 4 Error, 0 ReRun _
+
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py s
+_ 35 of 46 completed, 0 Pass, 0 Fail, 31 Skip, 0 XPass, 0 XFail, 4 Error, 0 ReRun _
+
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py s
+_ 36 of 46 completed, 0 Pass, 0 Fail, 32 Skip, 0 XPass, 0 XFail, 4 Error, 0 ReRun _
+
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py 
+TEST: TestWindowsGuestAgentOSInfo.test_create_vm[#win-2025#] [setup] STATUS: [0;31mERROR[0m
+Eadmin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f6e599b6660>
+golden_images_namespace = <ocp_resources.namespace.Namespace object at 0x7f6e56f3c510>
+windows_os_matrix__class__ = {'win-2025': {'container_disk_image_path': 'docker/kubevirt-common-instancetypes/windows2k25-container-disk:4.99', 'data_source': 'win2k25', 'dv_size': '70Gi', 'image_name': 'win_2k25_uefi.qcow2', ...}}
+
+    @pytest.fixture(scope="class")
+    def windows_ga_golden_image_data_source(admin_client, golden_images_namespace, windows_os_matrix__class__):
+>       yield from get_matrix_os_golden_image_data_source(
+            admin_client=admin_client,
+            golden_images_namespace=golden_images_namespace,
+            os_matrix=windows_os_matrix__class__,
+        )
+
+tests/virt/guest_agent/conftest.py:12: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/virt/cluster/common_templates/utils.py:493: in get_matrix_os_golden_image_data_source
+    yield from get_or_create_golden_image_data_source(
+tests/virt/utils.py:457: in get_or_create_golden_image_data_source
+    url=f"{get_test_artifact_server_url()}{os_dict['image_path']}",
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+utilities/artifactory.py:39: in get_test_artifact_server_url
+    for sample in TimeoutSampler(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <timeout_sampler.TimeoutSampler object at 0x7f6e56dbb7f0>
+
+    def __iter__(self) -> Any:
+        """
+        Call `func` and yield the result, or raise an exception on timeout.
+    
+        Yields:
+            any: Return value from `func`
+    
+        Raises:
+            TimeoutExpiredError: if `func` takes longer than `wait_timeout` seconds to return a value
+        """
+        timeout_watch = TimeoutWatch(timeout=self.wait_timeout)
+        if self.print_log:
+            log = (
+                f"Waiting for {self.wait_timeout} seconds"
+                f" [{datetime.timedelta(seconds=self.wait_timeout)}], retry every"
+                f" {self.sleep} seconds."
+            )
+    
+            if self.print_func_log:
+                log += f" ({self._func_log})"
+    
+            LOGGER.info(log)
+    
+        last_exp = None
+        elapsed_time = None
+        while timeout_watch.remaining_time() > 0:
+            try:
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+                yield self.func(*self.func_args, **self.func_kwargs)
+                time.sleep(self.sleep)
+                elapsed_time = None
+    
+            except Exception as exp:
+                last_exp = exp
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+    
+                if not self._should_ignore_exception(exp=last_exp):
+                    raise TimeoutExpiredError(
+                        self._get_exception_log(exp=last_exp), last_exp=last_exp, elapsed_time=elapsed_time
+                    )
+    
+                time.sleep(self.sleep)
+                elapsed_time = None
+    
+            finally:
+                if self.print_log and elapsed_time:
+                    LOGGER.info(_elapsed_time_log(elapsed_time=elapsed_time))
+    
+>       raise TimeoutExpiredError(self._get_exception_log(exp=last_exp), last_exp=last_exp)
+E       timeout_sampler.TimeoutExpiredError: Timed Out: 60
+E       Function: utilities.artifactory.<locals>.lambda: artifactory_connection_url.requests.get.get_artifactory_header
+E       Last exception: ConnectionError: HTTPSConnectionPool(host='%7bserver%7d', port=443): Max retries exceeded with url: /artifactory/cnv-qe-server-local/ (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x7f6e56d56fd0>: Failed to resolve '%7bserver%7d' ([Errno -2] Name or service not known)")).
+
+.venv/lib64/python3.14/site-packages/timeout_sampler/__init__.py:182: TimeoutExpiredError
+
+
+___ ERROR at setup of TestWindowsGuestAgentOSInfo.test_create_vm[#win-2025#] ___
+
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f6e599b6660>
+golden_images_namespace = <ocp_resources.namespace.Namespace object at 0x7f6e56f3c510>
+windows_os_matrix__class__ = {'win-2025': {'container_disk_image_path': 'docker/kubevirt-common-instancetypes/windows2k25-container-disk:4.99', 'data_source': 'win2k25', 'dv_size': '70Gi', 'image_name': 'win_2k25_uefi.qcow2', ...}}
+
+    @pytest.fixture(scope="class")
+    def windows_ga_golden_image_data_source(admin_client, golden_images_namespace, windows_os_matrix__class__):
+>       yield from get_matrix_os_golden_image_data_source(
+            admin_client=admin_client,
+            golden_images_namespace=golden_images_namespace,
+            os_matrix=windows_os_matrix__class__,
+        )
+
+tests/virt/guest_agent/conftest.py:12: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/virt/cluster/common_templates/utils.py:493: in get_matrix_os_golden_image_data_source
+    yield from get_or_create_golden_image_data_source(
+tests/virt/utils.py:457: in get_or_create_golden_image_data_source
+    url=f"{get_test_artifact_server_url()}{os_dict['image_path']}",
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+utilities/artifactory.py:39: in get_test_artifact_server_url
+    for sample in TimeoutSampler(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <timeout_sampler.TimeoutSampler object at 0x7f6e56dbb7f0>
+
+    def __iter__(self) -> Any:
+        """
+        Call `func` and yield the result, or raise an exception on timeout.
+    
+        Yields:
+            any: Return value from `func`
+    
+        Raises:
+            TimeoutExpiredError: if `func` takes longer than `wait_timeout` seconds to return a value
+        """
+        timeout_watch = TimeoutWatch(timeout=self.wait_timeout)
+        if self.print_log:
+            log = (
+                f"Waiting for {self.wait_timeout} seconds"
+                f" [{datetime.timedelta(seconds=self.wait_timeout)}], retry every"
+                f" {self.sleep} seconds."
+            )
+    
+            if self.print_func_log:
+                log += f" ({self._func_log})"
+    
+            LOGGER.info(log)
+    
+        last_exp = None
+        elapsed_time = None
+        while timeout_watch.remaining_time() > 0:
+            try:
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+                yield self.func(*self.func_args, **self.func_kwargs)
+                time.sleep(self.sleep)
+                elapsed_time = None
+    
+            except Exception as exp:
+                last_exp = exp
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+    
+                if not self._should_ignore_exception(exp=last_exp):
+                    raise TimeoutExpiredError(
+                        self._get_exception_log(exp=last_exp), last_exp=last_exp, elapsed_time=elapsed_time
+                    )
+    
+                time.sleep(self.sleep)
+                elapsed_time = None
+    
+            finally:
+                if self.print_log and elapsed_time:
+                    LOGGER.info(_elapsed_time_log(elapsed_time=elapsed_time))
+    
+>       raise TimeoutExpiredError(self._get_exception_log(exp=last_exp), last_exp=last_exp)
+E       timeout_sampler.TimeoutExpiredError: Timed Out: 60
+E       Function: utilities.artifactory.<locals>.lambda: artifactory_connection_url.requests.get.get_artifactory_header
+E       Last exception: ConnectionError: HTTPSConnectionPool(host='%7bserver%7d', port=443): Max retries exceeded with url: /artifactory/cnv-qe-server-local/ (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x7f6e56d56fd0>: Failed to resolve '%7bserver%7d' ([Errno -2] Name or service not known)")).
+
+.venv/lib64/python3.14/site-packages/timeout_sampler/__init__.py:182: TimeoutExpiredError
+---------------------------- Captured stderr setup -----------------------------
+
+TEST: TestWindowsGuestAgentOSInfo.test_os_info_appears_when_agent_starts[#win-2022#] STATUS: [1;33mSKIPPED[0m
+------------------------------------------------------- TEARDOWN -------------------------------------------------------
+
+--------------------------------------------- test_vm_deletion[#win-2022#] ---------------------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-23T15:33:28.391736 pytest_dependency [32mINFO[0m skip test_vm_deletion[#win-2022#] because it depends on TestWindowsGuestAgentOSInfo::create_vm[0m
+
+TEST: TestWindowsGuestAgentOSInfo.test_vm_deletion[#win-2022#] STATUS: [1;33mSKIPPED[0m
+------------------------------------------------------- TEARDOWN -------------------------------------------------------
+
+---------------------------------------------- test_create_vm[#win-2025#] ----------------------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-23T15:33:28.394771 conftest [32mINFO[0m Executing function fixture: term_handler_scope_function[0m
+2026-02-23T15:33:28.395115 conftest [32mINFO[0m Executing function fixture: autouse_fixtures[0m
+2026-02-23T15:33:28.395475 conftest [32mINFO[0m Executing class fixture: windows_os_matrix__class__[0m
+2026-02-23T15:33:28.395627 conftest [32mINFO[0m Executing class fixture: windows_ga_golden_image_data_source[0m
+2026-02-23T15:33:28.880098 tests.virt.utils [33mWARNING[0m No DataSource win2k25 found or it doesn't have a source pvc/snapshot.[0m
+2026-02-23T15:33:28.880363 utilities.artifactory [32mINFO[0m Testing connectivity to https://{server}/artifactory/cnv-qe-server-local/ HTTPS server[0m
+2026-02-23T15:34:31.838940 utilities.artifactory [31mERROR[0m Unable to connect to test image server: https://{server}/artifactory/cnv-qe-server-local/ HTTPS[0m
+_ 37 of 46 completed, 0 Pass, 0 Fail, 32 Skip, 0 XPass, 0 XFail, 5 Error, 0 ReRun _
+
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py 2026-02-23T15:34:31.865374 pytest_dependency [32mINFO[0m skip test_start_vm[#win-2025#] because it depends on TestWindowsGuestAgentOSInfo::create_vm[0m
+
+TEST: TestWindowsGuestAgentOSInfo.test_start_vm[#win-2025#] STATUS: [1;33mSKIPPED[0m
+s
+_ 38 of 46 completed, 0 Pass, 0 Fail, 33 Skip, 0 XPass, 0 XFail, 5 Error, 0 ReRun _
+
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py ------------------------------------------------------- TEARDOWN -------------------------------------------------------
+
+TEST: TestWindowsGuestAgentOSInfo.test_vmi_os_info_matches_windows_os[#win-2025#] STATUS: [1;33mSKIPPED[0m
+s
+_ 39 of 46 completed, 0 Pass, 0 Fail, 34 Skip, 0 XPass, 0 XFail, 5 Error, 0 ReRun _
+
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py ------------------------------------------------------- TEARDOWN -------------------------------------------------------
+
+TEST: TestWindowsGuestAgentOSInfo.test_vmi_hostname_matches_windows_hostname[#win-2025#] STATUS: [1;33mSKIPPED[0m
+s
+_ 40 of 46 completed, 0 Pass, 0 Fail, 35 Skip, 0 XPass, 0 XFail, 5 Error, 0 ReRun _
+
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py ------------------------------------------------------- TEARDOWN -------------------------------------------------------
+
+TEST: TestWindowsGuestAgentOSInfo.test_vmi_os_info_not_empty[#win-2025#] STATUS: [1;33mSKIPPED[0m
+s
+_ 41 of 46 completed, 0 Pass, 0 Fail, 36 Skip, 0 XPass, 0 XFail, 5 Error, 0 ReRun _
+
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py 
+TEST: TestWindowsGuestAgentOSInfo.test_guest_agent_info_available_after_reboot[#win-2025#] STATUS: [1;33mSKIPPED[0m
+s
+_ 42 of 46 completed, 0 Pass, 0 Fail, 37 Skip, 0 XPass, 0 XFail, 5 Error, 0 ReRun _
+
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py s
+TEST: TestWindowsGuestAgentOSInfo.test_os_info_absent_when_agent_stopped[#win-2025#] STATUS: [1;33mSKIPPED[0m
+
+_ 43 of 46 completed, 0 Pass, 0 Fail, 38 Skip, 0 XPass, 0 XFail, 5 Error, 0 ReRun _
+
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py ------------------------------------------------------- TEARDOWN -------------------------------------------------------
+s
+TEST: TestWindowsGuestAgentOSInfo.test_os_info_appears_when_agent_starts[#win-2025#] STATUS: [1;33mSKIPPED[0m
+
+_ 44 of 46 completed, 0 Pass, 0 Fail, 39 Skip, 0 XPass, 0 XFail, 5 Error, 0 ReRun _
+
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py ------------------------------------------------------- TEARDOWN -------------------------------------------------------
+
+TEST: TestWindowsGuestAgentOSInfo.test_vm_deletion[#win-2025#] STATUS: [1;33mSKIPPED[0m
+s
+_ 45 of 46 completed, 0 Pass, 0 Fail, 40 Skip, 0 XPass, 0 XFail, 5 Error, 0 ReRun _
+
+tests/deprecated_api/test_deprecation_audit_logs.py 
+TEST: test_deprecated_apis_in_audit_logs STATUS: [1;33mQUARANTINED[0m
+[NOTRUN] quarantined: Timeout after 180s retrieving logs Tracked <a href='https://issues.redhat.com/browse/CNV-76514' target='_blank'>CNV-76514</a>
+_ 46 of 46 completed, 0 Pass, 0 Fail, 40 Skip, 0 XPass, 1 XFail, 5 Error, 0 ReRun _
+                                                                         [100%]2026-02-23T15:35:55.605442 ocp_resources ConfigMap [32mINFO[0m Delete ConfigMap cnv-tests-run-in-progress[0m
+2026-02-23T15:35:55.922661 ocp_resources ConfigMap [32mINFO[0m Deleting {'kind': 'ConfigMap', 'apiVersion': 'v1', 'metadata': {'name': 'cnv-tests-run-in-progress', 'namespace': 'cnv-tests-run-in-progress-ns', 'uid': '48bf6777-71c3-4717-97db-b48c549245ec', 'resourceVersion': '23460101', 'creationTimestamp': '2026-02-23T15:25:43Z', 'managedFields': [{'manager': 'OpenAPI-Generator', 'operation': 'Update', 'apiVersion': 'v1', 'time': '2026-02-23T15:25:43Z', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:data': {'.': {}, 'f:host': {}, 'f:pytest_cmd': {}, 'f:run-in-container': {}, 'f:running_from_dir': {}, 'f:session-id': {}, 'f:user': {}}}}]}, 'data': '*******'}[0m
+2026-02-23T15:35:56.087764 ocp_resources ConfigMap [32mINFO[0m Wait until ConfigMap cnv-tests-run-in-progress is deleted[0m
+2026-02-23T15:35:56.402355 ocp_resources Namespace [32mINFO[0m Delete Namespace cnv-tests-run-in-progress-ns[0m
+2026-02-23T15:35:56.715539 ocp_resources Namespace [32mINFO[0m Deleting {'kind': 'Namespace', 'apiVersion': 'v1', 'metadata': {'name': 'cnv-tests-run-in-progress-ns', 'uid': '8d575775-389f-4c9d-985d-28d006635299', 'resourceVersion': '23460099', 'creationTimestamp': '2026-02-23T15:25:42Z', 'labels': {'kubernetes.io/metadata.name': 'cnv-tests-run-in-progress-ns', 'pod-security.kubernetes.io/audit': 'restricted', 'pod-security.kubernetes.io/audit-version': 'latest', 'pod-security.kubernetes.io/enforce': 'privileged', 'pod-security.kubernetes.io/warn': 'restricted', 'pod-security.kubernetes.io/warn-version': 'latest', 'security.openshift.io/scc.podSecurityLabelSync': 'false'}, 'annotations': {'openshift.io/sa.scc.mcs': 's0:c33,c22', 'openshift.io/sa.scc.supplemental-groups': '1001100000/10000', 'openshift.io/sa.scc.uid-range': '1001100000/10000', 'security.openshift.io/MinimallySufficientPodSecurityStandard': 'restricted'}, 'managedFields': [{'manager': 'cluster-policy-controller', 'operation': 'Apply', 'apiVersion': 'v1', 'time': '2026-02-23T15:25:43Z', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:annotations': {'f:openshift.io/sa.scc.mcs': {}, 'f:openshift.io/sa.scc.supplemental-groups': {}, 'f:openshift.io/sa.scc.uid-range': {}}}}}, {'manager': 'pod-security-admission-label-synchronization-controller', 'operation': 'Apply', 'apiVersion': 'v1', 'time': '2026-02-23T15:25:43Z', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:annotations': {'f:security.openshift.io/MinimallySufficientPodSecurityStandard': {}}, 'f:labels': {'f:pod-security.kubernetes.io/audit': {}, 'f:pod-security.kubernetes.io/audit-version': {}, 'f:pod-security.kubernetes.io/warn': {}, 'f:pod-security.kubernetes.io/warn-version': {}}}}}, {'manager': 'OpenAPI-Generator', 'operation': 'Update', 'apiVersion': 'v1', 'time': '2026-02-23T15:25:43Z', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:labels': {'.': {}, 'f:kubernetes.io/metadata.name': {}, 'f:pod-security.kubernetes.io/enforce': {}, 'f:security.openshift.io/scc.podSecurityLabelSync': {}}}}}]}, 'spec': {'finalizers': ['kubernetes']}, 'status': {'phase': 'Active'}}[0m
+2026-02-23T15:35:56.883508 ocp_resources Namespace [32mINFO[0m Wait until Namespace cnv-tests-run-in-progress-ns is deleted[0m
+2026-02-23T15:35:56.088240 timeout_sampler [32mINFO[0m Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_deleted.lambda: self.exists)[0m
+2026-02-23T15:35:56.246599 timeout_sampler [32mINFO[0m Elapsed time: 0.00031113624572753906 [0:00:00.000311][0m
+2026-02-23T15:35:56.884024 timeout_sampler [32mINFO[0m Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_deleted.lambda: self.exists)[0m
+2026-02-23T15:36:06.334397 timeout_sampler [32mINFO[0m Elapsed time: 9.289979219436646 [0:00:09.289979][0m
+==== 40 skipped, 18 warnings, 5 errors, 1 quarantined in 622.14s (0:10:22) =====
+
+==================================== ERRORS ====================================
+____ ERROR at setup of TestWindowsGuestAgentOSInfo.test_create_vm[#win-10#] ____
+
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f6e599b6660>
+golden_images_namespace = <ocp_resources.namespace.Namespace object at 0x7f6e56f3c510>
+windows_os_matrix__class__ = {'win-10': {'container_disk_image_path': 'docker/kubevirt-common-instancetypes/windows10-container-disk:4.99', 'data_source': 'win10', 'dv_size': '70Gi', 'image_name': 'win_10_uefi.qcow2', ...}}
+
+    @pytest.fixture(scope="class")
+    def windows_ga_golden_image_data_source(admin_client, golden_images_namespace, windows_os_matrix__class__):
+>       yield from get_matrix_os_golden_image_data_source(
+            admin_client=admin_client,
+            golden_images_namespace=golden_images_namespace,
+            os_matrix=windows_os_matrix__class__,
+        )
+
+tests/virt/guest_agent/conftest.py:12: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/virt/cluster/common_templates/utils.py:493: in get_matrix_os_golden_image_data_source
+    yield from get_or_create_golden_image_data_source(
+tests/virt/utils.py:457: in get_or_create_golden_image_data_source
+    url=f"{get_test_artifact_server_url()}{os_dict['image_path']}",
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+utilities/artifactory.py:39: in get_test_artifact_server_url
+    for sample in TimeoutSampler(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <timeout_sampler.TimeoutSampler object at 0x7f6e56bda0d0>
+
+    def __iter__(self) -> Any:
+        """
+        Call `func` and yield the result, or raise an exception on timeout.
+    
+        Yields:
+            any: Return value from `func`
+    
+        Raises:
+            TimeoutExpiredError: if `func` takes longer than `wait_timeout` seconds to return a value
+        """
+        timeout_watch = TimeoutWatch(timeout=self.wait_timeout)
+        if self.print_log:
+            log = (
+                f"Waiting for {self.wait_timeout} seconds"
+                f" [{datetime.timedelta(seconds=self.wait_timeout)}], retry every"
+                f" {self.sleep} seconds."
+            )
+    
+            if self.print_func_log:
+                log += f" ({self._func_log})"
+    
+            LOGGER.info(log)
+    
+        last_exp = None
+        elapsed_time = None
+        while timeout_watch.remaining_time() > 0:
+            try:
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+                yield self.func(*self.func_args, **self.func_kwargs)
+                time.sleep(self.sleep)
+                elapsed_time = None
+    
+            except Exception as exp:
+                last_exp = exp
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+    
+                if not self._should_ignore_exception(exp=last_exp):
+                    raise TimeoutExpiredError(
+                        self._get_exception_log(exp=last_exp), last_exp=last_exp, elapsed_time=elapsed_time
+                    )
+    
+                time.sleep(self.sleep)
+                elapsed_time = None
+    
+            finally:
+                if self.print_log and elapsed_time:
+                    LOGGER.info(_elapsed_time_log(elapsed_time=elapsed_time))
+    
+>       raise TimeoutExpiredError(self._get_exception_log(exp=last_exp), last_exp=last_exp)
+E       timeout_sampler.TimeoutExpiredError: Timed Out: 60
+E       Function: utilities.artifactory.<locals>.lambda: artifactory_connection_url.requests.get.get_artifactory_header
+E       Last exception: ConnectionError: HTTPSConnectionPool(host='%7bserver%7d', port=443): Max retries exceeded with url: /artifactory/cnv-qe-server-local/ (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x7f6e5823d810>: Failed to resolve '%7bserver%7d' ([Errno -2] Name or service not known)")).
+
+.venv/lib64/python3.14/site-packages/timeout_sampler/__init__.py:182: TimeoutExpiredError
+---------------------------- Captured stderr setup -----------------------------
+
+----------------------------------------------- test_create_vm[#win-10#] -----------------------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-23T15:25:44.232718 conftest [32mINFO[0m Executing session fixture: admin_client[0m
+2026-02-23T15:25:44.233017 conftest [32mINFO[0m Executing session fixture: pytestconfig[0m
+2026-02-23T15:25:44.233188 conftest [32mINFO[0m Executing session fixture: installing_cnv[0m
+2026-02-23T15:25:44.233306 conftest [32mINFO[0m Executing session fixture: cnv_tests_utilities_namespace[0m
+2026-02-23T15:25:44.395356 ocp_resources Namespace [32mINFO[0m Create Namespace cnv-tests-utilities[0m
+2026-02-23T15:25:44.395659 ocp_resources Namespace [32mINFO[0m Posting {'apiVersion': 'v1', 'kind': 'Namespace', 'metadata': {'name': 'cnv-tests-utilities', 'labels': {'pod-security.kubernetes.io/enforce': 'privileged', 'security.openshift.io/scc.podSecurityLabelSync': 'false'}}, 'spec': {}}[0m
+2026-02-23T15:25:44.716055 ocp_resources Namespace [32mINFO[0m Wait for Namespace cnv-tests-utilities status to be Active[0m
+2026-02-23T15:25:44.716420 timeout_sampler [32mINFO[0m Waiting for 120 seconds [0:02:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_for_status.lambda: self.exists)[0m
+2026-02-23T15:25:44.874192 ocp_resources Namespace [32mINFO[0m Status of Namespace cnv-tests-utilities is Active[0m
+2026-02-23T15:25:44.874487 timeout_sampler [32mINFO[0m Elapsed time: 0.00027751922607421875 [0:00:00.000278][0m
+2026-02-23T15:25:44.874951 conftest [32mINFO[0m Executing session fixture: skip_unprivileged_client[0m
+2026-02-23T15:25:44.876024 ocp_resources.resource [32mINFO[0m kind: OAuth api version: config.openshift.io/v1[0m
+2026-02-23T15:25:44.877614 ocp_resources.resource [32mINFO[0m kind: DaemonSet api version: apps/v1[0m
+2026-02-23T15:25:44.875316 conftest [32mINFO[0m Executing session fixture: identity_provider_config[0m
+2026-02-23T15:25:44.876716 conftest [32mINFO[0m Executing session fixture: leftovers_cleanup[0m
+2026-02-23T15:25:44.876978 tests.conftest [32mINFO[0m Checking for leftover resources[0m
+2026-02-23T15:25:45.352165 ocp_resources.resource [32mINFO[0m ResourceEdits: Updating data for resource OAuth cluster[0m
+2026-02-23T15:25:45.352655 ocp_resources OAuth [32mINFO[0m Update OAuth cluster:
+{'metadata': {'name': 'cluster'}, 'spec': {'tokenConfig': {'accessTokenMaxAgeSeconds': 604800}}}[0m
+2026-02-23T15:25:45.514992 conftest [32mINFO[0m Executing session fixture: artifactory_setup[0m
+2026-02-23T15:25:45.515455 tests.conftest [32mINFO[0m Checking for artifactory credentials:[0m
+2026-02-23T15:25:45.515701 tests.conftest [33mWARNING[0m Explicitly skipping artifactory setup check due to use of --skip-artifactory-check[0m
+2026-02-23T15:25:45.516091 conftest [32mINFO[0m Executing session fixture: os_path_environment[0m
+2026-02-23T15:25:45.516640 conftest [32mINFO[0m Executing session fixture: tmpdir_factory[0m
+2026-02-23T15:25:45.517089 conftest [32mINFO[0m Executing session fixture: bin_directory[0m
+2026-02-23T15:25:45.520578 conftest [32mINFO[0m Executing session fixture: virtctl_binary[0m
+2026-02-23T15:25:45.521877 ocp_resources.resource [32mINFO[0m kind: ConsoleCLIDownload api version: console.openshift.io/v1[0m
+2026-02-23T15:25:45.832942 utilities.infra [32mINFO[0m Downloading archive using: url=https://hyperconverged-cluster-cli-download-openshift-cnv.apps.c01-mv-421.rhos-psi.cnv-qe.rhood.us/amd64/linux/virtctl.tar.gz[0m
+2026-02-23T15:25:50.247527 utilities.infra [32mINFO[0m Extract the downloaded archive.[0m
+2026-02-23T15:25:50.483172 utilities.infra [32mINFO[0m Downloaded file: ['virtctl'][0m
+2026-02-23T15:25:50.487474 conftest [32mINFO[0m Executing session fixture: oc_binary[0m
+2026-02-23T15:25:50.797662 utilities.infra [32mINFO[0m Downloading archive using: url=https://downloads-openshift-console.apps.c01-mv-421.rhos-psi.cnv-qe.rhood.us/amd64/linux/oc.tar[0m
+2026-02-23T15:26:04.275616 utilities.infra [32mINFO[0m Extract the downloaded archive.[0m
+2026-02-23T15:26:04.507191 utilities.infra [32mINFO[0m Downloaded file: ['oc'][0m
+2026-02-23T15:26:04.523190 conftest [32mINFO[0m Executing session fixture: bin_directory_to_os_path[0m
+2026-02-23T15:26:04.523680 tests.conftest [32mINFO[0m Adding /tmp/pytest-THZmNMRLEep8MYBwrWv2fe/bin0 to $PATH[0m
+2026-02-23T15:26:04.523942 conftest [32mINFO[0m Executing session fixture: openshift_current_version[0m
+2026-02-23T15:26:04.524373 ocp_resources.resource [32mINFO[0m kind: ClusterVersion api version: config.openshift.io/v1[0m
+2026-02-23T15:26:04.852280 conftest [32mINFO[0m Executing session fixture: hco_namespace[0m
+2026-02-23T15:26:05.009337 conftest [32mINFO[0m Executing session fixture: csv_scope_session[0m
+2026-02-23T15:26:05.010470 ocp_resources.resource [32mINFO[0m kind: Subscription api version: operators.coreos.com/v1alpha1[0m
+2026-02-23T15:26:05.333551 ocp_resources.resource [32mINFO[0m kind: ClusterServiceVersion api version: operators.coreos.com/v1alpha1[0m
+2026-02-23T15:26:06.113378 conftest [32mINFO[0m Executing session fixture: cnv_current_version[0m
+2026-02-23T15:26:06.615517 conftest [32mINFO[0m Executing session fixture: cnv_subscription_scope_session[0m
+2026-02-23T15:26:06.615890 ocp_resources.resource [32mINFO[0m kind: Subscription api version: operators.coreos.com/v1alpha1[0m
+2026-02-23T15:26:06.772316 conftest [32mINFO[0m Executing session fixture: hco_image[0m
+2026-02-23T15:26:06.931473 ocp_resources.resource [32mINFO[0m kind: CatalogSource api version: operators.coreos.com/v1alpha1[0m
+2026-02-23T15:26:07.249325 ocp_resources.resource [32mINFO[0m kind: StorageClass api version: storage.k8s.io/v1[0m
+2026-02-23T15:26:07.248587 conftest [32mINFO[0m Executing session fixture: cluster_storage_classes[0m
+2026-02-23T15:26:07.409435 conftest [32mINFO[0m Executing session fixture: ocs_storage_class[0m
+2026-02-23T15:26:07.410044 conftest [32mINFO[0m Executing session fixture: ocs_current_version[0m
+2026-02-23T15:26:07.410568 ocp_resources.resource [32mINFO[0m kind: ClusterServiceVersion api version: operators.coreos.com/v1alpha1[0m
+2026-02-23T15:26:07.732571 conftest [32mINFO[0m Executing session fixture: kubevirt_resource_scope_session[0m
+2026-02-23T15:26:07.733140 ocp_resources.resource [32mINFO[0m kind: KubeVirt api version: kubevirt.io/v1[0m
+2026-02-23T15:26:07.894059 ocp_resources.resource [32mINFO[0m kind: Network api version: config.openshift.io/v1[0m
+2026-02-23T15:26:07.893180 conftest [32mINFO[0m Executing session fixture: cluster_service_network[0m
+2026-02-23T15:26:08.050726 conftest [32mINFO[0m Executing session fixture: ipv6_supported_cluster[0m
+2026-02-23T15:26:08.051521 conftest [32mINFO[0m Executing session fixture: ipv4_supported_cluster[0m
+2026-02-23T15:26:08.052096 conftest [32mINFO[0m Executing session fixture: nodes[0m
+2026-02-23T15:26:08.275674 conftest [32mINFO[0m Executing session fixture: workers[0m
+2026-02-23T15:26:09.228450 conftest [32mINFO[0m Executing session fixture: cnv_source[0m
+2026-02-23T15:26:09.228883 conftest [32mINFO[0m Executing session fixture: is_production_source[0m
+2026-02-23T15:26:09.229115 conftest [32mINFO[0m Executing session fixture: generated_pulled_secret[0m
+2026-02-23T15:26:09.229564 ocp_resources.resource [32mINFO[0m Trying to get client via new_client_from_config[0m
+2026-02-23T15:26:10.185760 conftest [32mINFO[0m Executing session fixture: cnv_tests_utilities_service_account[0m
+2026-02-23T15:26:10.214483 ocp_resources ServiceAccount [32mINFO[0m Create ServiceAccount cnv-tests-sa[0m
+2026-02-23T15:26:10.214612 ocp_resources ServiceAccount [32mINFO[0m Posting {'apiVersion': 'v1', 'kind': 'ServiceAccount', 'metadata': {'name': 'cnv-tests-sa', 'namespace': 'cnv-tests-utilities'}}[0m
+2026-02-23T15:26:12.033345 timeout_sampler [32mINFO[0m Waiting for 10 seconds [0:00:10], retry every 1 seconds. (Function: utilities.virt._get_image_json  Kwargs: {'cmd': 'oc image -o json info quay.io/openshift-cnv/qe-net-utils:latest --filter-by-os linux/amd64 --registry-config=/tmp/tmpwepuqmgn-cnv-tests-pull-secret/pull-secrets.json'})[0m
+2026-02-23T15:26:12.032616 conftest [32mINFO[0m Executing session fixture: utility_daemonset[0m
+2026-02-23T15:26:12.033926 pyhelper_utils.shell [32mINFO[0m Running oc image -o json info quay.io/openshift-cnv/qe-net-utils:latest --filter-by-os linux/amd64 --registry-config=/tmp/tmpwepuqmgn-cnv-tests-pull-secret/pull-secrets.json command[0m
+2026-02-23T15:26:14.823095 timeout_sampler [32mINFO[0m Elapsed time: 0.000293731689453125 [0:00:00.000294][0m
+2026-02-23T15:26:14.852123 ocp_resources.resource [32mINFO[0m kind: DaemonSet api version: apps/v1 --- [DuplicateFilter: Last log `Trying to get client via new_client_from_config` repeated 2 times][0m
+2026-02-23T15:26:14.860570 ocp_resources DaemonSet [32mINFO[0m Create DaemonSet utility[0m
+2026-02-23T15:26:14.860747 ocp_resources DaemonSet [32mINFO[0m Posting {'apiVersion': 'apps/v1', 'kind': 'DaemonSet', 'metadata': {'annotations': {'deprecated.daemonset.template.generation': '0'}, 'creationTimestamp': None, 'labels': {'cnv-test': 'utility', 'tier': 'node'}, 'name': 'utility', 'namespace': 'cnv-tests-utilities'}, 'spec': {'revisionHistoryLimit': 10, 'selector': {'matchLabels': {'cnv-test': 'utility', 'tier': 'node'}}, 'template': {'metadata': {'creationTimestamp': None, 'labels': {'cnv-test': 'utility', 'tier': 'node'}}, 'spec': {'containers': [{'command': ['/bin/bash', '-c', 'echo ok > /tmp/healthy && sleep INF'], 'image': 'quay.io/openshift-cnv/qe-net-utils:latest@sha256:2c8e11ac0f0b36553bed603c1c67dccb703d7059ccbcf8c91e3a35c99719ce20', 'imagePullPolicy': 'IfNotPresent', 'name': 'utility', 'readinessProbe': {'exec': {'command': ['cat', '/tmp/healthy']}, 'failureThreshold': 3, 'initialDelaySeconds': 5, 'periodSeconds': 5, 'successThreshold': 1, 'timeoutSeconds': 1}, 'resources': {'limits': {'cpu': '100m', 'memory': '50Mi'}, 'requests': {'cpu': '100m', 'memory': '50Mi'}}, 'securityContext': {'privileged': True, 'runAsUser': 0}, 'stdin': True, 'stdinOnce': True, 'terminationMessagePath': '/dev/termination-log', 'terminationMessagePolicy': 'File', 'tty': True, 'volumeMounts': [{'mountPath': '/host', 'name': 'host'}, {'mountPath': '/var/run/secrets/kubernetes.io/serviceaccount', 'name': 'kube-api-access-m5ch7', 'readOnly': True}, {'mountPath': '/host/run/openvswitch', 'name': 'ovs-run'}, {'mountPath': '/run/dbus/system_bus_socket', 'name': 'dbus-socket'}, {'mountPath': '/host/dev', 'name': 'dev'}, {'mountPath': '/host/etc', 'name': 'etc'}, {'mountPath': '/host/var', 'name': 'var'}]}], 'dnsPolicy': 'ClusterFirst', 'enableServiceLinks': True, 'hostNetwork': True, 'hostPID': True, 'imagePullSecrets': [{'name': 'default-dockercfg-xrlbh'}], 'preemptionPolicy': 'PreemptLowerPriority', 'priority': 0, 'restartPolicy': 'Always', 'schedulerName': 'default-scheduler', 'securityContext': {'privileged': True}, 'serviceAccount': 'cnv-tests-sa', 'serviceAccountName': 'cnv-tests-sa', 'terminationGracePeriodSeconds': 30, 'tolerations': [{'effect': 'NoSchedule', 'key': 'node-role.kubernetes.io/master', 'operator': 'Exists'}], 'volumes': [{'hostPath': {'path': '/', 'type': 'Directory'}, 'name': 'host'}, {'hostPath': {'path': '/run/openvswitch', 'type': ''}, 'name': 'ovs-run'}, {'hostPath': {'path': '/run/dbus/system_bus_socket', 'type': 'Socket'}, 'name': 'dbus-socket'}, {'hostPath': {'path': '/dev', 'type': 'Directory'}, 'name': 'dev'}, {'hostPath': {'path': '/etc', 'type': 'Directory'}, 'name': 'etc'}, {'hostPath': {'path': '/var', 'type': 'Directory'}, 'name': 'var'}, {'name': 'kube-api-access-m5ch7', 'projected': {'defaultMode': 420, 'sources': [{'serviceAccountToken': {'path': 'token'}}, {'configMap': {'items': [{'key': 'ca.crt', 'path': 'ca.crt'}], 'name': 'kube-root-ca.crt'}}, {'downwardAPI': {'items': [{'fieldRef': {'apiVersion': 'v1', 'fieldPath': 'metadata.namespace'}, 'path': 'namespace'}]}}, {'configMap': {'items': [{'key': 'service-ca.crt', 'path': 'service-ca.crt'}], 'name': 'openshift-service-ca.crt'}}]}}]}}, 'updateStrategy': {'type': 'OnDelete'}}}[0m
+2026-02-23T15:26:15.675686 ocp_resources DaemonSet [32mINFO[0m Wait for DaemonSet utility to deploy all desired pods[0m
+2026-02-23T15:26:15.676299 timeout_sampler [32mINFO[0m Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: kubernetes.dynamic.client.get  Kwargs: {'field_selector': 'metadata.name==utility', 'namespace': 'cnv-tests-utilities'})[0m
+2026-02-23T15:26:25.109274 timeout_sampler [32mINFO[0m Elapsed time: 9.263345718383789 [0:00:09.263346][0m
+2026-02-23T15:26:25.109781 conftest [32mINFO[0m Executing session fixture: workers_utility_pods[0m
+2026-02-23T15:26:29.369487 conftest [32mINFO[0m Executing session fixture: workers_type[0m
+2026-02-23T15:26:29.852037 ocp_resources Pod [32mINFO[0m Execute ['chroot', '/host', 'bash', '-c', 'systemd-detect-virt'] on utility-96c85 (c01-mv-421-qgr9v-worker-0-gwsf6)[0m
+2026-02-23T15:26:31.687858 ocp_resources Pod [32mINFO[0m Execute ['chroot', '/host', 'bash', '-c', 'systemd-detect-virt'] on utility-hrtkq (c01-mv-421-qgr9v-worker-0-rgbwd)[0m
+2026-02-23T15:26:33.725299 ocp_resources Pod [32mINFO[0m Execute ['chroot', '/host', 'bash', '-c', 'systemd-detect-virt'] on utility-xsxsq (c01-mv-421-qgr9v-worker-0-6brx9)[0m
+2026-02-23T15:26:34.996535 tests.conftest [32mINFO[0m Cluster workers are: virtual[0m
+2026-02-23T15:26:34.997420 conftest [32mINFO[0m Executing session fixture: nodes_cpu_architecture[0m
+2026-02-23T15:26:36.249361 pyhelper_utils.shell [32mINFO[0m Running virtctl --kubeconfig /home/fedora/.kube/config version command[0m
+2026-02-23T15:26:36.248993 conftest [32mINFO[0m Executing session fixture: cluster_info[0m
+2026-02-23T15:26:37.049316 ocp_resources.resource [32mINFO[0m kind: Network api version: config.openshift.io/v1[0m
+2026-02-23T15:26:37.215408 tests.conftest [32mINFO[0m 
+Cluster info:
+	Openshift version: 4.21.0
+	CNV version: 4.21.0
+	HCO image: brew.registry.redhat.io/rh-osbs/iib:1097155
+	OCS version: 4.21.0-104.stable
+	CNI type: OVNKubernetes
+	Workers type: virtual
+	Cluster CPU Architecture: amd64
+	IPv4 cluster: True
+	IPv6 cluster: False
+	Virtctl version: 
+	Client Version: version.Info{GitVersion:"v1.7.0-45-g33ff10241e", GitCommit:"33ff10241e848425ef145a49e450c5d1c0255edd", GitTreeState:"clean", BuildDate:"2026-01-15T09:28:24Z", GoVersion:"go1.24.11 (Red Hat 1.24.11-1.el8_10) X:strictfipsruntime", Compiler:"gc", Platform:"linux/amd64"}
+	Server Version: version.Info{GitVersion:"v1.7.0-45-g33ff10241e", GitCommit:"33ff10241e848425ef145a49e450c5d1c0255edd", GitTreeState:"clean", BuildDate:"2026-01-15T09:20:24Z", GoVersion:"go1.24.11 (Red Hat 1.24.11-1.el9_6) X:strictfipsruntime", Compiler:"gc", Platform:"linux/amd64"}
+[0m
+2026-02-23T15:26:37.217227 conftest [32mINFO[0m Executing function fixture: term_handler_scope_function[0m
+2026-02-23T15:26:37.217714 conftest [32mINFO[0m Executing class fixture: term_handler_scope_class[0m
+2026-02-23T15:26:37.218598 conftest [32mINFO[0m Executing module fixture: term_handler_scope_module[0m
+2026-02-23T15:26:37.219022 conftest [32mINFO[0m Executing session fixture: term_handler_scope_session[0m
+2026-02-23T15:26:37.219397 conftest [32mINFO[0m Executing session fixture: record_testsuite_property[0m
+2026-02-23T15:26:37.219682 conftest [32mINFO[0m Executing session fixture: junitxml_polarion[0m
+2026-02-23T15:26:37.220060 conftest [32mINFO[0m Executing session fixture: cluster_storage_classes_names[0m
+2026-02-23T15:26:37.220356 conftest [32mINFO[0m Executing session fixture: junitxml_plugin[0m
+2026-02-23T15:26:37.220613 conftest [32mINFO[0m Executing session fixture: hyperconverged_resource_scope_session[0m
+2026-02-23T15:26:37.221213 ocp_resources.resource [32mINFO[0m kind: HyperConverged api version: hco.kubevirt.io/v1beta1[0m
+2026-02-23T15:26:37.383303 conftest [32mINFO[0m Executing session fixture: cluster_sanity_scope_session[0m
+2026-02-23T15:26:37.385137 utilities.infra [32mINFO[0m Running cluster sanity. (To skip cluster sanity check pass --cluster-sanity-skip-check to pytest)[0m
+2026-02-23T15:26:37.385504 utilities.infra [32mINFO[0m Check storage classes sanity. (To skip storage class sanity check pass --cluster-sanity-skip-storage-check to pytest)[0m
+2026-02-23T15:26:37.385972 utilities.infra [32mINFO[0m Check nodes sanity. (To skip nodes sanity check pass --cluster-sanity-skip-nodes-check to pytest)[0m
+2026-02-23T15:26:37.386307 ocp_utilities.infra [32mINFO[0m Verify all nodes are in a healthy condition.[0m
+2026-02-23T15:26:38.341061 ocp_utilities.infra [32mINFO[0m Verify all nodes are schedulable.[0m
+2026-02-23T15:26:39.294305 timeout_sampler [32mINFO[0m Waiting for 300 seconds [0:05:00], retry every 5 seconds. (Function: utilities.infra.get_pods  Kwargs: {'client': <kubernetes.dynamic.client.DynamicClient object at 0x7f6e599b6660>, 'namespace': <ocp_resources.namespace.Namespace object at 0x7f6e5834bce0>})[0m
+2026-02-23T15:26:54.494670 timeout_sampler [32mINFO[0m Elapsed time: 0.0003933906555175781 [0:00:00.000393][0m
+2026-02-23T15:26:54.495123 utilities.infra [32mINFO[0m Check webhook endpoints health. (To skip webhook check pass --cluster-sanity-skip-webhook-check to pytest)[0m
+2026-02-23T15:26:54.495408 utilities.infra [32mINFO[0m Checking webhook endpoints health for services in namespace: openshift-cnv[0m
+2026-02-23T15:26:54.495617 utilities.infra [32mINFO[0m Scanning MutatingWebhookConfiguration resources for webhook services[0m
+2026-02-23T15:26:54.496068 ocp_resources.resource [32mINFO[0m kind: MutatingWebhookConfiguration api version: admissionregistration.k8s.io/v1[0m
+2026-02-23T15:26:57.115176 ocp_resources.resource [32mINFO[0m kind: ValidatingWebhookConfiguration api version: admissionregistration.k8s.io/v1[0m
+2026-02-23T15:26:57.114549 utilities.infra [32mINFO[0m Scanning ValidatingWebhookConfiguration resources for webhook services[0m
+2026-02-23T15:27:01.713891 utilities.infra [32mINFO[0m Checking endpoints for service: cdi-api[0m
+2026-02-23T15:27:02.027477 utilities.infra [32mINFO[0m Service cdi-api has 1 ready endpoint address(es)[0m
+2026-02-23T15:27:02.027729 utilities.infra [32mINFO[0m Checking endpoints for service: hco-webhook-service[0m
+2026-02-23T15:27:02.338870 utilities.infra [32mINFO[0m Service hco-webhook-service has 1 ready endpoint address(es)[0m
+2026-02-23T15:27:02.339221 utilities.infra [32mINFO[0m Checking endpoints for service: hostpath-provisioner-operator-service[0m
+2026-02-23T15:27:02.651278 utilities.infra [32mINFO[0m Service hostpath-provisioner-operator-service has 1 ready endpoint address(es)[0m
+2026-02-23T15:27:02.651499 utilities.infra [32mINFO[0m Checking endpoints for service: kubemacpool-service[0m
+2026-02-23T15:27:02.960648 utilities.infra [32mINFO[0m Service kubemacpool-service has 1 ready endpoint address(es)[0m
+2026-02-23T15:27:02.960968 utilities.infra [32mINFO[0m Checking endpoints for service: kubevirt-ipam-controller-webhook-service[0m
+2026-02-23T15:27:03.275796 utilities.infra [32mINFO[0m Service kubevirt-ipam-controller-webhook-service has 2 ready endpoint address(es)[0m
+2026-02-23T15:27:03.276077 utilities.infra [32mINFO[0m Checking endpoints for service: kubevirt-operator-webhook[0m
+2026-02-23T15:27:03.586264 utilities.infra [32mINFO[0m Service kubevirt-operator-webhook has 2 ready endpoint address(es)[0m
+2026-02-23T15:27:03.586613 utilities.infra [32mINFO[0m Checking endpoints for service: ssp-operator-service[0m
+2026-02-23T15:27:03.898907 utilities.infra [32mINFO[0m Service ssp-operator-service has 1 ready endpoint address(es)[0m
+2026-02-23T15:27:03.899262 utilities.infra [32mINFO[0m Checking endpoints for service: virt-api[0m
+2026-02-23T15:27:04.212520 utilities.infra [32mINFO[0m Service virt-api has 2 ready endpoint address(es)[0m
+2026-02-23T15:27:04.212891 utilities.infra [32mINFO[0m Checking endpoints for service: virt-template-validator[0m
+2026-02-23T15:27:04.526249 utilities.infra [32mINFO[0m Service virt-template-validator has 2 ready endpoint address(es)[0m
+2026-02-23T15:27:04.526611 utilities.infra [32mINFO[0m All discovered webhook services have available endpoints[0m
+2026-02-23T15:27:04.526877 utilities.infra [32mINFO[0m Checking VM creation capability via dry-run in namespace: default[0m
+2026-02-23T15:27:04.527562 ocp_resources.resource [32mINFO[0m kind: VirtualMachine api version: kubevirt.io/v1[0m
+2026-02-23T15:27:04.529841 ocp_resources VirtualMachine [32mINFO[0m Create VirtualMachine sanity-check-dry-run-vm[0m
+2026-02-23T15:27:04.530139 ocp_resources VirtualMachine [32mINFO[0m Posting {'apiVersion': 'kubevirt.io/v1', 'kind': 'VirtualMachine', 'metadata': {'name': 'sanity-check-dry-run-vm', 'namespace': 'default'}, 'spec': {'running': False, 'template': {'spec': {'domain': {'devices': {}, 'resources': {'requests': {'memory': '64Mi'}}}}}}}[0m
+2026-02-23T15:27:04.913689 utilities.infra [32mINFO[0m Dry-run VM creation succeeded[0m
+2026-02-23T15:27:04.914096 utilities.infra [32mINFO[0m Waiting for resource to stabilize: resource_kind=HyperConverged conditions={'Available': 'True', 'Progressing': 'False', 'ReconcileComplete': 'True', 'Degraded': 'False', 'Upgradeable': 'True'} sleep=600 consecutive_checks_count=3[0m
+2026-02-23T15:27:04.914346 timeout_sampler [32mINFO[0m Waiting for 600 seconds [0:10:00], retry every 5 seconds. (Function: utilities.infra.<locals>.lambda: dynamic_client.namespace.resource_kind.resource_name.list.get)[0m
+2026-02-23T15:27:04.915260 ocp_resources.resource [32mINFO[0m kind: HyperConverged api version: hco.kubevirt.io/v1beta1[0m
+2026-02-23T15:27:16.181135 timeout_sampler [32mINFO[0m Elapsed time: 10.799872636795044 [0:00:10.799873][0m
+2026-02-23T15:27:16.182215 ocp_utilities.infra [32mINFO[0m Verify all nodes are in a healthy condition.[0m
+2026-02-23T15:27:16.181606 conftest [32mINFO[0m Executing module fixture: cluster_sanity_scope_module[0m
+2026-02-23T15:27:16.181917 utilities.infra [32mINFO[0m Running cluster sanity. (To skip cluster sanity check pass --cluster-sanity-skip-check to pytest)[0m
+2026-02-23T15:27:16.182025 utilities.infra [32mINFO[0m Check storage classes sanity. (To skip storage class sanity check pass --cluster-sanity-skip-storage-check to pytest)[0m
+2026-02-23T15:27:16.182128 utilities.infra [32mINFO[0m Check nodes sanity. (To skip nodes sanity check pass --cluster-sanity-skip-nodes-check to pytest)[0m
+2026-02-23T15:27:17.289914 ocp_utilities.infra [32mINFO[0m Verify all nodes are schedulable.[0m
+2026-02-23T15:27:18.259901 timeout_sampler [32mINFO[0m Waiting for 300 seconds [0:05:00], retry every 5 seconds. (Function: utilities.infra.get_pods  Kwargs: {'client': <kubernetes.dynamic.client.DynamicClient object at 0x7f6e599b6660>, 'namespace': <ocp_resources.namespace.Namespace object at 0x7f6e5834bce0>})[0m
+2026-02-23T15:27:33.371882 timeout_sampler [32mINFO[0m Elapsed time: 0.0002732276916503906 [0:00:00.000273][0m
+2026-02-23T15:27:33.372319 utilities.infra [32mINFO[0m Check webhook endpoints health. (To skip webhook check pass --cluster-sanity-skip-webhook-check to pytest)[0m
+2026-02-23T15:27:33.372594 utilities.infra [32mINFO[0m Checking webhook endpoints health for services in namespace: openshift-cnv[0m
+2026-02-23T15:27:33.372884 utilities.infra [32mINFO[0m Scanning MutatingWebhookConfiguration resources for webhook services[0m
+2026-02-23T15:27:35.883063 utilities.infra [32mINFO[0m Scanning ValidatingWebhookConfiguration resources for webhook services[0m
+2026-02-23T15:27:40.408236 utilities.infra [32mINFO[0m Checking endpoints for service: cdi-api[0m
+2026-02-23T15:27:40.718392 utilities.infra [32mINFO[0m Service cdi-api has 1 ready endpoint address(es)[0m
+2026-02-23T15:27:40.718838 utilities.infra [32mINFO[0m Checking endpoints for service: hco-webhook-service[0m
+2026-02-23T15:27:41.030567 utilities.infra [32mINFO[0m Service hco-webhook-service has 1 ready endpoint address(es)[0m
+2026-02-23T15:27:41.030976 utilities.infra [32mINFO[0m Checking endpoints for service: hostpath-provisioner-operator-service[0m
+2026-02-23T15:27:41.340997 utilities.infra [32mINFO[0m Service hostpath-provisioner-operator-service has 1 ready endpoint address(es)[0m
+2026-02-23T15:27:41.341512 utilities.infra [32mINFO[0m Checking endpoints for service: kubemacpool-service[0m
+2026-02-23T15:27:41.653870 utilities.infra [32mINFO[0m Service kubemacpool-service has 1 ready endpoint address(es)[0m
+2026-02-23T15:27:41.654198 utilities.infra [32mINFO[0m Checking endpoints for service: kubevirt-ipam-controller-webhook-service[0m
+2026-02-23T15:27:41.966900 utilities.infra [32mINFO[0m Service kubevirt-ipam-controller-webhook-service has 2 ready endpoint address(es)[0m
+2026-02-23T15:27:41.967246 utilities.infra [32mINFO[0m Checking endpoints for service: kubevirt-operator-webhook[0m
+2026-02-23T15:27:42.281090 utilities.infra [32mINFO[0m Service kubevirt-operator-webhook has 2 ready endpoint address(es)[0m
+2026-02-23T15:27:42.281431 utilities.infra [32mINFO[0m Checking endpoints for service: ssp-operator-service[0m
+2026-02-23T15:27:42.595063 utilities.infra [32mINFO[0m Service ssp-operator-service has 1 ready endpoint address(es)[0m
+2026-02-23T15:27:42.595421 utilities.infra [32mINFO[0m Checking endpoints for service: virt-api[0m
+2026-02-23T15:27:42.908207 utilities.infra [32mINFO[0m Service virt-api has 2 ready endpoint address(es)[0m
+2026-02-23T15:27:42.908556 utilities.infra [32mINFO[0m Checking endpoints for service: virt-template-validator[0m
+2026-02-23T15:27:43.219083 utilities.infra [32mINFO[0m Service virt-template-validator has 2 ready endpoint address(es)[0m
+2026-02-23T15:27:43.219412 utilities.infra [32mINFO[0m All discovered webhook services have available endpoints[0m
+2026-02-23T15:27:43.219636 utilities.infra [32mINFO[0m Checking VM creation capability via dry-run in namespace: default[0m
+2026-02-23T15:27:43.221306 ocp_resources.resource [32mINFO[0m kind: VirtualMachine api version: kubevirt.io/v1[0m
+2026-02-23T15:27:43.223891 ocp_resources VirtualMachine [32mINFO[0m Create VirtualMachine sanity-check-dry-run-vm[0m
+2026-02-23T15:27:43.224181 ocp_resources VirtualMachine [32mINFO[0m Posting {'apiVersion': 'kubevirt.io/v1', 'kind': 'VirtualMachine', 'metadata': {'name': 'sanity-check-dry-run-vm', 'namespace': 'default'}, 'spec': {'running': False, 'template': {'spec': {'domain': {'devices': {}, 'resources': {'requests': {'memory': '64Mi'}}}}}}}[0m
+2026-02-23T15:27:43.552186 utilities.infra [32mINFO[0m Dry-run VM creation succeeded[0m
+2026-02-23T15:27:43.552585 utilities.infra [32mINFO[0m Waiting for resource to stabilize: resource_kind=HyperConverged conditions={'Available': 'True', 'Progressing': 'False', 'ReconcileComplete': 'True', 'Degraded': 'False', 'Upgradeable': 'True'} sleep=600 consecutive_checks_count=3[0m
+2026-02-23T15:27:43.552893 timeout_sampler [32mINFO[0m Waiting for 600 seconds [0:10:00], retry every 5 seconds. (Function: utilities.infra.<locals>.lambda: dynamic_client.namespace.resource_kind.resource_name.list.get)[0m
+2026-02-23T15:27:54.807452 timeout_sampler [32mINFO[0m Elapsed time: 10.781413078308105 [0:00:10.781413][0m
+2026-02-23T15:27:54.808586 conftest [32mINFO[0m Executing session fixture: ssh_key_tmpdir_scope_session[0m
+2026-02-23T15:27:54.810998 conftest [32mINFO[0m Executing session fixture: generated_ssh_key_for_vm_access[0m
+2026-02-23T15:27:54.906764 conftest [32mINFO[0m Executing session fixture: session_start_time[0m
+2026-02-23T15:27:54.907088 conftest [32mINFO[0m Executing function fixture: autouse_fixtures[0m
+2026-02-23T15:27:54.907359 conftest [32mINFO[0m Executing session fixture: schedulable_nodes[0m
+2026-02-23T15:27:57.948646 conftest [32mINFO[0m Executing session fixture: gpu_nodes[0m
+2026-02-23T15:27:58.930336 conftest [32mINFO[0m Executing session fixture: nodes_with_supported_gpus[0m
+2026-02-23T15:27:58.930777 conftest [32mINFO[0m Executing session fixture: sriov_workers[0m
+2026-02-23T15:27:59.406784 conftest [32mINFO[0m Executing session fixture: nodes_cpu_vendor[0m
+2026-02-23T15:27:59.568764 conftest [32mINFO[0m Executing session fixture: nodes_cpu_virt_extension[0m
+2026-02-23T15:27:59.569394 conftest [32mINFO[0m Executing session fixture: allocatable_memory_per_node_scope_session[0m
+2026-02-23T15:27:59.894315 tests.virt.utils [32mINFO[0m Node c01-mv-421-qgr9v-worker-0-6brx9 has 12.515708923339844 GiB of allocatable memory[0m
+2026-02-23T15:28:00.217568 tests.virt.utils [32mINFO[0m Node c01-mv-421-qgr9v-worker-0-gwsf6 has 12.515708923339844 GiB of allocatable memory[0m
+2026-02-23T15:28:00.546308 tests.virt.utils [32mINFO[0m Node c01-mv-421-qgr9v-worker-0-rgbwd has 12.515701293945312 GiB of allocatable memory[0m
+2026-02-23T15:28:00.546973 conftest [32mINFO[0m Executing session fixture: hugepages_gib_values[0m
+2026-02-23T15:28:01.037587 conftest [32mINFO[0m Executing session fixture: virt_special_infra_sanity[0m
+2026-02-23T15:28:01.038189 tests.virt.conftest [33mWARNING[0m Skipping virt special infra sanity because --skip-virt-sanity-check was passed[0m
+2026-02-23T15:28:01.038778 conftest [32mINFO[0m Executing session fixture: unprivileged_secret[0m
+2026-02-23T15:28:01.044952 ocp_resources Secret [32mINFO[0m Create Secret htpass-secret-for-cnv-tests[0m
+2026-02-23T15:28:01.045108 ocp_resources Secret [32mINFO[0m Posting {'apiVersion': 'v1', 'kind': 'Secret', 'metadata': {'name': 'htpass-secret-for-cnv-tests', 'namespace': 'openshift-config'}, 'data': '*******'}[0m
+2026-02-23T15:28:01.369958 conftest [32mINFO[0m Executing session fixture: identity_provider_with_htpasswd[0m
+2026-02-23T15:28:01.370438 ocp_resources.resource [32mINFO[0m ResourceEdit: Backing up old data[0m
+2026-02-23T15:28:01.530905 ocp_resources.resource [32mINFO[0m ResourceEdits: Updating data for resource OAuth cluster[0m
+2026-02-23T15:28:01.531286 ocp_resources OAuth [32mINFO[0m Update OAuth cluster:
+{'metadata': {'name': 'cluster'}, 'spec': {'identityProviders': [{'name': 'htpasswd_provider', 'mappingMethod': 'claim', 'type': 'HTPasswd', 'htpasswd': {'fileData': {'name': 'htpass-secret-for-cnv-tests'}}}], 'tokenConfig': {'accessTokenMaxAgeSeconds': 604800, 'accessTokenInactivityTimeout': None}}}[0m
+2026-02-23T15:28:01.694541 ocp_resources.resource [32mINFO[0m kind: Deployment api version: apps/v1[0m
+2026-02-23T15:28:01.852515 tests.conftest [32mINFO[0m Wait for oauth-openshift -> Type: Progressing -> Reason: ReplicaSetUpdated[0m
+2026-02-23T15:28:01.852976 timeout_sampler [32mINFO[0m Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: tests.conftest.<locals>.lambda: dp.instance.status.conditions)[0m
+2026-02-23T15:28:08.404649 timeout_sampler [32mINFO[0m Elapsed time: 6.242459774017334 [0:00:06.242460][0m
+2026-02-23T15:28:08.405418 timeout_sampler [32mINFO[0m Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: tests.conftest.<locals>.lambda: dp.instance.status.conditions)[0m
+2026-02-23T15:28:08.405084 tests.conftest [32mINFO[0m Wait for oauth-openshift -> Type: Progressing -> Reason: NewReplicaSetAvailable[0m
+2026-02-23T15:29:03.488215 timeout_sampler [32mINFO[0m Elapsed time: 54.776220083236694 [0:00:54.776220][0m
+2026-02-23T15:29:03.489564 conftest [32mINFO[0m Executing session fixture: kubeconfig_export_path[0m
+2026-02-23T15:29:03.490052 conftest [32mINFO[0m Executing session fixture: exported_kubeconfig[0m
+2026-02-23T15:29:03.490335 tests.conftest [33mWARNING[0m Both KUBECONFIG /home/fedora/.kube/config and /home/fedora/.kube/config exist. /home/fedora/.kube/config is used as kubeconfig source for this run.[0m
+2026-02-23T15:29:03.490747 tests.conftest [32mINFO[0m Setting KUBECONFIG dir for this run to point to: /tmp/tmpslnrnbve-cnv-tests-kubeconfig[0m
+2026-02-23T15:29:03.490918 tests.conftest [32mINFO[0m Copy KUBECONFIG to /tmp/tmpslnrnbve-cnv-tests-kubeconfig/kubeconfig[0m
+2026-02-23T15:29:03.492464 tests.conftest [32mINFO[0m Set: KUBECONFIG=/tmp/tmpslnrnbve-cnv-tests-kubeconfig/kubeconfig[0m
+2026-02-23T15:29:03.492765 conftest [32mINFO[0m Executing session fixture: unprivileged_client[0m
+2026-02-23T15:29:04.324450 timeout_sampler [32mINFO[0m Waiting for 60 seconds [0:01:00], retry every 3 seconds. (Function: subprocess.Popen  Kwargs: {'args': 'oc login https://api.c01-mv-421.rhos-psi.cnv-qe.rhood.us:6443 -u unprivileged-user -p unprivileged-password', 'shell': True, 'stdout': -1, 'stderr': -1})[0m
+2026-02-23T15:29:04.324136 utilities.infra [32mINFO[0m Trying to login to account[0m
+2026-02-23T15:29:09.206280 utilities.infra [32mINFO[0m Login - success[0m
+2026-02-23T15:29:09.206927 timeout_sampler [32mINFO[0m Elapsed time: 0.00023794174194335938 [0:00:00.000238][0m
+2026-02-23T15:29:09.238572 utilities.infra [32mINFO[0m Trying to login to account[0m
+2026-02-23T15:29:09.238878 timeout_sampler [32mINFO[0m Waiting for 60 seconds [0:01:00], retry every 3 seconds. (Function: subprocess.Popen  Kwargs: {'args': 'oc login https://api.c01-mv-421.rhos-psi.cnv-qe.rhood.us:6443 -u system:admin', 'shell': True, 'stdout': -1, 'stderr': -1})[0m
+2026-02-23T15:29:11.256410 utilities.infra [32mINFO[0m Login - success[0m
+2026-02-23T15:29:11.256720 timeout_sampler [32mINFO[0m Elapsed time: 0.0004334449768066406 [0:00:00.000433][0m
+2026-02-23T15:29:11.257726 ocp_resources.resource [32mINFO[0m Trying to get client via new_client_from_config[0m
+2026-02-23T15:29:11.281001 conftest [32mINFO[0m Executing session fixture: golden_images_namespace[0m
+2026-02-23T15:29:11.437235 conftest [32mINFO[0m Executing session fixture: cluster_node_cpus[0m
+2026-02-23T15:29:12.225641 conftest [32mINFO[0m Executing session fixture: cluster_common_modern_node_cpu[0m
+2026-02-23T15:29:12.225997 utilities.cpu [32mINFO[0m Common CPU used is EPYC-v2[0m
+2026-02-23T15:29:12.226274 conftest [32mINFO[0m Executing session fixture: host_cpu_model[0m
+2026-02-23T15:29:12.719158 conftest [32mINFO[0m Executing session fixture: modern_cpu_for_migration[0m
+2026-02-23T15:29:12.719665 utilities.cpu [32mINFO[0m Host model cpus for all nodes are same {'c01-mv-421-qgr9v-worker-0-6brx9': 'EPYC-Rome', 'c01-mv-421-qgr9v-worker-0-gwsf6': 'EPYC-Rome', 'c01-mv-421-qgr9v-worker-0-rgbwd': 'EPYC-Rome'}. No common cpus are needed[0m
+2026-02-23T15:29:12.720625 conftest [32mINFO[0m Executing module fixture: namespace[0m
+2026-02-23T15:29:12.721972 ocp_resources.resource [32mINFO[0m kind: ProjectRequest api version: project.openshift.io/v1[0m
+2026-02-23T15:29:12.723083 ocp_resources ProjectRequest [32mINFO[0m Create ProjectRequest guest-agent-test-windows-guest-agent-os-info[0m
+2026-02-23T15:29:12.723313 ocp_resources ProjectRequest [32mINFO[0m Posting {'apiVersion': 'project.openshift.io/v1', 'kind': 'ProjectRequest', 'metadata': {'name': 'guest-agent-test-windows-guest-agent-os-info'}}[0m
+2026-02-23T15:29:13.595061 ocp_resources.resource [32mINFO[0m kind: Project api version: project.openshift.io/v1[0m
+2026-02-23T15:29:13.595540 ocp_resources Project [32mINFO[0m Wait for Project guest-agent-test-windows-guest-agent-os-info status to be Active[0m
+2026-02-23T15:29:13.595906 timeout_sampler [32mINFO[0m Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_for_status.lambda: self.exists)[0m
+2026-02-23T15:29:13.764423 ocp_resources Project [32mINFO[0m Status of Project guest-agent-test-windows-guest-agent-os-info is Active[0m
+2026-02-23T15:29:13.764846 timeout_sampler [32mINFO[0m Elapsed time: 0.0003209114074707031 [0:00:00.000321][0m
+2026-02-23T15:29:13.920791 ocp_resources Namespace [32mINFO[0m Wait for Namespace guest-agent-test-windows-guest-agent-os-info status to be Active[0m
+2026-02-23T15:29:13.921152 timeout_sampler [32mINFO[0m Waiting for 120 seconds [0:02:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_for_status.lambda: self.exists)[0m
+2026-02-23T15:29:14.076629 ocp_resources Namespace [32mINFO[0m Status of Namespace guest-agent-test-windows-guest-agent-os-info is Active[0m
+2026-02-23T15:29:14.077027 timeout_sampler [32mINFO[0m Elapsed time: 0.0001938343048095703 [0:00:00.000194][0m
+2026-02-23T15:29:14.077441 ocp_resources.resource [32mINFO[0m ResourceEdits: Updating data for resource Namespace guest-agent-test-windows-guest-agent-os-info[0m
+2026-02-23T15:29:14.077679 ocp_resources Namespace [32mINFO[0m Update Namespace guest-agent-test-windows-guest-agent-os-info:
+{'metadata': {'labels': None, 'name': 'guest-agent-test-windows-guest-agent-os-info'}}[0m
+2026-02-23T15:29:14.411618 conftest [32mINFO[0m Executing class fixture: windows_os_matrix__class__[0m
+2026-02-23T15:29:14.412420 conftest [32mINFO[0m Executing class fixture: windows_ga_golden_image_data_source[0m
+2026-02-23T15:29:14.413431 ocp_resources.resource [32mINFO[0m kind: DataSource api version: cdi.kubevirt.io/v1beta1[0m
+2026-02-23T15:29:14.886717 tests.virt.utils [33mWARNING[0m No DataSource win10 found or it doesn't have a source pvc/snapshot.[0m
+2026-02-23T15:29:14.887189 utilities.artifactory [32mINFO[0m Testing connectivity to https://{server}/artifactory/cnv-qe-server-local/ HTTPS server[0m
+2026-02-23T15:29:14.887455 timeout_sampler [32mINFO[0m Waiting for 60 seconds [0:01:00], retry every 5 seconds. (Function: utilities.artifactory.<locals>.lambda: artifactory_connection_url.requests.get.get_artifactory_header)[0m
+___ ERROR at setup of TestWindowsGuestAgentOSInfo.test_create_vm[#win-2019#] ___
+
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f6e599b6660>
+golden_images_namespace = <ocp_resources.namespace.Namespace object at 0x7f6e56f3c510>
+windows_os_matrix__class__ = {'win-2019': {'container_disk_image_path': 'docker/kubevirt-common-instancetypes/windows2k19-container-disk:4.99', 'data_source': 'win2k19', 'dv_size': '70Gi', 'image_name': 'win_2k19_uefi.qcow2', ...}}
+
+    @pytest.fixture(scope="class")
+    def windows_ga_golden_image_data_source(admin_client, golden_images_namespace, windows_os_matrix__class__):
+>       yield from get_matrix_os_golden_image_data_source(
+            admin_client=admin_client,
+            golden_images_namespace=golden_images_namespace,
+            os_matrix=windows_os_matrix__class__,
+        )
+
+tests/virt/guest_agent/conftest.py:12: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/virt/cluster/common_templates/utils.py:493: in get_matrix_os_golden_image_data_source
+    yield from get_or_create_golden_image_data_source(
+tests/virt/utils.py:457: in get_or_create_golden_image_data_source
+    url=f"{get_test_artifact_server_url()}{os_dict['image_path']}",
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+utilities/artifactory.py:39: in get_test_artifact_server_url
+    for sample in TimeoutSampler(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <timeout_sampler.TimeoutSampler object at 0x7f6e56bd9f90>
+
+    def __iter__(self) -> Any:
+        """
+        Call `func` and yield the result, or raise an exception on timeout.
+    
+        Yields:
+            any: Return value from `func`
+    
+        Raises:
+            TimeoutExpiredError: if `func` takes longer than `wait_timeout` seconds to return a value
+        """
+        timeout_watch = TimeoutWatch(timeout=self.wait_timeout)
+        if self.print_log:
+            log = (
+                f"Waiting for {self.wait_timeout} seconds"
+                f" [{datetime.timedelta(seconds=self.wait_timeout)}], retry every"
+                f" {self.sleep} seconds."
+            )
+    
+            if self.print_func_log:
+                log += f" ({self._func_log})"
+    
+            LOGGER.info(log)
+    
+        last_exp = None
+        elapsed_time = None
+        while timeout_watch.remaining_time() > 0:
+            try:
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+                yield self.func(*self.func_args, **self.func_kwargs)
+                time.sleep(self.sleep)
+                elapsed_time = None
+    
+            except Exception as exp:
+                last_exp = exp
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+    
+                if not self._should_ignore_exception(exp=last_exp):
+                    raise TimeoutExpiredError(
+                        self._get_exception_log(exp=last_exp), last_exp=last_exp, elapsed_time=elapsed_time
+                    )
+    
+                time.sleep(self.sleep)
+                elapsed_time = None
+    
+            finally:
+                if self.print_log and elapsed_time:
+                    LOGGER.info(_elapsed_time_log(elapsed_time=elapsed_time))
+    
+>       raise TimeoutExpiredError(self._get_exception_log(exp=last_exp), last_exp=last_exp)
+E       timeout_sampler.TimeoutExpiredError: Timed Out: 60
+E       Function: utilities.artifactory.<locals>.lambda: artifactory_connection_url.requests.get.get_artifactory_header
+E       Last exception: ConnectionError: HTTPSConnectionPool(host='%7bserver%7d', port=443): Max retries exceeded with url: /artifactory/cnv-qe-server-local/ (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x7f6e56d54f50>: Failed to resolve '%7bserver%7d' ([Errno -2] Name or service not known)")).
+
+.venv/lib64/python3.14/site-packages/timeout_sampler/__init__.py:182: TimeoutExpiredError
+---------------------------- Captured stderr setup -----------------------------
+
+---------------------------------------------- test_create_vm[#win-2019#] ----------------------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-23T15:30:18.071790 conftest [32mINFO[0m Executing function fixture: term_handler_scope_function[0m
+2026-02-23T15:30:18.072091 conftest [32mINFO[0m Executing function fixture: autouse_fixtures[0m
+2026-02-23T15:30:18.072423 conftest [32mINFO[0m Executing class fixture: windows_os_matrix__class__[0m
+2026-02-23T15:30:18.072564 conftest [32mINFO[0m Executing class fixture: windows_ga_golden_image_data_source[0m
+2026-02-23T15:30:18.562642 tests.virt.utils [33mWARNING[0m No DataSource win2k19 found or it doesn't have a source pvc/snapshot.[0m
+2026-02-23T15:30:18.563052 utilities.artifactory [32mINFO[0m Testing connectivity to https://{server}/artifactory/cnv-qe-server-local/ HTTPS server[0m
+____ ERROR at setup of TestWindowsGuestAgentOSInfo.test_create_vm[#win-11#] ____
+
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f6e599b6660>
+golden_images_namespace = <ocp_resources.namespace.Namespace object at 0x7f6e56f3c510>
+windows_os_matrix__class__ = {'win-11': {'container_disk_image_path': 'docker/kubevirt-common-instancetypes/windows11-container-disk:4.99', 'data_source': 'win11', 'dv_size': '70Gi', 'image_name': 'win_11.qcow2', ...}}
+
+    @pytest.fixture(scope="class")
+    def windows_ga_golden_image_data_source(admin_client, golden_images_namespace, windows_os_matrix__class__):
+>       yield from get_matrix_os_golden_image_data_source(
+            admin_client=admin_client,
+            golden_images_namespace=golden_images_namespace,
+            os_matrix=windows_os_matrix__class__,
+        )
+
+tests/virt/guest_agent/conftest.py:12: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/virt/cluster/common_templates/utils.py:493: in get_matrix_os_golden_image_data_source
+    yield from get_or_create_golden_image_data_source(
+tests/virt/utils.py:457: in get_or_create_golden_image_data_source
+    url=f"{get_test_artifact_server_url()}{os_dict['image_path']}",
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+utilities/artifactory.py:39: in get_test_artifact_server_url
+    for sample in TimeoutSampler(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <timeout_sampler.TimeoutSampler object at 0x7f6e56dba990>
+
+    def __iter__(self) -> Any:
+        """
+        Call `func` and yield the result, or raise an exception on timeout.
+    
+        Yields:
+            any: Return value from `func`
+    
+        Raises:
+            TimeoutExpiredError: if `func` takes longer than `wait_timeout` seconds to return a value
+        """
+        timeout_watch = TimeoutWatch(timeout=self.wait_timeout)
+        if self.print_log:
+            log = (
+                f"Waiting for {self.wait_timeout} seconds"
+                f" [{datetime.timedelta(seconds=self.wait_timeout)}], retry every"
+                f" {self.sleep} seconds."
+            )
+    
+            if self.print_func_log:
+                log += f" ({self._func_log})"
+    
+            LOGGER.info(log)
+    
+        last_exp = None
+        elapsed_time = None
+        while timeout_watch.remaining_time() > 0:
+            try:
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+                yield self.func(*self.func_args, **self.func_kwargs)
+                time.sleep(self.sleep)
+                elapsed_time = None
+    
+            except Exception as exp:
+                last_exp = exp
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+    
+                if not self._should_ignore_exception(exp=last_exp):
+                    raise TimeoutExpiredError(
+                        self._get_exception_log(exp=last_exp), last_exp=last_exp, elapsed_time=elapsed_time
+                    )
+    
+                time.sleep(self.sleep)
+                elapsed_time = None
+    
+            finally:
+                if self.print_log and elapsed_time:
+                    LOGGER.info(_elapsed_time_log(elapsed_time=elapsed_time))
+    
+>       raise TimeoutExpiredError(self._get_exception_log(exp=last_exp), last_exp=last_exp)
+E       timeout_sampler.TimeoutExpiredError: Timed Out: 60
+E       Function: utilities.artifactory.<locals>.lambda: artifactory_connection_url.requests.get.get_artifactory_header
+E       Last exception: ConnectionError: HTTPSConnectionPool(host='%7bserver%7d', port=443): Max retries exceeded with url: /artifactory/cnv-qe-server-local/ (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x7f6e56d55bd0>: Failed to resolve '%7bserver%7d' ([Errno -2] Name or service not known)")).
+
+.venv/lib64/python3.14/site-packages/timeout_sampler/__init__.py:182: TimeoutExpiredError
+---------------------------- Captured stderr setup -----------------------------
+
+----------------------------------------------- test_create_vm[#win-11#] -----------------------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-23T15:31:21.390861 conftest [32mINFO[0m Executing function fixture: term_handler_scope_function[0m
+2026-02-23T15:31:21.391170 conftest [32mINFO[0m Executing function fixture: autouse_fixtures[0m
+2026-02-23T15:31:21.391507 conftest [32mINFO[0m Executing class fixture: windows_os_matrix__class__[0m
+2026-02-23T15:31:21.391650 conftest [32mINFO[0m Executing class fixture: windows_ga_golden_image_data_source[0m
+2026-02-23T15:31:21.877028 tests.virt.utils [33mWARNING[0m No DataSource win11 found or it doesn't have a source pvc/snapshot.[0m
+2026-02-23T15:31:21.877340 utilities.artifactory [32mINFO[0m Testing connectivity to https://{server}/artifactory/cnv-qe-server-local/ HTTPS server[0m
+___ ERROR at setup of TestWindowsGuestAgentOSInfo.test_create_vm[#win-2022#] ___
+
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f6e599b6660>
+golden_images_namespace = <ocp_resources.namespace.Namespace object at 0x7f6e56f3c510>
+windows_os_matrix__class__ = {'win-2022': {'container_disk_image_path': 'docker/kubevirt-common-instancetypes/windows2k22-container-disk:4.99', 'data_source': 'win2k22', 'dv_size': '70Gi', 'image_name': 'win_2022.qcow2', ...}}
+
+    @pytest.fixture(scope="class")
+    def windows_ga_golden_image_data_source(admin_client, golden_images_namespace, windows_os_matrix__class__):
+>       yield from get_matrix_os_golden_image_data_source(
+            admin_client=admin_client,
+            golden_images_namespace=golden_images_namespace,
+            os_matrix=windows_os_matrix__class__,
+        )
+
+tests/virt/guest_agent/conftest.py:12: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/virt/cluster/common_templates/utils.py:493: in get_matrix_os_golden_image_data_source
+    yield from get_or_create_golden_image_data_source(
+tests/virt/utils.py:457: in get_or_create_golden_image_data_source
+    url=f"{get_test_artifact_server_url()}{os_dict['image_path']}",
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+utilities/artifactory.py:39: in get_test_artifact_server_url
+    for sample in TimeoutSampler(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <timeout_sampler.TimeoutSampler object at 0x7f6e56db9950>
+
+    def __iter__(self) -> Any:
+        """
+        Call `func` and yield the result, or raise an exception on timeout.
+    
+        Yields:
+            any: Return value from `func`
+    
+        Raises:
+            TimeoutExpiredError: if `func` takes longer than `wait_timeout` seconds to return a value
+        """
+        timeout_watch = TimeoutWatch(timeout=self.wait_timeout)
+        if self.print_log:
+            log = (
+                f"Waiting for {self.wait_timeout} seconds"
+                f" [{datetime.timedelta(seconds=self.wait_timeout)}], retry every"
+                f" {self.sleep} seconds."
+            )
+    
+            if self.print_func_log:
+                log += f" ({self._func_log})"
+    
+            LOGGER.info(log)
+    
+        last_exp = None
+        elapsed_time = None
+        while timeout_watch.remaining_time() > 0:
+            try:
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+                yield self.func(*self.func_args, **self.func_kwargs)
+                time.sleep(self.sleep)
+                elapsed_time = None
+    
+            except Exception as exp:
+                last_exp = exp
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+    
+                if not self._should_ignore_exception(exp=last_exp):
+                    raise TimeoutExpiredError(
+                        self._get_exception_log(exp=last_exp), last_exp=last_exp, elapsed_time=elapsed_time
+                    )
+    
+                time.sleep(self.sleep)
+                elapsed_time = None
+    
+            finally:
+                if self.print_log and elapsed_time:
+                    LOGGER.info(_elapsed_time_log(elapsed_time=elapsed_time))
+    
+>       raise TimeoutExpiredError(self._get_exception_log(exp=last_exp), last_exp=last_exp)
+E       timeout_sampler.TimeoutExpiredError: Timed Out: 60
+E       Function: utilities.artifactory.<locals>.lambda: artifactory_connection_url.requests.get.get_artifactory_header
+E       Last exception: ConnectionError: HTTPSConnectionPool(host='%7bserver%7d', port=443): Max retries exceeded with url: /artifactory/cnv-qe-server-local/ (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x7f6e56d55a90>: Failed to resolve '%7bserver%7d' ([Errno -2] Name or service not known)")).
+
+.venv/lib64/python3.14/site-packages/timeout_sampler/__init__.py:182: TimeoutExpiredError
+---------------------------- Captured stderr setup -----------------------------
+
+---------------------------------------------- test_create_vm[#win-2022#] ----------------------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-23T15:32:24.894585 conftest [32mINFO[0m Executing function fixture: term_handler_scope_function[0m
+2026-02-23T15:32:24.895024 conftest [32mINFO[0m Executing function fixture: autouse_fixtures[0m
+2026-02-23T15:32:24.895440 conftest [32mINFO[0m Executing class fixture: windows_os_matrix__class__[0m
+2026-02-23T15:32:24.895613 conftest [32mINFO[0m Executing class fixture: windows_ga_golden_image_data_source[0m
+2026-02-23T15:32:25.383073 tests.virt.utils [33mWARNING[0m No DataSource win2k22 found or it doesn't have a source pvc/snapshot.[0m
+2026-02-23T15:32:25.383430 utilities.artifactory [32mINFO[0m Testing connectivity to https://{server}/artifactory/cnv-qe-server-local/ HTTPS server[0m
+___ ERROR at setup of TestWindowsGuestAgentOSInfo.test_create_vm[#win-2025#] ___
+
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7f6e599b6660>
+golden_images_namespace = <ocp_resources.namespace.Namespace object at 0x7f6e56f3c510>
+windows_os_matrix__class__ = {'win-2025': {'container_disk_image_path': 'docker/kubevirt-common-instancetypes/windows2k25-container-disk:4.99', 'data_source': 'win2k25', 'dv_size': '70Gi', 'image_name': 'win_2k25_uefi.qcow2', ...}}
+
+    @pytest.fixture(scope="class")
+    def windows_ga_golden_image_data_source(admin_client, golden_images_namespace, windows_os_matrix__class__):
+>       yield from get_matrix_os_golden_image_data_source(
+            admin_client=admin_client,
+            golden_images_namespace=golden_images_namespace,
+            os_matrix=windows_os_matrix__class__,
+        )
+
+tests/virt/guest_agent/conftest.py:12: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/virt/cluster/common_templates/utils.py:493: in get_matrix_os_golden_image_data_source
+    yield from get_or_create_golden_image_data_source(
+tests/virt/utils.py:457: in get_or_create_golden_image_data_source
+    url=f"{get_test_artifact_server_url()}{os_dict['image_path']}",
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+utilities/artifactory.py:39: in get_test_artifact_server_url
+    for sample in TimeoutSampler(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <timeout_sampler.TimeoutSampler object at 0x7f6e56dbb7f0>
+
+    def __iter__(self) -> Any:
+        """
+        Call `func` and yield the result, or raise an exception on timeout.
+    
+        Yields:
+            any: Return value from `func`
+    
+        Raises:
+            TimeoutExpiredError: if `func` takes longer than `wait_timeout` seconds to return a value
+        """
+        timeout_watch = TimeoutWatch(timeout=self.wait_timeout)
+        if self.print_log:
+            log = (
+                f"Waiting for {self.wait_timeout} seconds"
+                f" [{datetime.timedelta(seconds=self.wait_timeout)}], retry every"
+                f" {self.sleep} seconds."
+            )
+    
+            if self.print_func_log:
+                log += f" ({self._func_log})"
+    
+            LOGGER.info(log)
+    
+        last_exp = None
+        elapsed_time = None
+        while timeout_watch.remaining_time() > 0:
+            try:
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+                yield self.func(*self.func_args, **self.func_kwargs)
+                time.sleep(self.sleep)
+                elapsed_time = None
+    
+            except Exception as exp:
+                last_exp = exp
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+    
+                if not self._should_ignore_exception(exp=last_exp):
+                    raise TimeoutExpiredError(
+                        self._get_exception_log(exp=last_exp), last_exp=last_exp, elapsed_time=elapsed_time
+                    )
+    
+                time.sleep(self.sleep)
+                elapsed_time = None
+    
+            finally:
+                if self.print_log and elapsed_time:
+                    LOGGER.info(_elapsed_time_log(elapsed_time=elapsed_time))
+    
+>       raise TimeoutExpiredError(self._get_exception_log(exp=last_exp), last_exp=last_exp)
+E       timeout_sampler.TimeoutExpiredError: Timed Out: 60
+E       Function: utilities.artifactory.<locals>.lambda: artifactory_connection_url.requests.get.get_artifactory_header
+E       Last exception: ConnectionError: HTTPSConnectionPool(host='%7bserver%7d', port=443): Max retries exceeded with url: /artifactory/cnv-qe-server-local/ (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x7f6e56d56fd0>: Failed to resolve '%7bserver%7d' ([Errno -2] Name or service not known)")).
+
+.venv/lib64/python3.14/site-packages/timeout_sampler/__init__.py:182: TimeoutExpiredError
+---------------------------- Captured stderr setup -----------------------------
+
+TEST: TestWindowsGuestAgentOSInfo.test_os_info_appears_when_agent_starts[#win-2022#] STATUS: [1;33mSKIPPED[0m
+------------------------------------------------------- TEARDOWN -------------------------------------------------------
+
+--------------------------------------------- test_vm_deletion[#win-2022#] ---------------------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-23T15:33:28.391736 pytest_dependency [32mINFO[0m skip test_vm_deletion[#win-2022#] because it depends on TestWindowsGuestAgentOSInfo::create_vm[0m
+
+TEST: TestWindowsGuestAgentOSInfo.test_vm_deletion[#win-2022#] STATUS: [1;33mSKIPPED[0m
+------------------------------------------------------- TEARDOWN -------------------------------------------------------
+
+---------------------------------------------- test_create_vm[#win-2025#] ----------------------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-23T15:33:28.394771 conftest [32mINFO[0m Executing function fixture: term_handler_scope_function[0m
+2026-02-23T15:33:28.395115 conftest [32mINFO[0m Executing function fixture: autouse_fixtures[0m
+2026-02-23T15:33:28.395475 conftest [32mINFO[0m Executing class fixture: windows_os_matrix__class__[0m
+2026-02-23T15:33:28.395627 conftest [32mINFO[0m Executing class fixture: windows_ga_golden_image_data_source[0m
+2026-02-23T15:33:28.880098 tests.virt.utils [33mWARNING[0m No DataSource win2k25 found or it doesn't have a source pvc/snapshot.[0m
+2026-02-23T15:33:28.880363 utilities.artifactory [32mINFO[0m Testing connectivity to https://{server}/artifactory/cnv-qe-server-local/ HTTPS server[0m
+2026-02-23T15:34:31.838940 utilities.artifactory [31mERROR[0m Unable to connect to test image server: https://{server}/artifactory/cnv-qe-server-local/ HTTPS[0m
+=============================== warnings summary ===============================
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py: 12 warnings
+tests/deprecated_api/test_deprecation_audit_logs.py: 4 warnings
+.venv/lib64/python3.14/site-packages/kubernetes/client/exceptions.py:91: 2 warnings
+  /home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/kubernetes/client/exceptions.py:91: DeprecationWarning: HTTPResponse.getheaders() is deprecated and will be removed in urllib3 v2.1.0. Instead access HTTPResponse.headers directly.
+    self.headers = http_resp.getheaders()
+
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py::TestWindowsGuestAgentOSInfo::test_create_vm[#win-10#]
+tests/virt/guest_agent/test_windows_guest_agent_os_info.py::TestWindowsGuestAgentOSInfo::test_create_vm[#win-10#]
+  /home/fedora/thesis/openshift-virtualization-tests/.venv/lib64/python3.14/site-packages/ocp_resources/resource.py:1612: FutureWarning: 'client' arg will be mandatory in the next major release. `config_file` and `context` args will be removed.
+    super().__init__(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+ERROR tests/virt/guest_agent/test_windows_guest_agent_os_info.py::TestWindowsGuestAgentOSInfo::test_create_vm[#win-10#]
+ERROR tests/virt/guest_agent/test_windows_guest_agent_os_info.py::TestWindowsGuestAgentOSInfo::test_create_vm[#win-2019#]
+ERROR tests/virt/guest_agent/test_windows_guest_agent_os_info.py::TestWindowsGuestAgentOSInfo::test_create_vm[#win-11#]
+ERROR tests/virt/guest_agent/test_windows_guest_agent_os_info.py::TestWindowsGuestAgentOSInfo::test_create_vm[#win-2022#]
+ERROR tests/virt/guest_agent/test_windows_guest_agent_os_info.py::TestWindowsGuestAgentOSInfo::test_create_vm[#win-2025#]
+==== 40 skipped, 20 warnings, 5 errors, 1 quarantined in 622.15s (0:10:22) =====
