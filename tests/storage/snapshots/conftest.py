@@ -9,8 +9,12 @@ import shlex
 
 import pytest
 from ocp_resources.datavolume import DataVolume
+from ocp_resources.resource import ResourceEditor
 from ocp_resources.role_binding import RoleBinding
+from ocp_resources.storage_class import StorageClass
+from ocp_resources.storage_profile import StorageProfile
 from ocp_resources.virtual_machine_snapshot import VirtualMachineSnapshot
+from ocp_resources.volume_snapshot_class import VolumeSnapshotClass
 from pyhelper_utils.shell import run_ssh_commands
 
 from tests.storage.snapshots.constants import WINDOWS_DIRECTORY_PATH
@@ -106,3 +110,45 @@ def file_created_during_snapshot(windows_vm_for_snapshot, windows_snapshot):
     run_ssh_commands(host=windows_vm_for_snapshot.ssh_exec, commands=cmd)
     windows_snapshot.wait_snapshot_done(timeout=TIMEOUT_10MIN)
     windows_vm_for_snapshot.stop(wait=True)
+
+
+@pytest.fixture()
+def storageprofile_with_snapshot_class(
+    admin_client,
+    snapshot_storage_class_name_scope_module,
+):
+    """StorageProfile patched with snapshotClass set to the matching VolumeSnapshotClass.
+
+    Finds the VolumeSnapshotClass whose driver matches the StorageClass provisioner,
+    then patches the StorageProfile spec.snapshotClass to that VolumeSnapshotClass name.
+    Restores the original StorageProfile on teardown via ResourceEditor context manager.
+    """
+    storage_class_instance = StorageClass(
+        client=admin_client,
+        name=snapshot_storage_class_name_scope_module,
+    ).instance
+    provisioner = storage_class_instance.provisioner
+
+    matching_vsc_name = None
+    for volume_snapshot_class in VolumeSnapshotClass.get(client=admin_client):
+        if volume_snapshot_class.instance.driver == provisioner:
+            matching_vsc_name = volume_snapshot_class.name
+            break
+
+    if not matching_vsc_name:
+        pytest.skip(
+            f"No VolumeSnapshotClass found with driver matching provisioner '{provisioner}'"
+        )
+
+    storage_profile = StorageProfile(
+        name=snapshot_storage_class_name_scope_module,
+        client=admin_client,
+    )
+    LOGGER.info(
+        f"Patching StorageProfile '{storage_profile.name}' with "
+        f"snapshotClass='{matching_vsc_name}'"
+    )
+    with ResourceEditor(
+        patches={storage_profile: {"spec": {"snapshotClass": matching_vsc_name}}}
+    ):
+        yield storage_profile
