@@ -117,12 +117,26 @@ Each run benefits from all previous runs' lessons, creating cumulative improveme
 | **Code generation** | Pattern-aware | Pattern-aware + mistake-aware |
 | **Pre-runtime verification** | None | GRAVEYARD.md cross-reference |
 
+## Environment Variables
+
+The following must be set before running experiments:
+
+- `KUBECONFIG` — path to the OpenShift cluster kubeconfig
+- `ARTIFACTORY_SERVER` — Artifactory server hostname
+- `ARTIFACTORY_TOKEN` — Artifactory authentication token
+- `ARTIFACTORY_USER` — Artifactory username
+
 ## Usage
 
-### Automated Workflow (Orchestrator)
+### Running the Flow
+
+Make sure the environment variables above are set, then:
+
 ```bash
-# Full end-to-end generation with runtime validation
-./run_experiment.sh <stp_file> <experiment_name>
+cd openshift-virtualization-tests
+claude
+# inside claude, run:
+/v3-orchestrator <stp_file>
 ```
 
 ### Manual Workflow (Granular Control)

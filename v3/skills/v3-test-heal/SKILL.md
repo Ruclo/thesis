@@ -14,32 +14,27 @@
 
 ## How Tests Are Run
 
-Tests are executed against a live OpenShift cluster by running the following command:
+Tests are executed against a live OpenShift cluster. The following environment variables must be set before invocation:
+
+- `KUBECONFIG` — path to the OpenShift cluster kubeconfig
+- `ARTIFACTORY_SERVER` — Artifactory server hostname
+- `ARTIFACTORY_TOKEN` — Artifactory authentication token
+- `ARTIFACTORY_USER` — Artifactory username
+
+Run tests with:
 
 ```bash
-../runtstqe <test_file_path>
-```
-
-This is a wrapper script that sets up the cluster environment and runs pytest. Its contents are:
-
-```bash
-#!/bin/bash
-# Run tests on cluster
-# KUBECONFIG and Artifactory credentials are expected to be set externally
-
 uv run pytest "$1" \
   --skip-artifactory-check \
   --tc=conformance_tests:True
 ```
-
-It expects `KUBECONFIG` and Artifactory credentials to be set in the environment before invocation, then runs `uv run pytest` with `--skip-artifactory-check` and `--tc=conformance_tests:True` flags.
 
 ## Implementation
 
 ### Self-Healing Loop
 
 ```
-1. RUN test via: ../runtstqe <test_file>
+1. RUN test (see "How Tests Are Run" above)
 2. CAPTURE full output (stdout + stderr) as test_run.log
 3. IF all tests pass (exit code 0):
      UPDATE GRAVEYARD.md (if any fixes were applied in previous iterations)
@@ -145,7 +140,7 @@ graveyard_entries = []
 
 while iteration < max_iterations:
     # Run test against real cluster
-    result = bash(f"../runtstqe {test_file} 2>&1 | tee test_run.log")
+    result = bash(f"uv run pytest {test_file} --skip-artifactory-check --tc=conformance_tests:True 2>&1 | tee test_run.log")
 
     if result.exit_code == 0:
         log(f"✓ All tests pass after {iteration} iterations")
@@ -315,7 +310,7 @@ When analyzing failures, consult these sources in order:
 /v3-test-heal tests/compute/test_cpu_migration.py --max-iterations 5
 
 # The skill will:
-# 1. Run: ../runtstqe tests/virt/cluster/test_vnc_screenshot.py
+# 1. Run: uv run pytest tests/virt/cluster/test_vnc_screenshot.py --skip-artifactory-check --tc=conformance_tests:True
 # 2. Parse failures
 # 3. Fix code
 # 4. Re-run until pass or max iterations
@@ -326,7 +321,7 @@ When analyzing failures, consult these sources in order:
 **HIGH** - Can heal any test file in the repository against the live cluster
 
 ## Dependencies
-- Bash tool (run tests via `../runtstqe`, capture output)
+- Bash tool (run tests via `uv run pytest`, capture output)
 - Read tool (read test file, source code, docs)
 - Edit tool (apply fixes)
 - Write tool (create/update GRAVEYARD.md)
