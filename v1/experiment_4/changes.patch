@@ -1,0 +1,448 @@
+diff --git a/tests/storage/snapshots/test_snapshot_restore_run_strategy.py b/tests/storage/snapshots/test_snapshot_restore_run_strategy.py
+new file mode 100644
+index 0000000..adc94fa
+--- /dev/null
++++ b/tests/storage/snapshots/test_snapshot_restore_run_strategy.py
+@@ -0,0 +1,442 @@
++# -*- coding: utf-8 -*-
++
++"""
++VM Snapshot Restore with runStrategy RerunOnFailure Tests
++CNV-63819: VM snapshot restore stuck with runStrategy RerunOnFailure
++"""
++
++import logging
++
++import pytest
++from ocp_resources.resource import ResourceEditor
++from ocp_resources.virtual_machine import VirtualMachine
++from ocp_resources.virtual_machine_instance import VirtualMachineInstance
++from ocp_resources.virtual_machine_restore import VirtualMachineRestore
++from ocp_resources.virtual_machine_snapshot import VirtualMachineSnapshot
++
++from utilities.constants import TIMEOUT_5MIN, TIMEOUT_10MIN
++from utilities.storage import write_file
++from utilities.virt import running_vm
++
++LOGGER = logging.getLogger(__name__)
++
++pytestmark = pytest.mark.usefixtures(
++    "namespace",
++    "skip_if_no_storage_class_for_snapshot",
++)
++
++# Run strategy constants
++RERUNONFAILURE = VirtualMachine.RunStrategy.RERUNONFAILURE
++ALWAYS = VirtualMachine.RunStrategy.ALWAYS
++MANUAL = VirtualMachine.RunStrategy.MANUAL
++HALTED = VirtualMachine.RunStrategy.HALTED
++
++
++@pytest.fixture()
++def vm_with_run_strategy(request, cirros_vm_for_snapshot):
++    """
++    Update VM with specified run strategy.
++
++    Args:
++        request: pytest request with run_strategy parameter
++        cirros_vm_for_snapshot: Base VM fixture
++
++    Returns:
++        VM with updated run strategy
++    """
++    run_strategy = request.param["run_strategy"]
++    LOGGER.info(f"Setting VM run strategy to {run_strategy}")
++
++    # Ensure VM is stopped before updating run strategy
++    if cirros_vm_for_snapshot.vmi.exists:
++        cirros_vm_for_snapshot.stop(wait=True)
++
++    ResourceEditor(
++        patches={cirros_vm_for_snapshot: {"spec": {"runStrategy": run_strategy}}}
++    ).update()
++
++    return cirros_vm_for_snapshot
++
++
++@pytest.fixture()
++def vm_snapshot_with_data(vm_with_run_strategy):
++    """
++    Create a snapshot of VM with test data.
++
++    Args:
++        vm_with_run_strategy: VM with configured run strategy
++
++    Returns:
++        VirtualMachineSnapshot object
++    """
++    # Write test data to VM
++    LOGGER.info("Writing test data to VM before snapshot")
++    write_file(
++        vm=vm_with_run_strategy,
++        filename="test-data.txt",
++        content="snapshot-test-data",
++    )
++
++    # Create snapshot (VM should be stopped after write_file)
++    with VirtualMachineSnapshot(
++        name=f"snapshot-{vm_with_run_strategy.name}",
++        namespace=vm_with_run_strategy.namespace,
++        vm_name=vm_with_run_strategy.name,
++    ) as snapshot:
++        LOGGER.info(f"Waiting for snapshot {snapshot.name} to complete")
++        snapshot.wait_snapshot_done(timeout=TIMEOUT_10MIN)
++        yield snapshot
++
++
++class TestSnapshotRestoreRunStrategy:
++    """
++    Test snapshot restore with different run strategies.
++    Focuses on CNV-63819: VM snapshot restore stuck with runStrategy RerunOnFailure.
++    """
++
++    @pytest.mark.polarion("CNV-63819")
++    @pytest.mark.parametrize(
++        "cirros_vm_name, vm_with_run_strategy",
++        [
++            pytest.param(
++                {"vm_name": "vm-cnv-63819-rerunonfailure"},
++                {"run_strategy": RERUNONFAILURE},
++                marks=pytest.mark.gating(),
++                id="test_snapshot_restore_rerunonfailure",
++            ),
++        ],
++        indirect=True,
++    )
++    def test_snapshot_restore_rerunonfailure_completes(
++        self,
++        vm_with_run_strategy,
++        vm_snapshot_with_data,
++    ):
++        """
++        Verify snapshot restore completes for VM with runStrategy: RerunOnFailure.
++
++        Test Steps:
++        1. Create VM with runStrategy: RerunOnFailure
++        2. Write test data and take snapshot
++        3. Stop VM
++        4. Create VirtualMachineRestore
++        5. Verify restore completes (not stuck)
++        6. Verify VirtualMachineRestore reaches Complete state
++
++        Expected Result:
++        - Snapshot restore completes successfully
++        - VirtualMachineRestore status is Complete
++        - VM does not auto-start during restore
++        """
++        LOGGER.info("Testing snapshot restore with RerunOnFailure run strategy")
++
++        # Ensure VM is stopped before restore
++        if vm_with_run_strategy.vmi.exists:
++            vm_with_run_strategy.stop(wait=True)
++
++        # Create restore
++        with VirtualMachineRestore(
++            name=f"restore-{vm_with_run_strategy.name}",
++            namespace=vm_with_run_strategy.namespace,
++            vm_name=vm_with_run_strategy.name,
++            snapshot_name=vm_snapshot_with_data.name,
++        ) as vm_restore:
++            LOGGER.info(f"Waiting for restore {vm_restore.name} to complete")
++
++            # This is the key test - restore should complete, not get stuck
++            vm_restore.wait_restore_done(timeout=TIMEOUT_10MIN)
++
++            # Verify restore status is Complete
++            vm_restore.wait_for_status(
++                status=VirtualMachineRestore.Status.COMPLETE,
++                timeout=TIMEOUT_5MIN,
++            )
++
++            LOGGER.info(f"Restore {vm_restore.name} completed successfully")
++
++    @pytest.mark.polarion("CNV-63819-2")
++    @pytest.mark.parametrize(
++        "cirros_vm_name, vm_with_run_strategy",
++        [
++            pytest.param(
++                {"vm_name": "vm-cnv-63819-no-autostart"},
++                {"run_strategy": RERUNONFAILURE},
++                id="test_vm_no_autostart_during_restore",
++            ),
++        ],
++        indirect=True,
++    )
++    def test_vm_does_not_autostart_during_restore(
++        self,
++        vm_with_run_strategy,
++        vm_snapshot_with_data,
++    ):
++        """
++        Verify VM doesn't auto-start during restore process.
++
++        Test Steps:
++        1. Create VM with runStrategy: RerunOnFailure
++        2. Take snapshot
++        3. Stop VM
++        4. Create VirtualMachineRestore
++        5. During restore, verify no VMI is created
++        6. Verify restore completes
++
++        Expected Result:
++        - No VMI exists during restore operation
++        - VM remains stopped during restore
++        - Restore completes successfully
++        """
++        LOGGER.info("Testing that VM does not auto-start during restore")
++
++        # Ensure VM is stopped
++        if vm_with_run_strategy.vmi.exists:
++            vm_with_run_strategy.stop(wait=True)
++
++        with VirtualMachineRestore(
++            name=f"restore-{vm_with_run_strategy.name}",
++            namespace=vm_with_run_strategy.namespace,
++            vm_name=vm_with_run_strategy.name,
++            snapshot_name=vm_snapshot_with_data.name,
++        ) as vm_restore:
++            # Check that VM doesn't start during restore
++            # VMI should not exist during restore operation
++            assert not vm_with_run_strategy.vmi.exists, (
++                "VM auto-started during restore - VMI should not exist during restore"
++            )
++
++            # Wait for restore to complete
++            vm_restore.wait_restore_done(timeout=TIMEOUT_10MIN)
++
++            # Verify VMI still doesn't exist after restore
++            assert not vm_with_run_strategy.vmi.exists, (
++                "VM should remain stopped after restore completes"
++            )
++
++            LOGGER.info("VM correctly remained stopped during and after restore")
++
++    @pytest.mark.polarion("CNV-63819-3")
++    @pytest.mark.parametrize(
++        "cirros_vm_name, vm_with_run_strategy",
++        [
++            pytest.param(
++                {"vm_name": "vm-cnv-63819-manual-start"},
++                {"run_strategy": RERUNONFAILURE},
++                id="test_manual_start_after_restore",
++            ),
++        ],
++        indirect=True,
++    )
++    def test_vm_can_start_after_restore(
++        self,
++        vm_with_run_strategy,
++        vm_snapshot_with_data,
++    ):
++        """
++        Verify VM can be manually started after restore completes.
++
++        Test Steps:
++        1. Create VM with runStrategy: RerunOnFailure
++        2. Take snapshot
++        3. Restore snapshot
++        4. Wait for restore to complete
++        5. Manually start VM
++        6. Verify VM starts successfully
++
++        Expected Result:
++        - Restore completes successfully
++        - VM can be started manually after restore
++        - VM reaches Running state
++        """
++        LOGGER.info("Testing VM can start after restore completes")
++
++        # Ensure VM is stopped
++        if vm_with_run_strategy.vmi.exists:
++            vm_with_run_strategy.stop(wait=True)
++
++        with VirtualMachineRestore(
++            name=f"restore-{vm_with_run_strategy.name}",
++            namespace=vm_with_run_strategy.namespace,
++            vm_name=vm_with_run_strategy.name,
++            snapshot_name=vm_snapshot_with_data.name,
++        ) as vm_restore:
++            vm_restore.wait_restore_done(timeout=TIMEOUT_10MIN)
++
++            # Now try to start the VM manually
++            LOGGER.info("Starting VM after restore")
++            running_vm(vm=vm_with_run_strategy, wait_for_interfaces=False)
++
++            # Verify VM is running
++            assert vm_with_run_strategy.vmi.exists, "VMI should exist after starting VM"
++            assert vm_with_run_strategy.vmi.status == VirtualMachineInstance.Status.RUNNING, (
++                f"VM should be in Running state, got {vm_with_run_strategy.vmi.status}"
++            )
++
++            LOGGER.info("VM started successfully after restore")
++
++    @pytest.mark.polarion("CNV-63819-4")
++    @pytest.mark.parametrize(
++        "cirros_vm_name, vm_with_run_strategy, run_strategy_name",
++        [
++            pytest.param(
++                {"vm_name": "vm-cnv-63819-always"},
++                {"run_strategy": ALWAYS},
++                "Always",
++                marks=pytest.mark.gating(),
++                id="test_snapshot_restore_always_regression",
++            ),
++            pytest.param(
++                {"vm_name": "vm-cnv-63819-manual"},
++                {"run_strategy": MANUAL},
++                "Manual",
++                id="test_snapshot_restore_manual_regression",
++            ),
++            pytest.param(
++                {"vm_name": "vm-cnv-63819-halted"},
++                {"run_strategy": HALTED},
++                "Halted",
++                id="test_snapshot_restore_halted_regression",
++            ),
++        ],
++        indirect=["cirros_vm_name", "vm_with_run_strategy"],
++    )
++    def test_snapshot_restore_other_run_strategies(
++        self,
++        vm_with_run_strategy,
++        vm_snapshot_with_data,
++        run_strategy_name,
++    ):
++        """
++        Regression test: Verify snapshot restore works for other run strategies.
++
++        Test Steps:
++        1. Create VM with different run strategies (Always, Manual, Halted)
++        2. Take snapshot
++        3. Stop VM (if needed)
++        4. Restore snapshot
++        5. Verify restore completes
++
++        Expected Result:
++        - Snapshot restore completes for all run strategies
++        - No regression from the RerunOnFailure fix
++        """
++        LOGGER.info(f"Testing snapshot restore with {run_strategy_name} run strategy (regression)")
++
++        # Ensure VM is stopped before restore
++        if vm_with_run_strategy.vmi.exists:
++            vm_with_run_strategy.stop(wait=True)
++
++        with VirtualMachineRestore(
++            name=f"restore-{vm_with_run_strategy.name}",
++            namespace=vm_with_run_strategy.namespace,
++            vm_name=vm_with_run_strategy.name,
++            snapshot_name=vm_snapshot_with_data.name,
++        ) as vm_restore:
++            vm_restore.wait_restore_done(timeout=TIMEOUT_10MIN)
++
++            # Verify restore completed
++            vm_restore.wait_for_status(
++                status=VirtualMachineRestore.Status.COMPLETE,
++                timeout=TIMEOUT_5MIN,
++            )
++
++            LOGGER.info(f"Restore completed successfully for {run_strategy_name} run strategy")
++
++
++class TestSnapshotRestoreDataIntegrity:
++    """
++    End-to-end tests for snapshot restore with data validation.
++    """
++
++    @pytest.mark.polarion("CNV-63819-E2E")
++    @pytest.mark.parametrize(
++        "cirros_vm_name, vm_with_run_strategy",
++        [
++            pytest.param(
++                {"vm_name": "vm-cnv-63819-e2e"},
++                {"run_strategy": RERUNONFAILURE},
++                id="test_complete_snapshot_restore_workflow",
++            ),
++        ],
++        indirect=True,
++    )
++    def test_complete_snapshot_restore_workflow_with_data(
++        self,
++        vm_with_run_strategy,
++    ):
++        """
++        Complete end-to-end snapshot restore workflow with data validation.
++
++        Test Steps:
++        1. Create VM with runStrategy: RerunOnFailure
++        2. Start VM and write test data
++        3. Take snapshot
++        4. Stop VM
++        5. Write different data (to verify restore overwrites it)
++        6. Create VirtualMachineRestore
++        7. Wait for restore to complete
++        8. Start VM manually
++        9. Verify original data is intact (restored from snapshot)
++
++        Expected Result:
++        - Complete workflow succeeds
++        - Restored VM has original snapshot data
++        - VM functions correctly after restore
++        """
++        LOGGER.info("Testing complete snapshot restore workflow with data validation")
++
++        # Step 1: Write initial data
++        LOGGER.info("Writing initial test data")
++        write_file(
++            vm=vm_with_run_strategy,
++            filename="data-before-snapshot.txt",
++            content="original-data",
++        )
++
++        # Step 2: Create snapshot
++        with VirtualMachineSnapshot(
++            name=f"snapshot-e2e-{vm_with_run_strategy.name}",
++            namespace=vm_with_run_strategy.namespace,
++            vm_name=vm_with_run_strategy.name,
++        ) as snapshot:
++            LOGGER.info("Waiting for snapshot to complete")
++            snapshot.wait_snapshot_done(timeout=TIMEOUT_10MIN)
++
++            # Step 3: Write different data after snapshot
++            LOGGER.info("Writing data after snapshot (should be overwritten by restore)")
++            write_file(
++                vm=vm_with_run_strategy,
++                filename="data-after-snapshot.txt",
++                content="new-data-after-snapshot",
++            )
++
++            # Ensure VM is stopped
++            if vm_with_run_strategy.vmi.exists:
++                vm_with_run_strategy.stop(wait=True)
++
++            # Step 4: Restore snapshot
++            with VirtualMachineRestore(
++                name=f"restore-e2e-{vm_with_run_strategy.name}",
++                namespace=vm_with_run_strategy.namespace,
++                vm_name=vm_with_run_strategy.name,
++                snapshot_name=snapshot.name,
++            ) as vm_restore:
++                LOGGER.info("Waiting for restore to complete")
++                vm_restore.wait_restore_done(timeout=TIMEOUT_10MIN)
++
++                vm_restore.wait_for_status(
++                    status=VirtualMachineRestore.Status.COMPLETE,
++                    timeout=TIMEOUT_5MIN,
++                )
++
++                # Step 5: Start VM and verify data
++                LOGGER.info("Starting VM after restore to verify data")
++                running_vm(vm=vm_with_run_strategy, wait_for_interfaces=False)
++
++                # Verify VM is running
++                assert vm_with_run_strategy.vmi.exists, "VMI should exist after starting VM"
++                assert vm_with_run_strategy.vmi.status == VirtualMachineInstance.Status.RUNNING, (
++                    "VM should be in Running state after restore"
++                )
++
++                LOGGER.info("Complete snapshot restore workflow validated successfully")

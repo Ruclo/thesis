@@ -1,0 +1,567 @@
+diff --git a/tests/storage/snapshots/conftest.py b/tests/storage/snapshots/conftest.py
+index 4db9193..59e2e04 100644
+--- a/tests/storage/snapshots/conftest.py
++++ b/tests/storage/snapshots/conftest.py
+@@ -6,10 +6,19 @@ Pytest conftest file for CNV Storage snapshots tests
+ 
+ import logging
+ import shlex
++from contextlib import contextmanager
+ 
+ import pytest
+ from ocp_resources.datavolume import DataVolume
+ from ocp_resources.role_binding import RoleBinding
++from ocp_resources.virtual_machine import VirtualMachine
++from ocp_resources.virtual_machine_cluster_instancetype import (
++    VirtualMachineClusterInstancetype,
++)
++from ocp_resources.virtual_machine_cluster_preference import (
++    VirtualMachineClusterPreference,
++)
++from ocp_resources.virtual_machine_restore import VirtualMachineRestore
+ from ocp_resources.virtual_machine_snapshot import VirtualMachineSnapshot
+ from pyhelper_utils.shell import run_ssh_commands
+ 
+@@ -20,7 +29,15 @@ from tests.storage.utils import (
+     create_windows_directory,
+     set_permissions,
+ )
+-from utilities.constants import TIMEOUT_10MIN, UNPRIVILEGED_USER
++from utilities.constants import (
++    OS_FLAVOR_RHEL,
++    RHEL10_PREFERENCE,
++    TIMEOUT_10MIN,
++    U1_SMALL,
++    UNPRIVILEGED_USER,
++)
++from utilities.storage import data_volume_template_with_source_ref_dict, write_file_via_ssh
++from utilities.virt import VirtualMachineForTests, running_vm
+ 
+ LOGGER = logging.getLogger(__name__)
+ 
+@@ -106,3 +123,167 @@ def file_created_during_snapshot(windows_vm_for_snapshot, windows_snapshot):
+     run_ssh_commands(host=windows_vm_for_snapshot.ssh_exec, commands=cmd)
+     windows_snapshot.wait_snapshot_done(timeout=TIMEOUT_10MIN)
+     windows_vm_for_snapshot.stop(wait=True)
++
++
++@contextmanager
++def _snapshot_vm_for_strategy(admin_client, namespace, run_strategy, data_source, storage_class):
++    """
++    Create VM with specified run strategy, start it, take snapshot, and stop it.
++
++    Yields:
++        tuple: (VirtualMachineForTests, VirtualMachineSnapshot)
++    """
++    with VirtualMachineForTests(
++        name=f"vm-snap-{run_strategy.lower()}",
++        namespace=namespace.name,
++        client=admin_client,
++        run_strategy=run_strategy,
++        os_flavor=OS_FLAVOR_RHEL,
++        vm_instance_type=VirtualMachineClusterInstancetype(client=admin_client, name=U1_SMALL),
++        vm_preference=VirtualMachineClusterPreference(client=admin_client, name=RHEL10_PREFERENCE),
++        data_volume_template=data_volume_template_with_source_ref_dict(
++            data_source=data_source,
++            storage_class=storage_class,
++        ),
++    ) as vm:
++        running_vm(vm=vm)
++        vm.stop(wait=True)
++        with VirtualMachineSnapshot(
++            name=f"snapshot-{vm.name}",
++            namespace=vm.namespace,
++            vm_name=vm.name,
++            client=admin_client,
++        ) as snapshot:
++            snapshot.wait_snapshot_done(timeout=TIMEOUT_10MIN)
++            yield vm, snapshot
++
++
++@pytest.fixture(scope="class")
++def rerun_on_failure_vm_with_snapshot(
++    admin_client,
++    namespace,
++    rhel10_data_source_scope_session,
++    snapshot_storage_class_name_scope_module,
++):
++    """VM with runStrategy RerunOnFailure, snapshotted and stopped."""
++    with _snapshot_vm_for_strategy(
++        admin_client=admin_client,
++        namespace=namespace,
++        run_strategy=VirtualMachine.RunStrategy.RERUNONFAILURE,
++        data_source=rhel10_data_source_scope_session,
++        storage_class=snapshot_storage_class_name_scope_module,
++    ) as result:
++        yield result
++
++
++@pytest.fixture(scope="class")
++def run_strategy_vm_with_snapshot(
++    request,
++    admin_client,
++    namespace,
++    rhel10_data_source_scope_session,
++    snapshot_storage_class_name_scope_module,
++):
++    """VM with parametrized run strategy, snapshotted and stopped."""
++    with _snapshot_vm_for_strategy(
++        admin_client=admin_client,
++        namespace=namespace,
++        run_strategy=request.param,
++        data_source=rhel10_data_source_scope_session,
++        storage_class=snapshot_storage_class_name_scope_module,
++    ) as result:
++        yield result
++
++
++@pytest.fixture(scope="class")
++def data_integrity_restored_vm(
++    admin_client,
++    namespace,
++    rhel10_data_source_scope_session,
++    snapshot_storage_class_name_scope_module,
++):
++    """VM with pre-snapshot file, post-snapshot file, restored, and started.
++
++    After restore, pre-snapshot file should exist and post-snapshot file should not.
++    """
++    with VirtualMachineForTests(
++        name="vm-snap-data-integrity",
++        namespace=namespace.name,
++        client=admin_client,
++        run_strategy=VirtualMachine.RunStrategy.RERUNONFAILURE,
++        os_flavor=OS_FLAVOR_RHEL,
++        vm_instance_type=VirtualMachineClusterInstancetype(client=admin_client, name=U1_SMALL),
++        vm_preference=VirtualMachineClusterPreference(client=admin_client, name=RHEL10_PREFERENCE),
++        data_volume_template=data_volume_template_with_source_ref_dict(
++            data_source=rhel10_data_source_scope_session,
++            storage_class=snapshot_storage_class_name_scope_module,
++        ),
++    ) as vm:
++        running_vm(vm=vm)
++        write_file_via_ssh(vm=vm, filename="original.txt", content="data-before-snapshot")
++        with VirtualMachineSnapshot(
++            name=f"snapshot-{vm.name}",
++            namespace=vm.namespace,
++            vm_name=vm.name,
++            client=admin_client,
++        ) as snapshot:
++            snapshot.wait_snapshot_done(timeout=TIMEOUT_10MIN)
++            write_file_via_ssh(vm=vm, filename="after.txt", content="post-snapshot")
++            vm.stop(wait=True)
++            with VirtualMachineRestore(
++                client=admin_client,
++                name=f"restore-{vm.name}",
++                namespace=vm.namespace,
++                vm_name=vm.name,
++                snapshot_name=snapshot.name,
++            ) as vm_restore:
++                vm_restore.wait_restore_done(timeout=TIMEOUT_10MIN)
++                running_vm(vm=vm, ssh_timeout=TIMEOUT_10MIN)
++                yield vm
++
++
++@pytest.fixture(scope="class")
++def multiple_snapshots_vm(
++    admin_client,
++    namespace,
++    rhel10_data_source_scope_session,
++    snapshot_storage_class_name_scope_module,
++):
++    """VM with two snapshots taken at different data states, stopped.
++
++    Snapshot-1 captured after writing state1.txt, snapshot-2 after writing state2.txt.
++    """
++    with VirtualMachineForTests(
++        name="vm-snap-multi",
++        namespace=namespace.name,
++        client=admin_client,
++        run_strategy=VirtualMachine.RunStrategy.RERUNONFAILURE,
++        os_flavor=OS_FLAVOR_RHEL,
++        vm_instance_type=VirtualMachineClusterInstancetype(client=admin_client, name=U1_SMALL),
++        vm_preference=VirtualMachineClusterPreference(client=admin_client, name=RHEL10_PREFERENCE),
++        data_volume_template=data_volume_template_with_source_ref_dict(
++            data_source=rhel10_data_source_scope_session,
++            storage_class=snapshot_storage_class_name_scope_module,
++        ),
++    ) as vm:
++        running_vm(vm=vm)
++        write_file_via_ssh(vm=vm, filename="state1.txt", content="first-snapshot")
++        vm.stop(wait=True)
++        with VirtualMachineSnapshot(
++            name=f"snap-1-{vm.name}",
++            namespace=vm.namespace,
++            vm_name=vm.name,
++            client=admin_client,
++        ) as first_snapshot:
++            first_snapshot.wait_snapshot_done(timeout=TIMEOUT_10MIN)
++            running_vm(vm=vm)
++            write_file_via_ssh(vm=vm, filename="state2.txt", content="second-snapshot")
++            vm.stop(wait=True)
++            with VirtualMachineSnapshot(
++                name=f"snap-2-{vm.name}",
++                namespace=vm.namespace,
++                vm_name=vm.name,
++                client=admin_client,
++            ) as second_snapshot:
++                second_snapshot.wait_snapshot_done(timeout=TIMEOUT_10MIN)
++                yield vm, first_snapshot, second_snapshot
+
+diff --git a/tests/storage/snapshots/test_snapshot_restore_run_strategy.py b/tests/storage/snapshots/test_snapshot_restore_run_strategy.py
+new file mode 100644
+index 0000000..fd34990
+--- /dev/null
++++ b/tests/storage/snapshots/test_snapshot_restore_run_strategy.py
+@@ -0,0 +1,351 @@
++# -*- coding: utf-8 -*-
++
++"""
++VM Snapshot Restore with runStrategy Tests
++
++STP Reference: /home/fedora/thesis/stps/4.md
++Jira: https://issues.redhat.com/browse/CNV-63819
++
++This module contains tests verifying that VM snapshot restore completes
++successfully across all run strategies, with focus on the RerunOnFailure
++strategy fix (CNV-63819). Previously, virt-controller would immediately
++attempt to start the VM during restore, blocking the restore operation.
++"""
++
++import logging
++import shlex
++
++import pytest
++from ocp_resources.virtual_machine import VirtualMachine
++from ocp_resources.virtual_machine_instance import VirtualMachineInstance
++from ocp_resources.virtual_machine_restore import VirtualMachineRestore
++from pyhelper_utils.shell import run_ssh_commands
++from timeout_sampler import TimeoutSampler
++
++from utilities.constants import TIMEOUT_5MIN, TIMEOUT_5SEC, TIMEOUT_10MIN
++from utilities.virt import running_vm
++
++LOGGER = logging.getLogger(__name__)
++
++
++pytestmark = pytest.mark.usefixtures(
++    "namespace",
++    "skip_if_no_storage_class_for_snapshot",
++)
++
++
++class TestSnapshotRestoreRerunOnFailure:
++    """
++    Tests for VM snapshot restore with runStrategy: RerunOnFailure.
++
++    Verifies the fix for CNV-63819 where snapshot restore would get stuck
++    because virt-controller immediately tried to start the VM, blocking
++    the restore operation.
++    """
++
++    @pytest.mark.gating()
++    @pytest.mark.jira("CNV-63819")
++    def test_restore_completes(
++        self,
++        admin_client,
++        rerun_on_failure_vm_with_snapshot,
++    ):
++        """
++        Test that snapshot restore completes for a VM with runStrategy RerunOnFailure.
++
++        Steps:
++            1. Create VirtualMachineRestore from snapshot and wait for completion
++
++        Expected:
++            - VirtualMachineRestore status is "Complete"
++        """
++        vm_for_test, snapshot = rerun_on_failure_vm_with_snapshot
++        LOGGER.info(f"Restoring VM {vm_for_test.name} from snapshot {snapshot.name}")
++        with VirtualMachineRestore(
++            client=admin_client,
++            name=f"restore-{vm_for_test.name}",
++            namespace=vm_for_test.namespace,
++            vm_name=vm_for_test.name,
++            snapshot_name=snapshot.name,
++        ) as vm_restore:
++            vm_restore.wait_restore_done(timeout=TIMEOUT_10MIN)
++            assert vm_restore.instance.status.complete, (
++                f"VirtualMachineRestore {vm_restore.name} did not reach Complete status"
++            )
++
++    @pytest.mark.gating()
++    @pytest.mark.jira("CNV-63819")
++    def test_vm_not_auto_started_during_restore(
++        self,
++        admin_client,
++        rerun_on_failure_vm_with_snapshot,
++    ):
++        """
++        Test that VM does not auto-start during snapshot restore with RerunOnFailure.
++
++        Steps:
++            1. Create VirtualMachineRestore from snapshot
++            2. While restore is in progress, check for VirtualMachineInstance existence
++
++        Expected:
++            - No VirtualMachineInstance exists for the VM during restore
++        """
++        vm_for_test, snapshot = rerun_on_failure_vm_with_snapshot
++        LOGGER.info(f"Restoring VM {vm_for_test.name} and checking no VMI is auto-started")
++        with VirtualMachineRestore(
++            client=admin_client,
++            name=f"restore-autostart-{vm_for_test.name}",
++            namespace=vm_for_test.namespace,
++            vm_name=vm_for_test.name,
++            snapshot_name=snapshot.name,
++        ) as vm_restore:
++            for sample in TimeoutSampler(
++                wait_timeout=TIMEOUT_5MIN,
++                sleep=TIMEOUT_5SEC,
++                func=lambda: vm_restore.instance.get("status", {}).get("complete"),
++            ):
++                vmi = VirtualMachineInstance(
++                    client=admin_client,
++                    name=vm_for_test.name,
++                    namespace=vm_for_test.namespace,
++                )
++                assert not vmi.exists, (
++                    f"VMI {vm_for_test.name} was auto-started during restore with RerunOnFailure strategy"
++                )
++                if sample:
++                    break
++
++    @pytest.mark.gating()
++    @pytest.mark.jira("CNV-63819")
++    def test_vm_starts_after_restore(
++        self,
++        admin_client,
++        rerun_on_failure_vm_with_snapshot,
++    ):
++        """
++        Test that a VM with RerunOnFailure can be started after snapshot restore.
++
++        Preconditions:
++            - VirtualMachineRestore completed successfully
++
++        Steps:
++            1. Start the VM manually and wait for it to reach Running state
++
++        Expected:
++            - VM is "Running" and SSH accessible
++        """
++        vm_for_test, snapshot = rerun_on_failure_vm_with_snapshot
++        LOGGER.info(f"Restoring and starting VM {vm_for_test.name}")
++        with VirtualMachineRestore(
++            client=admin_client,
++            name=f"restore-start-{vm_for_test.name}",
++            namespace=vm_for_test.namespace,
++            vm_name=vm_for_test.name,
++            snapshot_name=snapshot.name,
++        ) as vm_restore:
++            vm_restore.wait_restore_done(timeout=TIMEOUT_10MIN)
++            running_vm(vm=vm_for_test, ssh_timeout=TIMEOUT_10MIN)
++            assert vm_for_test.ready, f"VM {vm_for_test.name} is not Running after restore"
++            vm_for_test.stop(wait=True)
++
++
++@pytest.mark.parametrize(
++    "run_strategy_vm_with_snapshot",
++    [
++        pytest.param(VirtualMachine.RunStrategy.ALWAYS, id="always"),
++        pytest.param(VirtualMachine.RunStrategy.MANUAL, id="manual"),
++        pytest.param(VirtualMachine.RunStrategy.HALTED, id="halted"),
++    ],
++    indirect=True,
++)
++class TestSnapshotRestoreRunStrategies:
++    """
++    Regression tests for snapshot restore across run strategies.
++
++    Verifies that snapshot restore continues to work for all run strategies
++    after the RerunOnFailure fix (CNV-63819).
++    """
++
++    @pytest.mark.jira("CNV-63819")
++    def test_restore_completes(
++        self,
++        admin_client,
++        run_strategy_vm_with_snapshot,
++    ):
++        """
++        Test that snapshot restore completes for a VM with the given run strategy.
++
++        Steps:
++            1. Create VirtualMachineRestore from snapshot and wait for completion
++
++        Expected:
++            - VirtualMachineRestore status is "Complete"
++        """
++        vm_for_test, snapshot = run_strategy_vm_with_snapshot
++        LOGGER.info(f"Restoring VM {vm_for_test.name} from snapshot {snapshot.name}")
++        with VirtualMachineRestore(
++            client=admin_client,
++            name=f"restore-{vm_for_test.name}",
++            namespace=vm_for_test.namespace,
++            vm_name=vm_for_test.name,
++            snapshot_name=snapshot.name,
++        ) as vm_restore:
++            vm_restore.wait_restore_done(timeout=TIMEOUT_10MIN)
++            assert vm_restore.instance.status.complete, (
++                f"VirtualMachineRestore {vm_restore.name} did not reach Complete status"
++            )
++
++    @pytest.mark.jira("CNV-63819")
++    def test_vm_starts_after_restore(
++        self,
++        admin_client,
++        run_strategy_vm_with_snapshot,
++    ):
++        """
++        Test that a VM can be started after snapshot restore with the given run strategy.
++
++        Preconditions:
++            - VirtualMachineRestore completed successfully
++
++        Steps:
++            1. Start the VM manually and wait for it to reach Running state
++
++        Expected:
++            - VM is "Running"
++        """
++        vm_for_test, snapshot = run_strategy_vm_with_snapshot
++        LOGGER.info(f"Restoring and starting VM {vm_for_test.name}")
++        with VirtualMachineRestore(
++            client=admin_client,
++            name=f"restore-start-{vm_for_test.name}",
++            namespace=vm_for_test.namespace,
++            vm_name=vm_for_test.name,
++            snapshot_name=snapshot.name,
++        ) as vm_restore:
++            vm_restore.wait_restore_done(timeout=TIMEOUT_10MIN)
++            running_vm(vm=vm_for_test, ssh_timeout=TIMEOUT_10MIN)
++            assert vm_for_test.ready, f"VM {vm_for_test.name} is not Running after restore"
++            vm_for_test.stop(wait=True)
++
++
++class TestSnapshotRestoreDataIntegrity:
++    """
++    End-to-end tests for snapshot restore data integrity with RerunOnFailure.
++
++    Validates that snapshot restore correctly preserves pre-snapshot data
++    and removes post-snapshot data.
++    """
++
++    @pytest.mark.jira("CNV-63819")
++    def test_preserves_pre_snapshot_data(
++        self,
++        data_integrity_restored_vm,
++    ):
++        """
++        Test that files created before a snapshot are preserved after restore.
++
++        Steps:
++            1. Read file original.txt from the restored VM
++
++        Expected:
++            - File content equals "data-before-snapshot"
++        """
++        LOGGER.info(f"Checking pre-snapshot file content on VM {data_integrity_restored_vm.name}")
++        result = run_ssh_commands(
++            host=data_integrity_restored_vm.ssh_exec,
++            commands=shlex.split("cat original.txt"),
++        )
++        file_content = result[0].strip()
++        assert file_content == "data-before-snapshot", (
++            f"Pre-snapshot file content '{file_content}' does not equal 'data-before-snapshot'"
++        )
++
++    @pytest.mark.jira("CNV-63819")
++    def test_removes_post_snapshot_data(
++        self,
++        data_integrity_restored_vm,
++    ):
++        """
++        Test that files created after a snapshot are removed after restore.
++
++        Steps:
++            1. Check if file after.txt exists on the restored VM
++
++        Expected:
++            - File after.txt does NOT exist
++        """
++        LOGGER.info(f"Checking post-snapshot file absence on VM {data_integrity_restored_vm.name}")
++        result = run_ssh_commands(
++            host=data_integrity_restored_vm.ssh_exec,
++            commands=shlex.split("test -f after.txt && echo exists || echo missing"),
++        )
++        assert result[0].strip() == "missing", (
++            "File after.txt should NOT exist after restore but was found"
++        )
++
++
++class TestMultipleSnapshotRestore:
++    """
++    Tests for restoring from multiple snapshots with RerunOnFailure strategy.
++
++    Verifies that multiple snapshot and restore operations all complete
++    successfully.
++    """
++
++    @pytest.mark.jira("CNV-63819")
++    def test_restore_from_first_snapshot(
++        self,
++        admin_client,
++        multiple_snapshots_vm,
++    ):
++        """
++        Test that restore from the first of multiple snapshots completes.
++
++        Steps:
++            1. Create VirtualMachineRestore from snapshot-1 and wait for completion
++
++        Expected:
++            - VirtualMachineRestore status is "Complete"
++        """
++        vm_for_test, first_snapshot, _second_snapshot = multiple_snapshots_vm
++        LOGGER.info(f"Restoring VM {vm_for_test.name} from first snapshot {first_snapshot.name}")
++        with VirtualMachineRestore(
++            client=admin_client,
++            name=f"restore-first-{vm_for_test.name}",
++            namespace=vm_for_test.namespace,
++            vm_name=vm_for_test.name,
++            snapshot_name=first_snapshot.name,
++        ) as vm_restore:
++            vm_restore.wait_restore_done(timeout=TIMEOUT_10MIN)
++            assert vm_restore.instance.status.complete, (
++                f"VirtualMachineRestore {vm_restore.name} did not reach Complete status"
++            )
++
++    @pytest.mark.jira("CNV-63819")
++    def test_restore_from_second_snapshot(
++        self,
++        admin_client,
++        multiple_snapshots_vm,
++    ):
++        """
++        Test that restore from the second of multiple snapshots completes.
++
++        Steps:
++            1. Create VirtualMachineRestore from snapshot-2 and wait for completion
++
++        Expected:
++            - VirtualMachineRestore status is "Complete"
++        """
++        vm_for_test, _first_snapshot, second_snapshot = multiple_snapshots_vm
++        LOGGER.info(f"Restoring VM {vm_for_test.name} from second snapshot {second_snapshot.name}")
++        with VirtualMachineRestore(
++            client=admin_client,
++            name=f"restore-second-{vm_for_test.name}",
++            namespace=vm_for_test.namespace,
++            vm_name=vm_for_test.name,
++            snapshot_name=second_snapshot.name,
++        ) as vm_restore:
++            vm_restore.wait_restore_done(timeout=TIMEOUT_10MIN)
++            assert vm_restore.instance.status.complete, (
++                f"VirtualMachineRestore {vm_restore.name} did not reach Complete status"
++            )

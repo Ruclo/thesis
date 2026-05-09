@@ -1,0 +1,1262 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.0, pytest-9.0.2, pluggy-1.6.0
+benchmark: 5.2.3 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /home/mvavrine/cnv/openshift-virtualization-tests
+configfile: pytest.ini (WARNING: ignoring pytest config in pyproject.toml!)
+plugins: anyio-4.12.0, html-4.1.1, order-1.3.0, repeat-0.9.4, progress-1.4.0, dependency-0.6.0, jira-0.3.22, metadata-3.1.1, testconfig-0.2.0, benchmark-5.2.3, mock-3.15.1
+collected 6 items
+
+tests/virt/node/hotplug/test_cpu_hotplug_max_sockets_limit.py .
+_ 1 of 6 completed, 1 Pass, 0 Fail, 0 Skip, 0 XPass, 0 XFail, 0 Error, 0 ReRun _
+
+tests/virt/node/hotplug/test_cpu_hotplug_max_sockets_limit.py F
+
+_ TestCPUHotplugMaxSocketsLimit.test_hotplug_cpu_within_limit[golden_image_data_source_for_test_scope_class0] _
+
+self = <tests.virt.node.hotplug.test_cpu_hotplug_max_sockets_limit.TestCPUHotplugMaxSocketsLimit object at 0x7fa615771e50>
+vm_with_cpu_hotplug_enabled = <utilities.virt.VirtualMachineForTestsFromTemplate object at 0x7fa615837e00>
+vm_initial_cpu_count = 4
+
+    @pytest.mark.polarion("CNV-61263")
+    @pytest.mark.dependency(name="test_hotplug_within_limit")
+    def test_hotplug_cpu_within_limit(self, vm_with_cpu_hotplug_enabled, vm_initial_cpu_count):
+        """
+        Verify CPU hotplug succeeds when within MaxSockets limit.
+    
+        Preconditions:
+            - VM running with initial CPU count (4 sockets)
+            - MaxSockets limit set to 8
+    
+        Steps:
+            1. Start VM with 4 CPUs
+            2. Hotplug CPUs to 6 sockets (within limit)
+            3. Verify guest OS sees 6 CPUs
+    
+        Expected Result:
+            - Hotplug operation succeeds
+            - Guest OS CPU count increases to 6
+        """
+        LOGGER.info(f"Testing CPU hotplug within limit for VM {vm_with_cpu_hotplug_enabled.name}")
+    
+        target_sockets = SIX_CPU_SOCKETS
+        LOGGER.info(f"Hotplugging CPUs from {FOUR_CPU_SOCKETS} to {target_sockets} sockets")
+    
+        hotplug_spec_vm(vm=vm_with_cpu_hotplug_enabled, sockets=target_sockets)
+    
+        LOGGER.info("Verifying guest OS sees hotplugged CPUs")
+>       assert_guest_os_cpu_count(vm=vm_with_cpu_hotplug_enabled, spec_cpu_amount=target_sockets)
+
+tests/virt/node/hotplug/test_cpu_hotplug_max_sockets_limit.py:153: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+vm = <utilities.virt.VirtualMachineForTestsFromTemplate object at 0x7fa615837e00>
+spec_cpu_amount = 6
+
+    def assert_guest_os_cpu_count(vm, spec_cpu_amount):
+        guest_os_cpu_amount = get_os_cpu_count(vm=vm)
+>       assert guest_os_cpu_amount == spec_cpu_amount, (
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            f"Wrong amount of CPUs! Guest: {guest_os_cpu_amount}; VMI: {spec_cpu_amount}"
+        )
+E       AssertionError: Wrong amount of CPUs! Guest: 4; VMI: 6
+
+tests/utils.py:218: AssertionError
+----------------------------- Captured stderr call -----------------------------
+2026-02-12T13:24:19.860082 ocp_resources.resource [32mINFO[0m ResourceEdits: Updating data for resource VirtualMachine vm-cpu-hotplug-max-sockets-test-1779103389-0593734[0m
+2026-02-12T13:24:19.861012 ocp_resources VirtualMachine [32mINFO[0m Update VirtualMachine vm-cpu-hotplug-max-sockets-test-1779103389-0593734:
+{'spec': {'template': {'spec': {'domain': {'cpu': {'sockets': 6}}}}}, 'metadata': {'name': 'vm-cpu-hotplug-max-sockets-test-1779103389-0593734'}}[0m
+
+-------------------- test_hotplug_cpu_within_limit[golden_image_data_source_for_test_scope_class0] --------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-12T13:24:19.857336 conftest [32mINFO[0m Executing function fixture: term_handler_scope_function[0m
+2026-02-12T13:24:19.857925 conftest [32mINFO[0m Executing function fixture: autouse_fixtures[0m
+--------------------------------------------------------- CALL ---------------------------------------------------------
+2026-02-12T13:24:19.859697 tests.virt.node.hotplug.test_cpu_hotplug_max_sockets_limit [32mINFO[0m Testing CPU hotplug within limit for VM vm-cpu-hotplug-max-sockets-test-1779103389-0593734[0m
+2026-02-12T13:24:19.859880 tests.virt.node.hotplug.test_cpu_hotplug_max_sockets_limit [32mINFO[0m Hotplugging CPUs from 4 to 6 sockets[0m
+2026-02-12T13:24:20.058905 tests.virt.node.hotplug.test_cpu_hotplug_max_sockets_limit [32mINFO[0m Verifying guest OS sees hotplugged CPUs[0m
+2026-02-12T13:24:20.059275 utilities.virt [32mINFO[0m SSH command: ssh -o 'ProxyCommand=virtctl port-forward --stdio=true vm/vm-cpu-hotplug-max-sockets-test-1779103389-0593734/node-hotplug-test-cpu-hotplug-max-sockets-limit 22' cloud-user@vm-cpu-hotplug-max-sockets-test-1779103389-0593734[0m
+2026-02-12T13:24:20.854202 paramiko.transport [32mINFO[0m Connected (version 2.0, client OpenSSH_8.7)[0m
+2026-02-12T13:24:21.488373 paramiko.transport [32mINFO[0m Authentication (publickey) successful![0m
+_ 2 of 6 completed, 1 Pass, 1 Fail, 0 Skip, 0 XPass, 0 XFail, 0 Error, 0 ReRun _
+
+tests/virt/node/hotplug/test_cpu_hotplug_max_sockets_limit.py s
+_ 3 of 6 completed, 1 Pass, 1 Fail, 1 Skip, 0 XPass, 0 XFail, 0 Error, 0 ReRun _
+
+tests/virt/node/hotplug/test_cpu_hotplug_max_sockets_limit.py s
+_ 4 of 6 completed, 1 Pass, 1 Fail, 2 Skip, 0 XPass, 0 XFail, 0 Error, 0 ReRun _
+
+tests/virt/node/hotplug/test_cpu_hotplug_max_sockets_limit.py F
+
+_ TestCPUHotplugMaxSocketsLimit.test_vm_behavior_at_maximum_cpu[golden_image_data_source_for_test_scope_class0] _
+
+self = <tests.virt.node.hotplug.test_cpu_hotplug_max_sockets_limit.TestCPUHotplugMaxSocketsLimit object at 0x7fa61575a7b0>
+vm_with_cpu_hotplug_enabled = <utilities.virt.VirtualMachineForTestsFromTemplate object at 0x7fa615837e00>
+
+    @pytest.mark.polarion("CNV-61263")
+    def test_vm_behavior_at_maximum_cpu(self, vm_with_cpu_hotplug_enabled):
+        """
+        Verify VM behaves correctly when operating at maximum CPU limit.
+    
+        Preconditions:
+            - VM running at max vCPUs (8 sockets)
+    
+        Steps:
+            1. Verify VM is running at max CPU limit
+            2. Check VM status and conditions
+            3. Verify VM remains stable and responsive
+    
+        Expected Result:
+            - VM runs normally at maximum CPU
+            - No error conditions present
+            - VM is responsive via SSH
+        """
+        LOGGER.info(f"Verifying VM behavior at maximum CPU for {vm_with_cpu_hotplug_enabled.name}")
+    
+>       assert_guest_os_cpu_count(
+            vm=vm_with_cpu_hotplug_enabled, spec_cpu_amount=EIGHT_CPU_SOCKETS
+        )
+
+tests/virt/node/hotplug/test_cpu_hotplug_max_sockets_limit.py:237: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+vm = <utilities.virt.VirtualMachineForTestsFromTemplate object at 0x7fa615837e00>
+spec_cpu_amount = 8
+
+    def assert_guest_os_cpu_count(vm, spec_cpu_amount):
+        guest_os_cpu_amount = get_os_cpu_count(vm=vm)
+>       assert guest_os_cpu_amount == spec_cpu_amount, (
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            f"Wrong amount of CPUs! Guest: {guest_os_cpu_amount}; VMI: {spec_cpu_amount}"
+        )
+E       AssertionError: Wrong amount of CPUs! Guest: 4; VMI: 8
+
+tests/utils.py:218: AssertionError
+---------------------------- Captured stderr setup -----------------------------
+2026-02-12T13:24:25.818764 pytest_dependency [32mINFO[0m skip test_hotplug_cpu_exceeds_max_sockets_limit[golden_image_data_source_for_test_scope_class0] because it depends on test_hotplug_within_limit[0m
+----------------------------- Captured stderr call -----------------------------
+
+TEST: TestCPUHotplugMaxSocketsLimit.test_hotplug_cpu_exceeds_max_sockets_limit[golden_image_data_source_for_test_scope_class0] STATUS: [1;33mSKIPPED[0m
+------------------------------------------------------- TEARDOWN -------------------------------------------------------
+
+------------------- test_vm_behavior_at_maximum_cpu[golden_image_data_source_for_test_scope_class0] -------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-12T13:24:25.821857 conftest [32mINFO[0m Executing function fixture: term_handler_scope_function[0m
+2026-02-12T13:24:25.822280 conftest [32mINFO[0m Executing function fixture: autouse_fixtures[0m
+--------------------------------------------------------- CALL ---------------------------------------------------------
+2026-02-12T13:24:25.823177 tests.virt.node.hotplug.test_cpu_hotplug_max_sockets_limit [32mINFO[0m Verifying VM behavior at maximum CPU for vm-cpu-hotplug-max-sockets-test-1779103389-0593734[0m
+2026-02-12T13:24:25.823330 utilities.virt [32mINFO[0m SSH command: ssh -o 'ProxyCommand=virtctl port-forward --stdio=true vm/vm-cpu-hotplug-max-sockets-test-1779103389-0593734/node-hotplug-test-cpu-hotplug-max-sockets-limit 22' cloud-user@vm-cpu-hotplug-max-sockets-test-1779103389-0593734[0m
+2026-02-12T13:24:26.504798 paramiko.transport [32mINFO[0m Connected (version 2.0, client OpenSSH_8.7)[0m
+2026-02-12T13:24:27.148505 paramiko.transport [32mINFO[0m Authentication (publickey) successful![0m
+_ 5 of 6 completed, 1 Pass, 2 Fail, 2 Skip, 0 XPass, 0 XFail, 0 Error, 0 ReRun _
+
+tests/deprecated_api/test_deprecation_audit_logs.py E
+
+_____________ ERROR at setup of test_deprecated_apis_in_audit_logs _____________
+
+func = <function NamespacedResource.instance.<locals>._instance at 0x7fa61438d4e0>
+exceptions_dict = {<class 'urllib3.exceptions.MaxRetryError'>: [], <class 'ConnectionAbortedError'>: [], <class 'ConnectionResetError'>:...eader changed', 'etcdserver: request timed out', 'Internal error occurred: failed calling webhook', 'rpc error:'], ...}
+timeout = 10, sleep_time = 1, kwargs = {}
+sampler = <timeout_sampler.TimeoutSampler object at 0x7fa60fa0dd10>
+
+    @staticmethod
+    def retry_cluster_exceptions(
+        func: Callable,
+        exceptions_dict: dict[type[Exception], list[str]] = DEFAULT_CLUSTER_RETRY_EXCEPTIONS,
+        timeout: int = TIMEOUT_10SEC,
+        sleep_time: int = 1,
+        **kwargs: Any,
+    ) -> Any:
+        try:
+            sampler = TimeoutSampler(
+                wait_timeout=timeout,
+                sleep=sleep_time,
+                func=func,
+                print_log=False,
+                exceptions_dict=exceptions_dict,
+                **kwargs,
+            )
+>           for sample in sampler:
+                          ^^^^^^^
+
+.venv/lib/python3.14/site-packages/ocp_resources/resource.py:1141: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <timeout_sampler.TimeoutSampler object at 0x7fa60fa0dd10>
+
+    def __iter__(self) -> Any:
+        """
+        Call `func` and yield the result, or raise an exception on timeout.
+    
+        Yields:
+            any: Return value from `func`
+    
+        Raises:
+            TimeoutExpiredError: if `func` takes longer than `wait_timeout` seconds to return a value
+        """
+        timeout_watch = TimeoutWatch(timeout=self.wait_timeout)
+        if self.print_log:
+            log = (
+                f"Waiting for {self.wait_timeout} seconds"
+                f" [{datetime.timedelta(seconds=self.wait_timeout)}], retry every"
+                f" {self.sleep} seconds."
+            )
+    
+            if self.print_func_log:
+                log += f" ({self._func_log})"
+    
+            LOGGER.info(log)
+    
+        last_exp = None
+        elapsed_time = None
+        while timeout_watch.remaining_time() > 0:
+            try:
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+                yield self.func(*self.func_args, **self.func_kwargs)
+                time.sleep(self.sleep)
+                elapsed_time = None
+    
+            except Exception as exp:
+                last_exp = exp
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+    
+                if not self._should_ignore_exception(exp=last_exp):
+>                   raise TimeoutExpiredError(
+                        self._get_exception_log(exp=last_exp), last_exp=last_exp, elapsed_time=elapsed_time
+                    )
+E                   timeout_sampler.TimeoutExpiredError: Timed Out: 10
+E                   Function: ocp_resources.resource._instance
+E                   Last exception: ForbiddenError: 403
+E                   Reason: Forbidden
+E                   HTTP response headers: HTTPHeaderDict({'Audit-Id': '09feedb3-a97b-41b6-8dd9-bc99550ee420', 'Cache-Control': 'no-cache, private', 'Content-Type': 'application/json', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'X-Kubernetes-Pf-Flowschema-Uid': '3f42b471-7d32-496e-be99-668d5a6c0032', 'X-Kubernetes-Pf-Prioritylevel-Uid': '7ee8859e-b009-4034-ad3e-cde56d6e1096', 'Date': 'Mon, 18 May 2026 11:45:48 GMT', 'Content-Length': '494'})
+E                   HTTP response body: b'{"kind":"Status","apiVersion":"v1","metadata":{},"status":"Failure","message":"virtualmachines.kubevirt.io \\"vm-cpu-hotplug-max-sockets-test-1779103389-0593734\\" is forbidden: User \\"unprivileged-user\\" cannot get resource \\"virtualmachines\\" in API group \\"kubevirt.io\\" in the namespace \\"node-hotplug-test-cpu-hotplug-max-sockets-limit\\"","reason":"Forbidden","details":{"name":"vm-cpu-hotplug-max-sockets-test-1779103389-0593734","group":"kubevirt.io","kind":"virtualmachines"},"code":403}\n'
+E                   Original traceback: 
+E                     File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/dynamic/client.py", line 55, in inner
+E                       resp = func(self, *args, **kwargs)
+E                   
+E                     File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/dynamic/client.py", line 277, in request
+E                       api_response = self.client.call_api(
+E                           path,
+E                       ...<11 lines>...
+E                           _request_timeout=params.get('_request_timeout')
+E                       )
+E                   
+E                     File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/api_client.py", line 348, in call_api
+E                       return self.__call_api(resource_path, method,
+E                              ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+E                                              path_params, query_params, header_params,
+E                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                       ...<2 lines>...
+E                                              _return_http_data_only, collection_formats,
+E                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                                              _preload_content, _request_timeout, _host)
+E                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   
+E                     File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/api_client.py", line 180, in __call_api
+E                       response_data = self.request(
+E                           method, url, query_params=query_params, headers=header_params,
+E                           post_params=post_params, body=body,
+E                           _preload_content=_preload_content,
+E                           _request_timeout=_request_timeout)
+E                   
+E                     File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/api_client.py", line 373, in request
+E                       return self.rest_client.GET(url,
+E                              ~~~~~~~~~~~~~~~~~~~~^^^^^
+E                                                   query_params=query_params,
+E                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                                                   _preload_content=_preload_content,
+E                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                                                   _request_timeout=_request_timeout,
+E                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                                                   headers=headers)
+E                                                   ^^^^^^^^^^^^^^^^
+E                   
+E                     File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/rest.py", line 244, in GET
+E                       return self.request("GET", url,
+E                              ~~~~~~~~~~~~^^^^^^^^^^^^
+E                                           headers=headers,
+E                                           ^^^^^^^^^^^^^^^^
+E                                           _preload_content=_preload_content,
+E                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                                           _request_timeout=_request_timeout,
+E                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                                           query_params=query_params)
+E                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   
+E                     File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/rest.py", line 238, in request
+E                       raise ApiException(http_resp=r)
+E                   .
+E                   Elapsed time: 0.7645597457885742 [0:00:00.764560]
+
+.venv/lib/python3.14/site-packages/timeout_sampler/__init__.py:171: TimeoutExpiredError
+
+The above exception was the direct cause of the following exception:
+
+self = <timeout_sampler.TimeoutSampler object at 0x7fa60fa0d1d0>
+
+    def __iter__(self) -> Any:
+        """
+        Call `func` and yield the result, or raise an exception on timeout.
+    
+        Yields:
+            any: Return value from `func`
+    
+        Raises:
+            TimeoutExpiredError: if `func` takes longer than `wait_timeout` seconds to return a value
+        """
+        timeout_watch = TimeoutWatch(timeout=self.wait_timeout)
+        if self.print_log:
+            log = (
+                f"Waiting for {self.wait_timeout} seconds"
+                f" [{datetime.timedelta(seconds=self.wait_timeout)}], retry every"
+                f" {self.sleep} seconds."
+            )
+    
+            if self.print_func_log:
+                log += f" ({self._func_log})"
+    
+            LOGGER.info(log)
+    
+        last_exp = None
+        elapsed_time = None
+        while timeout_watch.remaining_time() > 0:
+            try:
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+>               yield self.func(*self.func_args, **self.func_kwargs)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.venv/lib/python3.14/site-packages/timeout_sampler/__init__.py:162: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+utilities/infra.py:853: in get_node_audit_log_entries
+    lines = subprocess.getoutput(
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/subprocess.py:697: in getoutput
+    return getstatusoutput(cmd, encoding=encoding, errors=errors)[1]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/subprocess.py:677: in getstatusoutput
+    data = check_output(cmd, shell=True, text=True, stderr=STDOUT,
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/subprocess.py:472: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/subprocess.py:556: in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/subprocess.py:1207: in communicate
+    stdout = self.stdout.read()
+             ^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/ocp_resources/resource.py:764: in _sigint_handler
+    self.__exit__()
+.venv/lib/python3.14/site-packages/ocp_resources/resource.py:760: in __exit__
+    if not self.clean_up():
+           ^^^^^^^^^^^^^^^
+utilities/virt.py:445: in clean_up
+    if self.exists and self.ready:
+       ^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/ocp_resources/resource.py:951: in exists
+    return self.instance
+           ^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/ocp_resources/resource.py:1670: in instance
+    return self.retry_cluster_exceptions(func=_instance)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/ocp_resources/resource.py:1146: in retry_cluster_exceptions
+    raise exp.last_exp from exp
+.venv/lib/python3.14/site-packages/timeout_sampler/__init__.py:162: in __iter__
+    yield self.func(*self.func_args, **self.func_kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/ocp_resources/resource.py:1668: in _instance
+    return self.api.get(name=self.name, namespace=self.namespace)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/kubernetes/dynamic/client.py:112: in get
+    return self.request('get', path, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <kubernetes.dynamic.client.DynamicClient object at 0x7fa61579ad50>
+args = ('get', '/apis/kubevirt.io/v1/namespaces/node-hotplug-test-cpu-hotplug-max-sockets-limit/virtualmachines/vm-cpu-hotplug-max-sockets-test-1779103389-0593734')
+kwargs = {}, serialize_response = True
+serializer = <class 'kubernetes.dynamic.resource.ResourceInstance'>
+
+    def inner(self, *args, **kwargs):
+        serialize_response = kwargs.pop('serialize', True)
+        serializer = kwargs.pop('serializer', ResourceInstance)
+        try:
+            resp = func(self, *args, **kwargs)
+        except ApiException as e:
+>           raise api_exception(e)
+E           kubernetes.dynamic.exceptions.ForbiddenError: 403
+E           Reason: Forbidden
+E           HTTP response headers: HTTPHeaderDict({'Audit-Id': '09feedb3-a97b-41b6-8dd9-bc99550ee420', 'Cache-Control': 'no-cache, private', 'Content-Type': 'application/json', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'X-Kubernetes-Pf-Flowschema-Uid': '3f42b471-7d32-496e-be99-668d5a6c0032', 'X-Kubernetes-Pf-Prioritylevel-Uid': '7ee8859e-b009-4034-ad3e-cde56d6e1096', 'Date': 'Mon, 18 May 2026 11:45:48 GMT', 'Content-Length': '494'})
+E           HTTP response body: b'{"kind":"Status","apiVersion":"v1","metadata":{},"status":"Failure","message":"virtualmachines.kubevirt.io \\"vm-cpu-hotplug-max-sockets-test-1779103389-0593734\\" is forbidden: User \\"unprivileged-user\\" cannot get resource \\"virtualmachines\\" in API group \\"kubevirt.io\\" in the namespace \\"node-hotplug-test-cpu-hotplug-max-sockets-limit\\"","reason":"Forbidden","details":{"name":"vm-cpu-hotplug-max-sockets-test-1779103389-0593734","group":"kubevirt.io","kind":"virtualmachines"},"code":403}\n'
+E           Original traceback: 
+E             File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/dynamic/client.py", line 55, in inner
+E               resp = func(self, *args, **kwargs)
+E           
+E             File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/dynamic/client.py", line 277, in request
+E               api_response = self.client.call_api(
+E                   path,
+E               ...<11 lines>...
+E                   _request_timeout=params.get('_request_timeout')
+E               )
+E           
+E             File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/api_client.py", line 348, in call_api
+E               return self.__call_api(resource_path, method,
+E                      ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+E                                      path_params, query_params, header_params,
+E                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               ...<2 lines>...
+E                                      _return_http_data_only, collection_formats,
+E                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                                      _preload_content, _request_timeout, _host)
+E                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           
+E             File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/api_client.py", line 180, in __call_api
+E               response_data = self.request(
+E                   method, url, query_params=query_params, headers=header_params,
+E                   post_params=post_params, body=body,
+E                   _preload_content=_preload_content,
+E                   _request_timeout=_request_timeout)
+E           
+E             File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/api_client.py", line 373, in request
+E               return self.rest_client.GET(url,
+E                      ~~~~~~~~~~~~~~~~~~~~^^^^^
+E                                           query_params=query_params,
+E                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                                           _preload_content=_preload_content,
+E                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                                           _request_timeout=_request_timeout,
+E                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                                           headers=headers)
+E                                           ^^^^^^^^^^^^^^^^
+E           
+E             File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/rest.py", line 244, in GET
+E               return self.request("GET", url,
+E                      ~~~~~~~~~~~~^^^^^^^^^^^^
+E                                   headers=headers,
+E                                   ^^^^^^^^^^^^^^^^
+E                                   _preload_content=_preload_content,
+E                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                                   _request_timeout=_request_timeout,
+E                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                                   query_params=query_params)
+E                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           
+E             File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/rest.py", line 238, in request
+E               raise ApiException(http_resp=r)
+
+.venv/lib/python3.14/site-packages/kubernetes/dynamic/client.py:57: ForbiddenError
+
+During handling of the above exception, another exception occurred:
+
+audit_logs = defaultdict(<class 'list'>, {'ssp-rk-422b-cf8r7-master-0': ['audit-2026-02-12T01-27-42.775.log', 'audit-2026-02-12T02-...-2026-02-12T08-36-51.662.log', 'audit-2026-02-12T09-35-00.178.log', 'audit-2026-02-12T10-37-42.578.log', 'audit.log']})
+
+    @pytest.fixture()
+    def deprecated_apis_calls(audit_logs):
+        """Go over control plane nodes audit logs and look for calls using deprecated APIs"""
+        failed_api_calls = defaultdict(list)
+        for node, logs in audit_logs.items():
+>           for audit_log_entry_dict in get_node_audit_log_line_dict(
+                logs=logs, node=node, log_entry=DEPRECATED_API_LOG_ENTRY
+            ):
+
+tests/deprecated_api/test_deprecation_audit_logs.py:79: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+utilities/infra.py:868: in get_node_audit_log_line_dict
+    _, deprecated_api_lines = get_node_audit_log_entries(log=log, node=node, log_entry=log_entry)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/timeout_sampler/__init__.py:280: in wrapper
+    for sample in TimeoutSampler(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <timeout_sampler.TimeoutSampler object at 0x7fa60fa0d1d0>
+
+    def __iter__(self) -> Any:
+        """
+        Call `func` and yield the result, or raise an exception on timeout.
+    
+        Yields:
+            any: Return value from `func`
+    
+        Raises:
+            TimeoutExpiredError: if `func` takes longer than `wait_timeout` seconds to return a value
+        """
+        timeout_watch = TimeoutWatch(timeout=self.wait_timeout)
+        if self.print_log:
+            log = (
+                f"Waiting for {self.wait_timeout} seconds"
+                f" [{datetime.timedelta(seconds=self.wait_timeout)}], retry every"
+                f" {self.sleep} seconds."
+            )
+    
+            if self.print_func_log:
+                log += f" ({self._func_log})"
+    
+            LOGGER.info(log)
+    
+        last_exp = None
+        elapsed_time = None
+        while timeout_watch.remaining_time() > 0:
+            try:
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+                yield self.func(*self.func_args, **self.func_kwargs)
+                time.sleep(self.sleep)
+                elapsed_time = None
+    
+            except Exception as exp:
+                last_exp = exp
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+    
+                if not self._should_ignore_exception(exp=last_exp):
+>                   raise TimeoutExpiredError(
+                        self._get_exception_log(exp=last_exp), last_exp=last_exp, elapsed_time=elapsed_time
+                    )
+E                   timeout_sampler.TimeoutExpiredError: Timed Out: 30
+E                   Function: utilities.infra.get_node_audit_log_entries  Kwargs: {'log': 'audit-2026-02-12T05-39-24.822.log', 'node': 'ssp-rk-422b-cf8r7-master-0', 'log_entry': '"k8s.io/deprecated":"true"'}
+E                   Last exception: ForbiddenError: 403
+E                   Reason: Forbidden
+E                   HTTP response headers: HTTPHeaderDict({'Audit-Id': '09feedb3-a97b-41b6-8dd9-bc99550ee420', 'Cache-Control': 'no-cache, private', 'Content-Type': 'application/json', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'X-Kubernetes-Pf-Flowschema-Uid': '3f42b471-7d32-496e-be99-668d5a6c0032', 'X-Kubernetes-Pf-Prioritylevel-Uid': '7ee8859e-b009-4034-ad3e-cde56d6e1096', 'Date': 'Mon, 18 May 2026 11:45:48 GMT', 'Content-Length': '494'})
+E                   HTTP response body: b'{"kind":"Status","apiVersion":"v1","metadata":{},"status":"Failure","message":"virtualmachines.kubevirt.io \\"vm-cpu-hotplug-max-sockets-test-1779103389-0593734\\" is forbidden: User \\"unprivileged-user\\" cannot get resource \\"virtualmachines\\" in API group \\"kubevirt.io\\" in the namespace \\"node-hotplug-test-cpu-hotplug-max-sockets-limit\\"","reason":"Forbidden","details":{"name":"vm-cpu-hotplug-max-sockets-test-1779103389-0593734","group":"kubevirt.io","kind":"virtualmachines"},"code":403}\n'
+E                   Original traceback: 
+E                     File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/dynamic/client.py", line 55, in inner
+E                       resp = func(self, *args, **kwargs)
+E                   
+E                     File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/dynamic/client.py", line 277, in request
+E                       api_response = self.client.call_api(
+E                           path,
+E                       ...<11 lines>...
+E                           _request_timeout=params.get('_request_timeout')
+E                       )
+E                   
+E                     File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/api_client.py", line 348, in call_api
+E                       return self.__call_api(resource_path, method,
+E                              ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+E                                              path_params, query_params, header_params,
+E                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                       ...<2 lines>...
+E                                              _return_http_data_only, collection_formats,
+E                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                                              _preload_content, _request_timeout, _host)
+E                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   
+E                     File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/api_client.py", line 180, in __call_api
+E                       response_data = self.request(
+E                           method, url, query_params=query_params, headers=header_params,
+E                           post_params=post_params, body=body,
+E                           _preload_content=_preload_content,
+E                           _request_timeout=_request_timeout)
+E                   
+E                     File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/api_client.py", line 373, in request
+E                       return self.rest_client.GET(url,
+E                              ~~~~~~~~~~~~~~~~~~~~^^^^^
+E                                                   query_params=query_params,
+E                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                                                   _preload_content=_preload_content,
+E                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                                                   _request_timeout=_request_timeout,
+E                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                                                   headers=headers)
+E                                                   ^^^^^^^^^^^^^^^^
+E                   
+E                     File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/rest.py", line 244, in GET
+E                       return self.request("GET", url,
+E                              ~~~~~~~~~~~~^^^^^^^^^^^^
+E                                           headers=headers,
+E                                           ^^^^^^^^^^^^^^^^
+E                                           _preload_content=_preload_content,
+E                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                                           _request_timeout=_request_timeout,
+E                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                                           query_params=query_params)
+E                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   
+E                     File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/rest.py", line 238, in request
+E                       raise ApiException(http_resp=r)
+E                   .
+E                   Elapsed time: 30 [0:00:30]
+
+.venv/lib/python3.14/site-packages/timeout_sampler/__init__.py:171: TimeoutExpiredError
+---------------------------- Captured stderr setup -----------------------------
+2026-02-12T13:24:48.249574 ocp_utilities.infra [32mINFO[0m Verify all nodes are in a healthy condition.[0m
+
+------------------------------------------ test_deprecated_apis_in_audit_logs ------------------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-12T13:24:48.247950 conftest [32mINFO[0m Executing function fixture: term_handler_scope_function[0m
+2026-02-12T13:24:48.248295 conftest [32mINFO[0m Executing class fixture: term_handler_scope_class[0m
+2026-02-12T13:24:48.248560 conftest [32mINFO[0m Executing module fixture: term_handler_scope_module[0m
+2026-02-12T13:24:48.249038 conftest [32mINFO[0m Executing module fixture: cluster_sanity_scope_module[0m
+2026-02-12T13:24:48.249239 utilities.infra [32mINFO[0m Running cluster sanity. (To skip cluster sanity check pass --cluster-sanity-skip-check to pytest)[0m
+2026-02-12T13:24:48.249357 utilities.infra [32mINFO[0m Check storage classes sanity. (To skip storage class sanity check pass --cluster-sanity-skip-storage-check to pytest)[0m
+2026-02-12T13:24:48.249477 utilities.infra [32mINFO[0m Check nodes sanity. (To skip nodes sanity check pass --cluster-sanity-skip-nodes-check to pytest)[0m
+2026-02-12T13:24:49.911376 ocp_utilities.infra [32mINFO[0m Verify all nodes are schedulable.[0m
+2026-02-12T13:24:51.252873 timeout_sampler [32mINFO[0m Waiting for 300 seconds [0:05:00], retry every 5 seconds. (Function: utilities.infra.get_pods  Kwargs: {'dyn_client': <kubernetes.dynamic.client.DynamicClient object at 0x7fa616f29be0>, 'namespace': <ocp_resources.namespace.Namespace object at 0x7fa61592efd0>})[0m
+2026-02-12T13:25:10.848536 timeout_sampler [32mINFO[0m Elapsed time: 0.0003936290740966797 [0:00:00.000394][0m
+2026-02-12T13:25:10.849800 timeout_sampler [32mINFO[0m Waiting for 600 seconds [0:10:00], retry every 5 seconds. (Function: utilities.infra.<locals>.lambda: dynamic_client.namespace.resource_kind.resource_name.list.get)[0m
+2026-02-12T13:25:10.849490 utilities.infra [32mINFO[0m Waiting for resource to stabilize: resource_kind=HyperConverged conditions={'Available': 'True', 'Progressing': 'False', 'ReconcileComplete': 'True', 'Degraded': 'False', 'Upgradeable': 'True'} sleep=600 consecutive_checks_count=3[0m
+2026-02-12T13:25:22.250769 timeout_sampler [32mINFO[0m Elapsed time: 10.937405109405518 [0:00:10.937405][0m
+2026-02-12T13:25:22.251326 conftest [32mINFO[0m Executing function fixture: autouse_fixtures[0m
+2026-02-12T13:25:22.251848 conftest [32mINFO[0m Executing function fixture: audit_logs[0m
+2026-02-12T13:25:24.746684 timeout_sampler [32mINFO[0m Waiting for 30 seconds [0:00:30], retry every 10 seconds. (Function: utilities.infra.get_node_audit_log_entries  Kwargs: {'log': 'audit-2026-02-12T01-27-42.775.log', 'node': 'ssp-rk-422b-cf8r7-master-0', 'log_entry': '"k8s.io/deprecated":"true"'})[0m
+2026-02-12T13:25:24.746234 conftest [32mINFO[0m Executing function fixture: deprecated_apis_calls[0m
+2026-02-12T13:29:37.310013 timeout_sampler [32mINFO[0m Elapsed time: 0.00046443939208984375 [0:00:00.000464][0m
+2026-02-12T13:29:37.318228 timeout_sampler [32mINFO[0m Waiting for 30 seconds [0:00:30], retry every 10 seconds. (Function: utilities.infra.get_node_audit_log_entries  Kwargs: {'log': 'audit-2026-02-12T02-29-16.163.log', 'node': 'ssp-rk-422b-cf8r7-master-0', 'log_entry': '"k8s.io/deprecated":"true"'})[0m
+2026-02-12T13:35:11.326252 timeout_sampler [32mINFO[0m Elapsed time: 0.00020837783813476562 [0:00:00.000208][0m
+2026-02-12T13:35:11.346444 timeout_sampler [32mINFO[0m Waiting for 30 seconds [0:00:30], retry every 10 seconds. (Function: utilities.infra.get_node_audit_log_entries  Kwargs: {'log': 'audit-2026-02-12T03-34-07.855.log', 'node': 'ssp-rk-422b-cf8r7-master-0', 'log_entry': '"k8s.io/deprecated":"true"'})[0m
+2026-02-12T13:38:37.285802 timeout_sampler [32mINFO[0m Elapsed time: 0.0005128383636474609 [0:00:00.000513][0m
+2026-02-12T13:38:37.292702 timeout_sampler [32mINFO[0m Waiting for 30 seconds [0:00:30], retry every 10 seconds. (Function: utilities.infra.get_node_audit_log_entries  Kwargs: {'log': 'audit-2026-02-12T04-39-42.256.log', 'node': 'ssp-rk-422b-cf8r7-master-0', 'log_entry': '"k8s.io/deprecated":"true"'})[0m
+2026-02-12T13:42:46.230502 timeout_sampler [32mINFO[0m Elapsed time: 0.00026702880859375 [0:00:00.000267][0m
+2026-02-12T13:42:46.237026 timeout_sampler [32mINFO[0m Waiting for 30 seconds [0:00:30], retry every 10 seconds. (Function: utilities.infra.get_node_audit_log_entries  Kwargs: {'log': 'audit-2026-02-12T05-39-24.822.log', 'node': 'ssp-rk-422b-cf8r7-master-0', 'log_entry': '"k8s.io/deprecated":"true"'})[0m
+2026-02-12T13:45:48.476356 timeout_sampler [32mINFO[0m Elapsed time: 30 [0:00:30][0m
+_ 6 of 6 completed, 1 Pass, 2 Fail, 2 Skip, 0 XPass, 0 XFail, 1 Error, 0 ReRun _
+                                                                         [100%]== 2 failed, 1 passed, 2 skipped, 14 warnings, 1 error in 1851.72s (0:30:51) ===
+
+==================================== ERRORS ====================================
+_____________ ERROR at setup of test_deprecated_apis_in_audit_logs _____________
+
+func = <function NamespacedResource.instance.<locals>._instance at 0x7fa61438d4e0>
+exceptions_dict = {<class 'urllib3.exceptions.MaxRetryError'>: [], <class 'ConnectionAbortedError'>: [], <class 'ConnectionResetError'>:...eader changed', 'etcdserver: request timed out', 'Internal error occurred: failed calling webhook', 'rpc error:'], ...}
+timeout = 10, sleep_time = 1, kwargs = {}
+sampler = <timeout_sampler.TimeoutSampler object at 0x7fa60fa0dd10>
+
+    @staticmethod
+    def retry_cluster_exceptions(
+        func: Callable,
+        exceptions_dict: dict[type[Exception], list[str]] = DEFAULT_CLUSTER_RETRY_EXCEPTIONS,
+        timeout: int = TIMEOUT_10SEC,
+        sleep_time: int = 1,
+        **kwargs: Any,
+    ) -> Any:
+        try:
+            sampler = TimeoutSampler(
+                wait_timeout=timeout,
+                sleep=sleep_time,
+                func=func,
+                print_log=False,
+                exceptions_dict=exceptions_dict,
+                **kwargs,
+            )
+>           for sample in sampler:
+                          ^^^^^^^
+
+.venv/lib/python3.14/site-packages/ocp_resources/resource.py:1141: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <timeout_sampler.TimeoutSampler object at 0x7fa60fa0dd10>
+
+    def __iter__(self) -> Any:
+        """
+        Call `func` and yield the result, or raise an exception on timeout.
+    
+        Yields:
+            any: Return value from `func`
+    
+        Raises:
+            TimeoutExpiredError: if `func` takes longer than `wait_timeout` seconds to return a value
+        """
+        timeout_watch = TimeoutWatch(timeout=self.wait_timeout)
+        if self.print_log:
+            log = (
+                f"Waiting for {self.wait_timeout} seconds"
+                f" [{datetime.timedelta(seconds=self.wait_timeout)}], retry every"
+                f" {self.sleep} seconds."
+            )
+    
+            if self.print_func_log:
+                log += f" ({self._func_log})"
+    
+            LOGGER.info(log)
+    
+        last_exp = None
+        elapsed_time = None
+        while timeout_watch.remaining_time() > 0:
+            try:
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+                yield self.func(*self.func_args, **self.func_kwargs)
+                time.sleep(self.sleep)
+                elapsed_time = None
+    
+            except Exception as exp:
+                last_exp = exp
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+    
+                if not self._should_ignore_exception(exp=last_exp):
+>                   raise TimeoutExpiredError(
+                        self._get_exception_log(exp=last_exp), last_exp=last_exp, elapsed_time=elapsed_time
+                    )
+E                   timeout_sampler.TimeoutExpiredError: Timed Out: 10
+E                   Function: ocp_resources.resource._instance
+E                   Last exception: ForbiddenError: 403
+E                   Reason: Forbidden
+E                   HTTP response headers: HTTPHeaderDict({'Audit-Id': '09feedb3-a97b-41b6-8dd9-bc99550ee420', 'Cache-Control': 'no-cache, private', 'Content-Type': 'application/json', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'X-Kubernetes-Pf-Flowschema-Uid': '3f42b471-7d32-496e-be99-668d5a6c0032', 'X-Kubernetes-Pf-Prioritylevel-Uid': '7ee8859e-b009-4034-ad3e-cde56d6e1096', 'Date': 'Mon, 18 May 2026 11:45:48 GMT', 'Content-Length': '494'})
+E                   HTTP response body: b'{"kind":"Status","apiVersion":"v1","metadata":{},"status":"Failure","message":"virtualmachines.kubevirt.io \\"vm-cpu-hotplug-max-sockets-test-1779103389-0593734\\" is forbidden: User \\"unprivileged-user\\" cannot get resource \\"virtualmachines\\" in API group \\"kubevirt.io\\" in the namespace \\"node-hotplug-test-cpu-hotplug-max-sockets-limit\\"","reason":"Forbidden","details":{"name":"vm-cpu-hotplug-max-sockets-test-1779103389-0593734","group":"kubevirt.io","kind":"virtualmachines"},"code":403}\n'
+E                   Original traceback: 
+E                     File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/dynamic/client.py", line 55, in inner
+E                       resp = func(self, *args, **kwargs)
+E                   
+E                     File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/dynamic/client.py", line 277, in request
+E                       api_response = self.client.call_api(
+E                           path,
+E                       ...<11 lines>...
+E                           _request_timeout=params.get('_request_timeout')
+E                       )
+E                   
+E                     File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/api_client.py", line 348, in call_api
+E                       return self.__call_api(resource_path, method,
+E                              ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+E                                              path_params, query_params, header_params,
+E                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                       ...<2 lines>...
+E                                              _return_http_data_only, collection_formats,
+E                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                                              _preload_content, _request_timeout, _host)
+E                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   
+E                     File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/api_client.py", line 180, in __call_api
+E                       response_data = self.request(
+E                           method, url, query_params=query_params, headers=header_params,
+E                           post_params=post_params, body=body,
+E                           _preload_content=_preload_content,
+E                           _request_timeout=_request_timeout)
+E                   
+E                     File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/api_client.py", line 373, in request
+E                       return self.rest_client.GET(url,
+E                              ~~~~~~~~~~~~~~~~~~~~^^^^^
+E                                                   query_params=query_params,
+E                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                                                   _preload_content=_preload_content,
+E                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                                                   _request_timeout=_request_timeout,
+E                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                                                   headers=headers)
+E                                                   ^^^^^^^^^^^^^^^^
+E                   
+E                     File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/rest.py", line 244, in GET
+E                       return self.request("GET", url,
+E                              ~~~~~~~~~~~~^^^^^^^^^^^^
+E                                           headers=headers,
+E                                           ^^^^^^^^^^^^^^^^
+E                                           _preload_content=_preload_content,
+E                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                                           _request_timeout=_request_timeout,
+E                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                                           query_params=query_params)
+E                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   
+E                     File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/rest.py", line 238, in request
+E                       raise ApiException(http_resp=r)
+E                   .
+E                   Elapsed time: 0.7645597457885742 [0:00:00.764560]
+
+.venv/lib/python3.14/site-packages/timeout_sampler/__init__.py:171: TimeoutExpiredError
+
+The above exception was the direct cause of the following exception:
+
+self = <timeout_sampler.TimeoutSampler object at 0x7fa60fa0d1d0>
+
+    def __iter__(self) -> Any:
+        """
+        Call `func` and yield the result, or raise an exception on timeout.
+    
+        Yields:
+            any: Return value from `func`
+    
+        Raises:
+            TimeoutExpiredError: if `func` takes longer than `wait_timeout` seconds to return a value
+        """
+        timeout_watch = TimeoutWatch(timeout=self.wait_timeout)
+        if self.print_log:
+            log = (
+                f"Waiting for {self.wait_timeout} seconds"
+                f" [{datetime.timedelta(seconds=self.wait_timeout)}], retry every"
+                f" {self.sleep} seconds."
+            )
+    
+            if self.print_func_log:
+                log += f" ({self._func_log})"
+    
+            LOGGER.info(log)
+    
+        last_exp = None
+        elapsed_time = None
+        while timeout_watch.remaining_time() > 0:
+            try:
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+>               yield self.func(*self.func_args, **self.func_kwargs)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.venv/lib/python3.14/site-packages/timeout_sampler/__init__.py:162: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+utilities/infra.py:853: in get_node_audit_log_entries
+    lines = subprocess.getoutput(
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/subprocess.py:697: in getoutput
+    return getstatusoutput(cmd, encoding=encoding, errors=errors)[1]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/subprocess.py:677: in getstatusoutput
+    data = check_output(cmd, shell=True, text=True, stderr=STDOUT,
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/subprocess.py:472: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/subprocess.py:556: in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/subprocess.py:1207: in communicate
+    stdout = self.stdout.read()
+             ^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/ocp_resources/resource.py:764: in _sigint_handler
+    self.__exit__()
+.venv/lib/python3.14/site-packages/ocp_resources/resource.py:760: in __exit__
+    if not self.clean_up():
+           ^^^^^^^^^^^^^^^
+utilities/virt.py:445: in clean_up
+    if self.exists and self.ready:
+       ^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/ocp_resources/resource.py:951: in exists
+    return self.instance
+           ^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/ocp_resources/resource.py:1670: in instance
+    return self.retry_cluster_exceptions(func=_instance)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/ocp_resources/resource.py:1146: in retry_cluster_exceptions
+    raise exp.last_exp from exp
+.venv/lib/python3.14/site-packages/timeout_sampler/__init__.py:162: in __iter__
+    yield self.func(*self.func_args, **self.func_kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/ocp_resources/resource.py:1668: in _instance
+    return self.api.get(name=self.name, namespace=self.namespace)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/kubernetes/dynamic/client.py:112: in get
+    return self.request('get', path, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <kubernetes.dynamic.client.DynamicClient object at 0x7fa61579ad50>
+args = ('get', '/apis/kubevirt.io/v1/namespaces/node-hotplug-test-cpu-hotplug-max-sockets-limit/virtualmachines/vm-cpu-hotplug-max-sockets-test-1779103389-0593734')
+kwargs = {}, serialize_response = True
+serializer = <class 'kubernetes.dynamic.resource.ResourceInstance'>
+
+    def inner(self, *args, **kwargs):
+        serialize_response = kwargs.pop('serialize', True)
+        serializer = kwargs.pop('serializer', ResourceInstance)
+        try:
+            resp = func(self, *args, **kwargs)
+        except ApiException as e:
+>           raise api_exception(e)
+E           kubernetes.dynamic.exceptions.ForbiddenError: 403
+E           Reason: Forbidden
+E           HTTP response headers: HTTPHeaderDict({'Audit-Id': '09feedb3-a97b-41b6-8dd9-bc99550ee420', 'Cache-Control': 'no-cache, private', 'Content-Type': 'application/json', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'X-Kubernetes-Pf-Flowschema-Uid': '3f42b471-7d32-496e-be99-668d5a6c0032', 'X-Kubernetes-Pf-Prioritylevel-Uid': '7ee8859e-b009-4034-ad3e-cde56d6e1096', 'Date': 'Mon, 18 May 2026 11:45:48 GMT', 'Content-Length': '494'})
+E           HTTP response body: b'{"kind":"Status","apiVersion":"v1","metadata":{},"status":"Failure","message":"virtualmachines.kubevirt.io \\"vm-cpu-hotplug-max-sockets-test-1779103389-0593734\\" is forbidden: User \\"unprivileged-user\\" cannot get resource \\"virtualmachines\\" in API group \\"kubevirt.io\\" in the namespace \\"node-hotplug-test-cpu-hotplug-max-sockets-limit\\"","reason":"Forbidden","details":{"name":"vm-cpu-hotplug-max-sockets-test-1779103389-0593734","group":"kubevirt.io","kind":"virtualmachines"},"code":403}\n'
+E           Original traceback: 
+E             File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/dynamic/client.py", line 55, in inner
+E               resp = func(self, *args, **kwargs)
+E           
+E             File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/dynamic/client.py", line 277, in request
+E               api_response = self.client.call_api(
+E                   path,
+E               ...<11 lines>...
+E                   _request_timeout=params.get('_request_timeout')
+E               )
+E           
+E             File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/api_client.py", line 348, in call_api
+E               return self.__call_api(resource_path, method,
+E                      ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+E                                      path_params, query_params, header_params,
+E                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               ...<2 lines>...
+E                                      _return_http_data_only, collection_formats,
+E                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                                      _preload_content, _request_timeout, _host)
+E                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           
+E             File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/api_client.py", line 180, in __call_api
+E               response_data = self.request(
+E                   method, url, query_params=query_params, headers=header_params,
+E                   post_params=post_params, body=body,
+E                   _preload_content=_preload_content,
+E                   _request_timeout=_request_timeout)
+E           
+E             File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/api_client.py", line 373, in request
+E               return self.rest_client.GET(url,
+E                      ~~~~~~~~~~~~~~~~~~~~^^^^^
+E                                           query_params=query_params,
+E                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                                           _preload_content=_preload_content,
+E                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                                           _request_timeout=_request_timeout,
+E                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                                           headers=headers)
+E                                           ^^^^^^^^^^^^^^^^
+E           
+E             File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/rest.py", line 244, in GET
+E               return self.request("GET", url,
+E                      ~~~~~~~~~~~~^^^^^^^^^^^^
+E                                   headers=headers,
+E                                   ^^^^^^^^^^^^^^^^
+E                                   _preload_content=_preload_content,
+E                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                                   _request_timeout=_request_timeout,
+E                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                                   query_params=query_params)
+E                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           
+E             File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/rest.py", line 238, in request
+E               raise ApiException(http_resp=r)
+
+.venv/lib/python3.14/site-packages/kubernetes/dynamic/client.py:57: ForbiddenError
+
+During handling of the above exception, another exception occurred:
+
+audit_logs = defaultdict(<class 'list'>, {'ssp-rk-422b-cf8r7-master-0': ['audit-2026-02-12T01-27-42.775.log', 'audit-2026-02-12T02-...-2026-02-12T08-36-51.662.log', 'audit-2026-02-12T09-35-00.178.log', 'audit-2026-02-12T10-37-42.578.log', 'audit.log']})
+
+    @pytest.fixture()
+    def deprecated_apis_calls(audit_logs):
+        """Go over control plane nodes audit logs and look for calls using deprecated APIs"""
+        failed_api_calls = defaultdict(list)
+        for node, logs in audit_logs.items():
+>           for audit_log_entry_dict in get_node_audit_log_line_dict(
+                logs=logs, node=node, log_entry=DEPRECATED_API_LOG_ENTRY
+            ):
+
+tests/deprecated_api/test_deprecation_audit_logs.py:79: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+utilities/infra.py:868: in get_node_audit_log_line_dict
+    _, deprecated_api_lines = get_node_audit_log_entries(log=log, node=node, log_entry=log_entry)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/timeout_sampler/__init__.py:280: in wrapper
+    for sample in TimeoutSampler(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <timeout_sampler.TimeoutSampler object at 0x7fa60fa0d1d0>
+
+    def __iter__(self) -> Any:
+        """
+        Call `func` and yield the result, or raise an exception on timeout.
+    
+        Yields:
+            any: Return value from `func`
+    
+        Raises:
+            TimeoutExpiredError: if `func` takes longer than `wait_timeout` seconds to return a value
+        """
+        timeout_watch = TimeoutWatch(timeout=self.wait_timeout)
+        if self.print_log:
+            log = (
+                f"Waiting for {self.wait_timeout} seconds"
+                f" [{datetime.timedelta(seconds=self.wait_timeout)}], retry every"
+                f" {self.sleep} seconds."
+            )
+    
+            if self.print_func_log:
+                log += f" ({self._func_log})"
+    
+            LOGGER.info(log)
+    
+        last_exp = None
+        elapsed_time = None
+        while timeout_watch.remaining_time() > 0:
+            try:
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+                yield self.func(*self.func_args, **self.func_kwargs)
+                time.sleep(self.sleep)
+                elapsed_time = None
+    
+            except Exception as exp:
+                last_exp = exp
+                elapsed_time = self.wait_timeout - timeout_watch.remaining_time()
+    
+                if not self._should_ignore_exception(exp=last_exp):
+>                   raise TimeoutExpiredError(
+                        self._get_exception_log(exp=last_exp), last_exp=last_exp, elapsed_time=elapsed_time
+                    )
+E                   timeout_sampler.TimeoutExpiredError: Timed Out: 30
+E                   Function: utilities.infra.get_node_audit_log_entries  Kwargs: {'log': 'audit-2026-02-12T05-39-24.822.log', 'node': 'ssp-rk-422b-cf8r7-master-0', 'log_entry': '"k8s.io/deprecated":"true"'}
+E                   Last exception: ForbiddenError: 403
+E                   Reason: Forbidden
+E                   HTTP response headers: HTTPHeaderDict({'Audit-Id': '09feedb3-a97b-41b6-8dd9-bc99550ee420', 'Cache-Control': 'no-cache, private', 'Content-Type': 'application/json', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload', 'X-Content-Type-Options': 'nosniff', 'X-Kubernetes-Pf-Flowschema-Uid': '3f42b471-7d32-496e-be99-668d5a6c0032', 'X-Kubernetes-Pf-Prioritylevel-Uid': '7ee8859e-b009-4034-ad3e-cde56d6e1096', 'Date': 'Mon, 18 May 2026 11:45:48 GMT', 'Content-Length': '494'})
+E                   HTTP response body: b'{"kind":"Status","apiVersion":"v1","metadata":{},"status":"Failure","message":"virtualmachines.kubevirt.io \\"vm-cpu-hotplug-max-sockets-test-1779103389-0593734\\" is forbidden: User \\"unprivileged-user\\" cannot get resource \\"virtualmachines\\" in API group \\"kubevirt.io\\" in the namespace \\"node-hotplug-test-cpu-hotplug-max-sockets-limit\\"","reason":"Forbidden","details":{"name":"vm-cpu-hotplug-max-sockets-test-1779103389-0593734","group":"kubevirt.io","kind":"virtualmachines"},"code":403}\n'
+E                   Original traceback: 
+E                     File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/dynamic/client.py", line 55, in inner
+E                       resp = func(self, *args, **kwargs)
+E                   
+E                     File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/dynamic/client.py", line 277, in request
+E                       api_response = self.client.call_api(
+E                           path,
+E                       ...<11 lines>...
+E                           _request_timeout=params.get('_request_timeout')
+E                       )
+E                   
+E                     File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/api_client.py", line 348, in call_api
+E                       return self.__call_api(resource_path, method,
+E                              ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+E                                              path_params, query_params, header_params,
+E                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                       ...<2 lines>...
+E                                              _return_http_data_only, collection_formats,
+E                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                                              _preload_content, _request_timeout, _host)
+E                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   
+E                     File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/api_client.py", line 180, in __call_api
+E                       response_data = self.request(
+E                           method, url, query_params=query_params, headers=header_params,
+E                           post_params=post_params, body=body,
+E                           _preload_content=_preload_content,
+E                           _request_timeout=_request_timeout)
+E                   
+E                     File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/api_client.py", line 373, in request
+E                       return self.rest_client.GET(url,
+E                              ~~~~~~~~~~~~~~~~~~~~^^^^^
+E                                                   query_params=query_params,
+E                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                                                   _preload_content=_preload_content,
+E                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                                                   _request_timeout=_request_timeout,
+E                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                                                   headers=headers)
+E                                                   ^^^^^^^^^^^^^^^^
+E                   
+E                     File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/rest.py", line 244, in GET
+E                       return self.request("GET", url,
+E                              ~~~~~~~~~~~~^^^^^^^^^^^^
+E                                           headers=headers,
+E                                           ^^^^^^^^^^^^^^^^
+E                                           _preload_content=_preload_content,
+E                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                                           _request_timeout=_request_timeout,
+E                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                                           query_params=query_params)
+E                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   
+E                     File "/home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/rest.py", line 238, in request
+E                       raise ApiException(http_resp=r)
+E                   .
+E                   Elapsed time: 30 [0:00:30]
+
+.venv/lib/python3.14/site-packages/timeout_sampler/__init__.py:171: TimeoutExpiredError
+---------------------------- Captured stderr setup -----------------------------
+2026-02-12T13:24:48.249574 ocp_utilities.infra [32mINFO[0m Verify all nodes are in a healthy condition.[0m
+
+------------------------------------------ test_deprecated_apis_in_audit_logs ------------------------------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-12T13:24:48.247950 conftest [32mINFO[0m Executing function fixture: term_handler_scope_function[0m
+2026-02-12T13:24:48.248295 conftest [32mINFO[0m Executing class fixture: term_handler_scope_class[0m
+2026-02-12T13:24:48.248560 conftest [32mINFO[0m Executing module fixture: term_handler_scope_module[0m
+2026-02-12T13:24:48.249038 conftest [32mINFO[0m Executing module fixture: cluster_sanity_scope_module[0m
+2026-02-12T13:24:48.249239 utilities.infra [32mINFO[0m Running cluster sanity. (To skip cluster sanity check pass --cluster-sanity-skip-check to pytest)[0m
+2026-02-12T13:24:48.249357 utilities.infra [32mINFO[0m Check storage classes sanity. (To skip storage class sanity check pass --cluster-sanity-skip-storage-check to pytest)[0m
+2026-02-12T13:24:48.249477 utilities.infra [32mINFO[0m Check nodes sanity. (To skip nodes sanity check pass --cluster-sanity-skip-nodes-check to pytest)[0m
+2026-02-12T13:24:49.911376 ocp_utilities.infra [32mINFO[0m Verify all nodes are schedulable.[0m
+2026-02-12T13:24:51.252873 timeout_sampler [32mINFO[0m Waiting for 300 seconds [0:05:00], retry every 5 seconds. (Function: utilities.infra.get_pods  Kwargs: {'dyn_client': <kubernetes.dynamic.client.DynamicClient object at 0x7fa616f29be0>, 'namespace': <ocp_resources.namespace.Namespace object at 0x7fa61592efd0>})[0m
+2026-02-12T13:25:10.848536 timeout_sampler [32mINFO[0m Elapsed time: 0.0003936290740966797 [0:00:00.000394][0m
+2026-02-12T13:25:10.849800 timeout_sampler [32mINFO[0m Waiting for 600 seconds [0:10:00], retry every 5 seconds. (Function: utilities.infra.<locals>.lambda: dynamic_client.namespace.resource_kind.resource_name.list.get)[0m
+2026-02-12T13:25:10.849490 utilities.infra [32mINFO[0m Waiting for resource to stabilize: resource_kind=HyperConverged conditions={'Available': 'True', 'Progressing': 'False', 'ReconcileComplete': 'True', 'Degraded': 'False', 'Upgradeable': 'True'} sleep=600 consecutive_checks_count=3[0m
+2026-02-12T13:25:22.250769 timeout_sampler [32mINFO[0m Elapsed time: 10.937405109405518 [0:00:10.937405][0m
+2026-02-12T13:25:22.251326 conftest [32mINFO[0m Executing function fixture: autouse_fixtures[0m
+2026-02-12T13:25:22.251848 conftest [32mINFO[0m Executing function fixture: audit_logs[0m
+2026-02-12T13:25:24.746684 timeout_sampler [32mINFO[0m Waiting for 30 seconds [0:00:30], retry every 10 seconds. (Function: utilities.infra.get_node_audit_log_entries  Kwargs: {'log': 'audit-2026-02-12T01-27-42.775.log', 'node': 'ssp-rk-422b-cf8r7-master-0', 'log_entry': '"k8s.io/deprecated":"true"'})[0m
+2026-02-12T13:25:24.746234 conftest [32mINFO[0m Executing function fixture: deprecated_apis_calls[0m
+2026-02-12T13:29:37.310013 timeout_sampler [32mINFO[0m Elapsed time: 0.00046443939208984375 [0:00:00.000464][0m
+2026-02-12T13:29:37.318228 timeout_sampler [32mINFO[0m Waiting for 30 seconds [0:00:30], retry every 10 seconds. (Function: utilities.infra.get_node_audit_log_entries  Kwargs: {'log': 'audit-2026-02-12T02-29-16.163.log', 'node': 'ssp-rk-422b-cf8r7-master-0', 'log_entry': '"k8s.io/deprecated":"true"'})[0m
+2026-02-12T13:35:11.326252 timeout_sampler [32mINFO[0m Elapsed time: 0.00020837783813476562 [0:00:00.000208][0m
+2026-02-12T13:35:11.346444 timeout_sampler [32mINFO[0m Waiting for 30 seconds [0:00:30], retry every 10 seconds. (Function: utilities.infra.get_node_audit_log_entries  Kwargs: {'log': 'audit-2026-02-12T03-34-07.855.log', 'node': 'ssp-rk-422b-cf8r7-master-0', 'log_entry': '"k8s.io/deprecated":"true"'})[0m
+2026-02-12T13:38:37.285802 timeout_sampler [32mINFO[0m Elapsed time: 0.0005128383636474609 [0:00:00.000513][0m
+2026-02-12T13:38:37.292702 timeout_sampler [32mINFO[0m Waiting for 30 seconds [0:00:30], retry every 10 seconds. (Function: utilities.infra.get_node_audit_log_entries  Kwargs: {'log': 'audit-2026-02-12T04-39-42.256.log', 'node': 'ssp-rk-422b-cf8r7-master-0', 'log_entry': '"k8s.io/deprecated":"true"'})[0m
+2026-02-12T13:42:46.230502 timeout_sampler [32mINFO[0m Elapsed time: 0.00026702880859375 [0:00:00.000267][0m
+2026-02-12T13:42:46.237026 timeout_sampler [32mINFO[0m Waiting for 30 seconds [0:00:30], retry every 10 seconds. (Function: utilities.infra.get_node_audit_log_entries  Kwargs: {'log': 'audit-2026-02-12T05-39-24.822.log', 'node': 'ssp-rk-422b-cf8r7-master-0', 'log_entry': '"k8s.io/deprecated":"true"'})[0m
+2026-02-12T13:45:48.476356 timeout_sampler [32mINFO[0m Elapsed time: 30 [0:00:30][0m
+=================================== FAILURES ===================================
+_ TestCPUHotplugMaxSocketsLimit.test_hotplug_cpu_within_limit[golden_image_data_source_for_test_scope_class0] _
+
+self = <tests.virt.node.hotplug.test_cpu_hotplug_max_sockets_limit.TestCPUHotplugMaxSocketsLimit object at 0x7fa615771e50>
+vm_with_cpu_hotplug_enabled = <utilities.virt.VirtualMachineForTestsFromTemplate object at 0x7fa615837e00>
+vm_initial_cpu_count = 4
+
+    @pytest.mark.polarion("CNV-61263")
+    @pytest.mark.dependency(name="test_hotplug_within_limit")
+    def test_hotplug_cpu_within_limit(self, vm_with_cpu_hotplug_enabled, vm_initial_cpu_count):
+        """
+        Verify CPU hotplug succeeds when within MaxSockets limit.
+    
+        Preconditions:
+            - VM running with initial CPU count (4 sockets)
+            - MaxSockets limit set to 8
+    
+        Steps:
+            1. Start VM with 4 CPUs
+            2. Hotplug CPUs to 6 sockets (within limit)
+            3. Verify guest OS sees 6 CPUs
+    
+        Expected Result:
+            - Hotplug operation succeeds
+            - Guest OS CPU count increases to 6
+        """
+        LOGGER.info(f"Testing CPU hotplug within limit for VM {vm_with_cpu_hotplug_enabled.name}")
+    
+        target_sockets = SIX_CPU_SOCKETS
+        LOGGER.info(f"Hotplugging CPUs from {FOUR_CPU_SOCKETS} to {target_sockets} sockets")
+    
+        hotplug_spec_vm(vm=vm_with_cpu_hotplug_enabled, sockets=target_sockets)
+    
+        LOGGER.info("Verifying guest OS sees hotplugged CPUs")
+>       assert_guest_os_cpu_count(vm=vm_with_cpu_hotplug_enabled, spec_cpu_amount=target_sockets)
+
+tests/virt/node/hotplug/test_cpu_hotplug_max_sockets_limit.py:153: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+vm = <utilities.virt.VirtualMachineForTestsFromTemplate object at 0x7fa615837e00>
+spec_cpu_amount = 6
+
+    def assert_guest_os_cpu_count(vm, spec_cpu_amount):
+        guest_os_cpu_amount = get_os_cpu_count(vm=vm)
+>       assert guest_os_cpu_amount == spec_cpu_amount, (
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            f"Wrong amount of CPUs! Guest: {guest_os_cpu_amount}; VMI: {spec_cpu_amount}"
+        )
+E       AssertionError: Wrong amount of CPUs! Guest: 4; VMI: 6
+
+tests/utils.py:218: AssertionError
+----------------------------- Captured stderr call -----------------------------
+2026-02-12T13:24:19.860082 ocp_resources.resource [32mINFO[0m ResourceEdits: Updating data for resource VirtualMachine vm-cpu-hotplug-max-sockets-test-1779103389-0593734[0m
+2026-02-12T13:24:19.861012 ocp_resources VirtualMachine [32mINFO[0m Update VirtualMachine vm-cpu-hotplug-max-sockets-test-1779103389-0593734:
+{'spec': {'template': {'spec': {'domain': {'cpu': {'sockets': 6}}}}}, 'metadata': {'name': 'vm-cpu-hotplug-max-sockets-test-1779103389-0593734'}}[0m
+
+-------------------- test_hotplug_cpu_within_limit[golden_image_data_source_for_test_scope_class0] --------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-12T13:24:19.857336 conftest [32mINFO[0m Executing function fixture: term_handler_scope_function[0m
+2026-02-12T13:24:19.857925 conftest [32mINFO[0m Executing function fixture: autouse_fixtures[0m
+--------------------------------------------------------- CALL ---------------------------------------------------------
+2026-02-12T13:24:19.859697 tests.virt.node.hotplug.test_cpu_hotplug_max_sockets_limit [32mINFO[0m Testing CPU hotplug within limit for VM vm-cpu-hotplug-max-sockets-test-1779103389-0593734[0m
+2026-02-12T13:24:19.859880 tests.virt.node.hotplug.test_cpu_hotplug_max_sockets_limit [32mINFO[0m Hotplugging CPUs from 4 to 6 sockets[0m
+2026-02-12T13:24:20.058905 tests.virt.node.hotplug.test_cpu_hotplug_max_sockets_limit [32mINFO[0m Verifying guest OS sees hotplugged CPUs[0m
+2026-02-12T13:24:20.059275 utilities.virt [32mINFO[0m SSH command: ssh -o 'ProxyCommand=virtctl port-forward --stdio=true vm/vm-cpu-hotplug-max-sockets-test-1779103389-0593734/node-hotplug-test-cpu-hotplug-max-sockets-limit 22' cloud-user@vm-cpu-hotplug-max-sockets-test-1779103389-0593734[0m
+2026-02-12T13:24:20.854202 paramiko.transport [32mINFO[0m Connected (version 2.0, client OpenSSH_8.7)[0m
+2026-02-12T13:24:21.488373 paramiko.transport [32mINFO[0m Authentication (publickey) successful![0m
+_ TestCPUHotplugMaxSocketsLimit.test_vm_behavior_at_maximum_cpu[golden_image_data_source_for_test_scope_class0] _
+
+self = <tests.virt.node.hotplug.test_cpu_hotplug_max_sockets_limit.TestCPUHotplugMaxSocketsLimit object at 0x7fa61575a7b0>
+vm_with_cpu_hotplug_enabled = <utilities.virt.VirtualMachineForTestsFromTemplate object at 0x7fa615837e00>
+
+    @pytest.mark.polarion("CNV-61263")
+    def test_vm_behavior_at_maximum_cpu(self, vm_with_cpu_hotplug_enabled):
+        """
+        Verify VM behaves correctly when operating at maximum CPU limit.
+    
+        Preconditions:
+            - VM running at max vCPUs (8 sockets)
+    
+        Steps:
+            1. Verify VM is running at max CPU limit
+            2. Check VM status and conditions
+            3. Verify VM remains stable and responsive
+    
+        Expected Result:
+            - VM runs normally at maximum CPU
+            - No error conditions present
+            - VM is responsive via SSH
+        """
+        LOGGER.info(f"Verifying VM behavior at maximum CPU for {vm_with_cpu_hotplug_enabled.name}")
+    
+>       assert_guest_os_cpu_count(
+            vm=vm_with_cpu_hotplug_enabled, spec_cpu_amount=EIGHT_CPU_SOCKETS
+        )
+
+tests/virt/node/hotplug/test_cpu_hotplug_max_sockets_limit.py:237: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+vm = <utilities.virt.VirtualMachineForTestsFromTemplate object at 0x7fa615837e00>
+spec_cpu_amount = 8
+
+    def assert_guest_os_cpu_count(vm, spec_cpu_amount):
+        guest_os_cpu_amount = get_os_cpu_count(vm=vm)
+>       assert guest_os_cpu_amount == spec_cpu_amount, (
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            f"Wrong amount of CPUs! Guest: {guest_os_cpu_amount}; VMI: {spec_cpu_amount}"
+        )
+E       AssertionError: Wrong amount of CPUs! Guest: 4; VMI: 8
+
+tests/utils.py:218: AssertionError
+---------------------------- Captured stderr setup -----------------------------
+2026-02-12T13:24:25.818764 pytest_dependency [32mINFO[0m skip test_hotplug_cpu_exceeds_max_sockets_limit[golden_image_data_source_for_test_scope_class0] because it depends on test_hotplug_within_limit[0m
+----------------------------- Captured stderr call -----------------------------
+
+TEST: TestCPUHotplugMaxSocketsLimit.test_hotplug_cpu_exceeds_max_sockets_limit[golden_image_data_source_for_test_scope_class0] STATUS: [1;33mSKIPPED[0m
+------------------------------------------------------- TEARDOWN -------------------------------------------------------
+
+------------------- test_vm_behavior_at_maximum_cpu[golden_image_data_source_for_test_scope_class0] -------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-02-12T13:24:25.821857 conftest [32mINFO[0m Executing function fixture: term_handler_scope_function[0m
+2026-02-12T13:24:25.822280 conftest [32mINFO[0m Executing function fixture: autouse_fixtures[0m
+--------------------------------------------------------- CALL ---------------------------------------------------------
+2026-02-12T13:24:25.823177 tests.virt.node.hotplug.test_cpu_hotplug_max_sockets_limit [32mINFO[0m Verifying VM behavior at maximum CPU for vm-cpu-hotplug-max-sockets-test-1779103389-0593734[0m
+2026-02-12T13:24:25.823330 utilities.virt [32mINFO[0m SSH command: ssh -o 'ProxyCommand=virtctl port-forward --stdio=true vm/vm-cpu-hotplug-max-sockets-test-1779103389-0593734/node-hotplug-test-cpu-hotplug-max-sockets-limit 22' cloud-user@vm-cpu-hotplug-max-sockets-test-1779103389-0593734[0m
+2026-02-12T13:24:26.504798 paramiko.transport [32mINFO[0m Connected (version 2.0, client OpenSSH_8.7)[0m
+2026-02-12T13:24:27.148505 paramiko.transport [32mINFO[0m Authentication (publickey) successful![0m
+--------------------------- Captured stderr teardown ---------------------------
+
+TEST: TestCPUHotplugMaxSocketsLimit.test_vm_behavior_at_maximum_cpu[golden_image_data_source_for_test_scope_class0] STATUS: [0;31mFAILED[0m
+self = <tests.virt.node.hotplug.test_cpu_hotplug_max_sockets_limit.TestCPUHotplugMaxSocketsLimit object at 0x7fa61575a7b0>
+vm_with_cpu_hotplug_enabled = <utilities.virt.VirtualMachineForTestsFromTemplate object at 0x7fa615837e00>
+
+    @pytest.mark.polarion("CNV-61263")
+    def test_vm_behavior_at_maximum_cpu(self, vm_with_cpu_hotplug_enabled):
+        """
+        Verify VM behaves correctly when operating at maximum CPU limit.
+    
+        Preconditions:
+            - VM running at max vCPUs (8 sockets)
+    
+        Steps:
+            1. Verify VM is running at max CPU limit
+            2. Check VM status and conditions
+            3. Verify VM remains stable and responsive
+    
+        Expected Result:
+            - VM runs normally at maximum CPU
+            - No error conditions present
+            - VM is responsive via SSH
+        """
+        LOGGER.info(f"Verifying VM behavior at maximum CPU for {vm_with_cpu_hotplug_enabled.name}")
+    
+>       assert_guest_os_cpu_count(
+            vm=vm_with_cpu_hotplug_enabled, spec_cpu_amount=EIGHT_CPU_SOCKETS
+        )
+
+tests/virt/node/hotplug/test_cpu_hotplug_max_sockets_limit.py:237: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+vm = <utilities.virt.VirtualMachineForTestsFromTemplate object at 0x7fa615837e00>
+spec_cpu_amount = 8
+
+    def assert_guest_os_cpu_count(vm, spec_cpu_amount):
+        guest_os_cpu_amount = get_os_cpu_count(vm=vm)
+>       assert guest_os_cpu_amount == spec_cpu_amount, (
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            f"Wrong amount of CPUs! Guest: {guest_os_cpu_amount}; VMI: {spec_cpu_amount}"
+        )
+E       AssertionError: Wrong amount of CPUs! Guest: 4; VMI: 8
+
+tests/utils.py:218: AssertionError
+------------------------------------------------------- TEARDOWN -------------------------------------------------------
+2026-02-12T13:24:31.933830 ocp_resources VirtualMachine [32mINFO[0m Wait for VirtualMachine vm-cpu-hotplug-max-sockets-test-1779103389-0593734 status to be None[0m
+2026-02-12T13:24:31.934218 timeout_sampler [32mINFO[0m Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: kubernetes.dynamic.client.get  Kwargs: {'field_selector': 'metadata.name==vm-cpu-hotplug-max-sockets-test-1779103389-0593734', 'namespace': 'node-hotplug-test-cpu-hotplug-max-sockets-limit'})[0m
+2026-02-12T13:24:32.345078 timeout_sampler [32mINFO[0m Elapsed time: 0.00021767616271972656 [0:00:00.000218][0m
+2026-02-12T13:24:32.345673 ocp_resources.resource [32mINFO[0m kind: VirtualMachineInstance api version: kubevirt.io/v1[0m
+2026-02-12T13:24:32.345860 ocp_resources VirtualMachineInstance [32mINFO[0m Wait until VirtualMachineInstance vm-cpu-hotplug-max-sockets-test-1779103389-0593734 is deleted[0m
+2026-02-12T13:24:32.346026 timeout_sampler [32mINFO[0m Waiting for 480 seconds [0:08:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_deleted.lambda: self.exists)[0m
+2026-02-12T13:24:37.291368 timeout_sampler [32mINFO[0m Elapsed time: 4.787065267562866 [0:00:04.787065][0m
+2026-02-12T13:24:37.291646 ocp_resources VirtualMachine [32mINFO[0m Delete VirtualMachine vm-cpu-hotplug-max-sockets-test-1779103389-0593734[0m
+2026-02-12T13:24:37.605595 ocp_resources VirtualMachine [32mINFO[0m Deleting {'apiVersion': 'kubevirt.io/v1', 'kind': 'VirtualMachine', 'metadata': {'annotations': {'kubemacpool.io/transaction-timestamp': '2026-02-12T11:24:31.819261979Z', 'kubevirt.io/latest-observed-api-version': 'v1', 'kubevirt.io/storage-observed-api-version': 'v1', 'vm.kubevirt.io/validations': '[\n  {\n    "name": "minimal-required-memory",\n    "path": "jsonpath::.spec.domain.memory.guest",\n    "rule": "integer",\n    "message": "This VM requires more memory.",\n    "min": 1610612736\n  }\n]\n'}, 'creationTimestamp': '2026-02-12T11:23:13Z', 'finalizers': ['kubevirt.io/virtualMachineControllerFinalize'], 'generation': 4, 'labels': {'app': 'vm-cpu-hotplug-max-sockets-test-1779103389-0593734', 'kubevirt.io/dynamic-credentials-support': 'true', 'vm.kubevirt.io/template': 'rhel9-server-tiny', 'vm.kubevirt.io/template.namespace': 'openshift', 'vm.kubevirt.io/template.revision': '1', 'vm.kubevirt.io/template.version': 'v0.34.1'}, 'managedFields': [{'apiVersion': 'kubevirt.io/v1', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:annotations': {'f:kubevirt.io/latest-observed-api-version': {}, 'f:kubevirt.io/storage-observed-api-version': {}}, 'f:finalizers': {'.': {}, 'v:"kubevirt.io/virtualMachineControllerFinalize"': {}}}}, 'manager': 'virt-controller', 'operation': 'Update', 'time': '2026-02-12T11:23:13Z'}, {'apiVersion': 'kubevirt.io/v1', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:annotations': {'.': {}, 'f:vm.kubevirt.io/validations': {}}, 'f:labels': {'.': {}, 'f:app': {}, 'f:kubevirt.io/dynamic-credentials-support': {}, 'f:vm.kubevirt.io/template': {}, 'f:vm.kubevirt.io/template.namespace': {}, 'f:vm.kubevirt.io/template.revision': {}, 'f:vm.kubevirt.io/template.version': {}}}, 'f:spec': {'.': {}, 'f:dataVolumeTemplates': {}, 'f:template': {'.': {}, 'f:metadata': {'.': {}, 'f:annotations': {'.': {}, 'f:vm.kubevirt.io/flavor': {}, 'f:vm.kubevirt.io/os': {}, 'f:vm.kubevirt.io/workload': {}}, 'f:labels': {'.': {}, 'f:debugLogs': {}, 'f:kubevirt.io/domain': {}, 'f:kubevirt.io/size': {}, 'f:kubevirt.io/vm': {}}}, 'f:spec': {'.': {}, 'f:architecture': {}, 'f:domain': {'.': {}, 'f:cpu': {'.': {}, 'f:cores': {}, 'f:features': {}, 'f:maxSockets': {}, 'f:sockets': {}, 'f:threads': {}}, 'f:devices': {'.': {}, 'f:disks': {}, 'f:interfaces': {}, 'f:rng': {}}, 'f:features': {'.': {}, 'f:smm': {'.': {}, 'f:enabled': {}}}, 'f:firmware': {'.': {}, 'f:bootloader': {'.': {}, 'f:efi': {}}}, 'f:memory': {'.': {}, 'f:guest': {}}}, 'f:networks': {}, 'f:terminationGracePeriodSeconds': {}, 'f:volumes': {}}}}}, 'manager': 'OpenAPI-Generator', 'operation': 'Update', 'time': '2026-02-12T11:24:19Z'}, {'apiVersion': 'kubevirt.io/v1', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:spec': {'f:runStrategy': {}}}, 'manager': 'virt-api', 'operation': 'Update', 'time': '2026-02-12T11:24:31Z'}, {'apiVersion': 'kubevirt.io/v1', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:status': {'.': {}, 'f:conditions': {}, 'f:desiredGeneration': {}, 'f:observedGeneration': {}, 'f:printableStatus': {}, 'f:runStrategy': {}, 'f:volumeSnapshotStatuses': {}}}, 'manager': 'virt-controller', 'operation': 'Update', 'subresource': 'status', 'time': '2026-02-12T11:24:36Z'}], 'name': 'vm-cpu-hotplug-max-sockets-test-1779103389-0593734', 'namespace': 'node-hotplug-test-cpu-hotplug-max-sockets-limit', 'resourceVersion': '33044492', 'uid': 'cc241f27-0118-467c-96d1-580bc2c4e98e'}, 'spec': {'dataVolumeTemplates': [{'apiVersion': 'cdi.kubevirt.io/v1beta1', 'kind': 'DataVolume', 'metadata': {'name': 'rhel9'}, 'spec': {'sourceRef': {'kind': 'DataSource', 'name': 'rhel9', 'namespace': 'openshift-virtualization-os-images'}, 'storage': {'resources': {'requests': {'storage': '30Gi'}}, 'storageClassName': 'ocs-storagecluster-ceph-rbd-virtualization'}}}], 'runStrategy': 'Halted', 'template': {'metadata': {'annotations': {'kubevirt.io/pci-topology-version': 'v3', 'vm.kubevirt.io/flavor': 'tiny', 'vm.kubevirt.io/os': 'rhel9', 'vm.kubevirt.io/workload': 'server'}, 'labels': {'debugLogs': 'true', 'kubevirt.io/domain': 'vm-cpu-hotplug-max-sockets-test-1779103389-0593734', 'kubevirt.io/size': 'tiny', 'kubevirt.io/vm': 'vm-cpu-hotplug-max-sockets-test-1779103389-0593734'}}, 'spec': {'architecture': 'amd64', 'domain': {'cpu': {'cores': 1, 'features': [{'name': 'vmx', 'policy': 'disable'}], 'maxSockets': 8, 'sockets': 6, 'threads': 1}, 'devices': {'disks': [{'disk': {'bus': 'virtio'}, 'name': 'rootdisk'}, {'disk': {'bus': 'virtio'}, 'name': 'cloudinitdisk'}], 'interfaces': [{'macAddress': '02:5b:f1:24:33:5a', 'masquerade': {}, 'model': 'virtio', 'name': 'default'}], 'rng': {}}, 'features': {'acpi': {}, 'smm': {'enabled': True}}, 'firmware': {'bootloader': {'efi': {}}, 'serial': '3b86f161-0c50-4dbd-b9bc-f0e26d782ac8', 'uuid': '7b66677d-d94f-4bd3-80d2-981a21935183'}, 'machine': {'type': 'pc-q35-rhel9.8.0'}, 'memory': {'guest': '4Gi'}, 'resources': {}}, 'networks': [{'name': 'default', 'pod': {}}], 'terminationGracePeriodSeconds': 180, 'volumes': [{'dataVolume': {'name': 'rhel9'}, 'name': 'rootdisk'}, {'cloudInitNoCloud': {'userData': '*******'}, 'name': 'cloudinitdisk'}]}}}, 'status': {'conditions': [{'lastProbeTime': '2026-02-12T11:24:36Z', 'lastTransitionTime': '2026-02-12T11:24:36Z', 'message': 'VMI does not exist', 'reason': 'VMINotExists', 'status': 'False', 'type': 'Ready'}, {'lastProbeTime': None, 'lastTransitionTime': None, 'message': "All of the VMI's DVs are bound and ready", 'reason': 'AllDVsReady', 'status': 'True', 'type': 'DataVolumesReady'}, {'lastProbeTime': None, 'lastTransitionTime': None, 'status': 'True', 'type': 'LiveMigratable'}, {'lastProbeTime': None, 'lastTransitionTime': None, 'status': 'True', 'type': 'StorageLiveMigratable'}, {'lastProbeTime': None, 'lastTransitionTime': None, 'status': 'True', 'type': 'HotVCPUChange'}], 'desiredGeneration': 4, 'observedGeneration': 2, 'printableStatus': 'Stopped', 'runStrategy': 'Halted', 'volumeSnapshotStatuses': [{'enabled': True, 'name': 'rootdisk'}, {'enabled': False, 'name': 'cloudinitdisk', 'reason': 'Snapshot is not supported for this volumeSource type [cloudinitdisk]'}]}}[0m
+2026-02-12T13:24:37.840255 ocp_resources VirtualMachine [32mINFO[0m Wait until VirtualMachine vm-cpu-hotplug-max-sockets-test-1779103389-0593734 is deleted[0m
+2026-02-12T13:24:37.840587 timeout_sampler [32mINFO[0m Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_deleted.lambda: self.exists)[0m
+2026-02-12T13:24:37.992508 timeout_sampler [32mINFO[0m Elapsed time: 0.00020432472229003906 [0:00:00.000204][0m
+2026-02-12T13:24:37.993110 ocp_resources Namespace [32mINFO[0m Delete Namespace node-hotplug-test-cpu-hotplug-max-sockets-limit[0m
+2026-02-12T13:24:38.385526 ocp_resources Namespace [32mINFO[0m Deleting {'kind': 'Namespace', 'apiVersion': 'v1', 'metadata': {'name': 'node-hotplug-test-cpu-hotplug-max-sockets-limit', 'uid': '96d2bc69-be91-4133-9ecb-20cbf4258b4a', 'resourceVersion': '33042523', 'creationTimestamp': '2026-02-12T11:23:06Z', 'labels': {'kubernetes.io/metadata.name': 'node-hotplug-test-cpu-hotplug-max-sockets-limit', 'openshift-pipelines.tekton.dev/namespace-reconcile-version': '1.22.0', 'openshift-pipelines.tekton.dev/namespace-trusted-configmaps-version': '1.22.0', 'pod-security.kubernetes.io/audit': 'baseline', 'pod-security.kubernetes.io/audit-version': 'latest', 'pod-security.kubernetes.io/warn': 'baseline', 'pod-security.kubernetes.io/warn-version': 'latest'}, 'annotations': {'openshift.io/description': '', 'openshift.io/display-name': '', 'openshift.io/requester': 'unprivileged-user', 'openshift.io/sa.scc.mcs': 's0:c30,c25', 'openshift.io/sa.scc.supplemental-groups': '1000920000/10000', 'openshift.io/sa.scc.uid-range': '1000920000/10000', 'security.openshift.io/MinimallySufficientPodSecurityStandard': 'baseline'}, 'managedFields': [{'manager': 'cluster-policy-controller', 'operation': 'Apply', 'apiVersion': 'v1', 'time': '2026-02-12T11:23:06Z', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:annotations': {'f:openshift.io/sa.scc.mcs': {}, 'f:openshift.io/sa.scc.supplemental-groups': {}, 'f:openshift.io/sa.scc.uid-range': {}}}}}, {'manager': 'pod-security-admission-label-synchronization-controller', 'operation': 'Apply', 'apiVersion': 'v1', 'time': '2026-02-12T11:23:07Z', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:annotations': {'f:security.openshift.io/MinimallySufficientPodSecurityStandard': {}}, 'f:labels': {'f:pod-security.kubernetes.io/audit': {}, 'f:pod-security.kubernetes.io/audit-version': {}, 'f:pod-security.kubernetes.io/warn': {}, 'f:pod-security.kubernetes.io/warn-version': {}}}}}, {'manager': 'openshift-apiserver', 'operation': 'Update', 'apiVersion': 'v1', 'time': '2026-02-12T11:23:06Z', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:annotations': {'.': {}, 'f:openshift.io/description': {}, 'f:openshift.io/display-name': {}, 'f:openshift.io/requester': {}}, 'f:labels': {'.': {}, 'f:kubernetes.io/metadata.name': {}}}}}, {'manager': 'openshift-controller-manager', 'operation': 'Update', 'apiVersion': 'v1', 'time': '2026-02-12T11:23:06Z', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:spec': {'f:finalizers': {}}}, 'subresource': 'finalize'}, {'manager': 'openshift-pipelines-operator', 'operation': 'Update', 'apiVersion': 'v1', 'time': '2026-02-12T11:23:08Z', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:metadata': {'f:labels': {'f:openshift-pipelines.tekton.dev/namespace-reconcile-version': {}, 'f:openshift-pipelines.tekton.dev/namespace-trusted-configmaps-version': {}}}}}]}, 'spec': {'finalizers': ['kubernetes']}, 'status': {'phase': 'Active'}}[0m
+2026-02-12T13:24:38.559045 ocp_resources Namespace [32mINFO[0m Wait until Namespace node-hotplug-test-cpu-hotplug-max-sockets-limit is deleted[0m
+2026-02-12T13:24:38.559339 timeout_sampler [32mINFO[0m Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_deleted.lambda: self.exists)[0m
+2026-02-12T13:24:48.244738 timeout_sampler [32mINFO[0m Elapsed time: 9.50997805595398 [0:00:09.509978][0m
+=============================== warnings summary ===============================
+tests/virt/node/hotplug/test_cpu_hotplug_max_sockets_limit.py: 8 warnings
+tests/deprecated_api/test_deprecation_audit_logs.py: 6 warnings
+.venv/lib/python3.14/site-packages/kubernetes/client/exceptions.py:91: 2 warnings
+  /home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/exceptions.py:91: DeprecationWarning: HTTPResponse.getheaders() is deprecated and will be removed in urllib3 v2.1.0. Instead access HTTPResponse.headers directly.
+    self.headers = http_resp.getheaders()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/virt/node/hotplug/test_cpu_hotplug_max_sockets_limit.py::TestCPUHotplugMaxSocketsLimit::test_hotplug_cpu_within_limit[golden_image_data_source_for_test_scope_class0]
+FAILED tests/virt/node/hotplug/test_cpu_hotplug_max_sockets_limit.py::TestCPUHotplugMaxSocketsLimit::test_vm_behavior_at_maximum_cpu[golden_image_data_source_for_test_scope_class0]
+ERROR tests/deprecated_api/test_deprecation_audit_logs.py::test_deprecated_apis_in_audit_logs
+== 2 failed, 1 passed, 2 skipped, 16 warnings, 1 error in 1851.74s (0:30:51) ===

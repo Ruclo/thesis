@@ -1,0 +1,1564 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.0, pytest-9.0.2, pluggy-1.6.0
+benchmark: 5.2.3 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /home/mvavrine/cnv/openshift-virtualization-tests
+configfile: pytest.ini (WARNING: ignoring pytest config in pyproject.toml!)
+plugins: anyio-4.12.0, html-4.1.1, order-1.3.0, repeat-0.9.4, progress-1.4.0, dependency-0.6.0, jira-0.3.22, metadata-3.1.1, testconfig-0.2.0, benchmark-5.2.3, mock-3.15.1
+collected 5 items
+
+tests/storage/snapshots/test_storage_profile_snapshot_class.py E
+
+_ ERROR at setup of test_storage_profile_snapshot_class_honored[cirros_vm_with_storage_profile0] _
+
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7faf3382dbe0>
+storage_class_for_snapshot = 'standard-csi'
+volume_snapshot_classes = [<ocp_resources.volume_snapshot_class.VolumeSnapshotClass object at 0x7faf30b3c7d0>]
+
+    @pytest.fixture()
+    def storage_profile_with_snapshot_class(
+        admin_client,
+        storage_class_for_snapshot,
+        volume_snapshot_classes,
+    ):
+        """
+        Configure StorageProfile with a specific snapshotClass.
+    
+        Finds a compatible VolumeSnapshotClass and sets it in the StorageProfile.
+        Restores original configuration after test.
+        """
+        if not storage_class_for_snapshot:
+            pytest.skip("No storage class supports snapshots")
+    
+        storage_profile = StorageProfile(client=admin_client, name=storage_class_for_snapshot)
+        original_spec = storage_profile.instance.get("spec", {})
+        original_snapshot_class = original_spec.get("snapshotClass")
+    
+        # Find compatible VolumeSnapshotClass for this storage class provisioner
+        from ocp_resources.storage_class import StorageClass
+    
+        sc_provisioner = StorageClass(client=admin_client, name=storage_class_for_snapshot).instance.provisioner
+        compatible_vsc = None
+    
+        for vsc in volume_snapshot_classes:
+            if vsc.instance.driver == sc_provisioner:
+                compatible_vsc = vsc.name
+                LOGGER.info(
+                    f"Found compatible VolumeSnapshotClass '{compatible_vsc}' for StorageClass '{storage_class_for_snapshot}'"
+                )
+                break
+    
+        if not compatible_vsc:
+            pytest.skip(f"No compatible VolumeSnapshotClass found for StorageClass '{storage_class_for_snapshot}'")
+    
+        # Set snapshotClass in StorageProfile spec
+        with ResourceEditor(patches={storage_profile: {"spec": {"snapshotClass": compatible_vsc}}}):
+>           storage_profile.wait_for_status(status=ResourceEditor.Status.UPDATED, timeout=TIMEOUT_10MIN)
+                                                   ^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: type object 'ResourceEditor' has no attribute 'Status'
+
+tests/storage/snapshots/test_storage_profile_snapshot_class.py:79: AttributeError
+---------------------------- Captured stderr setup -----------------------------
+
+--------------------- test_storage_profile_snapshot_class_honored[cirros_vm_with_storage_profile0] ---------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-01-27T19:49:10.395797 conftest [32mINFO[0m Executing session fixture: admin_client[0m
+2026-01-27T19:49:10.396189 conftest [32mINFO[0m Executing session fixture: pytestconfig[0m
+2026-01-27T19:49:10.396445 conftest [32mINFO[0m Executing session fixture: installing_cnv[0m
+2026-01-27T19:49:10.396623 conftest [32mINFO[0m Executing session fixture: cnv_tests_utilities_namespace[0m
+2026-01-27T19:49:10.544605 ocp_resources Namespace [32mINFO[0m Create Namespace cnv-tests-utilities[0m
+2026-01-27T19:49:10.544916 ocp_resources Namespace [32mINFO[0m Posting {'apiVersion': 'v1', 'kind': 'Namespace', 'metadata': {'name': 'cnv-tests-utilities', 'labels': {'pod-security.kubernetes.io/enforce': 'privileged', 'security.openshift.io/scc.podSecurityLabelSync': 'false'}}, 'spec': {}}[0m
+2026-01-27T19:49:10.835892 ocp_resources Namespace [32mINFO[0m Wait for Namespace cnv-tests-utilities status to be Active[0m
+2026-01-27T19:49:10.836217 timeout_sampler [32mINFO[0m Waiting for 120 seconds [0:02:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_for_status.lambda: self.exists)[0m
+2026-01-27T19:49:10.988144 ocp_resources Namespace [32mINFO[0m Status of Namespace cnv-tests-utilities is Active[0m
+2026-01-27T19:49:10.988400 timeout_sampler [32mINFO[0m Elapsed time: 0.00018167495727539062 [0:00:00.000182][0m
+2026-01-27T19:49:10.989471 ocp_resources.resource [32mINFO[0m kind: OAuth api version: config.openshift.io/v1[0m
+2026-01-27T19:49:10.990308 ocp_resources.resource [32mINFO[0m kind: DaemonSet api version: apps/v1[0m
+2026-01-27T19:49:10.988699 conftest [32mINFO[0m Executing session fixture: skip_unprivileged_client[0m
+2026-01-27T19:49:10.988935 conftest [32mINFO[0m Executing session fixture: identity_provider_config[0m
+2026-01-27T19:49:10.989712 conftest [32mINFO[0m Executing session fixture: leftovers_cleanup[0m
+2026-01-27T19:49:10.989864 tests.conftest [32mINFO[0m Checking for leftover resources[0m
+2026-01-27T19:49:11.558153 ocp_resources.resource [32mINFO[0m ResourceEdits: Updating data for resource OAuth cluster[0m
+2026-01-27T19:49:11.558386 ocp_resources OAuth [32mINFO[0m Update OAuth cluster:
+{'metadata': {'name': 'cluster'}, 'spec': {}}[0m
+2026-01-27T19:49:11.708516 conftest [32mINFO[0m Executing session fixture: artifactory_setup[0m
+2026-01-27T19:49:11.708967 tests.conftest [32mINFO[0m Checking for artifactory credentials:[0m
+2026-01-27T19:49:11.709370 tests.conftest [33mWARNING[0m Explicitly skipping artifactory setup check due to use of --skip-artifactory-check[0m
+2026-01-27T19:49:11.712745 ocp_resources.resource [32mINFO[0m Trying to get client via new_client_from_config[0m
+2026-01-27T19:49:11.709868 conftest [32mINFO[0m Executing session fixture: os_path_environment[0m
+2026-01-27T19:49:11.710397 conftest [32mINFO[0m Executing session fixture: tmpdir_factory[0m
+2026-01-27T19:49:11.710653 conftest [32mINFO[0m Executing session fixture: bin_directory[0m
+2026-01-27T19:49:11.712282 conftest [32mINFO[0m Executing session fixture: virtctl_binary[0m
+2026-01-27T19:49:11.730191 ocp_resources.resource [32mINFO[0m kind: ConsoleCLIDownload api version: console.openshift.io/v1[0m
+2026-01-27T19:49:12.238642 utilities.infra [32mINFO[0m Downloading archive using: url=https://hyperconverged-cluster-cli-download-openshift-cnv.apps.ci-ln-c4f8zwb-72292.origin-ci-int-gce.dev.rhcloud.com/amd64/linux/virtctl.tar.gz[0m
+2026-01-27T19:49:33.768207 utilities.infra [32mINFO[0m Extract the downloaded archive.[0m
+2026-01-27T19:49:34.963220 ocp_resources.resource [32mINFO[0m Trying to get client via new_client_from_config[0m
+2026-01-27T19:49:34.960562 utilities.infra [32mINFO[0m Downloaded file: ['virtctl'][0m
+2026-01-27T19:49:34.962247 conftest [32mINFO[0m Executing session fixture: oc_binary[0m
+2026-01-27T19:49:34.984686 ocp_resources.resource [32mINFO[0m kind: ConsoleCLIDownload api version: console.openshift.io/v1[0m
+2026-01-27T19:49:35.468692 utilities.infra [32mINFO[0m Downloading archive using: url=https://downloads-openshift-console.apps.ci-ln-c4f8zwb-72292.origin-ci-int-gce.dev.rhcloud.com/amd64/linux/oc.tar[0m
+2026-01-27T19:50:29.355411 utilities.infra [32mINFO[0m Extract the downloaded archive.[0m
+2026-01-27T19:50:29.486426 utilities.infra [32mINFO[0m Downloaded file: ['oc'][0m
+2026-01-27T19:50:29.516293 ocp_resources.resource [32mINFO[0m kind: ClusterVersion api version: config.openshift.io/v1[0m
+2026-01-27T19:50:29.514761 conftest [32mINFO[0m Executing session fixture: bin_directory_to_os_path[0m
+2026-01-27T19:50:29.515638 tests.conftest [32mINFO[0m Adding /tmp/pytest-bRvR3fN8Zer2WfTywQqiW9/bin0 to $PATH[0m
+2026-01-27T19:50:29.515933 conftest [32mINFO[0m Executing session fixture: openshift_current_version[0m
+2026-01-27T19:50:29.828393 conftest [32mINFO[0m Executing session fixture: hco_namespace[0m
+2026-01-27T19:50:29.989279 ocp_resources.resource [32mINFO[0m kind: Subscription api version: operators.coreos.com/v1alpha1[0m
+2026-01-27T19:50:29.988541 conftest [32mINFO[0m Executing session fixture: csv_scope_session[0m
+2026-01-27T19:50:30.308043 ocp_resources.resource [32mINFO[0m kind: ClusterServiceVersion api version: operators.coreos.com/v1alpha1[0m
+2026-01-27T19:50:30.615523 conftest [32mINFO[0m Executing session fixture: cnv_current_version[0m
+2026-01-27T19:50:30.873239 ocp_resources.resource [32mINFO[0m kind: Subscription api version: operators.coreos.com/v1alpha1[0m
+2026-01-27T19:50:30.872498 conftest [32mINFO[0m Executing session fixture: cnv_subscription_scope_session[0m
+2026-01-27T19:50:31.027831 conftest [32mINFO[0m Executing session fixture: hco_image[0m
+2026-01-27T19:50:31.188562 ocp_resources.resource [32mINFO[0m kind: CatalogSource api version: operators.coreos.com/v1alpha1[0m
+2026-01-27T19:50:31.489299 ocp_resources.resource [32mINFO[0m kind: StorageClass api version: storage.k8s.io/v1[0m
+2026-01-27T19:50:31.488823 conftest [32mINFO[0m Executing session fixture: cluster_storage_classes[0m
+2026-01-27T19:50:31.635611 ocp_resources.resource [32mINFO[0m kind: KubeVirt api version: kubevirt.io/v1[0m
+2026-01-27T19:50:31.634709 conftest [32mINFO[0m Executing session fixture: ocs_storage_class[0m
+2026-01-27T19:50:31.635041 conftest [32mINFO[0m Executing session fixture: ocs_current_version[0m
+2026-01-27T19:50:31.635278 conftest [32mINFO[0m Executing session fixture: kubevirt_resource_scope_session[0m
+2026-01-27T19:50:31.794022 ocp_resources.resource [32mINFO[0m kind: Network api version: config.openshift.io/v1[0m
+2026-01-27T19:50:31.793433 conftest [32mINFO[0m Executing session fixture: cluster_service_network[0m
+2026-01-27T19:50:31.944544 conftest [32mINFO[0m Executing session fixture: ipv6_supported_cluster[0m
+2026-01-27T19:50:31.945082 conftest [32mINFO[0m Executing session fixture: ipv4_supported_cluster[0m
+2026-01-27T19:50:31.945371 conftest [32mINFO[0m Executing session fixture: nodes[0m
+2026-01-27T19:50:32.168884 conftest [32mINFO[0m Executing session fixture: workers[0m
+2026-01-27T19:50:33.150946 ocp_resources.resource [32mINFO[0m Trying to get client via new_client_from_config[0m
+2026-01-27T19:50:33.149996 conftest [32mINFO[0m Executing session fixture: cnv_source[0m
+2026-01-27T19:50:33.150384 conftest [32mINFO[0m Executing session fixture: is_production_source[0m
+2026-01-27T19:50:33.150577 conftest [32mINFO[0m Executing session fixture: generated_pulled_secret[0m
+2026-01-27T19:50:33.757465 conftest [32mINFO[0m Executing session fixture: cnv_tests_utilities_service_account[0m
+2026-01-27T19:50:33.772824 ocp_resources ServiceAccount [32mINFO[0m Create ServiceAccount cnv-tests-sa[0m
+2026-01-27T19:50:33.773026 ocp_resources ServiceAccount [32mINFO[0m Posting {'apiVersion': 'v1', 'kind': 'ServiceAccount', 'metadata': {'name': 'cnv-tests-sa', 'namespace': 'cnv-tests-utilities'}}[0m
+2026-01-27T19:50:35.154844 timeout_sampler [32mINFO[0m Waiting for 10 seconds [0:00:10], retry every 1 seconds. (Function: utilities.virt._get_image_json  Kwargs: {'cmd': 'oc image -o json info quay.io/openshift-cnv/qe-net-utils:latest --filter-by-os linux/amd64 --registry-config=/tmp/tmpwvr64fk0-cnv-tests-pull-secret/pull-secrets.json'})[0m
+2026-01-27T19:50:35.154122 conftest [32mINFO[0m Executing session fixture: utility_daemonset[0m
+2026-01-27T19:50:35.155292 pyhelper_utils.shell [32mINFO[0m Running oc image -o json info quay.io/openshift-cnv/qe-net-utils:latest --filter-by-os linux/amd64 --registry-config=/tmp/tmpwvr64fk0-cnv-tests-pull-secret/pull-secrets.json command[0m
+2026-01-27T19:50:37.492449 timeout_sampler [32mINFO[0m Elapsed time: 0.00026226043701171875 [0:00:00.000262][0m
+2026-01-27T19:50:37.532279 ocp_resources.resource [32mINFO[0m kind: DaemonSet api version: apps/v1 --- [DuplicateFilter: Last log `Trying to get client via new_client_from_config` repeated 2 times][0m
+2026-01-27T19:50:37.546617 ocp_resources DaemonSet [32mINFO[0m Create DaemonSet utility[0m
+2026-01-27T19:50:37.546937 ocp_resources DaemonSet [32mINFO[0m Posting {'apiVersion': 'apps/v1', 'kind': 'DaemonSet', 'metadata': {'annotations': {'deprecated.daemonset.template.generation': '0'}, 'creationTimestamp': None, 'labels': {'cnv-test': 'utility', 'tier': 'node'}, 'name': 'utility', 'namespace': 'cnv-tests-utilities'}, 'spec': {'revisionHistoryLimit': 10, 'selector': {'matchLabels': {'cnv-test': 'utility', 'tier': 'node'}}, 'template': {'metadata': {'creationTimestamp': None, 'labels': {'cnv-test': 'utility', 'tier': 'node'}}, 'spec': {'containers': [{'command': ['/bin/bash', '-c', 'echo ok > /tmp/healthy && sleep INF'], 'image': 'quay.io/openshift-cnv/qe-net-utils:latest@sha256:2c8e11ac0f0b36553bed603c1c67dccb703d7059ccbcf8c91e3a35c99719ce20', 'imagePullPolicy': 'IfNotPresent', 'name': 'utility', 'readinessProbe': {'exec': {'command': ['cat', '/tmp/healthy']}, 'failureThreshold': 3, 'initialDelaySeconds': 5, 'periodSeconds': 5, 'successThreshold': 1, 'timeoutSeconds': 1}, 'resources': {'limits': {'cpu': '100m', 'memory': '50Mi'}, 'requests': {'cpu': '100m', 'memory': '50Mi'}}, 'securityContext': {'privileged': True, 'runAsUser': 0}, 'stdin': True, 'stdinOnce': True, 'terminationMessagePath': '/dev/termination-log', 'terminationMessagePolicy': 'File', 'tty': True, 'volumeMounts': [{'mountPath': '/host', 'name': 'host'}, {'mountPath': '/var/run/secrets/kubernetes.io/serviceaccount', 'name': 'kube-api-access-m5ch7', 'readOnly': True}, {'mountPath': '/host/run/openvswitch', 'name': 'ovs-run'}, {'mountPath': '/run/dbus/system_bus_socket', 'name': 'dbus-socket'}, {'mountPath': '/host/dev', 'name': 'dev'}, {'mountPath': '/host/etc', 'name': 'etc'}, {'mountPath': '/host/var', 'name': 'var'}]}], 'dnsPolicy': 'ClusterFirst', 'enableServiceLinks': True, 'hostNetwork': True, 'hostPID': True, 'imagePullSecrets': [{'name': 'default-dockercfg-xrlbh'}], 'preemptionPolicy': 'PreemptLowerPriority', 'priority': 0, 'restartPolicy': 'Always', 'schedulerName': 'default-scheduler', 'securityContext': {'privileged': True}, 'serviceAccount': 'cnv-tests-sa', 'serviceAccountName': 'cnv-tests-sa', 'terminationGracePeriodSeconds': 30, 'tolerations': [{'effect': 'NoSchedule', 'key': 'node-role.kubernetes.io/master', 'operator': 'Exists'}], 'volumes': [{'hostPath': {'path': '/', 'type': 'Directory'}, 'name': 'host'}, {'hostPath': {'path': '/run/openvswitch', 'type': ''}, 'name': 'ovs-run'}, {'hostPath': {'path': '/run/dbus/system_bus_socket', 'type': 'Socket'}, 'name': 'dbus-socket'}, {'hostPath': {'path': '/dev', 'type': 'Directory'}, 'name': 'dev'}, {'hostPath': {'path': '/etc', 'type': 'Directory'}, 'name': 'etc'}, {'hostPath': {'path': '/var', 'type': 'Directory'}, 'name': 'var'}, {'name': 'kube-api-access-m5ch7', 'projected': {'defaultMode': 420, 'sources': [{'serviceAccountToken': {'path': 'token'}}, {'configMap': {'items': [{'key': 'ca.crt', 'path': 'ca.crt'}], 'name': 'kube-root-ca.crt'}}, {'downwardAPI': {'items': [{'fieldRef': {'apiVersion': 'v1', 'fieldPath': 'metadata.namespace'}, 'path': 'namespace'}]}}, {'configMap': {'items': [{'key': 'service-ca.crt', 'path': 'service-ca.crt'}], 'name': 'openshift-service-ca.crt'}}]}}]}}, 'updateStrategy': {'type': 'OnDelete'}}}[0m
+2026-01-27T19:50:38.076807 ocp_resources DaemonSet [32mINFO[0m Wait for DaemonSet utility to deploy all desired pods[0m
+2026-01-27T19:50:38.077371 timeout_sampler [32mINFO[0m Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: kubernetes.dynamic.client.get  Kwargs: {'field_selector': 'metadata.name==utility', 'namespace': 'cnv-tests-utilities'})[0m
+2026-01-27T19:50:46.517442 timeout_sampler [32mINFO[0m Elapsed time: 8.273606061935425 [0:00:08.273606][0m
+2026-01-27T19:50:46.517910 conftest [32mINFO[0m Executing session fixture: workers_utility_pods[0m
+2026-01-27T19:50:50.448513 conftest [32mINFO[0m Executing session fixture: workers_type[0m
+2026-01-27T19:50:50.928083 ocp_resources Pod [32mINFO[0m Execute ['chroot', '/host', 'bash', '-c', 'systemd-detect-virt'] on utility-b9bqh (ci-ln-c4f8zwb-72292-88kkf-worker-a-45b8p)[0m
+2026-01-27T19:50:52.138974 ocp_resources Pod [32mINFO[0m Execute ['chroot', '/host', 'bash', '-c', 'systemd-detect-virt'] on utility-cqwcv (ci-ln-c4f8zwb-72292-88kkf-worker-f-h6srg)[0m
+2026-01-27T19:50:53.478107 ocp_resources Pod [32mINFO[0m Execute ['chroot', '/host', 'bash', '-c', 'systemd-detect-virt'] on utility-jlrqg (ci-ln-c4f8zwb-72292-88kkf-worker-b-7cdzd)[0m
+2026-01-27T19:50:54.067419 tests.conftest [32mINFO[0m Cluster workers are: virtual[0m
+2026-01-27T19:50:54.068058 conftest [32mINFO[0m Executing session fixture: nodes_cpu_architecture[0m
+2026-01-27T19:50:55.063652 pyhelper_utils.shell [32mINFO[0m Running virtctl --kubeconfig /home/mvavrine/cnv/gcp.kubeconfig version command[0m
+2026-01-27T19:50:55.063245 conftest [32mINFO[0m Executing session fixture: cluster_info[0m
+2026-01-27T19:50:55.580875 ocp_resources.resource [32mINFO[0m kind: Network api version: config.openshift.io/v1[0m
+2026-01-27T19:50:55.730186 ocp_resources.resource [32mINFO[0m kind: HyperConverged api version: hco.kubevirt.io/v1beta1[0m
+2026-01-27T19:50:55.726616 tests.conftest [32mINFO[0m 
+Cluster info:
+	Openshift version: 4.21.0-0.nightly-2026-05-12-052734
+	CNV version: 4.21.6
+	HCO image: registry.redhat.io/redhat/redhat-operator-index:v4.21
+	OCS version: None
+	CNI type: OVNKubernetes
+	Workers type: virtual
+	Cluster CPU Architecture: amd64
+	IPv4 cluster: True
+	IPv6 cluster: False
+	Virtctl version: 
+	Client Version: version.Info{GitVersion:"v1.7.2-90-g901adcd460", GitCommit:"901adcd460c36c8e7c43a6f7705bb3a8d8e6a289", GitTreeState:"clean", BuildDate:"2026-04-24T20:40:40Z", GoVersion:"go1.24.13 (Red Hat 1.24.13-4.el9_6) X:strictfipsruntime", Compiler:"gc", Platform:"linux/amd64"}
+	Server Version: version.Info{GitVersion:"v1.7.2-90-g901adcd460", GitCommit:"901adcd460c36c8e7c43a6f7705bb3a8d8e6a289", GitTreeState:"clean", BuildDate:"2026-04-24T20:41:20Z", GoVersion:"go1.24.13 (Red Hat 1.24.13-4.el9_6) X:strictfipsruntime", Compiler:"gc", Platform:"linux/amd64"}
+[0m
+2026-01-27T19:50:55.727150 conftest [32mINFO[0m Executing function fixture: term_handler_scope_function[0m
+2026-01-27T19:50:55.727486 conftest [32mINFO[0m Executing class fixture: term_handler_scope_class[0m
+2026-01-27T19:50:55.727752 conftest [32mINFO[0m Executing module fixture: term_handler_scope_module[0m
+2026-01-27T19:50:55.728015 conftest [32mINFO[0m Executing session fixture: term_handler_scope_session[0m
+2026-01-27T19:50:55.728379 conftest [32mINFO[0m Executing session fixture: record_testsuite_property[0m
+2026-01-27T19:50:55.728676 conftest [32mINFO[0m Executing session fixture: junitxml_polarion[0m
+2026-01-27T19:50:55.729016 conftest [32mINFO[0m Executing session fixture: cluster_storage_classes_names[0m
+2026-01-27T19:50:55.729315 conftest [32mINFO[0m Executing session fixture: junitxml_plugin[0m
+2026-01-27T19:50:55.729592 conftest [32mINFO[0m Executing session fixture: hyperconverged_resource_scope_session[0m
+2026-01-27T19:50:55.889108 ocp_utilities.infra [32mINFO[0m Verify all nodes are in a healthy condition.[0m
+2026-01-27T19:50:55.888206 conftest [32mINFO[0m Executing session fixture: cluster_sanity_scope_session[0m
+2026-01-27T19:50:55.888712 utilities.infra [32mINFO[0m Running cluster sanity. (To skip cluster sanity check pass --cluster-sanity-skip-check to pytest)[0m
+2026-01-27T19:50:55.888866 utilities.infra [32mINFO[0m Check storage classes sanity. (To skip storage class sanity check pass --cluster-sanity-skip-storage-check to pytest)[0m
+2026-01-27T19:50:55.888988 utilities.infra [32mINFO[0m Check nodes sanity. (To skip nodes sanity check pass --cluster-sanity-skip-nodes-check to pytest)[0m
+2026-01-27T19:50:56.870083 ocp_utilities.infra [32mINFO[0m Verify all nodes are schedulable.[0m
+2026-01-27T19:50:57.860617 timeout_sampler [32mINFO[0m Waiting for 300 seconds [0:05:00], retry every 5 seconds. (Function: utilities.infra.get_pods  Kwargs: {'dyn_client': <kubernetes.dynamic.client.DynamicClient object at 0x7faf3382dbe0>, 'namespace': <ocp_resources.namespace.Namespace object at 0x7faf32233ce0>})[0m
+2026-01-27T19:51:11.104192 timeout_sampler [32mINFO[0m Elapsed time: 0.0002949237823486328 [0:00:00.000295][0m
+2026-01-27T19:51:11.104691 timeout_sampler [32mINFO[0m Waiting for 600 seconds [0:10:00], retry every 5 seconds. (Function: utilities.infra.<locals>.lambda: dynamic_client.namespace.resource_kind.resource_name.list.get)[0m
+2026-01-27T19:51:11.104494 utilities.infra [32mINFO[0m Waiting for resource to stabilize: resource_kind=HyperConverged conditions={'Available': 'True', 'Progressing': 'False', 'ReconcileComplete': 'True', 'Degraded': 'False', 'Upgradeable': 'True'} sleep=600 consecutive_checks_count=3[0m
+2026-01-27T19:51:22.067478 timeout_sampler [32mINFO[0m Elapsed time: 10.653897047042847 [0:00:10.653897][0m
+2026-01-27T19:51:22.068930 ocp_utilities.infra [32mINFO[0m Verify all nodes are in a healthy condition.[0m
+2026-01-27T19:51:22.068229 conftest [32mINFO[0m Executing module fixture: cluster_sanity_scope_module[0m
+2026-01-27T19:51:22.068577 utilities.infra [32mINFO[0m Running cluster sanity. (To skip cluster sanity check pass --cluster-sanity-skip-check to pytest)[0m
+2026-01-27T19:51:22.068712 utilities.infra [32mINFO[0m Check storage classes sanity. (To skip storage class sanity check pass --cluster-sanity-skip-storage-check to pytest)[0m
+2026-01-27T19:51:22.068831 utilities.infra [32mINFO[0m Check nodes sanity. (To skip nodes sanity check pass --cluster-sanity-skip-nodes-check to pytest)[0m
+2026-01-27T19:51:23.099437 ocp_utilities.infra [32mINFO[0m Verify all nodes are schedulable.[0m
+2026-01-27T19:51:24.162917 timeout_sampler [32mINFO[0m Waiting for 300 seconds [0:05:00], retry every 5 seconds. (Function: utilities.infra.get_pods  Kwargs: {'dyn_client': <kubernetes.dynamic.client.DynamicClient object at 0x7faf3382dbe0>, 'namespace': <ocp_resources.namespace.Namespace object at 0x7faf32233ce0>})[0m
+2026-01-27T19:51:38.520345 timeout_sampler [32mINFO[0m Elapsed time: 0.0003387928009033203 [0:00:00.000339][0m
+2026-01-27T19:51:38.521037 timeout_sampler [32mINFO[0m Waiting for 600 seconds [0:10:00], retry every 5 seconds. (Function: utilities.infra.<locals>.lambda: dynamic_client.namespace.resource_kind.resource_name.list.get)[0m
+2026-01-27T19:51:38.520736 utilities.infra [32mINFO[0m Waiting for resource to stabilize: resource_kind=HyperConverged conditions={'Available': 'True', 'Progressing': 'False', 'ReconcileComplete': 'True', 'Degraded': 'False', 'Upgradeable': 'True'} sleep=600 consecutive_checks_count=3[0m
+2026-01-27T19:51:49.478212 timeout_sampler [32mINFO[0m Elapsed time: 10.637301683425903 [0:00:10.637302][0m
+2026-01-27T19:51:49.478762 conftest [32mINFO[0m Executing session fixture: ssh_key_tmpdir_scope_session[0m
+2026-01-27T19:51:49.480339 conftest [32mINFO[0m Executing session fixture: generated_ssh_key_for_vm_access[0m
+2026-01-27T19:51:49.576385 conftest [32mINFO[0m Executing function fixture: autouse_fixtures[0m
+2026-01-27T19:51:49.576763 conftest [32mINFO[0m Executing session fixture: storage_class_for_snapshot[0m
+2026-01-27T19:51:49.737189 ocp_resources.resource [32mINFO[0m kind: VolumeSnapshotClass api version: snapshot.storage.k8s.io/v1[0m
+2026-01-27T19:51:50.116973 tests.conftest [32mINFO[0m Storage class for snapshot: standard-csi[0m
+2026-01-27T19:51:50.117402 conftest [32mINFO[0m Executing session fixture: skip_if_no_storage_class_for_snapshot[0m
+2026-01-27T19:51:50.117742 conftest [32mINFO[0m Executing session fixture: unprivileged_secret[0m
+2026-01-27T19:51:50.123048 ocp_resources.resource [32mINFO[0m Trying to get client via new_client_from_config[0m
+2026-01-27T19:51:50.138593 ocp_resources Secret [32mINFO[0m Create Secret htpass-secret-for-cnv-tests[0m
+2026-01-27T19:51:50.138788 ocp_resources Secret [32mINFO[0m Posting {'apiVersion': 'v1', 'kind': 'Secret', 'metadata': {'name': 'htpass-secret-for-cnv-tests', 'namespace': 'openshift-config'}, 'data': '*******'}[0m
+2026-01-27T19:51:50.887395 ocp_resources.resource [32mINFO[0m ResourceEdit: Backing up old data[0m
+2026-01-27T19:51:50.887084 conftest [32mINFO[0m Executing session fixture: identity_provider_with_htpasswd[0m
+2026-01-27T19:51:51.047437 ocp_resources.resource [32mINFO[0m ResourceEdits: Updating data for resource OAuth cluster[0m
+2026-01-27T19:51:51.047754 ocp_resources OAuth [32mINFO[0m Update OAuth cluster:
+{'metadata': {'name': 'cluster'}, 'spec': {'identityProviders': [{'name': 'htpasswd_provider', 'mappingMethod': 'claim', 'type': 'HTPasswd', 'htpasswd': {'fileData': {'name': 'htpass-secret-for-cnv-tests'}}}], 'tokenConfig': {'accessTokenMaxAgeSeconds': 604800, 'accessTokenInactivityTimeout': None}}}[0m
+2026-01-27T19:51:51.219686 ocp_resources.resource [32mINFO[0m Trying to get client via new_client_from_config[0m
+2026-01-27T19:51:51.235990 ocp_resources.resource [32mINFO[0m kind: Deployment api version: apps/v1[0m
+2026-01-27T19:51:51.564644 timeout_sampler [32mINFO[0m Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: tests.conftest.<locals>.lambda: dp.instance.status.conditions)[0m
+2026-01-27T19:51:51.564348 tests.conftest [32mINFO[0m Wait for oauth-openshift -> Type: Progressing -> Reason: ReplicaSetUpdated[0m
+2026-01-27T19:52:10.449785 timeout_sampler [32mINFO[0m Elapsed time: 18.713640689849854 [0:00:18.713641][0m
+2026-01-27T19:52:10.450291 timeout_sampler [32mINFO[0m Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: tests.conftest.<locals>.lambda: dp.instance.status.conditions)[0m
+2026-01-27T19:52:10.450071 tests.conftest [32mINFO[0m Wait for oauth-openshift -> Type: Progressing -> Reason: NewReplicaSetAvailable[0m
+2026-01-27T19:53:05.887733 timeout_sampler [32mINFO[0m Elapsed time: 55.26674437522888 [0:00:55.266744][0m
+2026-01-27T19:53:05.888304 conftest [32mINFO[0m Executing session fixture: kubeconfig_export_path[0m
+2026-01-27T19:53:05.888690 conftest [32mINFO[0m Executing session fixture: exported_kubeconfig[0m
+2026-01-27T19:53:05.889396 tests.conftest [33mWARNING[0m Both KUBECONFIG /home/mvavrine/cnv/gcp.kubeconfig and /home/mvavrine/.kube/config exist. /home/mvavrine/cnv/gcp.kubeconfig is used as kubeconfig source for this run.[0m
+2026-01-27T19:53:05.889763 tests.conftest [32mINFO[0m Setting KUBECONFIG dir for this run to point to: /tmp/tmp9tubw4s8-cnv-tests-kubeconfig[0m
+2026-01-27T19:53:05.889886 tests.conftest [32mINFO[0m Copy KUBECONFIG to /tmp/tmp9tubw4s8-cnv-tests-kubeconfig/kubeconfig[0m
+2026-01-27T19:53:05.890734 tests.conftest [32mINFO[0m Set: KUBECONFIG=/tmp/tmp9tubw4s8-cnv-tests-kubeconfig/kubeconfig[0m
+2026-01-27T19:53:05.891141 conftest [32mINFO[0m Executing session fixture: unprivileged_client[0m
+2026-01-27T19:53:06.432707 timeout_sampler [32mINFO[0m Waiting for 60 seconds [0:01:00], retry every 3 seconds. (Function: subprocess.Popen  Kwargs: {'args': 'oc login https://api.ci-ln-c4f8zwb-72292.origin-ci-int-gce.dev.rhcloud.com:6443 -u unprivileged-user -p unprivileged-password', 'shell': True, 'stdout': -1, 'stderr': -1})[0m
+2026-01-27T19:53:06.432406 utilities.infra [32mINFO[0m Trying to login to account[0m
+2026-01-27T19:53:09.998554 timeout_sampler [32mINFO[0m Elapsed time: 0.0004303455352783203 [0:00:00.000430][0m
+2026-01-27T19:53:10.013647 timeout_sampler [32mINFO[0m Waiting for 60 seconds [0:01:00], retry every 3 seconds. (Function: subprocess.Popen  Kwargs: {'args': 'oc login https://api.ci-ln-c4f8zwb-72292.origin-ci-int-gce.dev.rhcloud.com:6443 -u system:admin', 'shell': True, 'stdout': -1, 'stderr': -1})[0m
+2026-01-27T19:53:09.998279 utilities.infra [32mINFO[0m Login - success[0m
+2026-01-27T19:53:10.013420 utilities.infra [32mINFO[0m Trying to login to account[0m
+2026-01-27T19:53:11.301852 timeout_sampler [32mINFO[0m Elapsed time: 0.0005431175231933594 [0:00:00.000543][0m
+2026-01-27T19:53:11.302580 ocp_resources.resource [32mINFO[0m Trying to get client via new_client_from_config[0m
+2026-01-27T19:53:11.301565 utilities.infra [32mINFO[0m Login - success[0m
+2026-01-27T19:53:11.327248 ocp_resources.resource [32mINFO[0m kind: ProjectRequest api version: project.openshift.io/v1[0m
+2026-01-27T19:53:11.327459 ocp_resources ProjectRequest [32mINFO[0m Create ProjectRequest snapshots-test-storage-profile-snapshot-class[0m
+2026-01-27T19:53:11.327575 ocp_resources ProjectRequest [32mINFO[0m Posting {'apiVersion': 'project.openshift.io/v1', 'kind': 'ProjectRequest', 'metadata': {'name': 'snapshots-test-storage-profile-snapshot-class'}}[0m
+2026-01-27T19:53:11.326625 conftest [32mINFO[0m Executing module fixture: namespace[0m
+2026-01-27T19:53:11.939102 ocp_resources.resource [32mINFO[0m kind: Project api version: project.openshift.io/v1[0m
+2026-01-27T19:53:11.939383 ocp_resources Project [32mINFO[0m Wait for Project snapshots-test-storage-profile-snapshot-class status to be Active[0m
+2026-01-27T19:53:11.939595 timeout_sampler [32mINFO[0m Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_for_status.lambda: self.exists)[0m
+2026-01-27T19:53:12.107117 ocp_resources Project [32mINFO[0m Status of Project snapshots-test-storage-profile-snapshot-class is Active[0m
+2026-01-27T19:53:12.107383 timeout_sampler [32mINFO[0m Elapsed time: 0.00020694732666015625 [0:00:00.000207][0m
+2026-01-27T19:53:12.267107 ocp_resources Namespace [32mINFO[0m Wait for Namespace snapshots-test-storage-profile-snapshot-class status to be Active[0m
+2026-01-27T19:53:12.267384 timeout_sampler [32mINFO[0m Waiting for 120 seconds [0:02:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_for_status.lambda: self.exists)[0m
+2026-01-27T19:53:12.427062 ocp_resources Namespace [32mINFO[0m Status of Namespace snapshots-test-storage-profile-snapshot-class is Active[0m
+2026-01-27T19:53:12.427371 timeout_sampler [32mINFO[0m Elapsed time: 0.00016021728515625 [0:00:00.000160][0m
+2026-01-27T19:53:12.427594 ocp_resources.resource [32mINFO[0m ResourceEdits: Updating data for resource Namespace snapshots-test-storage-profile-snapshot-class[0m
+2026-01-27T19:53:12.427726 ocp_resources Namespace [32mINFO[0m Update Namespace snapshots-test-storage-profile-snapshot-class:
+{'metadata': {'labels': None, 'name': 'snapshots-test-storage-profile-snapshot-class'}}[0m
+2026-01-27T19:53:12.747459 conftest [32mINFO[0m Executing function fixture: volume_snapshot_classes[0m
+2026-01-27T19:53:12.907133 conftest [32mINFO[0m Executing function fixture: storage_profile_with_snapshot_class[0m
+2026-01-27T19:53:13.083731 ocp_resources.resource [32mINFO[0m kind: StorageProfile api version: cdi.kubevirt.io/v1beta1[0m
+2026-01-27T19:53:13.536437 ocp_resources.resource [32mINFO[0m ResourceEdit: Backing up old data[0m
+2026-01-27T19:53:13.536224 tests.storage.snapshots.test_storage_profile_snapshot_class [32mINFO[0m Found compatible VolumeSnapshotClass 'csi-gce-pd-vsc' for StorageClass 'standard-csi'[0m
+2026-01-27T19:53:13.697954 ocp_resources.resource [32mINFO[0m ResourceEdits: Updating data for resource StorageProfile standard-csi[0m
+2026-01-27T19:53:13.698227 ocp_resources StorageProfile [32mINFO[0m Update StorageProfile standard-csi:
+{'spec': {'snapshotClass': 'csi-gce-pd-vsc'}, 'metadata': {'name': 'standard-csi'}}[0m
+2026-01-27T19:53:13.856913 ocp_resources.resource [32mINFO[0m ResourceEdits: Restoring data for resource StorageProfile standard-csi[0m
+2026-01-27T19:53:13.857212 ocp_resources StorageProfile [32mINFO[0m Update StorageProfile standard-csi:
+{'spec': {}, 'metadata': {'name': 'standard-csi'}}[0m
+_ 1 of 5 completed, 0 Pass, 0 Fail, 0 Skip, 0 XPass, 0 XFail, 1 Error, 0 ReRun _
+
+tests/storage/snapshots/test_storage_profile_snapshot_class.py E
+
+_ ERROR at setup of test_fallback_to_label_based_selection[cirros_vm_without_snapshot_class0] _
+
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7faf3382dbe0>
+storage_class_for_snapshot = 'standard-csi'
+
+    @pytest.fixture()
+    def storage_profile_without_snapshot_class(
+        admin_client,
+        storage_class_for_snapshot,
+    ):
+        """
+        Ensure StorageProfile does not have snapshotClass set.
+    
+        Removes snapshotClass from StorageProfile if present.
+        Restores original configuration after test.
+        """
+        if not storage_class_for_snapshot:
+            pytest.skip("No storage class supports snapshots")
+    
+        storage_profile = StorageProfile(client=admin_client, name=storage_class_for_snapshot)
+        original_spec = storage_profile.instance.get("spec", {})
+        original_snapshot_class = original_spec.get("snapshotClass")
+    
+        if original_snapshot_class:
+            # Remove snapshotClass from StorageProfile spec
+            with ResourceEditor(patches={storage_profile: {"spec": {"snapshotClass": None}}}):
+>               storage_profile.wait_for_status(status=ResourceEditor.Status.UPDATED, timeout=TIMEOUT_10MIN)
+                                                       ^^^^^^^^^^^^^^^^^^^^^
+E               AttributeError: type object 'ResourceEditor' has no attribute 'Status'
+
+tests/storage/snapshots/test_storage_profile_snapshot_class.py:114: AttributeError
+---------------------------- Captured stderr setup -----------------------------
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7faf3382dbe0>
+storage_class_for_snapshot = 'standard-csi'
+volume_snapshot_classes = [<ocp_resources.volume_snapshot_class.VolumeSnapshotClass object at 0x7faf30b3c7d0>]
+
+    @pytest.fixture()
+    def storage_profile_with_snapshot_class(
+        admin_client,
+        storage_class_for_snapshot,
+        volume_snapshot_classes,
+    ):
+        """
+        Configure StorageProfile with a specific snapshotClass.
+    
+        Finds a compatible VolumeSnapshotClass and sets it in the StorageProfile.
+        Restores original configuration after test.
+        """
+        if not storage_class_for_snapshot:
+            pytest.skip("No storage class supports snapshots")
+    
+        storage_profile = StorageProfile(client=admin_client, name=storage_class_for_snapshot)
+        original_spec = storage_profile.instance.get("spec", {})
+        original_snapshot_class = original_spec.get("snapshotClass")
+    
+        # Find compatible VolumeSnapshotClass for this storage class provisioner
+        from ocp_resources.storage_class import StorageClass
+    
+        sc_provisioner = StorageClass(client=admin_client, name=storage_class_for_snapshot).instance.provisioner
+        compatible_vsc = None
+    
+        for vsc in volume_snapshot_classes:
+            if vsc.instance.driver == sc_provisioner:
+                compatible_vsc = vsc.name
+                LOGGER.info(
+                    f"Found compatible VolumeSnapshotClass '{compatible_vsc}' for StorageClass '{storage_class_for_snapshot}'"
+                )
+                break
+    
+        if not compatible_vsc:
+            pytest.skip(f"No compatible VolumeSnapshotClass found for StorageClass '{storage_class_for_snapshot}'")
+    
+        # Set snapshotClass in StorageProfile spec
+        with ResourceEditor(patches={storage_profile: {"spec": {"snapshotClass": compatible_vsc}}}):
+>           storage_profile.wait_for_status(status=ResourceEditor.Status.UPDATED, timeout=TIMEOUT_10MIN)
+                                                   ^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: type object 'ResourceEditor' has no attribute 'Status'
+
+tests/storage/snapshots/test_storage_profile_snapshot_class.py:79: AttributeError
+2026-01-27T19:53:14.152741 ocp_resources.resource [32mINFO[0m kind: StorageProfile api version: cdi.kubevirt.io/v1beta1[0m
+------------------------------------------------------- TEARDOWN -------------------------------------------------------
+
+---------------------- test_fallback_to_label_based_selection[cirros_vm_without_snapshot_class0] ----------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-01-27T19:53:14.151181 conftest [32mINFO[0m Executing function fixture: term_handler_scope_function[0m
+2026-01-27T19:53:14.151551 conftest [32mINFO[0m Executing class fixture: term_handler_scope_class[0m
+2026-01-27T19:53:14.152022 conftest [32mINFO[0m Executing function fixture: autouse_fixtures[0m
+2026-01-27T19:53:14.152438 conftest [32mINFO[0m Executing function fixture: storage_profile_without_snapshot_class[0m
+2026-01-27T19:53:14.306844 ocp_resources.resource [32mINFO[0m ResourceEdit: Backing up old data[0m
+2026-01-27T19:53:14.467175 ocp_resources.resource [32mINFO[0m ResourceEdits: Updating data for resource StorageProfile standard-csi[0m
+2026-01-27T19:53:14.467503 ocp_resources StorageProfile [32mINFO[0m Update StorageProfile standard-csi:
+{'spec': {'snapshotClass': None}, 'metadata': {'name': 'standard-csi'}}[0m
+2026-01-27T19:53:14.622388 ocp_resources.resource [32mINFO[0m ResourceEdits: Restoring data for resource StorageProfile standard-csi[0m
+2026-01-27T19:53:14.622597 ocp_resources StorageProfile [32mINFO[0m Update StorageProfile standard-csi:
+{'spec': {'snapshotClass': 'csi-gce-pd-vsc'}, 'metadata': {'name': 'standard-csi'}}[0m
+_ 2 of 5 completed, 0 Pass, 0 Fail, 0 Skip, 0 XPass, 0 XFail, 2 Error, 0 ReRun _
+
+tests/storage/snapshots/test_storage_profile_snapshot_class.py E
+
+_ ERROR at setup of test_restore_with_storage_profile_snapshot_class[cirros_vm_with_storage_profile0] _
+
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7faf3382dbe0>
+storage_class_for_snapshot = 'standard-csi'
+volume_snapshot_classes = [<ocp_resources.volume_snapshot_class.VolumeSnapshotClass object at 0x7faf30b3dbd0>]
+
+    @pytest.fixture()
+    def storage_profile_with_snapshot_class(
+        admin_client,
+        storage_class_for_snapshot,
+        volume_snapshot_classes,
+    ):
+        """
+        Configure StorageProfile with a specific snapshotClass.
+    
+        Finds a compatible VolumeSnapshotClass and sets it in the StorageProfile.
+        Restores original configuration after test.
+        """
+        if not storage_class_for_snapshot:
+            pytest.skip("No storage class supports snapshots")
+    
+        storage_profile = StorageProfile(client=admin_client, name=storage_class_for_snapshot)
+        original_spec = storage_profile.instance.get("spec", {})
+        original_snapshot_class = original_spec.get("snapshotClass")
+    
+        # Find compatible VolumeSnapshotClass for this storage class provisioner
+        from ocp_resources.storage_class import StorageClass
+    
+        sc_provisioner = StorageClass(client=admin_client, name=storage_class_for_snapshot).instance.provisioner
+        compatible_vsc = None
+    
+        for vsc in volume_snapshot_classes:
+            if vsc.instance.driver == sc_provisioner:
+                compatible_vsc = vsc.name
+                LOGGER.info(
+                    f"Found compatible VolumeSnapshotClass '{compatible_vsc}' for StorageClass '{storage_class_for_snapshot}'"
+                )
+                break
+    
+        if not compatible_vsc:
+            pytest.skip(f"No compatible VolumeSnapshotClass found for StorageClass '{storage_class_for_snapshot}'")
+    
+        # Set snapshotClass in StorageProfile spec
+        with ResourceEditor(patches={storage_profile: {"spec": {"snapshotClass": compatible_vsc}}}):
+>           storage_profile.wait_for_status(status=ResourceEditor.Status.UPDATED, timeout=TIMEOUT_10MIN)
+                                                   ^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: type object 'ResourceEditor' has no attribute 'Status'
+
+tests/storage/snapshots/test_storage_profile_snapshot_class.py:79: AttributeError
+---------------------------- Captured stderr setup -----------------------------
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7faf3382dbe0>
+storage_class_for_snapshot = 'standard-csi'
+
+    @pytest.fixture()
+    def storage_profile_without_snapshot_class(
+        admin_client,
+        storage_class_for_snapshot,
+    ):
+        """
+        Ensure StorageProfile does not have snapshotClass set.
+    
+        Removes snapshotClass from StorageProfile if present.
+        Restores original configuration after test.
+        """
+        if not storage_class_for_snapshot:
+            pytest.skip("No storage class supports snapshots")
+    
+        storage_profile = StorageProfile(client=admin_client, name=storage_class_for_snapshot)
+        original_spec = storage_profile.instance.get("spec", {})
+        original_snapshot_class = original_spec.get("snapshotClass")
+    
+        if original_snapshot_class:
+            # Remove snapshotClass from StorageProfile spec
+            with ResourceEditor(patches={storage_profile: {"spec": {"snapshotClass": None}}}):
+>               storage_profile.wait_for_status(status=ResourceEditor.Status.UPDATED, timeout=TIMEOUT_10MIN)
+                                                       ^^^^^^^^^^^^^^^^^^^^^
+E               AttributeError: type object 'ResourceEditor' has no attribute 'Status'
+
+tests/storage/snapshots/test_storage_profile_snapshot_class.py:114: AttributeError
+------------------------------------------------------- TEARDOWN -------------------------------------------------------
+
+------------------ test_restore_with_storage_profile_snapshot_class[cirros_vm_with_storage_profile0] ------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-01-27T19:53:14.794227 conftest [32mINFO[0m Executing function fixture: term_handler_scope_function[0m
+2026-01-27T19:53:14.794506 conftest [32mINFO[0m Executing class fixture: term_handler_scope_class[0m
+2026-01-27T19:53:14.794897 conftest [32mINFO[0m Executing function fixture: autouse_fixtures[0m
+2026-01-27T19:53:14.795299 conftest [32mINFO[0m Executing function fixture: volume_snapshot_classes[0m
+2026-01-27T19:53:14.956971 ocp_resources.resource [32mINFO[0m kind: StorageProfile api version: cdi.kubevirt.io/v1beta1[0m
+2026-01-27T19:53:14.956560 conftest [32mINFO[0m Executing function fixture: storage_profile_with_snapshot_class[0m
+2026-01-27T19:53:15.411073 ocp_resources.resource [32mINFO[0m ResourceEdit: Backing up old data[0m
+2026-01-27T19:53:15.410790 tests.storage.snapshots.test_storage_profile_snapshot_class [32mINFO[0m Found compatible VolumeSnapshotClass 'csi-gce-pd-vsc' for StorageClass 'standard-csi'[0m
+2026-01-27T19:53:15.556955 ocp_resources.resource [32mINFO[0m ResourceEdits: Updating data for resource StorageProfile standard-csi[0m
+2026-01-27T19:53:15.716932 ocp_resources.resource [32mINFO[0m ResourceEdits: Restoring data for resource StorageProfile standard-csi[0m
+2026-01-27T19:53:15.717240 ocp_resources StorageProfile [32mINFO[0m Update StorageProfile standard-csi:
+{'spec': {}, 'metadata': {'name': 'standard-csi'}}[0m
+_ 3 of 5 completed, 0 Pass, 0 Fail, 0 Skip, 0 XPass, 0 XFail, 3 Error, 0 ReRun _
+
+tests/storage/snapshots/test_storage_profile_snapshot_class.py s
+_ 4 of 5 completed, 0 Pass, 0 Fail, 1 Skip, 0 XPass, 0 XFail, 3 Error, 0 ReRun _
+
+tests/deprecated_api/test_deprecation_audit_logs.py E
+
+_____________ ERROR at setup of test_deprecated_apis_in_audit_logs _____________
+
+audit_logs = defaultdict(<class 'list'>, {'ci-ln-c4f8zwb-72292-88kkf-master-0': ['audit-2026-01-27T15-49-18.019.log', 'audit-2026-0...4f8zwb-72292-88kkf-master-2': ['audit-2026-01-27T15-54-49.886.log', 'audit-2026-01-27T17-48-27.600.log', 'audit.log']})
+
+    @pytest.fixture()
+    def deprecated_apis_calls(audit_logs):
+        """Go over control plane nodes audit logs and look for calls using deprecated APIs"""
+        failed_api_calls = defaultdict(list)
+        for node, logs in audit_logs.items():
+>           for audit_log_entry_dict in get_node_audit_log_line_dict(
+                logs=logs, node=node, log_entry=DEPRECATED_API_LOG_ENTRY
+            ):
+
+tests/deprecated_api/test_deprecation_audit_logs.py:79: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+utilities/infra.py:868: in get_node_audit_log_line_dict
+    _, deprecated_api_lines = get_node_audit_log_entries(log=log, node=node, log_entry=log_entry)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/timeout_sampler/__init__.py:280: in wrapper
+    for sample in TimeoutSampler(
+.venv/lib/python3.14/site-packages/timeout_sampler/__init__.py:162: in __iter__
+    yield self.func(*self.func_args, **self.func_kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+utilities/infra.py:853: in get_node_audit_log_entries
+    lines = subprocess.getoutput(
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/subprocess.py:697: in getoutput
+    return getstatusoutput(cmd, encoding=encoding, errors=errors)[1]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/subprocess.py:677: in getstatusoutput
+    data = check_output(cmd, shell=True, text=True, stderr=STDOUT,
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/subprocess.py:472: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/subprocess.py:556: in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/subprocess.py:1207: in communicate
+    stdout = self.stdout.read()
+             ^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <ocp_resources.secret.Secret object at 0x7faf320765d0>
+signal_received = 2
+_frame = <frame at 0x7faf32232c30, file '/home/mvavrine/.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/subprocess.py', line 1207, code communicate>
+
+    def _sigint_handler(self, signal_received: int, _frame: Any) -> None:
+        self.__exit__()
+>       sys.exit(signal_received)
+E       SystemExit: 2
+
+.venv/lib/python3.14/site-packages/ocp_resources/resource.py:765: SystemExit
+---------------------------- Captured stderr setup -----------------------------
+
+------------------------------------------ test_deprecated_apis_in_audit_logs ------------------------------------------
+2026-01-27T19:53:25.404387 ocp_utilities.infra [32mINFO[0m Verify all nodes are in a healthy condition.[0m
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-01-27T19:53:25.402962 conftest [32mINFO[0m Executing function fixture: term_handler_scope_function[0m
+2026-01-27T19:53:25.403334 conftest [32mINFO[0m Executing class fixture: term_handler_scope_class[0m
+2026-01-27T19:53:25.403550 conftest [32mINFO[0m Executing module fixture: term_handler_scope_module[0m
+2026-01-27T19:53:25.403923 conftest [32mINFO[0m Executing module fixture: cluster_sanity_scope_module[0m
+2026-01-27T19:53:25.404111 utilities.infra [32mINFO[0m Running cluster sanity. (To skip cluster sanity check pass --cluster-sanity-skip-check to pytest)[0m
+2026-01-27T19:53:25.404214 utilities.infra [32mINFO[0m Check storage classes sanity. (To skip storage class sanity check pass --cluster-sanity-skip-storage-check to pytest)[0m
+2026-01-27T19:53:25.404304 utilities.infra [32mINFO[0m Check nodes sanity. (To skip nodes sanity check pass --cluster-sanity-skip-nodes-check to pytest)[0m
+2026-01-27T19:53:26.603664 ocp_utilities.infra [32mINFO[0m Verify all nodes are schedulable.[0m
+2026-01-27T19:53:27.792949 timeout_sampler [32mINFO[0m Waiting for 300 seconds [0:05:00], retry every 5 seconds. (Function: utilities.infra.get_pods  Kwargs: {'dyn_client': <kubernetes.dynamic.client.DynamicClient object at 0x7faf3382dbe0>, 'namespace': <ocp_resources.namespace.Namespace object at 0x7faf32233ce0>})[0m
+2026-01-27T19:53:41.047456 timeout_sampler [32mINFO[0m Elapsed time: 0.00035381317138671875 [0:00:00.000354][0m
+2026-01-27T19:53:41.048332 timeout_sampler [32mINFO[0m Waiting for 600 seconds [0:10:00], retry every 5 seconds. (Function: utilities.infra.<locals>.lambda: dynamic_client.namespace.resource_kind.resource_name.list.get)[0m
+2026-01-27T19:53:41.048133 utilities.infra [32mINFO[0m Waiting for resource to stabilize: resource_kind=HyperConverged conditions={'Available': 'True', 'Progressing': 'False', 'ReconcileComplete': 'True', 'Degraded': 'False', 'Upgradeable': 'True'} sleep=600 consecutive_checks_count=3[0m
+2026-01-27T19:53:52.030549 timeout_sampler [32mINFO[0m Elapsed time: 10.638693571090698 [0:00:10.638694][0m
+2026-01-27T19:53:52.031177 conftest [32mINFO[0m Executing function fixture: autouse_fixtures[0m
+2026-01-27T19:53:52.031614 conftest [32mINFO[0m Executing function fixture: audit_logs[0m
+2026-01-27T19:53:53.724698 timeout_sampler [32mINFO[0m Waiting for 30 seconds [0:00:30], retry every 10 seconds. (Function: utilities.infra.get_node_audit_log_entries  Kwargs: {'log': 'audit-2026-01-27T15-49-18.019.log', 'node': 'ci-ln-c4f8zwb-72292-88kkf-master-0', 'log_entry': '"k8s.io/deprecated":"true"'})[0m
+2026-01-27T19:53:53.724332 conftest [32mINFO[0m Executing function fixture: deprecated_apis_calls[0m
+2026-01-27T19:55:12.049973 timeout_sampler [32mINFO[0m Elapsed time: 0.0003924369812011719 [0:00:00.000392][0m
+2026-01-27T19:55:12.069636 timeout_sampler [32mINFO[0m Waiting for 30 seconds [0:00:30], retry every 10 seconds. (Function: utilities.infra.get_node_audit_log_entries  Kwargs: {'log': 'audit-2026-01-27T17-05-30.089.log', 'node': 'ci-ln-c4f8zwb-72292-88kkf-master-0', 'log_entry': '"k8s.io/deprecated":"true"'})[0m
+2026-01-27T19:57:13.685339 timeout_sampler [32mINFO[0m Elapsed time: 0.0002586841583251953 [0:00:00.000259][0m
+2026-01-27T19:57:13.704954 timeout_sampler [32mINFO[0m Waiting for 30 seconds [0:00:30], retry every 10 seconds. (Function: utilities.infra.get_node_audit_log_entries  Kwargs: {'log': 'audit.log', 'node': 'ci-ln-c4f8zwb-72292-88kkf-master-0', 'log_entry': '"k8s.io/deprecated":"true"'})[0m
+2026-01-27T19:57:57.205771 timeout_sampler [32mINFO[0m Elapsed time: 0.00025463104248046875 [0:00:00.000255][0m
+2026-01-27T19:57:57.216187 timeout_sampler [32mINFO[0m Waiting for 30 seconds [0:00:30], retry every 10 seconds. (Function: utilities.infra.get_node_audit_log_entries  Kwargs: {'log': 'audit-2026-01-27T15-31-31.131.log', 'node': 'ci-ln-c4f8zwb-72292-88kkf-master-1', 'log_entry': '"k8s.io/deprecated":"true"'})[0m
+2026-01-27T19:58:57.949071 timeout_sampler [32mINFO[0m Elapsed time: 0.00024366378784179688 [0:00:00.000244][0m
+2026-01-27T19:58:57.962266 timeout_sampler [32mINFO[0m Waiting for 30 seconds [0:00:30], retry every 10 seconds. (Function: utilities.infra.get_node_audit_log_entries  Kwargs: {'log': 'audit-2026-01-27T16-55-17.695.log', 'node': 'ci-ln-c4f8zwb-72292-88kkf-master-1', 'log_entry': '"k8s.io/deprecated":"true"'})[0m
+2026-01-27T20:00:24.309867 timeout_sampler [32mINFO[0m Elapsed time: 0.00038313865661621094 [0:00:00.000383][0m
+2026-01-27T20:00:24.318134 timeout_sampler [32mINFO[0m Waiting for 30 seconds [0:00:30], retry every 10 seconds. (Function: utilities.infra.get_node_audit_log_entries  Kwargs: {'log': 'audit.log', 'node': 'ci-ln-c4f8zwb-72292-88kkf-master-1', 'log_entry': '"k8s.io/deprecated":"true"'})[0m
+2026-01-27T20:01:03.932715 timeout_sampler [32mINFO[0m Elapsed time: 0.0003235340118408203 [0:00:00.000324][0m
+2026-01-27T20:01:03.949474 timeout_sampler [32mINFO[0m Waiting for 30 seconds [0:00:30], retry every 10 seconds. (Function: utilities.infra.get_node_audit_log_entries  Kwargs: {'log': 'audit-2026-01-27T15-54-49.886.log', 'node': 'ci-ln-c4f8zwb-72292-88kkf-master-2', 'log_entry': '"k8s.io/deprecated":"true"'})[0m
+2026-01-27T20:02:12.530813 timeout_sampler [32mINFO[0m Elapsed time: 0.0002894401550292969 [0:00:00.000289][0m
+2026-01-27T20:02:12.544073 timeout_sampler [32mINFO[0m Waiting for 30 seconds [0:00:30], retry every 10 seconds. (Function: utilities.infra.get_node_audit_log_entries  Kwargs: {'log': 'audit-2026-01-27T17-48-27.600.log', 'node': 'ci-ln-c4f8zwb-72292-88kkf-master-2', 'log_entry': '"k8s.io/deprecated":"true"'})[0m
+2026-01-27T20:02:36.914336 ocp_resources Secret [32mINFO[0m Delete Secret htpass-secret-for-cnv-tests[0m
+2026-01-27T20:02:37.425611 ocp_resources Secret [32mINFO[0m Deleting {'kind': 'Secret', 'apiVersion': 'v1', 'metadata': {'name': 'htpass-secret-for-cnv-tests', 'namespace': 'openshift-config', 'uid': 'aca94005-33ac-4b14-b303-55ff573a335e', 'resourceVersion': '142600', 'creationTimestamp': '2026-01-27T17:51:50Z', 'managedFields': [{'manager': 'OpenAPI-Generator', 'operation': 'Update', 'apiVersion': 'v1', 'time': '2026-01-27T17:51:50Z', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:data': {'.': {}, 'f:htpasswd': {}}, 'f:type': {}}}]}, 'data': '*******', 'type': 'Opaque'}[0m
+2026-01-27T20:02:37.583279 ocp_resources Secret [32mINFO[0m Wait until Secret htpass-secret-for-cnv-tests is deleted[0m
+2026-01-27T20:02:37.583712 timeout_sampler [32mINFO[0m Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_deleted.lambda: self.exists)[0m
+2026-01-27T20:02:37.737029 timeout_sampler [32mINFO[0m Elapsed time: 0.00035262107849121094 [0:00:00.000353][0m
+2026-01-27T20:02:37.737508 timeout_sampler [32mINFO[0m Elapsed time: 0.0002167224884033203 [0:00:00.000217][0m
+_ 5 of 5 completed, 0 Pass, 0 Fail, 1 Skip, 0 XPass, 0 XFail, 4 Error, 0 ReRun _
+E
+___________ ERROR at teardown of test_deprecated_apis_in_audit_logs ____________
+
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7faf3382dbe0>
+skip_unprivileged_client = False
+
+    @pytest.fixture(scope="session")
+    def unprivileged_secret(admin_client, skip_unprivileged_client):
+        if skip_unprivileged_client:
+            yield
+    
+        else:
+            password = UNPRIVILEGED_PASSWORD.encode()
+            enc_password = bcrypt.hashpw(password, bcrypt.gensalt(5, prefix=b"2a")).decode()
+            crypto_credentials = f"{UNPRIVILEGED_USER}:{enc_password}"
+            with Secret(
+                name=HTTP_SECRET_NAME,
+                namespace=NamespacesNames.OPENSHIFT_CONFIG,
+                htpasswd=base64_encode_str(text=crypto_credentials),
+            ) as secret:
+                yield secret
+    
+            #  Wait for oauth-openshift deployment to update after removing htpass-secret
+>           _wait_for_oauth_openshift_deployment()
+
+tests/conftest.py:329: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/conftest.py:353: in _wait_for_oauth_openshift_deployment
+    _wait_sampler(_reason=reason)
+tests/conftest.py:346: in _wait_sampler
+    for sample in sampler:
+                  ^^^^^^^
+.venv/lib/python3.14/site-packages/timeout_sampler/__init__.py:162: in __iter__
+    yield self.func(*self.func_args, **self.func_kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/conftest.py:344: in <lambda>
+    func=lambda: dp.instance.status.conditions,
+                 ^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/ocp_resources/resource.py:1670: in instance
+    return self.retry_cluster_exceptions(func=_instance)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/ocp_resources/resource.py:1141: in retry_cluster_exceptions
+    for sample in sampler:
+                  ^^^^^^^
+.venv/lib/python3.14/site-packages/timeout_sampler/__init__.py:162: in __iter__
+    yield self.func(*self.func_args, **self.func_kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/ocp_resources/resource.py:1668: in _instance
+    return self.api.get(name=self.name, namespace=self.namespace)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/kubernetes/dynamic/client.py:112: in get
+    return self.request('get', path, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/kubernetes/dynamic/client.py:55: in inner
+    resp = func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/kubernetes/dynamic/client.py:277: in request
+    api_response = self.client.call_api(
+.venv/lib/python3.14/site-packages/kubernetes/client/api_client.py:348: in call_api
+    return self.__call_api(resource_path, method,
+.venv/lib/python3.14/site-packages/kubernetes/client/api_client.py:180: in __call_api
+    response_data = self.request(
+.venv/lib/python3.14/site-packages/kubernetes/client/api_client.py:373: in request
+    return self.rest_client.GET(url,
+.venv/lib/python3.14/site-packages/kubernetes/client/rest.py:244: in GET
+    return self.request("GET", url,
+.venv/lib/python3.14/site-packages/kubernetes/client/rest.py:217: in request
+    r = self.pool_manager.request(method, url,
+.venv/lib/python3.14/site-packages/urllib3/_request_methods.py:135: in request
+    return self.request_encode_url(
+.venv/lib/python3.14/site-packages/urllib3/_request_methods.py:182: in request_encode_url
+    return self.urlopen(method, url, **extra_kw)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/urllib3/poolmanager.py:443: in urlopen
+    response = conn.urlopen(method, u.request_uri, **kw)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/urllib3/connectionpool.py:787: in urlopen
+    response = self._make_request(
+.venv/lib/python3.14/site-packages/urllib3/connectionpool.py:534: in _make_request
+    response = conn.getresponse()
+               ^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/urllib3/connection.py:516: in getresponse
+    httplib_response = super().getresponse()
+                       ^^^^^^^^^^^^^^^^^^^^^
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/http/client.py:1430: in getresponse
+    response.begin()
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/http/client.py:331: in begin
+    version, status, reason = self._read_status()
+                              ^^^^^^^^^^^^^^^^^^^
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/http/client.py:292: in _read_status
+    line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/socket.py:725: in readinto
+    return self._sock.recv_into(b)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/ssl.py:1304: in recv_into
+    return self.read(nbytes, buffer)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/ssl.py:1138: in read
+    return self._sslobj.read(len, buffer)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <ocp_resources.secret.Secret object at 0x7faf320765d0>
+signal_received = 2
+_frame = <frame at 0x7faf30c42020, file '/home/mvavrine/.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/ssl.py', line 1141, code read>
+
+    def _sigint_handler(self, signal_received: int, _frame: Any) -> None:
+        self.__exit__()
+>       sys.exit(signal_received)
+E       SystemExit: 2
+
+.venv/lib/python3.14/site-packages/ocp_resources/resource.py:765: SystemExit
+---------------------------- Captured stderr setup -----------------------------
+
+------------------------------------------ test_deprecated_apis_in_audit_logs ------------------------------------------
+2026-01-27T19:53:25.404387 ocp_utilities.infra [32mINFO[0m Verify all nodes are in a healthy condition.[0m
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-01-27T19:53:25.402962 conftest [32mINFO[0m Executing function fixture: term_handler_scope_function[0m
+2026-01-27T19:53:25.403334 conftest [32mINFO[0m Executing class fixture: term_handler_scope_class[0m
+2026-01-27T19:53:25.403550 conftest [32mINFO[0m Executing module fixture: term_handler_scope_module[0m
+2026-01-27T19:53:25.403923 conftest [32mINFO[0m Executing module fixture: cluster_sanity_scope_module[0m
+2026-01-27T19:53:25.404111 utilities.infra [32mINFO[0m Running cluster sanity. (To skip cluster sanity check pass --cluster-sanity-skip-check to pytest)[0m
+2026-01-27T19:53:25.404214 utilities.infra [32mINFO[0m Check storage classes sanity. (To skip storage class sanity check pass --cluster-sanity-skip-storage-check to pytest)[0m
+2026-01-27T19:53:25.404304 utilities.infra [32mINFO[0m Check nodes sanity. (To skip nodes sanity check pass --cluster-sanity-skip-nodes-check to pytest)[0m
+2026-01-27T19:53:26.603664 ocp_utilities.infra [32mINFO[0m Verify all nodes are schedulable.[0m
+2026-01-27T19:53:27.792949 timeout_sampler [32mINFO[0m Waiting for 300 seconds [0:05:00], retry every 5 seconds. (Function: utilities.infra.get_pods  Kwargs: {'dyn_client': <kubernetes.dynamic.client.DynamicClient object at 0x7faf3382dbe0>, 'namespace': <ocp_resources.namespace.Namespace object at 0x7faf32233ce0>})[0m
+2026-01-27T19:53:41.047456 timeout_sampler [32mINFO[0m Elapsed time: 0.00035381317138671875 [0:00:00.000354][0m
+2026-01-27T19:53:41.048332 timeout_sampler [32mINFO[0m Waiting for 600 seconds [0:10:00], retry every 5 seconds. (Function: utilities.infra.<locals>.lambda: dynamic_client.namespace.resource_kind.resource_name.list.get)[0m
+2026-01-27T19:53:41.048133 utilities.infra [32mINFO[0m Waiting for resource to stabilize: resource_kind=HyperConverged conditions={'Available': 'True', 'Progressing': 'False', 'ReconcileComplete': 'True', 'Degraded': 'False', 'Upgradeable': 'True'} sleep=600 consecutive_checks_count=3[0m
+2026-01-27T19:53:52.030549 timeout_sampler [32mINFO[0m Elapsed time: 10.638693571090698 [0:00:10.638694][0m
+2026-01-27T19:53:52.031177 conftest [32mINFO[0m Executing function fixture: autouse_fixtures[0m
+2026-01-27T19:53:52.031614 conftest [32mINFO[0m Executing function fixture: audit_logs[0m
+2026-01-27T19:53:53.724698 timeout_sampler [32mINFO[0m Waiting for 30 seconds [0:00:30], retry every 10 seconds. (Function: utilities.infra.get_node_audit_log_entries  Kwargs: {'log': 'audit-2026-01-27T15-49-18.019.log', 'node': 'ci-ln-c4f8zwb-72292-88kkf-master-0', 'log_entry': '"k8s.io/deprecated":"true"'})[0m
+2026-01-27T19:53:53.724332 conftest [32mINFO[0m Executing function fixture: deprecated_apis_calls[0m
+2026-01-27T19:55:12.049973 timeout_sampler [32mINFO[0m Elapsed time: 0.0003924369812011719 [0:00:00.000392][0m
+2026-01-27T19:55:12.069636 timeout_sampler [32mINFO[0m Waiting for 30 seconds [0:00:30], retry every 10 seconds. (Function: utilities.infra.get_node_audit_log_entries  Kwargs: {'log': 'audit-2026-01-27T17-05-30.089.log', 'node': 'ci-ln-c4f8zwb-72292-88kkf-master-0', 'log_entry': '"k8s.io/deprecated":"true"'})[0m
+2026-01-27T19:57:13.685339 timeout_sampler [32mINFO[0m Elapsed time: 0.0002586841583251953 [0:00:00.000259][0m
+2026-01-27T19:57:13.704954 timeout_sampler [32mINFO[0m Waiting for 30 seconds [0:00:30], retry every 10 seconds. (Function: utilities.infra.get_node_audit_log_entries  Kwargs: {'log': 'audit.log', 'node': 'ci-ln-c4f8zwb-72292-88kkf-master-0', 'log_entry': '"k8s.io/deprecated":"true"'})[0m
+2026-01-27T19:57:57.205771 timeout_sampler [32mINFO[0m Elapsed time: 0.00025463104248046875 [0:00:00.000255][0m
+2026-01-27T19:57:57.216187 timeout_sampler [32mINFO[0m Waiting for 30 seconds [0:00:30], retry every 10 seconds. (Function: utilities.infra.get_node_audit_log_entries  Kwargs: {'log': 'audit-2026-01-27T15-31-31.131.log', 'node': 'ci-ln-c4f8zwb-72292-88kkf-master-1', 'log_entry': '"k8s.io/deprecated":"true"'})[0m
+2026-01-27T19:58:57.949071 timeout_sampler [32mINFO[0m Elapsed time: 0.00024366378784179688 [0:00:00.000244][0m
+2026-01-27T19:58:57.962266 timeout_sampler [32mINFO[0m Waiting for 30 seconds [0:00:30], retry every 10 seconds. (Function: utilities.infra.get_node_audit_log_entries  Kwargs: {'log': 'audit-2026-01-27T16-55-17.695.log', 'node': 'ci-ln-c4f8zwb-72292-88kkf-master-1', 'log_entry': '"k8s.io/deprecated":"true"'})[0m
+2026-01-27T20:00:24.309867 timeout_sampler [32mINFO[0m Elapsed time: 0.00038313865661621094 [0:00:00.000383][0m
+2026-01-27T20:00:24.318134 timeout_sampler [32mINFO[0m Waiting for 30 seconds [0:00:30], retry every 10 seconds. (Function: utilities.infra.get_node_audit_log_entries  Kwargs: {'log': 'audit.log', 'node': 'ci-ln-c4f8zwb-72292-88kkf-master-1', 'log_entry': '"k8s.io/deprecated":"true"'})[0m
+2026-01-27T20:01:03.932715 timeout_sampler [32mINFO[0m Elapsed time: 0.0003235340118408203 [0:00:00.000324][0m
+2026-01-27T20:01:03.949474 timeout_sampler [32mINFO[0m Waiting for 30 seconds [0:00:30], retry every 10 seconds. (Function: utilities.infra.get_node_audit_log_entries  Kwargs: {'log': 'audit-2026-01-27T15-54-49.886.log', 'node': 'ci-ln-c4f8zwb-72292-88kkf-master-2', 'log_entry': '"k8s.io/deprecated":"true"'})[0m
+2026-01-27T20:02:12.530813 timeout_sampler [32mINFO[0m Elapsed time: 0.0002894401550292969 [0:00:00.000289][0m
+2026-01-27T20:02:12.544073 timeout_sampler [32mINFO[0m Waiting for 30 seconds [0:00:30], retry every 10 seconds. (Function: utilities.infra.get_node_audit_log_entries  Kwargs: {'log': 'audit-2026-01-27T17-48-27.600.log', 'node': 'ci-ln-c4f8zwb-72292-88kkf-master-2', 'log_entry': '"k8s.io/deprecated":"true"'})[0m
+2026-01-27T20:02:36.914336 ocp_resources Secret [32mINFO[0m Delete Secret htpass-secret-for-cnv-tests[0m
+2026-01-27T20:02:37.425611 ocp_resources Secret [32mINFO[0m Deleting {'kind': 'Secret', 'apiVersion': 'v1', 'metadata': {'name': 'htpass-secret-for-cnv-tests', 'namespace': 'openshift-config', 'uid': 'aca94005-33ac-4b14-b303-55ff573a335e', 'resourceVersion': '142600', 'creationTimestamp': '2026-01-27T17:51:50Z', 'managedFields': [{'manager': 'OpenAPI-Generator', 'operation': 'Update', 'apiVersion': 'v1', 'time': '2026-01-27T17:51:50Z', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:data': {'.': {}, 'f:htpasswd': {}}, 'f:type': {}}}]}, 'data': '*******', 'type': 'Opaque'}[0m
+2026-01-27T20:02:37.583279 ocp_resources Secret [32mINFO[0m Wait until Secret htpass-secret-for-cnv-tests is deleted[0m
+2026-01-27T20:02:37.583712 timeout_sampler [32mINFO[0m Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_deleted.lambda: self.exists)[0m
+2026-01-27T20:02:37.737029 timeout_sampler [32mINFO[0m Elapsed time: 0.00035262107849121094 [0:00:00.000353][0m
+2026-01-27T20:02:37.737508 timeout_sampler [32mINFO[0m Elapsed time: 0.0002167224884033203 [0:00:00.000217][0m
+--------------------------- Captured stderr teardown ---------------------------
+audit_logs = defaultdict(<class 'list'>, {'ci-ln-c4f8zwb-72292-88kkf-master-0': ['audit-2026-01-27T15-49-18.019.log', 'audit-2026-0...4f8zwb-72292-88kkf-master-2': ['audit-2026-01-27T15-54-49.886.log', 'audit-2026-01-27T17-48-27.600.log', 'audit.log']})
+
+    @pytest.fixture()
+    def deprecated_apis_calls(audit_logs):
+        """Go over control plane nodes audit logs and look for calls using deprecated APIs"""
+        failed_api_calls = defaultdict(list)
+        for node, logs in audit_logs.items():
+>           for audit_log_entry_dict in get_node_audit_log_line_dict(
+                logs=logs, node=node, log_entry=DEPRECATED_API_LOG_ENTRY
+            ):
+
+tests/deprecated_api/test_deprecation_audit_logs.py:79: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+utilities/infra.py:868: in get_node_audit_log_line_dict
+    _, deprecated_api_lines = get_node_audit_log_entries(log=log, node=node, log_entry=log_entry)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/timeout_sampler/__init__.py:280: in wrapper
+    for sample in TimeoutSampler(
+.venv/lib/python3.14/site-packages/timeout_sampler/__init__.py:162: in __iter__
+    yield self.func(*self.func_args, **self.func_kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+utilities/infra.py:853: in get_node_audit_log_entries
+    lines = subprocess.getoutput(
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/subprocess.py:697: in getoutput
+    return getstatusoutput(cmd, encoding=encoding, errors=errors)[1]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/subprocess.py:677: in getstatusoutput
+    data = check_output(cmd, shell=True, text=True, stderr=STDOUT,
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/subprocess.py:472: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/subprocess.py:556: in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/subprocess.py:1207: in communicate
+    stdout = self.stdout.read()
+             ^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <ocp_resources.secret.Secret object at 0x7faf320765d0>
+signal_received = 2
+_frame = <frame at 0x7faf32232c30, file '/home/mvavrine/.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/subprocess.py', line 1207, code communicate>
+
+    def _sigint_handler(self, signal_received: int, _frame: Any) -> None:
+        self.__exit__()
+>       sys.exit(signal_received)
+E       SystemExit: 2
+
+.venv/lib/python3.14/site-packages/ocp_resources/resource.py:765: SystemExit
+------------------------------------------------------- TEARDOWN -------------------------------------------------------
+2026-01-27T20:02:37.963873 tests.conftest [32mINFO[0m Remove: /tmp/tmp9tubw4s8-cnv-tests-kubeconfig/kubeconfig[0m
+2026-01-27T20:02:37.965395 ocp_resources.resource [32mINFO[0m ResourceEdits: Restoring data for resource OAuth cluster[0m
+2026-01-27T20:02:37.965590 ocp_resources OAuth [32mINFO[0m Update OAuth cluster:
+{'metadata': {'name': 'cluster'}, 'spec': {'identityProviders': None, 'tokenConfig': None}}[0m
+2026-01-27T20:02:37.964976 tests.conftest [32mINFO[0m Set: KUBECONFIG=/home/mvavrine/cnv/gcp.kubeconfig[0m
+2026-01-27T20:02:38.303789 ocp_resources Secret [32mINFO[0m Delete Secret htpass-secret-for-cnv-tests[0m
+2026-01-27T20:02:38.446270 ocp_resources Secret [33mWARNING[0m Resource Secret htpass-secret-for-cnv-tests was not found, and wasn't deleted[0m
+2026-01-27T20:02:38.446836 ocp_resources.resource [32mINFO[0m Trying to get client via new_client_from_config[0m
+2026-01-27T20:02:38.463646 ocp_resources.resource [32mINFO[0m kind: Deployment api version: apps/v1[0m
+2026-01-27T20:02:38.809611 timeout_sampler [32mINFO[0m Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: tests.conftest.<locals>.lambda: dp.instance.status.conditions)[0m
+2026-01-27T20:02:38.809328 tests.conftest [32mINFO[0m Wait for oauth-openshift -> Type: Progressing -> Reason: ReplicaSetUpdated[0m
+2026-01-27T20:02:47.144260 timeout_sampler [32mINFO[0m Elapsed time: 8.164765357971191 [0:00:08.164765][0m
+2026-01-27T20:02:47.144721 timeout_sampler [32mINFO[0m Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: tests.conftest.<locals>.lambda: dp.instance.status.conditions)[0m
+2026-01-27T20:02:47.144515 tests.conftest [32mINFO[0m Wait for oauth-openshift -> Type: Progressing -> Reason: NewReplicaSetAvailable[0m
+2026-01-27T20:03:16.644038 ocp_resources Secret [32mINFO[0m Delete Secret htpass-secret-for-cnv-tests[0m
+2026-01-27T20:03:16.806446 ocp_resources Secret [33mWARNING[0m Resource Secret htpass-secret-for-cnv-tests was not found, and wasn't deleted[0m
+2026-01-27T20:03:16.806980 timeout_sampler [32mINFO[0m Elapsed time: 29.39235544204712 [0:00:29.392355][0m
+                                                                         [100%]============= 1 skipped, 8 warnings, 5 errors in 856.58s (0:14:16) =============
+
+==================================== ERRORS ====================================
+_ ERROR at setup of test_storage_profile_snapshot_class_honored[cirros_vm_with_storage_profile0] _
+
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7faf3382dbe0>
+storage_class_for_snapshot = 'standard-csi'
+volume_snapshot_classes = [<ocp_resources.volume_snapshot_class.VolumeSnapshotClass object at 0x7faf30b3c7d0>]
+
+    @pytest.fixture()
+    def storage_profile_with_snapshot_class(
+        admin_client,
+        storage_class_for_snapshot,
+        volume_snapshot_classes,
+    ):
+        """
+        Configure StorageProfile with a specific snapshotClass.
+    
+        Finds a compatible VolumeSnapshotClass and sets it in the StorageProfile.
+        Restores original configuration after test.
+        """
+        if not storage_class_for_snapshot:
+            pytest.skip("No storage class supports snapshots")
+    
+        storage_profile = StorageProfile(client=admin_client, name=storage_class_for_snapshot)
+        original_spec = storage_profile.instance.get("spec", {})
+        original_snapshot_class = original_spec.get("snapshotClass")
+    
+        # Find compatible VolumeSnapshotClass for this storage class provisioner
+        from ocp_resources.storage_class import StorageClass
+    
+        sc_provisioner = StorageClass(client=admin_client, name=storage_class_for_snapshot).instance.provisioner
+        compatible_vsc = None
+    
+        for vsc in volume_snapshot_classes:
+            if vsc.instance.driver == sc_provisioner:
+                compatible_vsc = vsc.name
+                LOGGER.info(
+                    f"Found compatible VolumeSnapshotClass '{compatible_vsc}' for StorageClass '{storage_class_for_snapshot}'"
+                )
+                break
+    
+        if not compatible_vsc:
+            pytest.skip(f"No compatible VolumeSnapshotClass found for StorageClass '{storage_class_for_snapshot}'")
+    
+        # Set snapshotClass in StorageProfile spec
+        with ResourceEditor(patches={storage_profile: {"spec": {"snapshotClass": compatible_vsc}}}):
+>           storage_profile.wait_for_status(status=ResourceEditor.Status.UPDATED, timeout=TIMEOUT_10MIN)
+                                                   ^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: type object 'ResourceEditor' has no attribute 'Status'
+
+tests/storage/snapshots/test_storage_profile_snapshot_class.py:79: AttributeError
+---------------------------- Captured stderr setup -----------------------------
+
+--------------------- test_storage_profile_snapshot_class_honored[cirros_vm_with_storage_profile0] ---------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-01-27T19:49:10.395797 conftest [32mINFO[0m Executing session fixture: admin_client[0m
+2026-01-27T19:49:10.396189 conftest [32mINFO[0m Executing session fixture: pytestconfig[0m
+2026-01-27T19:49:10.396445 conftest [32mINFO[0m Executing session fixture: installing_cnv[0m
+2026-01-27T19:49:10.396623 conftest [32mINFO[0m Executing session fixture: cnv_tests_utilities_namespace[0m
+2026-01-27T19:49:10.544605 ocp_resources Namespace [32mINFO[0m Create Namespace cnv-tests-utilities[0m
+2026-01-27T19:49:10.544916 ocp_resources Namespace [32mINFO[0m Posting {'apiVersion': 'v1', 'kind': 'Namespace', 'metadata': {'name': 'cnv-tests-utilities', 'labels': {'pod-security.kubernetes.io/enforce': 'privileged', 'security.openshift.io/scc.podSecurityLabelSync': 'false'}}, 'spec': {}}[0m
+2026-01-27T19:49:10.835892 ocp_resources Namespace [32mINFO[0m Wait for Namespace cnv-tests-utilities status to be Active[0m
+2026-01-27T19:49:10.836217 timeout_sampler [32mINFO[0m Waiting for 120 seconds [0:02:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_for_status.lambda: self.exists)[0m
+2026-01-27T19:49:10.988144 ocp_resources Namespace [32mINFO[0m Status of Namespace cnv-tests-utilities is Active[0m
+2026-01-27T19:49:10.988400 timeout_sampler [32mINFO[0m Elapsed time: 0.00018167495727539062 [0:00:00.000182][0m
+2026-01-27T19:49:10.989471 ocp_resources.resource [32mINFO[0m kind: OAuth api version: config.openshift.io/v1[0m
+2026-01-27T19:49:10.990308 ocp_resources.resource [32mINFO[0m kind: DaemonSet api version: apps/v1[0m
+2026-01-27T19:49:10.988699 conftest [32mINFO[0m Executing session fixture: skip_unprivileged_client[0m
+2026-01-27T19:49:10.988935 conftest [32mINFO[0m Executing session fixture: identity_provider_config[0m
+2026-01-27T19:49:10.989712 conftest [32mINFO[0m Executing session fixture: leftovers_cleanup[0m
+2026-01-27T19:49:10.989864 tests.conftest [32mINFO[0m Checking for leftover resources[0m
+2026-01-27T19:49:11.558153 ocp_resources.resource [32mINFO[0m ResourceEdits: Updating data for resource OAuth cluster[0m
+2026-01-27T19:49:11.558386 ocp_resources OAuth [32mINFO[0m Update OAuth cluster:
+{'metadata': {'name': 'cluster'}, 'spec': {}}[0m
+2026-01-27T19:49:11.708516 conftest [32mINFO[0m Executing session fixture: artifactory_setup[0m
+2026-01-27T19:49:11.708967 tests.conftest [32mINFO[0m Checking for artifactory credentials:[0m
+2026-01-27T19:49:11.709370 tests.conftest [33mWARNING[0m Explicitly skipping artifactory setup check due to use of --skip-artifactory-check[0m
+2026-01-27T19:49:11.712745 ocp_resources.resource [32mINFO[0m Trying to get client via new_client_from_config[0m
+2026-01-27T19:49:11.709868 conftest [32mINFO[0m Executing session fixture: os_path_environment[0m
+2026-01-27T19:49:11.710397 conftest [32mINFO[0m Executing session fixture: tmpdir_factory[0m
+2026-01-27T19:49:11.710653 conftest [32mINFO[0m Executing session fixture: bin_directory[0m
+2026-01-27T19:49:11.712282 conftest [32mINFO[0m Executing session fixture: virtctl_binary[0m
+2026-01-27T19:49:11.730191 ocp_resources.resource [32mINFO[0m kind: ConsoleCLIDownload api version: console.openshift.io/v1[0m
+2026-01-27T19:49:12.238642 utilities.infra [32mINFO[0m Downloading archive using: url=https://hyperconverged-cluster-cli-download-openshift-cnv.apps.ci-ln-c4f8zwb-72292.origin-ci-int-gce.dev.rhcloud.com/amd64/linux/virtctl.tar.gz[0m
+2026-01-27T19:49:33.768207 utilities.infra [32mINFO[0m Extract the downloaded archive.[0m
+2026-01-27T19:49:34.963220 ocp_resources.resource [32mINFO[0m Trying to get client via new_client_from_config[0m
+2026-01-27T19:49:34.960562 utilities.infra [32mINFO[0m Downloaded file: ['virtctl'][0m
+2026-01-27T19:49:34.962247 conftest [32mINFO[0m Executing session fixture: oc_binary[0m
+2026-01-27T19:49:34.984686 ocp_resources.resource [32mINFO[0m kind: ConsoleCLIDownload api version: console.openshift.io/v1[0m
+2026-01-27T19:49:35.468692 utilities.infra [32mINFO[0m Downloading archive using: url=https://downloads-openshift-console.apps.ci-ln-c4f8zwb-72292.origin-ci-int-gce.dev.rhcloud.com/amd64/linux/oc.tar[0m
+2026-01-27T19:50:29.355411 utilities.infra [32mINFO[0m Extract the downloaded archive.[0m
+2026-01-27T19:50:29.486426 utilities.infra [32mINFO[0m Downloaded file: ['oc'][0m
+2026-01-27T19:50:29.516293 ocp_resources.resource [32mINFO[0m kind: ClusterVersion api version: config.openshift.io/v1[0m
+2026-01-27T19:50:29.514761 conftest [32mINFO[0m Executing session fixture: bin_directory_to_os_path[0m
+2026-01-27T19:50:29.515638 tests.conftest [32mINFO[0m Adding /tmp/pytest-bRvR3fN8Zer2WfTywQqiW9/bin0 to $PATH[0m
+2026-01-27T19:50:29.515933 conftest [32mINFO[0m Executing session fixture: openshift_current_version[0m
+2026-01-27T19:50:29.828393 conftest [32mINFO[0m Executing session fixture: hco_namespace[0m
+2026-01-27T19:50:29.989279 ocp_resources.resource [32mINFO[0m kind: Subscription api version: operators.coreos.com/v1alpha1[0m
+2026-01-27T19:50:29.988541 conftest [32mINFO[0m Executing session fixture: csv_scope_session[0m
+2026-01-27T19:50:30.308043 ocp_resources.resource [32mINFO[0m kind: ClusterServiceVersion api version: operators.coreos.com/v1alpha1[0m
+2026-01-27T19:50:30.615523 conftest [32mINFO[0m Executing session fixture: cnv_current_version[0m
+2026-01-27T19:50:30.873239 ocp_resources.resource [32mINFO[0m kind: Subscription api version: operators.coreos.com/v1alpha1[0m
+2026-01-27T19:50:30.872498 conftest [32mINFO[0m Executing session fixture: cnv_subscription_scope_session[0m
+2026-01-27T19:50:31.027831 conftest [32mINFO[0m Executing session fixture: hco_image[0m
+2026-01-27T19:50:31.188562 ocp_resources.resource [32mINFO[0m kind: CatalogSource api version: operators.coreos.com/v1alpha1[0m
+2026-01-27T19:50:31.489299 ocp_resources.resource [32mINFO[0m kind: StorageClass api version: storage.k8s.io/v1[0m
+2026-01-27T19:50:31.488823 conftest [32mINFO[0m Executing session fixture: cluster_storage_classes[0m
+2026-01-27T19:50:31.635611 ocp_resources.resource [32mINFO[0m kind: KubeVirt api version: kubevirt.io/v1[0m
+2026-01-27T19:50:31.634709 conftest [32mINFO[0m Executing session fixture: ocs_storage_class[0m
+2026-01-27T19:50:31.635041 conftest [32mINFO[0m Executing session fixture: ocs_current_version[0m
+2026-01-27T19:50:31.635278 conftest [32mINFO[0m Executing session fixture: kubevirt_resource_scope_session[0m
+2026-01-27T19:50:31.794022 ocp_resources.resource [32mINFO[0m kind: Network api version: config.openshift.io/v1[0m
+2026-01-27T19:50:31.793433 conftest [32mINFO[0m Executing session fixture: cluster_service_network[0m
+2026-01-27T19:50:31.944544 conftest [32mINFO[0m Executing session fixture: ipv6_supported_cluster[0m
+2026-01-27T19:50:31.945082 conftest [32mINFO[0m Executing session fixture: ipv4_supported_cluster[0m
+2026-01-27T19:50:31.945371 conftest [32mINFO[0m Executing session fixture: nodes[0m
+2026-01-27T19:50:32.168884 conftest [32mINFO[0m Executing session fixture: workers[0m
+2026-01-27T19:50:33.150946 ocp_resources.resource [32mINFO[0m Trying to get client via new_client_from_config[0m
+2026-01-27T19:50:33.149996 conftest [32mINFO[0m Executing session fixture: cnv_source[0m
+2026-01-27T19:50:33.150384 conftest [32mINFO[0m Executing session fixture: is_production_source[0m
+2026-01-27T19:50:33.150577 conftest [32mINFO[0m Executing session fixture: generated_pulled_secret[0m
+2026-01-27T19:50:33.757465 conftest [32mINFO[0m Executing session fixture: cnv_tests_utilities_service_account[0m
+2026-01-27T19:50:33.772824 ocp_resources ServiceAccount [32mINFO[0m Create ServiceAccount cnv-tests-sa[0m
+2026-01-27T19:50:33.773026 ocp_resources ServiceAccount [32mINFO[0m Posting {'apiVersion': 'v1', 'kind': 'ServiceAccount', 'metadata': {'name': 'cnv-tests-sa', 'namespace': 'cnv-tests-utilities'}}[0m
+2026-01-27T19:50:35.154844 timeout_sampler [32mINFO[0m Waiting for 10 seconds [0:00:10], retry every 1 seconds. (Function: utilities.virt._get_image_json  Kwargs: {'cmd': 'oc image -o json info quay.io/openshift-cnv/qe-net-utils:latest --filter-by-os linux/amd64 --registry-config=/tmp/tmpwvr64fk0-cnv-tests-pull-secret/pull-secrets.json'})[0m
+2026-01-27T19:50:35.154122 conftest [32mINFO[0m Executing session fixture: utility_daemonset[0m
+2026-01-27T19:50:35.155292 pyhelper_utils.shell [32mINFO[0m Running oc image -o json info quay.io/openshift-cnv/qe-net-utils:latest --filter-by-os linux/amd64 --registry-config=/tmp/tmpwvr64fk0-cnv-tests-pull-secret/pull-secrets.json command[0m
+2026-01-27T19:50:37.492449 timeout_sampler [32mINFO[0m Elapsed time: 0.00026226043701171875 [0:00:00.000262][0m
+2026-01-27T19:50:37.532279 ocp_resources.resource [32mINFO[0m kind: DaemonSet api version: apps/v1 --- [DuplicateFilter: Last log `Trying to get client via new_client_from_config` repeated 2 times][0m
+2026-01-27T19:50:37.546617 ocp_resources DaemonSet [32mINFO[0m Create DaemonSet utility[0m
+2026-01-27T19:50:37.546937 ocp_resources DaemonSet [32mINFO[0m Posting {'apiVersion': 'apps/v1', 'kind': 'DaemonSet', 'metadata': {'annotations': {'deprecated.daemonset.template.generation': '0'}, 'creationTimestamp': None, 'labels': {'cnv-test': 'utility', 'tier': 'node'}, 'name': 'utility', 'namespace': 'cnv-tests-utilities'}, 'spec': {'revisionHistoryLimit': 10, 'selector': {'matchLabels': {'cnv-test': 'utility', 'tier': 'node'}}, 'template': {'metadata': {'creationTimestamp': None, 'labels': {'cnv-test': 'utility', 'tier': 'node'}}, 'spec': {'containers': [{'command': ['/bin/bash', '-c', 'echo ok > /tmp/healthy && sleep INF'], 'image': 'quay.io/openshift-cnv/qe-net-utils:latest@sha256:2c8e11ac0f0b36553bed603c1c67dccb703d7059ccbcf8c91e3a35c99719ce20', 'imagePullPolicy': 'IfNotPresent', 'name': 'utility', 'readinessProbe': {'exec': {'command': ['cat', '/tmp/healthy']}, 'failureThreshold': 3, 'initialDelaySeconds': 5, 'periodSeconds': 5, 'successThreshold': 1, 'timeoutSeconds': 1}, 'resources': {'limits': {'cpu': '100m', 'memory': '50Mi'}, 'requests': {'cpu': '100m', 'memory': '50Mi'}}, 'securityContext': {'privileged': True, 'runAsUser': 0}, 'stdin': True, 'stdinOnce': True, 'terminationMessagePath': '/dev/termination-log', 'terminationMessagePolicy': 'File', 'tty': True, 'volumeMounts': [{'mountPath': '/host', 'name': 'host'}, {'mountPath': '/var/run/secrets/kubernetes.io/serviceaccount', 'name': 'kube-api-access-m5ch7', 'readOnly': True}, {'mountPath': '/host/run/openvswitch', 'name': 'ovs-run'}, {'mountPath': '/run/dbus/system_bus_socket', 'name': 'dbus-socket'}, {'mountPath': '/host/dev', 'name': 'dev'}, {'mountPath': '/host/etc', 'name': 'etc'}, {'mountPath': '/host/var', 'name': 'var'}]}], 'dnsPolicy': 'ClusterFirst', 'enableServiceLinks': True, 'hostNetwork': True, 'hostPID': True, 'imagePullSecrets': [{'name': 'default-dockercfg-xrlbh'}], 'preemptionPolicy': 'PreemptLowerPriority', 'priority': 0, 'restartPolicy': 'Always', 'schedulerName': 'default-scheduler', 'securityContext': {'privileged': True}, 'serviceAccount': 'cnv-tests-sa', 'serviceAccountName': 'cnv-tests-sa', 'terminationGracePeriodSeconds': 30, 'tolerations': [{'effect': 'NoSchedule', 'key': 'node-role.kubernetes.io/master', 'operator': 'Exists'}], 'volumes': [{'hostPath': {'path': '/', 'type': 'Directory'}, 'name': 'host'}, {'hostPath': {'path': '/run/openvswitch', 'type': ''}, 'name': 'ovs-run'}, {'hostPath': {'path': '/run/dbus/system_bus_socket', 'type': 'Socket'}, 'name': 'dbus-socket'}, {'hostPath': {'path': '/dev', 'type': 'Directory'}, 'name': 'dev'}, {'hostPath': {'path': '/etc', 'type': 'Directory'}, 'name': 'etc'}, {'hostPath': {'path': '/var', 'type': 'Directory'}, 'name': 'var'}, {'name': 'kube-api-access-m5ch7', 'projected': {'defaultMode': 420, 'sources': [{'serviceAccountToken': {'path': 'token'}}, {'configMap': {'items': [{'key': 'ca.crt', 'path': 'ca.crt'}], 'name': 'kube-root-ca.crt'}}, {'downwardAPI': {'items': [{'fieldRef': {'apiVersion': 'v1', 'fieldPath': 'metadata.namespace'}, 'path': 'namespace'}]}}, {'configMap': {'items': [{'key': 'service-ca.crt', 'path': 'service-ca.crt'}], 'name': 'openshift-service-ca.crt'}}]}}]}}, 'updateStrategy': {'type': 'OnDelete'}}}[0m
+2026-01-27T19:50:38.076807 ocp_resources DaemonSet [32mINFO[0m Wait for DaemonSet utility to deploy all desired pods[0m
+2026-01-27T19:50:38.077371 timeout_sampler [32mINFO[0m Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: kubernetes.dynamic.client.get  Kwargs: {'field_selector': 'metadata.name==utility', 'namespace': 'cnv-tests-utilities'})[0m
+2026-01-27T19:50:46.517442 timeout_sampler [32mINFO[0m Elapsed time: 8.273606061935425 [0:00:08.273606][0m
+2026-01-27T19:50:46.517910 conftest [32mINFO[0m Executing session fixture: workers_utility_pods[0m
+2026-01-27T19:50:50.448513 conftest [32mINFO[0m Executing session fixture: workers_type[0m
+2026-01-27T19:50:50.928083 ocp_resources Pod [32mINFO[0m Execute ['chroot', '/host', 'bash', '-c', 'systemd-detect-virt'] on utility-b9bqh (ci-ln-c4f8zwb-72292-88kkf-worker-a-45b8p)[0m
+2026-01-27T19:50:52.138974 ocp_resources Pod [32mINFO[0m Execute ['chroot', '/host', 'bash', '-c', 'systemd-detect-virt'] on utility-cqwcv (ci-ln-c4f8zwb-72292-88kkf-worker-f-h6srg)[0m
+2026-01-27T19:50:53.478107 ocp_resources Pod [32mINFO[0m Execute ['chroot', '/host', 'bash', '-c', 'systemd-detect-virt'] on utility-jlrqg (ci-ln-c4f8zwb-72292-88kkf-worker-b-7cdzd)[0m
+2026-01-27T19:50:54.067419 tests.conftest [32mINFO[0m Cluster workers are: virtual[0m
+2026-01-27T19:50:54.068058 conftest [32mINFO[0m Executing session fixture: nodes_cpu_architecture[0m
+2026-01-27T19:50:55.063652 pyhelper_utils.shell [32mINFO[0m Running virtctl --kubeconfig /home/mvavrine/cnv/gcp.kubeconfig version command[0m
+2026-01-27T19:50:55.063245 conftest [32mINFO[0m Executing session fixture: cluster_info[0m
+2026-01-27T19:50:55.580875 ocp_resources.resource [32mINFO[0m kind: Network api version: config.openshift.io/v1[0m
+2026-01-27T19:50:55.730186 ocp_resources.resource [32mINFO[0m kind: HyperConverged api version: hco.kubevirt.io/v1beta1[0m
+2026-01-27T19:50:55.726616 tests.conftest [32mINFO[0m 
+Cluster info:
+	Openshift version: 4.21.0-0.nightly-2026-05-12-052734
+	CNV version: 4.21.6
+	HCO image: registry.redhat.io/redhat/redhat-operator-index:v4.21
+	OCS version: None
+	CNI type: OVNKubernetes
+	Workers type: virtual
+	Cluster CPU Architecture: amd64
+	IPv4 cluster: True
+	IPv6 cluster: False
+	Virtctl version: 
+	Client Version: version.Info{GitVersion:"v1.7.2-90-g901adcd460", GitCommit:"901adcd460c36c8e7c43a6f7705bb3a8d8e6a289", GitTreeState:"clean", BuildDate:"2026-04-24T20:40:40Z", GoVersion:"go1.24.13 (Red Hat 1.24.13-4.el9_6) X:strictfipsruntime", Compiler:"gc", Platform:"linux/amd64"}
+	Server Version: version.Info{GitVersion:"v1.7.2-90-g901adcd460", GitCommit:"901adcd460c36c8e7c43a6f7705bb3a8d8e6a289", GitTreeState:"clean", BuildDate:"2026-04-24T20:41:20Z", GoVersion:"go1.24.13 (Red Hat 1.24.13-4.el9_6) X:strictfipsruntime", Compiler:"gc", Platform:"linux/amd64"}
+[0m
+2026-01-27T19:50:55.727150 conftest [32mINFO[0m Executing function fixture: term_handler_scope_function[0m
+2026-01-27T19:50:55.727486 conftest [32mINFO[0m Executing class fixture: term_handler_scope_class[0m
+2026-01-27T19:50:55.727752 conftest [32mINFO[0m Executing module fixture: term_handler_scope_module[0m
+2026-01-27T19:50:55.728015 conftest [32mINFO[0m Executing session fixture: term_handler_scope_session[0m
+2026-01-27T19:50:55.728379 conftest [32mINFO[0m Executing session fixture: record_testsuite_property[0m
+2026-01-27T19:50:55.728676 conftest [32mINFO[0m Executing session fixture: junitxml_polarion[0m
+2026-01-27T19:50:55.729016 conftest [32mINFO[0m Executing session fixture: cluster_storage_classes_names[0m
+2026-01-27T19:50:55.729315 conftest [32mINFO[0m Executing session fixture: junitxml_plugin[0m
+2026-01-27T19:50:55.729592 conftest [32mINFO[0m Executing session fixture: hyperconverged_resource_scope_session[0m
+2026-01-27T19:50:55.889108 ocp_utilities.infra [32mINFO[0m Verify all nodes are in a healthy condition.[0m
+2026-01-27T19:50:55.888206 conftest [32mINFO[0m Executing session fixture: cluster_sanity_scope_session[0m
+2026-01-27T19:50:55.888712 utilities.infra [32mINFO[0m Running cluster sanity. (To skip cluster sanity check pass --cluster-sanity-skip-check to pytest)[0m
+2026-01-27T19:50:55.888866 utilities.infra [32mINFO[0m Check storage classes sanity. (To skip storage class sanity check pass --cluster-sanity-skip-storage-check to pytest)[0m
+2026-01-27T19:50:55.888988 utilities.infra [32mINFO[0m Check nodes sanity. (To skip nodes sanity check pass --cluster-sanity-skip-nodes-check to pytest)[0m
+2026-01-27T19:50:56.870083 ocp_utilities.infra [32mINFO[0m Verify all nodes are schedulable.[0m
+2026-01-27T19:50:57.860617 timeout_sampler [32mINFO[0m Waiting for 300 seconds [0:05:00], retry every 5 seconds. (Function: utilities.infra.get_pods  Kwargs: {'dyn_client': <kubernetes.dynamic.client.DynamicClient object at 0x7faf3382dbe0>, 'namespace': <ocp_resources.namespace.Namespace object at 0x7faf32233ce0>})[0m
+2026-01-27T19:51:11.104192 timeout_sampler [32mINFO[0m Elapsed time: 0.0002949237823486328 [0:00:00.000295][0m
+2026-01-27T19:51:11.104691 timeout_sampler [32mINFO[0m Waiting for 600 seconds [0:10:00], retry every 5 seconds. (Function: utilities.infra.<locals>.lambda: dynamic_client.namespace.resource_kind.resource_name.list.get)[0m
+2026-01-27T19:51:11.104494 utilities.infra [32mINFO[0m Waiting for resource to stabilize: resource_kind=HyperConverged conditions={'Available': 'True', 'Progressing': 'False', 'ReconcileComplete': 'True', 'Degraded': 'False', 'Upgradeable': 'True'} sleep=600 consecutive_checks_count=3[0m
+2026-01-27T19:51:22.067478 timeout_sampler [32mINFO[0m Elapsed time: 10.653897047042847 [0:00:10.653897][0m
+2026-01-27T19:51:22.068930 ocp_utilities.infra [32mINFO[0m Verify all nodes are in a healthy condition.[0m
+2026-01-27T19:51:22.068229 conftest [32mINFO[0m Executing module fixture: cluster_sanity_scope_module[0m
+2026-01-27T19:51:22.068577 utilities.infra [32mINFO[0m Running cluster sanity. (To skip cluster sanity check pass --cluster-sanity-skip-check to pytest)[0m
+2026-01-27T19:51:22.068712 utilities.infra [32mINFO[0m Check storage classes sanity. (To skip storage class sanity check pass --cluster-sanity-skip-storage-check to pytest)[0m
+2026-01-27T19:51:22.068831 utilities.infra [32mINFO[0m Check nodes sanity. (To skip nodes sanity check pass --cluster-sanity-skip-nodes-check to pytest)[0m
+2026-01-27T19:51:23.099437 ocp_utilities.infra [32mINFO[0m Verify all nodes are schedulable.[0m
+2026-01-27T19:51:24.162917 timeout_sampler [32mINFO[0m Waiting for 300 seconds [0:05:00], retry every 5 seconds. (Function: utilities.infra.get_pods  Kwargs: {'dyn_client': <kubernetes.dynamic.client.DynamicClient object at 0x7faf3382dbe0>, 'namespace': <ocp_resources.namespace.Namespace object at 0x7faf32233ce0>})[0m
+2026-01-27T19:51:38.520345 timeout_sampler [32mINFO[0m Elapsed time: 0.0003387928009033203 [0:00:00.000339][0m
+2026-01-27T19:51:38.521037 timeout_sampler [32mINFO[0m Waiting for 600 seconds [0:10:00], retry every 5 seconds. (Function: utilities.infra.<locals>.lambda: dynamic_client.namespace.resource_kind.resource_name.list.get)[0m
+2026-01-27T19:51:38.520736 utilities.infra [32mINFO[0m Waiting for resource to stabilize: resource_kind=HyperConverged conditions={'Available': 'True', 'Progressing': 'False', 'ReconcileComplete': 'True', 'Degraded': 'False', 'Upgradeable': 'True'} sleep=600 consecutive_checks_count=3[0m
+2026-01-27T19:51:49.478212 timeout_sampler [32mINFO[0m Elapsed time: 10.637301683425903 [0:00:10.637302][0m
+2026-01-27T19:51:49.478762 conftest [32mINFO[0m Executing session fixture: ssh_key_tmpdir_scope_session[0m
+2026-01-27T19:51:49.480339 conftest [32mINFO[0m Executing session fixture: generated_ssh_key_for_vm_access[0m
+2026-01-27T19:51:49.576385 conftest [32mINFO[0m Executing function fixture: autouse_fixtures[0m
+2026-01-27T19:51:49.576763 conftest [32mINFO[0m Executing session fixture: storage_class_for_snapshot[0m
+2026-01-27T19:51:49.737189 ocp_resources.resource [32mINFO[0m kind: VolumeSnapshotClass api version: snapshot.storage.k8s.io/v1[0m
+2026-01-27T19:51:50.116973 tests.conftest [32mINFO[0m Storage class for snapshot: standard-csi[0m
+2026-01-27T19:51:50.117402 conftest [32mINFO[0m Executing session fixture: skip_if_no_storage_class_for_snapshot[0m
+2026-01-27T19:51:50.117742 conftest [32mINFO[0m Executing session fixture: unprivileged_secret[0m
+2026-01-27T19:51:50.123048 ocp_resources.resource [32mINFO[0m Trying to get client via new_client_from_config[0m
+2026-01-27T19:51:50.138593 ocp_resources Secret [32mINFO[0m Create Secret htpass-secret-for-cnv-tests[0m
+2026-01-27T19:51:50.138788 ocp_resources Secret [32mINFO[0m Posting {'apiVersion': 'v1', 'kind': 'Secret', 'metadata': {'name': 'htpass-secret-for-cnv-tests', 'namespace': 'openshift-config'}, 'data': '*******'}[0m
+2026-01-27T19:51:50.887395 ocp_resources.resource [32mINFO[0m ResourceEdit: Backing up old data[0m
+2026-01-27T19:51:50.887084 conftest [32mINFO[0m Executing session fixture: identity_provider_with_htpasswd[0m
+2026-01-27T19:51:51.047437 ocp_resources.resource [32mINFO[0m ResourceEdits: Updating data for resource OAuth cluster[0m
+2026-01-27T19:51:51.047754 ocp_resources OAuth [32mINFO[0m Update OAuth cluster:
+{'metadata': {'name': 'cluster'}, 'spec': {'identityProviders': [{'name': 'htpasswd_provider', 'mappingMethod': 'claim', 'type': 'HTPasswd', 'htpasswd': {'fileData': {'name': 'htpass-secret-for-cnv-tests'}}}], 'tokenConfig': {'accessTokenMaxAgeSeconds': 604800, 'accessTokenInactivityTimeout': None}}}[0m
+2026-01-27T19:51:51.219686 ocp_resources.resource [32mINFO[0m Trying to get client via new_client_from_config[0m
+2026-01-27T19:51:51.235990 ocp_resources.resource [32mINFO[0m kind: Deployment api version: apps/v1[0m
+2026-01-27T19:51:51.564644 timeout_sampler [32mINFO[0m Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: tests.conftest.<locals>.lambda: dp.instance.status.conditions)[0m
+2026-01-27T19:51:51.564348 tests.conftest [32mINFO[0m Wait for oauth-openshift -> Type: Progressing -> Reason: ReplicaSetUpdated[0m
+2026-01-27T19:52:10.449785 timeout_sampler [32mINFO[0m Elapsed time: 18.713640689849854 [0:00:18.713641][0m
+2026-01-27T19:52:10.450291 timeout_sampler [32mINFO[0m Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: tests.conftest.<locals>.lambda: dp.instance.status.conditions)[0m
+2026-01-27T19:52:10.450071 tests.conftest [32mINFO[0m Wait for oauth-openshift -> Type: Progressing -> Reason: NewReplicaSetAvailable[0m
+2026-01-27T19:53:05.887733 timeout_sampler [32mINFO[0m Elapsed time: 55.26674437522888 [0:00:55.266744][0m
+2026-01-27T19:53:05.888304 conftest [32mINFO[0m Executing session fixture: kubeconfig_export_path[0m
+2026-01-27T19:53:05.888690 conftest [32mINFO[0m Executing session fixture: exported_kubeconfig[0m
+2026-01-27T19:53:05.889396 tests.conftest [33mWARNING[0m Both KUBECONFIG /home/mvavrine/cnv/gcp.kubeconfig and /home/mvavrine/.kube/config exist. /home/mvavrine/cnv/gcp.kubeconfig is used as kubeconfig source for this run.[0m
+2026-01-27T19:53:05.889763 tests.conftest [32mINFO[0m Setting KUBECONFIG dir for this run to point to: /tmp/tmp9tubw4s8-cnv-tests-kubeconfig[0m
+2026-01-27T19:53:05.889886 tests.conftest [32mINFO[0m Copy KUBECONFIG to /tmp/tmp9tubw4s8-cnv-tests-kubeconfig/kubeconfig[0m
+2026-01-27T19:53:05.890734 tests.conftest [32mINFO[0m Set: KUBECONFIG=/tmp/tmp9tubw4s8-cnv-tests-kubeconfig/kubeconfig[0m
+2026-01-27T19:53:05.891141 conftest [32mINFO[0m Executing session fixture: unprivileged_client[0m
+2026-01-27T19:53:06.432707 timeout_sampler [32mINFO[0m Waiting for 60 seconds [0:01:00], retry every 3 seconds. (Function: subprocess.Popen  Kwargs: {'args': 'oc login https://api.ci-ln-c4f8zwb-72292.origin-ci-int-gce.dev.rhcloud.com:6443 -u unprivileged-user -p unprivileged-password', 'shell': True, 'stdout': -1, 'stderr': -1})[0m
+2026-01-27T19:53:06.432406 utilities.infra [32mINFO[0m Trying to login to account[0m
+2026-01-27T19:53:09.998554 timeout_sampler [32mINFO[0m Elapsed time: 0.0004303455352783203 [0:00:00.000430][0m
+2026-01-27T19:53:10.013647 timeout_sampler [32mINFO[0m Waiting for 60 seconds [0:01:00], retry every 3 seconds. (Function: subprocess.Popen  Kwargs: {'args': 'oc login https://api.ci-ln-c4f8zwb-72292.origin-ci-int-gce.dev.rhcloud.com:6443 -u system:admin', 'shell': True, 'stdout': -1, 'stderr': -1})[0m
+2026-01-27T19:53:09.998279 utilities.infra [32mINFO[0m Login - success[0m
+2026-01-27T19:53:10.013420 utilities.infra [32mINFO[0m Trying to login to account[0m
+2026-01-27T19:53:11.301852 timeout_sampler [32mINFO[0m Elapsed time: 0.0005431175231933594 [0:00:00.000543][0m
+2026-01-27T19:53:11.302580 ocp_resources.resource [32mINFO[0m Trying to get client via new_client_from_config[0m
+2026-01-27T19:53:11.301565 utilities.infra [32mINFO[0m Login - success[0m
+2026-01-27T19:53:11.327248 ocp_resources.resource [32mINFO[0m kind: ProjectRequest api version: project.openshift.io/v1[0m
+2026-01-27T19:53:11.327459 ocp_resources ProjectRequest [32mINFO[0m Create ProjectRequest snapshots-test-storage-profile-snapshot-class[0m
+2026-01-27T19:53:11.327575 ocp_resources ProjectRequest [32mINFO[0m Posting {'apiVersion': 'project.openshift.io/v1', 'kind': 'ProjectRequest', 'metadata': {'name': 'snapshots-test-storage-profile-snapshot-class'}}[0m
+2026-01-27T19:53:11.326625 conftest [32mINFO[0m Executing module fixture: namespace[0m
+2026-01-27T19:53:11.939102 ocp_resources.resource [32mINFO[0m kind: Project api version: project.openshift.io/v1[0m
+2026-01-27T19:53:11.939383 ocp_resources Project [32mINFO[0m Wait for Project snapshots-test-storage-profile-snapshot-class status to be Active[0m
+2026-01-27T19:53:11.939595 timeout_sampler [32mINFO[0m Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_for_status.lambda: self.exists)[0m
+2026-01-27T19:53:12.107117 ocp_resources Project [32mINFO[0m Status of Project snapshots-test-storage-profile-snapshot-class is Active[0m
+2026-01-27T19:53:12.107383 timeout_sampler [32mINFO[0m Elapsed time: 0.00020694732666015625 [0:00:00.000207][0m
+2026-01-27T19:53:12.267107 ocp_resources Namespace [32mINFO[0m Wait for Namespace snapshots-test-storage-profile-snapshot-class status to be Active[0m
+2026-01-27T19:53:12.267384 timeout_sampler [32mINFO[0m Waiting for 120 seconds [0:02:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_for_status.lambda: self.exists)[0m
+2026-01-27T19:53:12.427062 ocp_resources Namespace [32mINFO[0m Status of Namespace snapshots-test-storage-profile-snapshot-class is Active[0m
+2026-01-27T19:53:12.427371 timeout_sampler [32mINFO[0m Elapsed time: 0.00016021728515625 [0:00:00.000160][0m
+2026-01-27T19:53:12.427594 ocp_resources.resource [32mINFO[0m ResourceEdits: Updating data for resource Namespace snapshots-test-storage-profile-snapshot-class[0m
+2026-01-27T19:53:12.427726 ocp_resources Namespace [32mINFO[0m Update Namespace snapshots-test-storage-profile-snapshot-class:
+{'metadata': {'labels': None, 'name': 'snapshots-test-storage-profile-snapshot-class'}}[0m
+2026-01-27T19:53:12.747459 conftest [32mINFO[0m Executing function fixture: volume_snapshot_classes[0m
+2026-01-27T19:53:12.907133 conftest [32mINFO[0m Executing function fixture: storage_profile_with_snapshot_class[0m
+2026-01-27T19:53:13.083731 ocp_resources.resource [32mINFO[0m kind: StorageProfile api version: cdi.kubevirt.io/v1beta1[0m
+2026-01-27T19:53:13.536437 ocp_resources.resource [32mINFO[0m ResourceEdit: Backing up old data[0m
+2026-01-27T19:53:13.536224 tests.storage.snapshots.test_storage_profile_snapshot_class [32mINFO[0m Found compatible VolumeSnapshotClass 'csi-gce-pd-vsc' for StorageClass 'standard-csi'[0m
+2026-01-27T19:53:13.697954 ocp_resources.resource [32mINFO[0m ResourceEdits: Updating data for resource StorageProfile standard-csi[0m
+2026-01-27T19:53:13.698227 ocp_resources StorageProfile [32mINFO[0m Update StorageProfile standard-csi:
+{'spec': {'snapshotClass': 'csi-gce-pd-vsc'}, 'metadata': {'name': 'standard-csi'}}[0m
+2026-01-27T19:53:13.856913 ocp_resources.resource [32mINFO[0m ResourceEdits: Restoring data for resource StorageProfile standard-csi[0m
+2026-01-27T19:53:13.857212 ocp_resources StorageProfile [32mINFO[0m Update StorageProfile standard-csi:
+{'spec': {}, 'metadata': {'name': 'standard-csi'}}[0m
+_ ERROR at setup of test_fallback_to_label_based_selection[cirros_vm_without_snapshot_class0] _
+
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7faf3382dbe0>
+storage_class_for_snapshot = 'standard-csi'
+
+    @pytest.fixture()
+    def storage_profile_without_snapshot_class(
+        admin_client,
+        storage_class_for_snapshot,
+    ):
+        """
+        Ensure StorageProfile does not have snapshotClass set.
+    
+        Removes snapshotClass from StorageProfile if present.
+        Restores original configuration after test.
+        """
+        if not storage_class_for_snapshot:
+            pytest.skip("No storage class supports snapshots")
+    
+        storage_profile = StorageProfile(client=admin_client, name=storage_class_for_snapshot)
+        original_spec = storage_profile.instance.get("spec", {})
+        original_snapshot_class = original_spec.get("snapshotClass")
+    
+        if original_snapshot_class:
+            # Remove snapshotClass from StorageProfile spec
+            with ResourceEditor(patches={storage_profile: {"spec": {"snapshotClass": None}}}):
+>               storage_profile.wait_for_status(status=ResourceEditor.Status.UPDATED, timeout=TIMEOUT_10MIN)
+                                                       ^^^^^^^^^^^^^^^^^^^^^
+E               AttributeError: type object 'ResourceEditor' has no attribute 'Status'
+
+tests/storage/snapshots/test_storage_profile_snapshot_class.py:114: AttributeError
+---------------------------- Captured stderr setup -----------------------------
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7faf3382dbe0>
+storage_class_for_snapshot = 'standard-csi'
+volume_snapshot_classes = [<ocp_resources.volume_snapshot_class.VolumeSnapshotClass object at 0x7faf30b3c7d0>]
+
+    @pytest.fixture()
+    def storage_profile_with_snapshot_class(
+        admin_client,
+        storage_class_for_snapshot,
+        volume_snapshot_classes,
+    ):
+        """
+        Configure StorageProfile with a specific snapshotClass.
+    
+        Finds a compatible VolumeSnapshotClass and sets it in the StorageProfile.
+        Restores original configuration after test.
+        """
+        if not storage_class_for_snapshot:
+            pytest.skip("No storage class supports snapshots")
+    
+        storage_profile = StorageProfile(client=admin_client, name=storage_class_for_snapshot)
+        original_spec = storage_profile.instance.get("spec", {})
+        original_snapshot_class = original_spec.get("snapshotClass")
+    
+        # Find compatible VolumeSnapshotClass for this storage class provisioner
+        from ocp_resources.storage_class import StorageClass
+    
+        sc_provisioner = StorageClass(client=admin_client, name=storage_class_for_snapshot).instance.provisioner
+        compatible_vsc = None
+    
+        for vsc in volume_snapshot_classes:
+            if vsc.instance.driver == sc_provisioner:
+                compatible_vsc = vsc.name
+                LOGGER.info(
+                    f"Found compatible VolumeSnapshotClass '{compatible_vsc}' for StorageClass '{storage_class_for_snapshot}'"
+                )
+                break
+    
+        if not compatible_vsc:
+            pytest.skip(f"No compatible VolumeSnapshotClass found for StorageClass '{storage_class_for_snapshot}'")
+    
+        # Set snapshotClass in StorageProfile spec
+        with ResourceEditor(patches={storage_profile: {"spec": {"snapshotClass": compatible_vsc}}}):
+>           storage_profile.wait_for_status(status=ResourceEditor.Status.UPDATED, timeout=TIMEOUT_10MIN)
+                                                   ^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: type object 'ResourceEditor' has no attribute 'Status'
+
+tests/storage/snapshots/test_storage_profile_snapshot_class.py:79: AttributeError
+2026-01-27T19:53:14.152741 ocp_resources.resource [32mINFO[0m kind: StorageProfile api version: cdi.kubevirt.io/v1beta1[0m
+------------------------------------------------------- TEARDOWN -------------------------------------------------------
+
+---------------------- test_fallback_to_label_based_selection[cirros_vm_without_snapshot_class0] ----------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-01-27T19:53:14.151181 conftest [32mINFO[0m Executing function fixture: term_handler_scope_function[0m
+2026-01-27T19:53:14.151551 conftest [32mINFO[0m Executing class fixture: term_handler_scope_class[0m
+2026-01-27T19:53:14.152022 conftest [32mINFO[0m Executing function fixture: autouse_fixtures[0m
+2026-01-27T19:53:14.152438 conftest [32mINFO[0m Executing function fixture: storage_profile_without_snapshot_class[0m
+2026-01-27T19:53:14.306844 ocp_resources.resource [32mINFO[0m ResourceEdit: Backing up old data[0m
+2026-01-27T19:53:14.467175 ocp_resources.resource [32mINFO[0m ResourceEdits: Updating data for resource StorageProfile standard-csi[0m
+2026-01-27T19:53:14.467503 ocp_resources StorageProfile [32mINFO[0m Update StorageProfile standard-csi:
+{'spec': {'snapshotClass': None}, 'metadata': {'name': 'standard-csi'}}[0m
+2026-01-27T19:53:14.622388 ocp_resources.resource [32mINFO[0m ResourceEdits: Restoring data for resource StorageProfile standard-csi[0m
+2026-01-27T19:53:14.622597 ocp_resources StorageProfile [32mINFO[0m Update StorageProfile standard-csi:
+{'spec': {'snapshotClass': 'csi-gce-pd-vsc'}, 'metadata': {'name': 'standard-csi'}}[0m
+_ ERROR at setup of test_restore_with_storage_profile_snapshot_class[cirros_vm_with_storage_profile0] _
+
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7faf3382dbe0>
+storage_class_for_snapshot = 'standard-csi'
+volume_snapshot_classes = [<ocp_resources.volume_snapshot_class.VolumeSnapshotClass object at 0x7faf30b3dbd0>]
+
+    @pytest.fixture()
+    def storage_profile_with_snapshot_class(
+        admin_client,
+        storage_class_for_snapshot,
+        volume_snapshot_classes,
+    ):
+        """
+        Configure StorageProfile with a specific snapshotClass.
+    
+        Finds a compatible VolumeSnapshotClass and sets it in the StorageProfile.
+        Restores original configuration after test.
+        """
+        if not storage_class_for_snapshot:
+            pytest.skip("No storage class supports snapshots")
+    
+        storage_profile = StorageProfile(client=admin_client, name=storage_class_for_snapshot)
+        original_spec = storage_profile.instance.get("spec", {})
+        original_snapshot_class = original_spec.get("snapshotClass")
+    
+        # Find compatible VolumeSnapshotClass for this storage class provisioner
+        from ocp_resources.storage_class import StorageClass
+    
+        sc_provisioner = StorageClass(client=admin_client, name=storage_class_for_snapshot).instance.provisioner
+        compatible_vsc = None
+    
+        for vsc in volume_snapshot_classes:
+            if vsc.instance.driver == sc_provisioner:
+                compatible_vsc = vsc.name
+                LOGGER.info(
+                    f"Found compatible VolumeSnapshotClass '{compatible_vsc}' for StorageClass '{storage_class_for_snapshot}'"
+                )
+                break
+    
+        if not compatible_vsc:
+            pytest.skip(f"No compatible VolumeSnapshotClass found for StorageClass '{storage_class_for_snapshot}'")
+    
+        # Set snapshotClass in StorageProfile spec
+        with ResourceEditor(patches={storage_profile: {"spec": {"snapshotClass": compatible_vsc}}}):
+>           storage_profile.wait_for_status(status=ResourceEditor.Status.UPDATED, timeout=TIMEOUT_10MIN)
+                                                   ^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: type object 'ResourceEditor' has no attribute 'Status'
+
+tests/storage/snapshots/test_storage_profile_snapshot_class.py:79: AttributeError
+---------------------------- Captured stderr setup -----------------------------
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7faf3382dbe0>
+storage_class_for_snapshot = 'standard-csi'
+
+    @pytest.fixture()
+    def storage_profile_without_snapshot_class(
+        admin_client,
+        storage_class_for_snapshot,
+    ):
+        """
+        Ensure StorageProfile does not have snapshotClass set.
+    
+        Removes snapshotClass from StorageProfile if present.
+        Restores original configuration after test.
+        """
+        if not storage_class_for_snapshot:
+            pytest.skip("No storage class supports snapshots")
+    
+        storage_profile = StorageProfile(client=admin_client, name=storage_class_for_snapshot)
+        original_spec = storage_profile.instance.get("spec", {})
+        original_snapshot_class = original_spec.get("snapshotClass")
+    
+        if original_snapshot_class:
+            # Remove snapshotClass from StorageProfile spec
+            with ResourceEditor(patches={storage_profile: {"spec": {"snapshotClass": None}}}):
+>               storage_profile.wait_for_status(status=ResourceEditor.Status.UPDATED, timeout=TIMEOUT_10MIN)
+                                                       ^^^^^^^^^^^^^^^^^^^^^
+E               AttributeError: type object 'ResourceEditor' has no attribute 'Status'
+
+tests/storage/snapshots/test_storage_profile_snapshot_class.py:114: AttributeError
+------------------------------------------------------- TEARDOWN -------------------------------------------------------
+
+------------------ test_restore_with_storage_profile_snapshot_class[cirros_vm_with_storage_profile0] ------------------
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-01-27T19:53:14.794227 conftest [32mINFO[0m Executing function fixture: term_handler_scope_function[0m
+2026-01-27T19:53:14.794506 conftest [32mINFO[0m Executing class fixture: term_handler_scope_class[0m
+2026-01-27T19:53:14.794897 conftest [32mINFO[0m Executing function fixture: autouse_fixtures[0m
+2026-01-27T19:53:14.795299 conftest [32mINFO[0m Executing function fixture: volume_snapshot_classes[0m
+2026-01-27T19:53:14.956971 ocp_resources.resource [32mINFO[0m kind: StorageProfile api version: cdi.kubevirt.io/v1beta1[0m
+2026-01-27T19:53:14.956560 conftest [32mINFO[0m Executing function fixture: storage_profile_with_snapshot_class[0m
+2026-01-27T19:53:15.411073 ocp_resources.resource [32mINFO[0m ResourceEdit: Backing up old data[0m
+2026-01-27T19:53:15.410790 tests.storage.snapshots.test_storage_profile_snapshot_class [32mINFO[0m Found compatible VolumeSnapshotClass 'csi-gce-pd-vsc' for StorageClass 'standard-csi'[0m
+2026-01-27T19:53:15.556955 ocp_resources.resource [32mINFO[0m ResourceEdits: Updating data for resource StorageProfile standard-csi[0m
+2026-01-27T19:53:15.716932 ocp_resources.resource [32mINFO[0m ResourceEdits: Restoring data for resource StorageProfile standard-csi[0m
+2026-01-27T19:53:15.717240 ocp_resources StorageProfile [32mINFO[0m Update StorageProfile standard-csi:
+{'spec': {}, 'metadata': {'name': 'standard-csi'}}[0m
+_____________ ERROR at setup of test_deprecated_apis_in_audit_logs _____________
+
+audit_logs = defaultdict(<class 'list'>, {'ci-ln-c4f8zwb-72292-88kkf-master-0': ['audit-2026-01-27T15-49-18.019.log', 'audit-2026-0...4f8zwb-72292-88kkf-master-2': ['audit-2026-01-27T15-54-49.886.log', 'audit-2026-01-27T17-48-27.600.log', 'audit.log']})
+
+    @pytest.fixture()
+    def deprecated_apis_calls(audit_logs):
+        """Go over control plane nodes audit logs and look for calls using deprecated APIs"""
+        failed_api_calls = defaultdict(list)
+        for node, logs in audit_logs.items():
+>           for audit_log_entry_dict in get_node_audit_log_line_dict(
+                logs=logs, node=node, log_entry=DEPRECATED_API_LOG_ENTRY
+            ):
+
+tests/deprecated_api/test_deprecation_audit_logs.py:79: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+utilities/infra.py:868: in get_node_audit_log_line_dict
+    _, deprecated_api_lines = get_node_audit_log_entries(log=log, node=node, log_entry=log_entry)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/timeout_sampler/__init__.py:280: in wrapper
+    for sample in TimeoutSampler(
+.venv/lib/python3.14/site-packages/timeout_sampler/__init__.py:162: in __iter__
+    yield self.func(*self.func_args, **self.func_kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+utilities/infra.py:853: in get_node_audit_log_entries
+    lines = subprocess.getoutput(
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/subprocess.py:697: in getoutput
+    return getstatusoutput(cmd, encoding=encoding, errors=errors)[1]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/subprocess.py:677: in getstatusoutput
+    data = check_output(cmd, shell=True, text=True, stderr=STDOUT,
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/subprocess.py:472: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/subprocess.py:556: in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/subprocess.py:1207: in communicate
+    stdout = self.stdout.read()
+             ^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <ocp_resources.secret.Secret object at 0x7faf320765d0>
+signal_received = 2
+_frame = <frame at 0x7faf32232c30, file '/home/mvavrine/.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/subprocess.py', line 1207, code communicate>
+
+    def _sigint_handler(self, signal_received: int, _frame: Any) -> None:
+        self.__exit__()
+>       sys.exit(signal_received)
+E       SystemExit: 2
+
+.venv/lib/python3.14/site-packages/ocp_resources/resource.py:765: SystemExit
+---------------------------- Captured stderr setup -----------------------------
+
+------------------------------------------ test_deprecated_apis_in_audit_logs ------------------------------------------
+2026-01-27T19:53:25.404387 ocp_utilities.infra [32mINFO[0m Verify all nodes are in a healthy condition.[0m
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-01-27T19:53:25.402962 conftest [32mINFO[0m Executing function fixture: term_handler_scope_function[0m
+2026-01-27T19:53:25.403334 conftest [32mINFO[0m Executing class fixture: term_handler_scope_class[0m
+2026-01-27T19:53:25.403550 conftest [32mINFO[0m Executing module fixture: term_handler_scope_module[0m
+2026-01-27T19:53:25.403923 conftest [32mINFO[0m Executing module fixture: cluster_sanity_scope_module[0m
+2026-01-27T19:53:25.404111 utilities.infra [32mINFO[0m Running cluster sanity. (To skip cluster sanity check pass --cluster-sanity-skip-check to pytest)[0m
+2026-01-27T19:53:25.404214 utilities.infra [32mINFO[0m Check storage classes sanity. (To skip storage class sanity check pass --cluster-sanity-skip-storage-check to pytest)[0m
+2026-01-27T19:53:25.404304 utilities.infra [32mINFO[0m Check nodes sanity. (To skip nodes sanity check pass --cluster-sanity-skip-nodes-check to pytest)[0m
+2026-01-27T19:53:26.603664 ocp_utilities.infra [32mINFO[0m Verify all nodes are schedulable.[0m
+2026-01-27T19:53:27.792949 timeout_sampler [32mINFO[0m Waiting for 300 seconds [0:05:00], retry every 5 seconds. (Function: utilities.infra.get_pods  Kwargs: {'dyn_client': <kubernetes.dynamic.client.DynamicClient object at 0x7faf3382dbe0>, 'namespace': <ocp_resources.namespace.Namespace object at 0x7faf32233ce0>})[0m
+2026-01-27T19:53:41.047456 timeout_sampler [32mINFO[0m Elapsed time: 0.00035381317138671875 [0:00:00.000354][0m
+2026-01-27T19:53:41.048332 timeout_sampler [32mINFO[0m Waiting for 600 seconds [0:10:00], retry every 5 seconds. (Function: utilities.infra.<locals>.lambda: dynamic_client.namespace.resource_kind.resource_name.list.get)[0m
+2026-01-27T19:53:41.048133 utilities.infra [32mINFO[0m Waiting for resource to stabilize: resource_kind=HyperConverged conditions={'Available': 'True', 'Progressing': 'False', 'ReconcileComplete': 'True', 'Degraded': 'False', 'Upgradeable': 'True'} sleep=600 consecutive_checks_count=3[0m
+2026-01-27T19:53:52.030549 timeout_sampler [32mINFO[0m Elapsed time: 10.638693571090698 [0:00:10.638694][0m
+2026-01-27T19:53:52.031177 conftest [32mINFO[0m Executing function fixture: autouse_fixtures[0m
+2026-01-27T19:53:52.031614 conftest [32mINFO[0m Executing function fixture: audit_logs[0m
+2026-01-27T19:53:53.724698 timeout_sampler [32mINFO[0m Waiting for 30 seconds [0:00:30], retry every 10 seconds. (Function: utilities.infra.get_node_audit_log_entries  Kwargs: {'log': 'audit-2026-01-27T15-49-18.019.log', 'node': 'ci-ln-c4f8zwb-72292-88kkf-master-0', 'log_entry': '"k8s.io/deprecated":"true"'})[0m
+2026-01-27T19:53:53.724332 conftest [32mINFO[0m Executing function fixture: deprecated_apis_calls[0m
+2026-01-27T19:55:12.049973 timeout_sampler [32mINFO[0m Elapsed time: 0.0003924369812011719 [0:00:00.000392][0m
+2026-01-27T19:55:12.069636 timeout_sampler [32mINFO[0m Waiting for 30 seconds [0:00:30], retry every 10 seconds. (Function: utilities.infra.get_node_audit_log_entries  Kwargs: {'log': 'audit-2026-01-27T17-05-30.089.log', 'node': 'ci-ln-c4f8zwb-72292-88kkf-master-0', 'log_entry': '"k8s.io/deprecated":"true"'})[0m
+2026-01-27T19:57:13.685339 timeout_sampler [32mINFO[0m Elapsed time: 0.0002586841583251953 [0:00:00.000259][0m
+2026-01-27T19:57:13.704954 timeout_sampler [32mINFO[0m Waiting for 30 seconds [0:00:30], retry every 10 seconds. (Function: utilities.infra.get_node_audit_log_entries  Kwargs: {'log': 'audit.log', 'node': 'ci-ln-c4f8zwb-72292-88kkf-master-0', 'log_entry': '"k8s.io/deprecated":"true"'})[0m
+2026-01-27T19:57:57.205771 timeout_sampler [32mINFO[0m Elapsed time: 0.00025463104248046875 [0:00:00.000255][0m
+2026-01-27T19:57:57.216187 timeout_sampler [32mINFO[0m Waiting for 30 seconds [0:00:30], retry every 10 seconds. (Function: utilities.infra.get_node_audit_log_entries  Kwargs: {'log': 'audit-2026-01-27T15-31-31.131.log', 'node': 'ci-ln-c4f8zwb-72292-88kkf-master-1', 'log_entry': '"k8s.io/deprecated":"true"'})[0m
+2026-01-27T19:58:57.949071 timeout_sampler [32mINFO[0m Elapsed time: 0.00024366378784179688 [0:00:00.000244][0m
+2026-01-27T19:58:57.962266 timeout_sampler [32mINFO[0m Waiting for 30 seconds [0:00:30], retry every 10 seconds. (Function: utilities.infra.get_node_audit_log_entries  Kwargs: {'log': 'audit-2026-01-27T16-55-17.695.log', 'node': 'ci-ln-c4f8zwb-72292-88kkf-master-1', 'log_entry': '"k8s.io/deprecated":"true"'})[0m
+2026-01-27T20:00:24.309867 timeout_sampler [32mINFO[0m Elapsed time: 0.00038313865661621094 [0:00:00.000383][0m
+2026-01-27T20:00:24.318134 timeout_sampler [32mINFO[0m Waiting for 30 seconds [0:00:30], retry every 10 seconds. (Function: utilities.infra.get_node_audit_log_entries  Kwargs: {'log': 'audit.log', 'node': 'ci-ln-c4f8zwb-72292-88kkf-master-1', 'log_entry': '"k8s.io/deprecated":"true"'})[0m
+2026-01-27T20:01:03.932715 timeout_sampler [32mINFO[0m Elapsed time: 0.0003235340118408203 [0:00:00.000324][0m
+2026-01-27T20:01:03.949474 timeout_sampler [32mINFO[0m Waiting for 30 seconds [0:00:30], retry every 10 seconds. (Function: utilities.infra.get_node_audit_log_entries  Kwargs: {'log': 'audit-2026-01-27T15-54-49.886.log', 'node': 'ci-ln-c4f8zwb-72292-88kkf-master-2', 'log_entry': '"k8s.io/deprecated":"true"'})[0m
+2026-01-27T20:02:12.530813 timeout_sampler [32mINFO[0m Elapsed time: 0.0002894401550292969 [0:00:00.000289][0m
+2026-01-27T20:02:12.544073 timeout_sampler [32mINFO[0m Waiting for 30 seconds [0:00:30], retry every 10 seconds. (Function: utilities.infra.get_node_audit_log_entries  Kwargs: {'log': 'audit-2026-01-27T17-48-27.600.log', 'node': 'ci-ln-c4f8zwb-72292-88kkf-master-2', 'log_entry': '"k8s.io/deprecated":"true"'})[0m
+2026-01-27T20:02:36.914336 ocp_resources Secret [32mINFO[0m Delete Secret htpass-secret-for-cnv-tests[0m
+2026-01-27T20:02:37.425611 ocp_resources Secret [32mINFO[0m Deleting {'kind': 'Secret', 'apiVersion': 'v1', 'metadata': {'name': 'htpass-secret-for-cnv-tests', 'namespace': 'openshift-config', 'uid': 'aca94005-33ac-4b14-b303-55ff573a335e', 'resourceVersion': '142600', 'creationTimestamp': '2026-01-27T17:51:50Z', 'managedFields': [{'manager': 'OpenAPI-Generator', 'operation': 'Update', 'apiVersion': 'v1', 'time': '2026-01-27T17:51:50Z', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:data': {'.': {}, 'f:htpasswd': {}}, 'f:type': {}}}]}, 'data': '*******', 'type': 'Opaque'}[0m
+2026-01-27T20:02:37.583279 ocp_resources Secret [32mINFO[0m Wait until Secret htpass-secret-for-cnv-tests is deleted[0m
+2026-01-27T20:02:37.583712 timeout_sampler [32mINFO[0m Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_deleted.lambda: self.exists)[0m
+2026-01-27T20:02:37.737029 timeout_sampler [32mINFO[0m Elapsed time: 0.00035262107849121094 [0:00:00.000353][0m
+2026-01-27T20:02:37.737508 timeout_sampler [32mINFO[0m Elapsed time: 0.0002167224884033203 [0:00:00.000217][0m
+___________ ERROR at teardown of test_deprecated_apis_in_audit_logs ____________
+
+admin_client = <kubernetes.dynamic.client.DynamicClient object at 0x7faf3382dbe0>
+skip_unprivileged_client = False
+
+    @pytest.fixture(scope="session")
+    def unprivileged_secret(admin_client, skip_unprivileged_client):
+        if skip_unprivileged_client:
+            yield
+    
+        else:
+            password = UNPRIVILEGED_PASSWORD.encode()
+            enc_password = bcrypt.hashpw(password, bcrypt.gensalt(5, prefix=b"2a")).decode()
+            crypto_credentials = f"{UNPRIVILEGED_USER}:{enc_password}"
+            with Secret(
+                name=HTTP_SECRET_NAME,
+                namespace=NamespacesNames.OPENSHIFT_CONFIG,
+                htpasswd=base64_encode_str(text=crypto_credentials),
+            ) as secret:
+                yield secret
+    
+            #  Wait for oauth-openshift deployment to update after removing htpass-secret
+>           _wait_for_oauth_openshift_deployment()
+
+tests/conftest.py:329: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/conftest.py:353: in _wait_for_oauth_openshift_deployment
+    _wait_sampler(_reason=reason)
+tests/conftest.py:346: in _wait_sampler
+    for sample in sampler:
+                  ^^^^^^^
+.venv/lib/python3.14/site-packages/timeout_sampler/__init__.py:162: in __iter__
+    yield self.func(*self.func_args, **self.func_kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/conftest.py:344: in <lambda>
+    func=lambda: dp.instance.status.conditions,
+                 ^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/ocp_resources/resource.py:1670: in instance
+    return self.retry_cluster_exceptions(func=_instance)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/ocp_resources/resource.py:1141: in retry_cluster_exceptions
+    for sample in sampler:
+                  ^^^^^^^
+.venv/lib/python3.14/site-packages/timeout_sampler/__init__.py:162: in __iter__
+    yield self.func(*self.func_args, **self.func_kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/ocp_resources/resource.py:1668: in _instance
+    return self.api.get(name=self.name, namespace=self.namespace)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/kubernetes/dynamic/client.py:112: in get
+    return self.request('get', path, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/kubernetes/dynamic/client.py:55: in inner
+    resp = func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/kubernetes/dynamic/client.py:277: in request
+    api_response = self.client.call_api(
+.venv/lib/python3.14/site-packages/kubernetes/client/api_client.py:348: in call_api
+    return self.__call_api(resource_path, method,
+.venv/lib/python3.14/site-packages/kubernetes/client/api_client.py:180: in __call_api
+    response_data = self.request(
+.venv/lib/python3.14/site-packages/kubernetes/client/api_client.py:373: in request
+    return self.rest_client.GET(url,
+.venv/lib/python3.14/site-packages/kubernetes/client/rest.py:244: in GET
+    return self.request("GET", url,
+.venv/lib/python3.14/site-packages/kubernetes/client/rest.py:217: in request
+    r = self.pool_manager.request(method, url,
+.venv/lib/python3.14/site-packages/urllib3/_request_methods.py:135: in request
+    return self.request_encode_url(
+.venv/lib/python3.14/site-packages/urllib3/_request_methods.py:182: in request_encode_url
+    return self.urlopen(method, url, **extra_kw)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/urllib3/poolmanager.py:443: in urlopen
+    response = conn.urlopen(method, u.request_uri, **kw)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/urllib3/connectionpool.py:787: in urlopen
+    response = self._make_request(
+.venv/lib/python3.14/site-packages/urllib3/connectionpool.py:534: in _make_request
+    response = conn.getresponse()
+               ^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/urllib3/connection.py:516: in getresponse
+    httplib_response = super().getresponse()
+                       ^^^^^^^^^^^^^^^^^^^^^
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/http/client.py:1430: in getresponse
+    response.begin()
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/http/client.py:331: in begin
+    version, status, reason = self._read_status()
+                              ^^^^^^^^^^^^^^^^^^^
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/http/client.py:292: in _read_status
+    line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/socket.py:725: in readinto
+    return self._sock.recv_into(b)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/ssl.py:1304: in recv_into
+    return self.read(nbytes, buffer)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/ssl.py:1138: in read
+    return self._sslobj.read(len, buffer)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <ocp_resources.secret.Secret object at 0x7faf320765d0>
+signal_received = 2
+_frame = <frame at 0x7faf30c42020, file '/home/mvavrine/.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/ssl.py', line 1141, code read>
+
+    def _sigint_handler(self, signal_received: int, _frame: Any) -> None:
+        self.__exit__()
+>       sys.exit(signal_received)
+E       SystemExit: 2
+
+.venv/lib/python3.14/site-packages/ocp_resources/resource.py:765: SystemExit
+---------------------------- Captured stderr setup -----------------------------
+
+------------------------------------------ test_deprecated_apis_in_audit_logs ------------------------------------------
+2026-01-27T19:53:25.404387 ocp_utilities.infra [32mINFO[0m Verify all nodes are in a healthy condition.[0m
+-------------------------------------------------------- SETUP --------------------------------------------------------
+2026-01-27T19:53:25.402962 conftest [32mINFO[0m Executing function fixture: term_handler_scope_function[0m
+2026-01-27T19:53:25.403334 conftest [32mINFO[0m Executing class fixture: term_handler_scope_class[0m
+2026-01-27T19:53:25.403550 conftest [32mINFO[0m Executing module fixture: term_handler_scope_module[0m
+2026-01-27T19:53:25.403923 conftest [32mINFO[0m Executing module fixture: cluster_sanity_scope_module[0m
+2026-01-27T19:53:25.404111 utilities.infra [32mINFO[0m Running cluster sanity. (To skip cluster sanity check pass --cluster-sanity-skip-check to pytest)[0m
+2026-01-27T19:53:25.404214 utilities.infra [32mINFO[0m Check storage classes sanity. (To skip storage class sanity check pass --cluster-sanity-skip-storage-check to pytest)[0m
+2026-01-27T19:53:25.404304 utilities.infra [32mINFO[0m Check nodes sanity. (To skip nodes sanity check pass --cluster-sanity-skip-nodes-check to pytest)[0m
+2026-01-27T19:53:26.603664 ocp_utilities.infra [32mINFO[0m Verify all nodes are schedulable.[0m
+2026-01-27T19:53:27.792949 timeout_sampler [32mINFO[0m Waiting for 300 seconds [0:05:00], retry every 5 seconds. (Function: utilities.infra.get_pods  Kwargs: {'dyn_client': <kubernetes.dynamic.client.DynamicClient object at 0x7faf3382dbe0>, 'namespace': <ocp_resources.namespace.Namespace object at 0x7faf32233ce0>})[0m
+2026-01-27T19:53:41.047456 timeout_sampler [32mINFO[0m Elapsed time: 0.00035381317138671875 [0:00:00.000354][0m
+2026-01-27T19:53:41.048332 timeout_sampler [32mINFO[0m Waiting for 600 seconds [0:10:00], retry every 5 seconds. (Function: utilities.infra.<locals>.lambda: dynamic_client.namespace.resource_kind.resource_name.list.get)[0m
+2026-01-27T19:53:41.048133 utilities.infra [32mINFO[0m Waiting for resource to stabilize: resource_kind=HyperConverged conditions={'Available': 'True', 'Progressing': 'False', 'ReconcileComplete': 'True', 'Degraded': 'False', 'Upgradeable': 'True'} sleep=600 consecutive_checks_count=3[0m
+2026-01-27T19:53:52.030549 timeout_sampler [32mINFO[0m Elapsed time: 10.638693571090698 [0:00:10.638694][0m
+2026-01-27T19:53:52.031177 conftest [32mINFO[0m Executing function fixture: autouse_fixtures[0m
+2026-01-27T19:53:52.031614 conftest [32mINFO[0m Executing function fixture: audit_logs[0m
+2026-01-27T19:53:53.724698 timeout_sampler [32mINFO[0m Waiting for 30 seconds [0:00:30], retry every 10 seconds. (Function: utilities.infra.get_node_audit_log_entries  Kwargs: {'log': 'audit-2026-01-27T15-49-18.019.log', 'node': 'ci-ln-c4f8zwb-72292-88kkf-master-0', 'log_entry': '"k8s.io/deprecated":"true"'})[0m
+2026-01-27T19:53:53.724332 conftest [32mINFO[0m Executing function fixture: deprecated_apis_calls[0m
+2026-01-27T19:55:12.049973 timeout_sampler [32mINFO[0m Elapsed time: 0.0003924369812011719 [0:00:00.000392][0m
+2026-01-27T19:55:12.069636 timeout_sampler [32mINFO[0m Waiting for 30 seconds [0:00:30], retry every 10 seconds. (Function: utilities.infra.get_node_audit_log_entries  Kwargs: {'log': 'audit-2026-01-27T17-05-30.089.log', 'node': 'ci-ln-c4f8zwb-72292-88kkf-master-0', 'log_entry': '"k8s.io/deprecated":"true"'})[0m
+2026-01-27T19:57:13.685339 timeout_sampler [32mINFO[0m Elapsed time: 0.0002586841583251953 [0:00:00.000259][0m
+2026-01-27T19:57:13.704954 timeout_sampler [32mINFO[0m Waiting for 30 seconds [0:00:30], retry every 10 seconds. (Function: utilities.infra.get_node_audit_log_entries  Kwargs: {'log': 'audit.log', 'node': 'ci-ln-c4f8zwb-72292-88kkf-master-0', 'log_entry': '"k8s.io/deprecated":"true"'})[0m
+2026-01-27T19:57:57.205771 timeout_sampler [32mINFO[0m Elapsed time: 0.00025463104248046875 [0:00:00.000255][0m
+2026-01-27T19:57:57.216187 timeout_sampler [32mINFO[0m Waiting for 30 seconds [0:00:30], retry every 10 seconds. (Function: utilities.infra.get_node_audit_log_entries  Kwargs: {'log': 'audit-2026-01-27T15-31-31.131.log', 'node': 'ci-ln-c4f8zwb-72292-88kkf-master-1', 'log_entry': '"k8s.io/deprecated":"true"'})[0m
+2026-01-27T19:58:57.949071 timeout_sampler [32mINFO[0m Elapsed time: 0.00024366378784179688 [0:00:00.000244][0m
+2026-01-27T19:58:57.962266 timeout_sampler [32mINFO[0m Waiting for 30 seconds [0:00:30], retry every 10 seconds. (Function: utilities.infra.get_node_audit_log_entries  Kwargs: {'log': 'audit-2026-01-27T16-55-17.695.log', 'node': 'ci-ln-c4f8zwb-72292-88kkf-master-1', 'log_entry': '"k8s.io/deprecated":"true"'})[0m
+2026-01-27T20:00:24.309867 timeout_sampler [32mINFO[0m Elapsed time: 0.00038313865661621094 [0:00:00.000383][0m
+2026-01-27T20:00:24.318134 timeout_sampler [32mINFO[0m Waiting for 30 seconds [0:00:30], retry every 10 seconds. (Function: utilities.infra.get_node_audit_log_entries  Kwargs: {'log': 'audit.log', 'node': 'ci-ln-c4f8zwb-72292-88kkf-master-1', 'log_entry': '"k8s.io/deprecated":"true"'})[0m
+2026-01-27T20:01:03.932715 timeout_sampler [32mINFO[0m Elapsed time: 0.0003235340118408203 [0:00:00.000324][0m
+2026-01-27T20:01:03.949474 timeout_sampler [32mINFO[0m Waiting for 30 seconds [0:00:30], retry every 10 seconds. (Function: utilities.infra.get_node_audit_log_entries  Kwargs: {'log': 'audit-2026-01-27T15-54-49.886.log', 'node': 'ci-ln-c4f8zwb-72292-88kkf-master-2', 'log_entry': '"k8s.io/deprecated":"true"'})[0m
+2026-01-27T20:02:12.530813 timeout_sampler [32mINFO[0m Elapsed time: 0.0002894401550292969 [0:00:00.000289][0m
+2026-01-27T20:02:12.544073 timeout_sampler [32mINFO[0m Waiting for 30 seconds [0:00:30], retry every 10 seconds. (Function: utilities.infra.get_node_audit_log_entries  Kwargs: {'log': 'audit-2026-01-27T17-48-27.600.log', 'node': 'ci-ln-c4f8zwb-72292-88kkf-master-2', 'log_entry': '"k8s.io/deprecated":"true"'})[0m
+2026-01-27T20:02:36.914336 ocp_resources Secret [32mINFO[0m Delete Secret htpass-secret-for-cnv-tests[0m
+2026-01-27T20:02:37.425611 ocp_resources Secret [32mINFO[0m Deleting {'kind': 'Secret', 'apiVersion': 'v1', 'metadata': {'name': 'htpass-secret-for-cnv-tests', 'namespace': 'openshift-config', 'uid': 'aca94005-33ac-4b14-b303-55ff573a335e', 'resourceVersion': '142600', 'creationTimestamp': '2026-01-27T17:51:50Z', 'managedFields': [{'manager': 'OpenAPI-Generator', 'operation': 'Update', 'apiVersion': 'v1', 'time': '2026-01-27T17:51:50Z', 'fieldsType': 'FieldsV1', 'fieldsV1': {'f:data': {'.': {}, 'f:htpasswd': {}}, 'f:type': {}}}]}, 'data': '*******', 'type': 'Opaque'}[0m
+2026-01-27T20:02:37.583279 ocp_resources Secret [32mINFO[0m Wait until Secret htpass-secret-for-cnv-tests is deleted[0m
+2026-01-27T20:02:37.583712 timeout_sampler [32mINFO[0m Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: ocp_resources.resource.wait_deleted.lambda: self.exists)[0m
+2026-01-27T20:02:37.737029 timeout_sampler [32mINFO[0m Elapsed time: 0.00035262107849121094 [0:00:00.000353][0m
+2026-01-27T20:02:37.737508 timeout_sampler [32mINFO[0m Elapsed time: 0.0002167224884033203 [0:00:00.000217][0m
+--------------------------- Captured stderr teardown ---------------------------
+audit_logs = defaultdict(<class 'list'>, {'ci-ln-c4f8zwb-72292-88kkf-master-0': ['audit-2026-01-27T15-49-18.019.log', 'audit-2026-0...4f8zwb-72292-88kkf-master-2': ['audit-2026-01-27T15-54-49.886.log', 'audit-2026-01-27T17-48-27.600.log', 'audit.log']})
+
+    @pytest.fixture()
+    def deprecated_apis_calls(audit_logs):
+        """Go over control plane nodes audit logs and look for calls using deprecated APIs"""
+        failed_api_calls = defaultdict(list)
+        for node, logs in audit_logs.items():
+>           for audit_log_entry_dict in get_node_audit_log_line_dict(
+                logs=logs, node=node, log_entry=DEPRECATED_API_LOG_ENTRY
+            ):
+
+tests/deprecated_api/test_deprecation_audit_logs.py:79: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+utilities/infra.py:868: in get_node_audit_log_line_dict
+    _, deprecated_api_lines = get_node_audit_log_entries(log=log, node=node, log_entry=log_entry)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/timeout_sampler/__init__.py:280: in wrapper
+    for sample in TimeoutSampler(
+.venv/lib/python3.14/site-packages/timeout_sampler/__init__.py:162: in __iter__
+    yield self.func(*self.func_args, **self.func_kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+utilities/infra.py:853: in get_node_audit_log_entries
+    lines = subprocess.getoutput(
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/subprocess.py:697: in getoutput
+    return getstatusoutput(cmd, encoding=encoding, errors=errors)[1]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/subprocess.py:677: in getstatusoutput
+    data = check_output(cmd, shell=True, text=True, stderr=STDOUT,
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/subprocess.py:472: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/subprocess.py:556: in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/subprocess.py:1207: in communicate
+    stdout = self.stdout.read()
+             ^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <ocp_resources.secret.Secret object at 0x7faf320765d0>
+signal_received = 2
+_frame = <frame at 0x7faf32232c30, file '/home/mvavrine/.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/subprocess.py', line 1207, code communicate>
+
+    def _sigint_handler(self, signal_received: int, _frame: Any) -> None:
+        self.__exit__()
+>       sys.exit(signal_received)
+E       SystemExit: 2
+
+.venv/lib/python3.14/site-packages/ocp_resources/resource.py:765: SystemExit
+------------------------------------------------------- TEARDOWN -------------------------------------------------------
+2026-01-27T20:02:37.963873 tests.conftest [32mINFO[0m Remove: /tmp/tmp9tubw4s8-cnv-tests-kubeconfig/kubeconfig[0m
+2026-01-27T20:02:37.965395 ocp_resources.resource [32mINFO[0m ResourceEdits: Restoring data for resource OAuth cluster[0m
+2026-01-27T20:02:37.965590 ocp_resources OAuth [32mINFO[0m Update OAuth cluster:
+{'metadata': {'name': 'cluster'}, 'spec': {'identityProviders': None, 'tokenConfig': None}}[0m
+2026-01-27T20:02:37.964976 tests.conftest [32mINFO[0m Set: KUBECONFIG=/home/mvavrine/cnv/gcp.kubeconfig[0m
+2026-01-27T20:02:38.303789 ocp_resources Secret [32mINFO[0m Delete Secret htpass-secret-for-cnv-tests[0m
+2026-01-27T20:02:38.446270 ocp_resources Secret [33mWARNING[0m Resource Secret htpass-secret-for-cnv-tests was not found, and wasn't deleted[0m
+2026-01-27T20:02:38.446836 ocp_resources.resource [32mINFO[0m Trying to get client via new_client_from_config[0m
+2026-01-27T20:02:38.463646 ocp_resources.resource [32mINFO[0m kind: Deployment api version: apps/v1[0m
+2026-01-27T20:02:38.809611 timeout_sampler [32mINFO[0m Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: tests.conftest.<locals>.lambda: dp.instance.status.conditions)[0m
+2026-01-27T20:02:38.809328 tests.conftest [32mINFO[0m Wait for oauth-openshift -> Type: Progressing -> Reason: ReplicaSetUpdated[0m
+2026-01-27T20:02:47.144260 timeout_sampler [32mINFO[0m Elapsed time: 8.164765357971191 [0:00:08.164765][0m
+2026-01-27T20:02:47.144721 timeout_sampler [32mINFO[0m Waiting for 240 seconds [0:04:00], retry every 1 seconds. (Function: tests.conftest.<locals>.lambda: dp.instance.status.conditions)[0m
+2026-01-27T20:02:47.144515 tests.conftest [32mINFO[0m Wait for oauth-openshift -> Type: Progressing -> Reason: NewReplicaSetAvailable[0m
+2026-01-27T20:03:16.644038 ocp_resources Secret [32mINFO[0m Delete Secret htpass-secret-for-cnv-tests[0m
+2026-01-27T20:03:16.806446 ocp_resources Secret [33mWARNING[0m Resource Secret htpass-secret-for-cnv-tests was not found, and wasn't deleted[0m
+2026-01-27T20:03:16.806980 timeout_sampler [32mINFO[0m Elapsed time: 29.39235544204712 [0:00:29.392355][0m
+=============================== warnings summary ===============================
+tests/storage/snapshots/test_storage_profile_snapshot_class.py: 5 warnings
+tests/deprecated_api/test_deprecation_audit_logs.py: 3 warnings
+.venv/lib/python3.14/site-packages/kubernetes/client/exceptions.py:91: 2 warnings
+  /home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/exceptions.py:91: DeprecationWarning: HTTPResponse.getheaders() is deprecated and will be removed in urllib3 v2.1.0. Instead access HTTPResponse.headers directly.
+    self.headers = http_resp.getheaders()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+_ 5 of 5 completed, 0 Pass, 0 Fail, 1 Skip, 0 XPass, 0 XFail, 4 Error, 0 ReRun _
+=========================== short test summary info ============================
+ERROR tests/storage/snapshots/test_storage_profile_snapshot_class.py::test_storage_profile_snapshot_class_honored[cirros_vm_with_storage_profile0]
+ERROR tests/storage/snapshots/test_storage_profile_snapshot_class.py::test_fallback_to_label_based_selection[cirros_vm_without_snapshot_class0]
+ERROR tests/storage/snapshots/test_storage_profile_snapshot_class.py::test_restore_with_storage_profile_snapshot_class[cirros_vm_with_storage_profile0]
+ERROR tests/deprecated_api/test_deprecation_audit_logs.py::test_deprecated_apis_in_audit_logs
+ERROR tests/deprecated_api/test_deprecation_audit_logs.py::test_deprecated_apis_in_audit_logs
+============ 1 skipped, 10 warnings, 5 errors in 856.58s (0:14:16) =============

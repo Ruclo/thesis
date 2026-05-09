@@ -1,0 +1,41 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.0, pytest-9.0.2, pluggy-1.6.0
+benchmark: 5.2.3 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /home/mvavrine/cnv/openshift-virtualization-tests
+configfile: pytest.ini (WARNING: ignoring pytest config in pyproject.toml!)
+plugins: anyio-4.12.0, html-4.1.1, order-1.3.0, repeat-0.9.4, progress-1.4.0, dependency-0.6.0, jira-0.3.22, metadata-3.1.1, testconfig-0.2.0, benchmark-5.2.3, mock-3.15.1
+collected 6 items
+
+tests/virt/node/general/test_vnc_screenshot_stability.py .
+_ 1 of 6 completed, 1 Pass, 0 Fail, 0 Skip, 0 XPass, 0 XFail, 0 Error, 0 ReRun _
+
+tests/virt/node/general/test_vnc_screenshot_stability.py .
+_ 2 of 6 completed, 2 Pass, 0 Fail, 0 Skip, 0 XPass, 0 XFail, 0 Error, 0 ReRun _
+
+tests/virt/node/general/test_vnc_screenshot_stability.py .
+_ 3 of 6 completed, 3 Pass, 0 Fail, 0 Skip, 0 XPass, 0 XFail, 0 Error, 0 ReRun _
+
+tests/virt/node/general/test_vnc_screenshot_stability.py .
+_ 4 of 6 completed, 4 Pass, 0 Fail, 0 Skip, 0 XPass, 0 XFail, 0 Error, 0 ReRun _
+
+tests/virt/node/general/test_vnc_screenshot_stability.py .
+_ 5 of 6 completed, 5 Pass, 0 Fail, 0 Skip, 0 XPass, 0 XFail, 0 Error, 0 ReRun _
+
+tests/deprecated_api/test_deprecation_audit_logs.py .
+_ 6 of 6 completed, 6 Pass, 0 Fail, 0 Skip, 0 XPass, 0 XFail, 0 Error, 0 ReRun _
+                                                                         [100%]================== 6 passed, 14 warnings in 928.98s (0:15:28) ==================
+
+=============================== warnings summary ===============================
+tests/virt/node/general/test_vnc_screenshot_stability.py: 8 warnings
+tests/deprecated_api/test_deprecation_audit_logs.py: 4 warnings
+.venv/lib/python3.14/site-packages/kubernetes/client/exceptions.py:91: 2 warnings
+  /home/mvavrine/cnv/openshift-virtualization-tests/.venv/lib/python3.14/site-packages/kubernetes/client/exceptions.py:91: DeprecationWarning: HTTPResponse.getheaders() is deprecated and will be removed in urllib3 v2.1.0. Instead access HTTPResponse.headers directly.
+    self.headers = http_resp.getheaders()
+
+tests/virt/node/general/test_vnc_screenshot_stability.py::test_vnc_stability_with_concurrent_screenshots
+tests/virt/node/general/test_vnc_screenshot_stability.py::test_extended_vnc_with_periodic_screenshots
+  /home/mvavrine/.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/pty.py:66: DeprecationWarning: This process (pid=49146) is multi-threaded, use of forkpty() may lead to deadlocks in the child.
+    pid, fd = os.forkpty()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================== 6 passed, 16 warnings in 928.98s (0:15:28) ==================

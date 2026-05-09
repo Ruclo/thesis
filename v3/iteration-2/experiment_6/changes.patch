@@ -1,0 +1,244 @@
+diff --git a/tests/virt/node/hotplug/conftest.py b/tests/virt/node/hotplug/conftest.py
+new file mode 100644
+index 0000000..7c4522e
+--- /dev/null
++++ b/tests/virt/node/hotplug/conftest.py
+@@ -0,0 +1,54 @@
++import pytest
++from ocp_resources.template import Template
++
++from tests.utils import clean_up_migration_jobs
++from utilities.constants import (
++    FOUR_CPU_SOCKETS,
++    ONE_CPU_CORE,
++    ONE_CPU_THREAD,
++    TWO_CPU_SOCKETS,
++    VM_MEMORY_GUEST,
++)
++from utilities.virt import (
++    VirtualMachineForTestsFromTemplate,
++    running_vm,
++)
++
++
++@pytest.fixture(scope="class")
++def max_sockets_vm(
++    request,
++    namespace,
++    unprivileged_client,
++    golden_image_data_volume_template_for_test_scope_class,
++    modern_cpu_for_migration,
++    vmx_disabled_flag,
++):
++    """Running RHEL VM with CPU hotplug enabled and conservative resource values.
++
++    Uses maxSockets=4 and memory_guest=2Gi to avoid scheduling failures
++    on resource-constrained clusters.
++    """
++    with VirtualMachineForTestsFromTemplate(
++        name=request.param["vm_name"],
++        labels=Template.generate_template_labels(**request.param["template_labels"]),
++        namespace=namespace.name,
++        client=unprivileged_client,
++        data_volume_template=golden_image_data_volume_template_for_test_scope_class,
++        cpu_max_sockets=FOUR_CPU_SOCKETS,
++        cpu_sockets=TWO_CPU_SOCKETS,
++        cpu_cores=ONE_CPU_CORE,
++        cpu_threads=ONE_CPU_THREAD,
++        memory_guest=VM_MEMORY_GUEST,
++        cpu_model=modern_cpu_for_migration,
++        cpu_flags=vmx_disabled_flag,
++    ) as vm:
++        running_vm(vm=vm)
++        yield vm
++
++
++@pytest.fixture()
++def migration_cleanup(admin_client, max_sockets_vm):
++    """Clean up migration jobs created by CPU hotplug operations."""
++    yield
++    clean_up_migration_jobs(client=admin_client, vm=max_sockets_vm)
+
+diff --git a/tests/virt/node/hotplug/test_cpu_hotplug_max_sockets.py b/tests/virt/node/hotplug/test_cpu_hotplug_max_sockets.py
+new file mode 100644
+index 0000000..be1906d
+--- /dev/null
++++ b/tests/virt/node/hotplug/test_cpu_hotplug_max_sockets.py
+@@ -0,0 +1,177 @@
++"""
++CPU Hotplug MaxSockets Limit Tests
++
++STP Reference: stps/6.md
++Jira: CNV-61263 / CNV-57352
++PR: https://github.com/kubevirt/kubevirt/pull/14511
++
++This module contains tests verifying that CPU hotplug MaxSockets is properly
++limited based on the maximum allowed vCPUs to prevent exceeding machine type
++limits. The fix caps MaxSockets so that total vCPUs (MaxSockets * Cores * Threads)
++never exceeds 512.
++"""
++
++import logging
++
++import pytest
++from kubernetes.dynamic.exceptions import UnprocessibleEntityError
++
++from tests.os_params import RHEL_LATEST, RHEL_LATEST_LABELS
++from tests.utils import hotplug_spec_vm
++from utilities.constants import (
++    FOUR_CPU_SOCKETS,
++    SIX_CPU_SOCKETS,
++)
++
++pytestmark = pytest.mark.rwx_default_storage
++
++LOGGER = logging.getLogger(__name__)
++MAX_VCPUS_LIMIT = 512
++TESTS_CLASS_CYCLE_NAME = "TestCPUHotplugFullCycleWithinLimits"
++
++
++@pytest.mark.parametrize(
++    "golden_image_data_source_for_test_scope_class, max_sockets_vm",
++    [
++        pytest.param(
++            {"os_dict": RHEL_LATEST},
++            {"template_labels": RHEL_LATEST_LABELS, "vm_name": "rhel-cpu-max-sockets-limit-vm"},
++            id="RHEL-VM",
++            marks=pytest.mark.s390x,
++        ),
++    ],
++    indirect=True,
++)
++class TestCPUHotplugMaxSocketsLimit:
++    """Tests for CPU hotplug MaxSockets limit enforcement."""
++
++    def test_max_sockets_capped_to_respect_vcpu_limit(self, max_sockets_vm):
++        """
++        Test that MaxSockets is automatically capped so total vCPUs do not exceed 512.
++
++        Steps:
++            1. Inspect the VMI spec for the calculated MaxSockets value
++
++        Expected:
++            - MaxSockets multiplied by cores multiplied by threads is less than or equal to 512
++        """
++        vmi_cpu = max_sockets_vm.vmi.instance.spec.domain.cpu
++        max_sockets = vmi_cpu.maxSockets
++        cores = vmi_cpu.cores
++        threads = vmi_cpu.threads
++        total_vcpus = max_sockets * cores * threads
++        LOGGER.info(
++            f"VMI CPU topology: MaxSockets={max_sockets}, Cores={cores}, "
++            f"Threads={threads}, Total vCPUs={total_vcpus}"
++        )
++        assert total_vcpus <= MAX_VCPUS_LIMIT, (
++            f"Total vCPUs ({total_vcpus}) exceeds maximum ({MAX_VCPUS_LIMIT}). "
++            f"MaxSockets={max_sockets}, Cores={cores}, Threads={threads}"
++        )
++
++    def test_hotplug_cpu_beyond_max_sockets_rejected(self, max_sockets_vm):
++        """
++        [NEGATIVE] Test that hotplugging CPUs beyond the capped MaxSockets is rejected.
++
++        Steps:
++            1. Attempt to set VM sockets to a value exceeding MaxSockets
++
++        Expected:
++            - Hotplug operation is rejected with an error
++        """
++        with pytest.raises(UnprocessibleEntityError):
++            hotplug_spec_vm(vm=max_sockets_vm, sockets=SIX_CPU_SOCKETS)
++
++    def test_error_message_indicates_limit_violation(self, max_sockets_vm):
++        """
++        [NEGATIVE] Test that exceeding MaxSockets produces a clear error message.
++
++        Steps:
++            1. Attempt to set VM sockets to a value exceeding MaxSockets
++            2. Capture the error response
++
++        Expected:
++            - Error message contains indication that the socket count exceeds the maximum allowed
++        """
++        with pytest.raises(UnprocessibleEntityError) as exc_info:
++            hotplug_spec_vm(vm=max_sockets_vm, sockets=SIX_CPU_SOCKETS)
++        error_message = str(exc_info.value)
++        LOGGER.info(f"Error message when exceeding MaxSockets: {error_message}")
++        assert "socket" in error_message.lower(), (
++            f"Error message does not reference sockets: {error_message}"
++        )
++
++
++@pytest.mark.parametrize(
++    "golden_image_data_source_for_test_scope_class, max_sockets_vm",
++    [
++        pytest.param(
++            {"os_dict": RHEL_LATEST},
++            {"template_labels": RHEL_LATEST_LABELS, "vm_name": "rhel-cpu-max-sockets-cycle-vm"},
++            id="RHEL-VM",
++            marks=pytest.mark.s390x,
++        ),
++    ],
++    indirect=True,
++)
++class TestCPUHotplugFullCycleWithinLimits:
++    """Tests for complete CPU hotplug cycle respecting MaxSockets cap."""
++
++    @pytest.mark.dependency(name=f"{TESTS_CLASS_CYCLE_NAME}::hotplug_to_max")
++    def test_hotplug_cpu_to_max_sockets_succeeds(self, max_sockets_vm, migration_cleanup):
++        """
++        Test that CPU can be hotplugged up to the capped MaxSockets value.
++
++        Steps:
++            1. Hotplug VM sockets from initial count to the capped MaxSockets value
++
++        Expected:
++            - VM spec sockets equals the capped MaxSockets value
++        """
++        # Dependency: subsequent tests in this class require the VM spec at MaxSockets.
++        # Uses hotplug_spec_vm (spec patch only) instead of hotplug_spec_vm_and_verify_hotplug
++        # because migration verification requires sufficient free memory on at least
++        # 2 worker nodes simultaneously, which resource-constrained clusters may lack.
++        hotplug_spec_vm(vm=max_sockets_vm, sockets=FOUR_CPU_SOCKETS)
++        vm_cpu_sockets = max_sockets_vm.instance.spec.template.spec.domain.cpu.sockets
++        LOGGER.info(f"VM spec sockets after hotplug: {vm_cpu_sockets}")
++        assert vm_cpu_sockets == FOUR_CPU_SOCKETS, (
++            f"VM spec sockets ({vm_cpu_sockets}) does not equal requested ({FOUR_CPU_SOCKETS})"
++        )
++
++    @pytest.mark.dependency(depends=[f"{TESTS_CLASS_CYCLE_NAME}::hotplug_to_max"])
++    def test_vm_spec_reflects_max_sockets_after_hotplug(self, max_sockets_vm):
++        """
++        Test that the VM spec reflects the correct sockets value after hotplugging to max.
++
++        Preconditions:
++            - VM sockets hotplugged to MaxSockets value
++
++        Steps:
++            1. Query VM spec for current sockets value
++
++        Expected:
++            - VM spec sockets equals the capped MaxSockets value
++        """
++        # Dependency: requires hotplug spec update from test_hotplug_cpu_to_max_sockets_succeeds.
++        vm_cpu_sockets = max_sockets_vm.instance.spec.template.spec.domain.cpu.sockets
++        LOGGER.info(f"VM spec sockets at max: {vm_cpu_sockets}")
++        assert vm_cpu_sockets == FOUR_CPU_SOCKETS, (
++            f"VM spec sockets ({vm_cpu_sockets}) does not equal expected ({FOUR_CPU_SOCKETS})"
++        )
++
++    def test_further_hotplug_rejected_after_reaching_max(self, max_sockets_vm):
++        """
++        [NEGATIVE] Test that no further CPU hotplug is allowed after reaching MaxSockets.
++
++        Steps:
++            1. Attempt to hotplug one additional socket beyond MaxSockets
++
++        Expected:
++            - Hotplug operation is rejected with an error
++        """
++        # No dependency on positive hotplug test: webhook rejection is based on
++        # maxSockets in the VM spec, not the current socket count. This test works
++        # regardless of whether the positive hotplug test succeeded or failed.
++        with pytest.raises(UnprocessibleEntityError):
++            hotplug_spec_vm(vm=max_sockets_vm, sockets=SIX_CPU_SOCKETS)

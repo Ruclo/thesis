@@ -1,0 +1,466 @@
+diff --git a/tests/virt/node/hard_reset/__init__.py b/tests/virt/node/hard_reset/__init__.py
+new file mode 100644
+index 0000000..e69de29
+
+diff --git a/tests/virt/node/hard_reset/conftest.py b/tests/virt/node/hard_reset/conftest.py
+new file mode 100644
+index 0000000..5835d7a
+--- /dev/null
++++ b/tests/virt/node/hard_reset/conftest.py
+@@ -0,0 +1,138 @@
++import logging
++import shlex
++
++import pytest
++from pyhelper_utils.shell import run_ssh_commands
++from timeout_sampler import TimeoutSampler
++
++from utilities.constants import TIMEOUT_2MIN, TIMEOUT_10MIN
++from utilities.virt import VirtualMachineForTests, fedora_vm_body, running_vm, wait_for_running_vm
++
++LOGGER = logging.getLogger(__name__)
++
++
++def get_vm_boot_count(vm: VirtualMachineForTests) -> int:
++    """Returns the number of boots recorded by systemd journal.
++
++    Args:
++        vm: Virtual machine to query boot count from.
++
++    Returns:
++        Number of boots as reported by journalctl --list-boots.
++    """
++    boot_count_output = run_ssh_commands(
++        host=vm.ssh_exec,
++        commands=[shlex.split("journalctl --list-boots | wc -l")],
++    )[0].strip()
++    return int(boot_count_output)
++
++
++def wait_for_boot_count_increment(
++    vm: VirtualMachineForTests,
++    boot_count_before: int,
++) -> int:
++    """Wait until the boot count increments beyond the given value.
++
++    Args:
++        vm: Virtual machine to query boot count from.
++        boot_count_before: Boot count recorded before the reset.
++
++    Returns:
++        New boot count after increment is detected.
++    """
++    for sample in TimeoutSampler(
++        wait_timeout=TIMEOUT_2MIN,
++        sleep=5,
++        func=get_vm_boot_count,
++        vm=vm,
++    ):
++        if sample > boot_count_before:
++            return sample
++    return get_vm_boot_count(vm=vm)
++
++
++@pytest.fixture(scope="class")
++def hard_reset_vm(unprivileged_client, namespace):
++    """Running Fedora VM for hard reset tests."""
++    name = "fedora-vm-hard-reset"
++    with VirtualMachineForTests(
++        client=unprivileged_client,
++        name=name,
++        namespace=namespace.name,
++        body=fedora_vm_body(name=name),
++    ) as vm:
++        running_vm(vm=vm)
++        yield vm
++
++
++@pytest.fixture(scope="class")
++def boot_count_before_reset(hard_reset_vm):
++    """Boot count recorded before VMI reset."""
++    return get_vm_boot_count(vm=hard_reset_vm)
++
++
++@pytest.fixture(scope="class")
++def vmi_uid_before_reset(hard_reset_vm):
++    """VMI UID recorded before reset."""
++    return hard_reset_vm.vmi.instance.metadata.uid
++
++
++@pytest.fixture(scope="class")
++def pod_name_before_reset(hard_reset_vm):
++    """Virt-launcher pod name recorded before reset."""
++    return hard_reset_vm.privileged_vmi.virt_launcher_pod.name
++
++
++@pytest.fixture(scope="class")
++def hard_reset_vm_after_reset(hard_reset_vm, boot_count_before_reset, vmi_uid_before_reset, pod_name_before_reset):
++    """Perform VMI reset and wait for VM to be running again.
++
++    Depends on boot_count_before_reset, vmi_uid_before_reset, and pod_name_before_reset
++    to ensure those values are captured before the reset is performed.
++    """
++    LOGGER.info(f"Performing hard reset on VMI {hard_reset_vm.vmi.name}")
++    hard_reset_vm.vmi.reset()
++    wait_for_running_vm(vm=hard_reset_vm, ssh_timeout=TIMEOUT_10MIN)
++
++
++@pytest.fixture(scope="class")
++def non_running_vm(unprivileged_client, namespace):
++    """Fedora VM in stopped state (not started)."""
++    name = "fedora-vm-stopped"
++    with VirtualMachineForTests(
++        client=unprivileged_client,
++        name=name,
++        namespace=namespace.name,
++        body=fedora_vm_body(name=name),
++    ) as vm:
++        yield vm
++
++
++@pytest.fixture(scope="class")
++def paused_vm(unprivileged_client, namespace):
++    """Running Fedora VM with paused VMI."""
++    name = "fedora-vm-paused"
++    with VirtualMachineForTests(
++        client=unprivileged_client,
++        name=name,
++        namespace=namespace.name,
++        body=fedora_vm_body(name=name),
++    ) as vm:
++        running_vm(vm=vm)
++        LOGGER.info(f"Pausing VMI {vm.vmi.name}")
++        vm.privileged_vmi.pause(wait=True)
++        yield vm
++
++
++@pytest.fixture(scope="class")
++def virtctl_reset_vm(unprivileged_client, namespace):
++    """Running Fedora VM for virtctl reset tests."""
++    name = "fedora-vm-virtctl-reset"
++    with VirtualMachineForTests(
++        client=unprivileged_client,
++        name=name,
++        namespace=namespace.name,
++        body=fedora_vm_body(name=name),
++    ) as vm:
++        running_vm(vm=vm)
++        yield vm
+
+diff --git a/tests/virt/node/hard_reset/test_virtctl_reset.py b/tests/virt/node/hard_reset/test_virtctl_reset.py
+new file mode 100644
+index 0000000..9c8e853
+--- /dev/null
++++ b/tests/virt/node/hard_reset/test_virtctl_reset.py
+@@ -0,0 +1,86 @@
++"""
++VMI Hard Reset via virtctl Tests
++
++STP Reference: https://issues.redhat.com/browse/VIRTSTRAT-357
++
++This module contains tests for the VMI hard reset functionality
++accessed through the virtctl CLI command.
++"""
++
++import logging
++
++import pytest
++
++from tests.virt.node.hard_reset.conftest import get_vm_boot_count, wait_for_boot_count_increment
++from utilities.constants import TIMEOUT_10MIN
++from utilities.infra import run_virtctl_command
++from utilities.virt import wait_for_running_vm
++
++LOGGER = logging.getLogger(__name__)
++
++pytestmark = pytest.mark.virt
++
++
++class TestVirtctlReset:
++    """
++    Tests for VMI hard reset via the virtctl reset command.
++
++    Preconditions:
++        - Running Fedora virtual machine with SSH access
++    """
++
++    @pytest.mark.polarion("CNV-12377")
++    def test_virtctl_reset_command_succeeds(self, virtctl_reset_vm):
++        """
++        Test that the 'virtctl reset' command completes successfully.
++
++        Steps:
++            1. Execute 'virtctl reset <vmi-name>' command
++
++        Expected:
++            - Command exit code equals 0
++        """
++        command_success, output, error = run_virtctl_command(
++            command=["reset", virtctl_reset_vm.vmi.name],
++            namespace=virtctl_reset_vm.namespace,
++            verify_stderr=False,
++        )
++        LOGGER.info(f"virtctl reset output: {output}, stderr: {error}")
++        assert command_success, f"virtctl reset command failed: {error}"
++        wait_for_running_vm(vm=virtctl_reset_vm, ssh_timeout=TIMEOUT_10MIN)
++
++    @pytest.mark.polarion("CNV-12378")
++    def test_virtctl_reset_triggers_guest_reboot(self, virtctl_reset_vm):
++        """
++        Test that running 'virtctl reset' on a running VMI triggers a guest reboot.
++
++        Steps:
++            1. Record boot count before reset
++            2. Execute 'virtctl reset <vmi-name>' command
++            3. Wait for VM to become running and SSH accessible
++            4. Compare boot count after reset with boot count before reset
++
++        Expected:
++            - Boot count after reset equals boot count before reset plus 1
++        """
++        boot_count_before = get_vm_boot_count(vm=virtctl_reset_vm)
++        LOGGER.info(f"Boot count before virtctl reset: {boot_count_before}")
++
++        command_success, output, error = run_virtctl_command(
++            command=["reset", virtctl_reset_vm.vmi.name],
++            namespace=virtctl_reset_vm.namespace,
++            verify_stderr=False,
++        )
++        assert command_success, f"virtctl reset command failed: {error}"
++
++        wait_for_running_vm(vm=virtctl_reset_vm, ssh_timeout=TIMEOUT_10MIN)
++
++        boot_count_after = wait_for_boot_count_increment(
++            vm=virtctl_reset_vm,
++            boot_count_before=boot_count_before,
++        )
++        LOGGER.info(f"Boot count after virtctl reset: {boot_count_after}")
++        assert boot_count_after - boot_count_before == 1, (
++            f"Expected boot count to increment by 1 after virtctl reset, "
++            f"but got before={boot_count_before} after={boot_count_after}"
++        )
+
+diff --git a/tests/virt/node/hard_reset/test_vmi_hard_reset.py b/tests/virt/node/hard_reset/test_vmi_hard_reset.py
+new file mode 100644
+index 0000000..5c2ed07
+--- /dev/null
++++ b/tests/virt/node/hard_reset/test_vmi_hard_reset.py
+@@ -0,0 +1,107 @@
++"""
++VMI Hard Reset Tests
++
++STP Reference: https://issues.redhat.com/browse/VIRTSTRAT-357
++
++This module contains tests for the VMI hard reset subresource API,
++verifying that a running VMI can be reset in-place without pod
++rescheduling, preserving VMI UID and triggering an actual guest reboot.
++"""
++
++import logging
++
++import pytest
++
++from tests.virt.node.hard_reset.conftest import get_vm_boot_count, wait_for_boot_count_increment
++
++LOGGER = logging.getLogger(__name__)
++
++pytestmark = pytest.mark.virt
++
++
++class TestVMIHardReset:
++    """
++    Tests for VMI hard reset core functionality via the subresource API.
++
++    Preconditions:
++        - Running Fedora virtual machine with SSH access
++        - Boot count recorded before reset
++        - VMI UID and pod name recorded before reset
++        - VMI reset performed and VM is running again with SSH access
++    """
++
++    @pytest.mark.polarion("CNV-12374")
++    def test_guest_reboots_after_reset(
++        self,
++        hard_reset_vm,
++        boot_count_before_reset,
++        hard_reset_vm_after_reset,
++    ):
++        """
++        Test that a VMI hard reset triggers an actual guest reboot.
++
++        Steps:
++            1. Compare boot count after reset with boot count before reset
++
++        Expected:
++            - Boot count after reset equals boot count before reset plus 1
++        """
++        boot_count_after_reset = wait_for_boot_count_increment(
++            vm=hard_reset_vm,
++            boot_count_before=boot_count_before_reset,
++        )
++        LOGGER.info(
++            f"Boot count before reset: {boot_count_before_reset}, after reset: {boot_count_after_reset}"
++        )
++        assert boot_count_after_reset - boot_count_before_reset == 1, (
++            f"Expected boot count to increment by 1 after reset, "
++            f"but got before={boot_count_before_reset} after={boot_count_after_reset}"
++        )
++
++    @pytest.mark.polarion("CNV-12375")
++    def test_pod_preserved_after_reset(
++        self,
++        hard_reset_vm,
++        pod_name_before_reset,
++        hard_reset_vm_after_reset,
++    ):
++        """
++        Test that the virt-launcher pod is not rescheduled after a VMI reset.
++
++        Steps:
++            1. Compare pod name after reset with pod name before reset
++
++        Expected:
++            - Pod name after reset equals pod name before reset
++        """
++        pod_name_after_reset = hard_reset_vm.privileged_vmi.virt_launcher_pod.name
++        LOGGER.info(
++            f"Pod name before reset: {pod_name_before_reset}, after reset: {pod_name_after_reset}"
++        )
++        assert pod_name_after_reset == pod_name_before_reset, (
++            f"Pod was rescheduled after reset: before={pod_name_before_reset} after={pod_name_after_reset}"
++        )
++
++    @pytest.mark.polarion("CNV-12376")
++    def test_vmi_uid_unchanged_after_reset(
++        self,
++        hard_reset_vm,
++        vmi_uid_before_reset,
++        hard_reset_vm_after_reset,
++    ):
++        """
++        Test that the VMI UID remains unchanged after a hard reset.
++
++        Steps:
++            1. Compare VMI UID after reset with VMI UID before reset
++
++        Expected:
++            - VMI UID after reset equals VMI UID before reset
++        """
++        vmi_uid_after_reset = hard_reset_vm.vmi.instance.metadata.uid
++        LOGGER.info(
++            f"VMI UID before reset: {vmi_uid_before_reset}, after reset: {vmi_uid_after_reset}"
++        )
++        assert vmi_uid_after_reset == vmi_uid_before_reset, (
++            f"VMI UID changed after reset: before={vmi_uid_before_reset} after={vmi_uid_after_reset}"
++        )
+
+diff --git a/tests/virt/node/hard_reset/test_vmi_reset_negative.py b/tests/virt/node/hard_reset/test_vmi_reset_negative.py
+new file mode 100644
+index 0000000..93e2111
+--- /dev/null
++++ b/tests/virt/node/hard_reset/test_vmi_reset_negative.py
+@@ -0,0 +1,104 @@
++"""
++VMI Hard Reset Negative and Edge Case Tests
++
++STP Reference: https://issues.redhat.com/browse/VIRTSTRAT-357
++
++This module contains negative tests for the VMI hard reset feature,
++verifying proper error handling for invalid reset scenarios,
++and edge case behavior for paused VMIs.
++"""
++
++import logging
++
++import pytest
++from kubernetes.client.exceptions import ApiException
++from ocp_resources.virtual_machine_instance import VirtualMachineInstance
++
++LOGGER = logging.getLogger(__name__)
++
++pytestmark = pytest.mark.virt
++
++
++class TestVMIResetOnStoppedVM:
++    """
++    Tests for VMI hard reset error handling on a stopped VMI.
++
++    Preconditions:
++        - Fedora virtual machine in stopped state (not started)
++    """
++
++    @pytest.mark.polarion("CNV-12379")
++    def test_reset_stopped_vmi(self, non_running_vm):
++        """
++        [NEGATIVE] Test that resetting a stopped VMI fails with an appropriate error.
++
++        Preconditions:
++            - VM is in stopped state (not running)
++
++        Steps:
++            1. Attempt to call reset on the stopped VMI
++
++        Expected:
++            - Operation raises an error indicating the VMI is not running
++        """
++        LOGGER.info(f"Attempting to reset stopped VM {non_running_vm.name}")
++        with pytest.raises(ApiException, match="404"):
++            vmi = VirtualMachineInstance(
++                name=non_running_vm.name,
++                namespace=non_running_vm.namespace,
++                client=non_running_vm.client,
++            )
++            vmi.reset()
++
++
++class TestVMIResetOnPausedVM:
++    """
++    Tests for VMI hard reset behavior on a paused VMI.
++
++    Preconditions:
++        - Running Fedora virtual machine with paused VMI
++    """
++
++    @pytest.mark.polarion("CNV-12380")
++    def test_reset_paused_vmi_succeeds(self, paused_vm):
++        """
++        Test that the reset API call succeeds on a paused VMI.
++
++        Preconditions:
++            - VM is running
++            - VMI is paused
++
++        Steps:
++            1. Call reset on the paused VMI
++
++        Expected:
++            - Reset operation completes without raising an error
++        """
++        LOGGER.info(f"Resetting paused VMI {paused_vm.vmi.name}")
++        paused_vm.vmi.reset()
++        LOGGER.info(f"Reset API call succeeded for paused VMI {paused_vm.vmi.name}")
++
++
++@pytest.mark.polarion("CNV-12381")
++def test_reset_nonexistent_vmi(admin_client, namespace):
++    """
++    [NEGATIVE] Test that resetting a non-existent VMI fails with a not-found error.
++
++    Preconditions:
++        - No VMI with name "nonexistent-vmi" exists in the namespace
++
++    Steps:
++        1. Attempt to call reset on a non-existent VMI name
++
++    Expected:
++        - Operation raises a not-found error
++    """
++    nonexistent_vmi_name = "nonexistent-vmi-for-reset"
++    LOGGER.info(f"Attempting to reset non-existent VMI {nonexistent_vmi_name}")
++    vmi = VirtualMachineInstance(
++        name=nonexistent_vmi_name,
++        namespace=namespace.name,
++        client=admin_client,
++    )
++    with pytest.raises(ApiException, match="404"):
++        vmi.reset()

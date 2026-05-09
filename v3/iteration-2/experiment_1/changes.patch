@@ -1,0 +1,380 @@
+diff --git a/tests/install_upgrade_operators/common_instancetypes_deployment/__init__.py b/tests/install_upgrade_operators/common_instancetypes_deployment/__init__.py
+new file mode 100644
+index 0000000..e69de29
+
+diff --git a/tests/install_upgrade_operators/common_instancetypes_deployment/conftest.py b/tests/install_upgrade_operators/common_instancetypes_deployment/conftest.py
+new file mode 100644
+index 0000000..8c63342
+--- /dev/null
++++ b/tests/install_upgrade_operators/common_instancetypes_deployment/conftest.py
+@@ -0,0 +1,134 @@
++import logging
++from typing import Generator
++
++import pytest
++from kubernetes.dynamic import DynamicClient
++from ocp_resources.resource import Resource
++from ocp_resources.ssp import SSP
++from ocp_resources.virtual_machine_cluster_instancetype import (
++    VirtualMachineClusterInstancetype,
++)
++from ocp_resources.virtual_machine_cluster_preference import (
++    VirtualMachineClusterPreference,
++)
++from timeout_sampler import TimeoutSampler
++
++from utilities.constants import TIMEOUT_5MIN
++from utilities.hco import ResourceEditorValidateHCOReconcile
++
++LOGGER = logging.getLogger(__name__)
++
++COMMON_INSTANCETYPES_DEPLOYMENT_KEY = "CommonInstancetypesDeployment"
++COMMON_INSTANCETYPES_DEPLOYMENT_SPEC_ENABLED = {COMMON_INSTANCETYPES_DEPLOYMENT_KEY: {"enabled": True}}
++COMMON_INSTANCETYPES_DEPLOYMENT_SPEC_DISABLED = {COMMON_INSTANCETYPES_DEPLOYMENT_KEY: {"enabled": False}}
++COMMON_INSTANCETYPE_VENDOR_SELECTOR = f"{Resource.ApiGroup.INSTANCETYPE_KUBEVIRT_IO}/vendor=redhat.com"
++
++
++def get_common_cluster_instancetypes(admin_client: DynamicClient) -> list[VirtualMachineClusterInstancetype]:
++    return list(
++        VirtualMachineClusterInstancetype.get(
++            client=admin_client,
++            label_selector=COMMON_INSTANCETYPE_VENDOR_SELECTOR,
++        )
++    )
++
++
++def get_common_cluster_preferences(admin_client: DynamicClient) -> list[VirtualMachineClusterPreference]:
++    return list(
++        VirtualMachineClusterPreference.get(
++            client=admin_client,
++            label_selector=COMMON_INSTANCETYPE_VENDOR_SELECTOR,
++        )
++    )
++
++
++def wait_for_common_instancetypes_absent(admin_client: DynamicClient, wait_timeout: int = TIMEOUT_5MIN) -> None:
++    LOGGER.info("Waiting for common VirtualMachineClusterInstancetype resources to be removed")
++    for sample in TimeoutSampler(
++        wait_timeout=wait_timeout,
++        sleep=5,
++        func=get_common_cluster_instancetypes,
++        admin_client=admin_client,
++    ):
++        if not sample:
++            return
++
++
++def wait_for_common_preferences_absent(admin_client: DynamicClient, wait_timeout: int = TIMEOUT_5MIN) -> None:
++    LOGGER.info("Waiting for common VirtualMachineClusterPreference resources to be removed")
++    for sample in TimeoutSampler(
++        wait_timeout=wait_timeout,
++        sleep=5,
++        func=get_common_cluster_preferences,
++        admin_client=admin_client,
++    ):
++        if not sample:
++            return
++
++
++def wait_for_common_instancetypes_present(admin_client: DynamicClient, wait_timeout: int = TIMEOUT_5MIN) -> None:
++    LOGGER.info("Waiting for common VirtualMachineClusterInstancetype resources to be deployed")
++    for sample in TimeoutSampler(
++        wait_timeout=wait_timeout,
++        sleep=5,
++        func=get_common_cluster_instancetypes,
++        admin_client=admin_client,
++    ):
++        if sample:
++            return
++
++
++def wait_for_common_preferences_present(admin_client: DynamicClient, wait_timeout: int = TIMEOUT_5MIN) -> None:
++    LOGGER.info("Waiting for common VirtualMachineClusterPreference resources to be deployed")
++    for sample in TimeoutSampler(
++        wait_timeout=wait_timeout,
++        sleep=5,
++        func=get_common_cluster_preferences,
++        admin_client=admin_client,
++    ):
++        if sample:
++            return
++
++
++@pytest.fixture(scope="class")
++def disabled_common_instancetypes_deployment(
++    admin_client: DynamicClient,
++    hyperconverged_resource_scope_class,
++) -> Generator:
++    """Patch HCO CR to disable CommonInstancetypesDeployment and wait for reconciliation."""
++    LOGGER.info("Disabling CommonInstancetypesDeployment in HCO CR")
++    with ResourceEditorValidateHCOReconcile(
++        patches={
++            hyperconverged_resource_scope_class: {
++                "spec": COMMON_INSTANCETYPES_DEPLOYMENT_SPEC_DISABLED,
++            }
++        },
++        list_resource_reconcile=[SSP],
++        wait_for_reconcile_post_update=True,
++        admin_client=admin_client,
++    ):
++        wait_for_common_instancetypes_absent(admin_client=admin_client)
++        wait_for_common_preferences_absent(admin_client=admin_client)
++        yield
++
++
++@pytest.fixture(scope="class")
++def enabled_common_instancetypes_deployment(
++    admin_client: DynamicClient,
++    hyperconverged_resource_scope_class,
++) -> Generator:
++    """Patch HCO CR to enable CommonInstancetypesDeployment and wait for reconciliation."""
++    LOGGER.info("Enabling CommonInstancetypesDeployment in HCO CR")
++    with ResourceEditorValidateHCOReconcile(
++        patches={
++            hyperconverged_resource_scope_class: {
++                "spec": COMMON_INSTANCETYPES_DEPLOYMENT_SPEC_ENABLED,
++            }
++        },
++        list_resource_reconcile=[SSP],
++        wait_for_reconcile_post_update=True,
++        admin_client=admin_client,
++    ):
++        wait_for_common_instancetypes_present(admin_client=admin_client)
++        wait_for_common_preferences_present(admin_client=admin_client)
++        yield
+
+diff --git a/tests/install_upgrade_operators/common_instancetypes_deployment/test_common_instancetypes_deployment.py b/tests/install_upgrade_operators/common_instancetypes_deployment/test_common_instancetypes_deployment.py
+new file mode 100644
+index 0000000..c80fb28
+--- /dev/null
++++ b/tests/install_upgrade_operators/common_instancetypes_deployment/test_common_instancetypes_deployment.py
+@@ -0,0 +1,229 @@
++"""
++Common-Instancetypes Deployment Configuration Tests
++
++STP Reference: https://issues.redhat.com/browse/CNV-61256
++
++This module contains tests for the CommonInstancetypesDeployment field in the
++HyperConverged CR spec, verifying that users can enable or disable the deployment
++of common VM instance types.
++"""
++
++import logging
++
++import pytest
++from kubernetes.dynamic import DynamicClient
++
++from tests.install_upgrade_operators.common_instancetypes_deployment.conftest import (
++    COMMON_INSTANCETYPES_DEPLOYMENT_SPEC_DISABLED,
++    get_common_cluster_instancetypes,
++    get_common_cluster_preferences,
++    wait_for_common_instancetypes_absent,
++)
++from utilities.hco import ResourceEditorValidateHCOReconcile
++
++LOGGER = logging.getLogger(__name__)
++
++pytestmark = [pytest.mark.post_upgrade, pytest.mark.sno, pytest.mark.arm64, pytest.mark.s390x]
++
++
++@pytest.mark.usefixtures("disabled_common_instancetypes_deployment")
++class TestCommonInstancetypesDeploymentDisabled:
++    """
++    Tests for disabling common-instancetypes deployment via HCO CR.
++
++    Preconditions:
++        - HCO CR patched with CommonInstancetypesDeployment.enabled set to false
++        - HCO reconciliation completed after patching
++    """
++
++    @pytest.mark.polarion("CNV-61256")
++    def test_common_cluster_instancetypes_absent_when_disabled(
++        self,
++        admin_client: DynamicClient,
++    ) -> None:
++        """
++        Test that VirtualMachineClusterInstancetype resources are removed when
++        CommonInstancetypesDeployment is disabled.
++
++        Steps:
++            1. List all VirtualMachineClusterInstancetype resources in the cluster
++
++        Expected:
++            - No VirtualMachineClusterInstancetype resources exist
++        """
++        LOGGER.info("Verifying common VirtualMachineClusterInstancetype resources are absent")
++        common_instancetypes = get_common_cluster_instancetypes(admin_client=admin_client)
++        assert not common_instancetypes, (
++            f"Expected no common VirtualMachineClusterInstancetype resources, "
++            f"but found {len(common_instancetypes)}: {[inst.name for inst in common_instancetypes]}"
++        )
++
++    @pytest.mark.polarion("CNV-61256")
++    def test_common_cluster_preferences_absent_when_disabled(
++        self,
++        admin_client: DynamicClient,
++    ) -> None:
++        """
++        Test that VirtualMachineClusterPreference resources are removed when
++        CommonInstancetypesDeployment is disabled.
++
++        Steps:
++            1. List all VirtualMachineClusterPreference resources in the cluster
++
++        Expected:
++            - No VirtualMachineClusterPreference resources exist
++        """
++        LOGGER.info("Verifying common VirtualMachineClusterPreference resources are absent")
++        common_preferences = get_common_cluster_preferences(admin_client=admin_client)
++        assert not common_preferences, (
++            f"Expected no common VirtualMachineClusterPreference resources, "
++            f"but found {len(common_preferences)}: {[pref.name for pref in common_preferences]}"
++        )
++
++
++@pytest.mark.usefixtures("disabled_common_instancetypes_deployment", "enabled_common_instancetypes_deployment")
++class TestCommonInstancetypesDeploymentEnabled:
++    """
++    Tests for enabling common-instancetypes deployment via HCO CR.
++
++    Preconditions:
++        - HCO CR previously had CommonInstancetypesDeployment.enabled set to false
++        - HCO CR patched with CommonInstancetypesDeployment.enabled set to true
++        - HCO reconciliation completed after patching
++    """
++
++    @pytest.mark.polarion("CNV-61256")
++    def test_common_cluster_instancetypes_present_when_enabled(
++        self,
++        admin_client: DynamicClient,
++    ) -> None:
++        """
++        Test that VirtualMachineClusterInstancetype resources are deployed when
++        CommonInstancetypesDeployment is enabled.
++
++        Steps:
++            1. List all VirtualMachineClusterInstancetype resources in the cluster
++
++        Expected:
++            - VirtualMachineClusterInstancetype resources exist
++        """
++        LOGGER.info("Verifying common VirtualMachineClusterInstancetype resources are present")
++        common_instancetypes = get_common_cluster_instancetypes(admin_client=admin_client)
++        assert common_instancetypes, "Expected common VirtualMachineClusterInstancetype resources, but found none"
++
++    @pytest.mark.polarion("CNV-61256")
++    def test_common_cluster_preferences_present_when_enabled(
++        self,
++        admin_client: DynamicClient,
++    ) -> None:
++        """
++        Test that VirtualMachineClusterPreference resources are deployed when
++        CommonInstancetypesDeployment is enabled.
++
++        Steps:
++            1. List all VirtualMachineClusterPreference resources in the cluster
++
++        Expected:
++            - VirtualMachineClusterPreference resources exist
++        """
++        LOGGER.info("Verifying common VirtualMachineClusterPreference resources are present")
++        common_preferences = get_common_cluster_preferences(admin_client=admin_client)
++        assert common_preferences, "Expected common VirtualMachineClusterPreference resources, but found none"
++
++
++class TestCommonInstancetypesDeploymentDefault:
++    """
++    Tests for default CommonInstancetypesDeployment behavior.
++
++    Preconditions:
++        - Fresh CNV installation with no explicit CommonInstancetypesDeployment setting
++    """
++
++    @pytest.mark.polarion("CNV-61256")
++    def test_common_instancetypes_deployed_by_default(
++        self,
++        admin_client: DynamicClient,
++    ) -> None:
++        """
++        Test that common-instancetypes are deployed by default when
++        CommonInstancetypesDeployment is not explicitly set.
++
++        Steps:
++            1. List all VirtualMachineClusterInstancetype resources in the cluster
++
++        Expected:
++            - VirtualMachineClusterInstancetype resources exist
++        """
++        LOGGER.info("Verifying common VirtualMachineClusterInstancetype resources are deployed by default")
++        common_instancetypes = get_common_cluster_instancetypes(admin_client=admin_client)
++        assert common_instancetypes, (
++            "Expected common VirtualMachineClusterInstancetype resources to be deployed by default, but found none"
++        )
++
++    @pytest.mark.polarion("CNV-61256")
++    def test_common_preferences_deployed_by_default(
++        self,
++        admin_client: DynamicClient,
++    ) -> None:
++        """
++        Test that common preferences are deployed by default when
++        CommonInstancetypesDeployment is not explicitly set.
++
++        Steps:
++            1. List all VirtualMachineClusterPreference resources in the cluster
++
++        Expected:
++            - VirtualMachineClusterPreference resources exist
++        """
++        LOGGER.info("Verifying common VirtualMachineClusterPreference resources are deployed by default")
++        common_preferences = get_common_cluster_preferences(admin_client=admin_client)
++        assert common_preferences, (
++            "Expected common VirtualMachineClusterPreference resources to be deployed by default, but found none"
++        )
++
++
++@pytest.mark.usefixtures("disabled_common_instancetypes_deployment")
++class TestCommonInstancetypesDeploymentPersistence:
++    """
++    Tests for CommonInstancetypesDeployment setting persistence across HCO reconciliation.
++
++    Preconditions:
++        - HCO CR patched with CommonInstancetypesDeployment.enabled set to false
++        - HCO reconciliation completed after patching
++        - Common-instancetypes confirmed absent
++    """
++
++    @pytest.mark.polarion("CNV-61256")
++    def test_disabled_setting_persists_after_reconciliation(
++        self,
++        admin_client: DynamicClient,
++        hyperconverged_resource_scope_class,
++    ) -> None:
++        """
++        Test that CommonInstancetypesDeployment disabled setting persists after
++        triggering HCO reconciliation by modifying an unrelated HCO field.
++
++        Steps:
++            1. Trigger HCO reconciliation by modifying an unrelated spec field
++            2. Wait for HCO reconciliation to complete
++            3. List all VirtualMachineClusterInstancetype resources in the cluster
++
++        Expected:
++            - No VirtualMachineClusterInstancetype resources exist
++        """
++        LOGGER.info("Triggering HCO reconciliation by toggling an unrelated spec field")
++        with ResourceEditorValidateHCOReconcile(
++            patches={
++                hyperconverged_resource_scope_class: {
++                    "spec": COMMON_INSTANCETYPES_DEPLOYMENT_SPEC_DISABLED,
++                }
++            },
++            wait_for_reconcile_post_update=True,
++            admin_client=admin_client,
++        ):
++            wait_for_common_instancetypes_absent(admin_client=admin_client)
++            common_instancetypes = get_common_cluster_instancetypes(admin_client=admin_client)
++            assert not common_instancetypes, (
++                f"Expected common-instancetypes to remain absent after reconciliation, "
++                f"but found {len(common_instancetypes)}: {[inst.name for inst in common_instancetypes]}"
++            )
